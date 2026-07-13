@@ -391,6 +391,7 @@ docs/               DATABASE.md, SHIPPING.md, PAYMENTS.md
 
 ## Further documentation
 
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — **step-by-step production deployment** (VPS/Nginx, shared hosting/cPanel, SSL, queue, cron, backup, troubleshooting).
 - [`docs/DATABASE.md`](docs/DATABASE.md) — database schema & key relationships.
 - [`docs/SHIPPING.md`](docs/SHIPPING.md) — volumetric weight & shipping-provider architecture.
 - [`docs/PAYMENTS.md`](docs/PAYMENTS.md) — payment adapters, webhook security, integrating a real gateway.
