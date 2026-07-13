@@ -1,0 +1,35 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Article;
+use App\Models\Banner;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Product;
+use App\Models\Review;
+use Illuminate\View\View;
+
+class HomeController extends Controller
+{
+    public function index(): View
+    {
+        $featuredCard = fn ($q) => $q->published()->with(['brand', 'category']);
+
+        return view('storefront.home', [
+            'heroBanners' => Banner::active()->where('position', 'hero')->orderBy('sort_order')->get(),
+            'quotationBanner' => Banner::active()->where('position', 'quotation')->orderBy('sort_order')->first(),
+            'shortcutCategories' => Category::active()->where('is_featured', true)->orderBy('sort_order')->take(12)->get(),
+            'featured' => Product::published()->where('is_featured', true)->with(['brand', 'category'])->latest('published_at')->take(10)->get(),
+            'packages' => Product::published()->where('product_type', 'bundle')->with(['brand', 'category'])->take(8)->get(),
+            'newest' => Product::published()->where('is_new', true)->with(['brand', 'category'])->latest('published_at')->take(10)->get(),
+            'promos' => Product::published()->whereNotNull('sale_price')->with(['brand', 'category'])->take(10)->get(),
+            'surplus' => Product::published()->where('is_clearance', true)->orWhere('condition', '!=', 'new')->with(['brand', 'category'])->take(8)->get(),
+            'brands' => Brand::active()->where('is_featured', true)->orderBy('sort_order')->take(12)->get(),
+            'mostViewed' => Product::published()->with(['brand', 'category'])->orderByDesc('view_count')->take(10)->get(),
+            'topRated' => Product::published()->where('rating_count', '>', 0)->with(['brand', 'category'])->orderByDesc('rating_avg')->take(10)->get(),
+            'articles' => Article::published()->latest('published_at')->take(3)->get(),
+            'testimonials' => Review::visible()->where('rating', '>=', 4)->whereNotNull('comment')->with(['user', 'product'])->latest()->take(6)->get(),
+        ]);
+    }
+}

@@ -1,0 +1,238 @@
+<?php
+
+use App\Http\Controllers\Account;
+use App\Http\Controllers\Admin;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\CompareController;
+use App\Http\Controllers\ContentController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentWebhookController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SeoController;
+use App\Http\Controllers\WishlistController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Storefront (public)
+|--------------------------------------------------------------------------
+*/
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
+Route::get('/produk', [CatalogController::class, 'index'])->name('products.index');
+Route::get('/promo', [CatalogController::class, 'promo'])->name('promo');
+Route::get('/produk-baru', [CatalogController::class, 'newest'])->name('products.new');
+Route::get('/barang-clearance', [CatalogController::class, 'clearance'])->name('clearance');
+Route::get('/barang-sisa-proyek', [CatalogController::class, 'surplus'])->name('surplus');
+
+Route::get('/pencarian', [SearchController::class, 'index'])->name('search');
+Route::get('/api/pencarian/suggest', [SearchController::class, 'suggest'])
+    ->middleware('throttle:60,1')->name('search.suggest');
+
+Route::get('/kategori/{category:slug}', [CatalogController::class, 'category'])->name('categories.show');
+Route::get('/brand/{brand:slug}', [CatalogController::class, 'brand'])->name('brands.show');
+
+// Product detail resolves slug manually (to support old-slug redirects).
+Route::get('/produk/{slug}', [ProductController::class, 'show'])->name('products.show');
+
+/* Cart */
+Route::controller(CartController::class)->group(function () {
+    Route::get('/keranjang', 'index')->name('cart.index');
+    Route::post('/keranjang', 'store')->name('cart.store');
+    Route::patch('/keranjang/{item}', 'update')->name('cart.update');
+    Route::delete('/keranjang/{item}', 'destroy')->name('cart.destroy');
+    Route::post('/keranjang/{item}/simpan-nanti', 'saveForLater')->name('cart.save');
+    Route::post('/keranjang/{item}/pindah', 'moveToCart')->name('cart.move');
+    Route::post('/keranjang/{item}/setujui-kondisi', 'acknowledge')->name('cart.acknowledge');
+    Route::post('/keranjang/kupon', 'applyCoupon')->name('cart.coupon');
+    Route::delete('/keranjang/kupon', 'removeCoupon')->name('cart.coupon.remove');
+    Route::post('/keranjang/catatan', 'note')->name('cart.note');
+});
+
+/* Checkout */
+Route::controller(CheckoutController::class)->group(function () {
+    Route::get('/checkout', 'index')->name('checkout.index');
+    Route::post('/checkout/ongkir', 'shippingOptions')->name('checkout.shipping');
+    Route::post('/checkout', 'store')->middleware('throttle:20,1')->name('checkout.store');
+});
+
+/* Orders + invoice (public via non-guessable token) */
+Route::get('/pesanan/{order:public_token}', [OrderController::class, 'track'])->name('orders.track');
+Route::get('/pesanan/{order:public_token}/bayar', [OrderController::class, 'pay'])->name('orders.pay');
+Route::get('/invoice/{invoice:public_token}', [OrderController::class, 'invoice'])->name('invoices.show');
+Route::get('/invoice/{invoice:public_token}/pdf', [OrderController::class, 'invoicePdf'])->name('invoices.pdf');
+
+/* Quotation / RFQ */
+Route::controller(QuotationController::class)->group(function () {
+    Route::get('/permintaan-penawaran', 'create')->name('quotations.create');
+    Route::post('/permintaan-penawaran', 'store')->middleware('throttle:10,1')->name('quotations.store');
+    Route::get('/penawaran/{quotation:public_token}', 'show')->name('quotations.show');
+    Route::post('/penawaran/{quotation:public_token}/setujui', 'approve')->name('quotations.approve');
+    Route::post('/penawaran/{quotation:public_token}/tolak', 'reject')->name('quotations.reject');
+});
+
+/* Wishlist */
+Route::controller(WishlistController::class)->group(function () {
+    Route::get('/wishlist', 'index')->name('wishlist.index');
+    Route::post('/wishlist/{product:slug}', 'toggle')->name('wishlist.toggle');
+    Route::post('/wishlist/berbagi', 'share')->name('wishlist.share');
+    Route::get('/wishlist/berbagi/{token}', 'shared')->name('wishlist.shared');
+});
+
+/* Comparison */
+Route::controller(CompareController::class)->group(function () {
+    Route::get('/perbandingan', 'index')->name('compare.index');
+    Route::post('/perbandingan/{product:slug}', 'add')->name('compare.add');
+    Route::delete('/perbandingan/{product:slug}', 'remove')->name('compare.remove');
+    Route::delete('/perbandingan', 'clear')->name('compare.clear');
+});
+
+/* Reviews & product Q&A */
+Route::post('/produk/{product:slug}/review', [ReviewController::class, 'store'])
+    ->middleware('auth')->name('reviews.store');
+Route::post('/review/{review}/membantu', [ReviewController::class, 'helpful'])
+    ->middleware('auth')->name('reviews.helpful');
+Route::post('/review/{review}/laporkan', [ReviewController::class, 'report'])
+    ->middleware('auth')->name('reviews.report');
+Route::post('/produk/{product:slug}/tanya', [ProductController::class, 'ask'])->name('questions.store');
+
+/* CMS + misc */
+Route::post('/newsletter', [ContentController::class, 'subscribe'])->name('newsletter.subscribe');
+Route::get('/artikel', [ContentController::class, 'articles'])->name('articles.index');
+Route::get('/artikel/{article:slug}', [ContentController::class, 'article'])->name('articles.show');
+Route::get('/faq', [ContentController::class, 'faq'])->name('faq');
+Route::get('/halaman/{page:slug}', [ContentController::class, 'page'])->name('pages.show');
+
+/* SEO */
+Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
+Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
+
+/*
+|--------------------------------------------------------------------------
+| Payment webhook (CSRF-exempt, signature-verified inside controller)
+|--------------------------------------------------------------------------
+*/
+Route::post('/webhook/pembayaran/{provider}', PaymentWebhookController::class)->name('webhook.payment');
+
+/*
+|--------------------------------------------------------------------------
+| Authentication
+|--------------------------------------------------------------------------
+*/
+Route::middleware('guest')->group(function () {
+    Route::get('/masuk', [LoginController::class, 'create'])->name('login');
+    Route::post('/masuk', [LoginController::class, 'store'])->middleware('throttle:10,1');
+    Route::get('/daftar', [RegisterController::class, 'create'])->name('register');
+    Route::post('/daftar', [RegisterController::class, 'store'])->middleware('throttle:10,1');
+});
+Route::post('/keluar', [LoginController::class, 'destroy'])->middleware('auth')->name('logout');
+
+/*
+|--------------------------------------------------------------------------
+| Customer account
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->prefix('akun')->name('account.')->group(function () {
+    Route::get('/', [Account\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/profil', [Account\ProfileController::class, 'edit'])->name('profile');
+    Route::put('/profil', [Account\ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/password', [Account\ProfileController::class, 'updatePassword'])->name('password.update');
+
+    Route::resource('alamat', Account\AddressController::class)->except(['show'])->names('addresses');
+
+    Route::get('/pesanan', [Account\OrderController::class, 'index'])->name('orders');
+    Route::get('/pesanan/{order:public_token}', [Account\OrderController::class, 'show'])->name('orders.show');
+
+    Route::get('/quotation', [Account\QuotationController::class, 'index'])->name('quotations');
+    Route::get('/wishlist', [WishlistController::class, 'account'])->name('wishlist');
+    Route::get('/review', [Account\ReviewController::class, 'index'])->name('reviews');
+    Route::post('/review', [Account\ReviewController::class, 'store'])->name('reviews.store');
+    Route::get('/notifikasi', [Account\NotificationController::class, 'index'])->name('notifications');
+    Route::post('/notifikasi/{id}/baca', [Account\NotificationController::class, 'read'])->name('notifications.read');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Admin panel  (auth + staff, then per-permission gates)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [Admin\DashboardController::class, 'index'])->name('dashboard');
+
+    Route::middleware('permission:catalog.manage')->group(function () {
+        Route::resource('kategori', Admin\CategoryController::class)->names('categories')->except('show');
+        Route::resource('brand', Admin\BrandController::class)->names('brands')->except('show');
+        Route::resource('produk', Admin\ProductController::class)->names('products')->except('show');
+        Route::resource('atribut', Admin\AttributeController::class)->names('attributes')->except('show');
+    });
+
+    Route::middleware('permission:inventory.manage')->group(function () {
+        Route::get('/stok', [Admin\StockController::class, 'index'])->name('stock.index');
+        Route::post('/stok/{product}/sesuaikan', [Admin\StockController::class, 'adjust'])->name('stock.adjust');
+        Route::resource('gudang', Admin\WarehouseController::class)->names('warehouses')->except('show');
+    });
+
+    Route::middleware('permission:price.manage')->group(function () {
+        Route::resource('kupon', Admin\CouponController::class)->names('coupons')->except('show');
+    });
+
+    Route::middleware('permission:order.view')->group(function () {
+        Route::get('/pesanan', [Admin\OrderController::class, 'index'])->name('orders.index');
+        Route::get('/pesanan/{order}', [Admin\OrderController::class, 'show'])->name('orders.show');
+    });
+    Route::middleware('permission:order.manage')->group(function () {
+        Route::post('/pesanan/{order}/status', [Admin\OrderController::class, 'updateStatus'])->name('orders.status');
+        Route::post('/pesanan/{order}/ongkir', [Admin\OrderController::class, 'confirmShipping'])->name('orders.shipping');
+        Route::post('/pesanan/{order}/kirim', [Admin\OrderController::class, 'ship'])->name('orders.ship');
+    });
+    Route::middleware('permission:payment.manage')->group(function () {
+        Route::post('/pesanan/{order}/verifikasi-bayar', [Admin\OrderController::class, 'verifyPayment'])->name('orders.verify');
+    });
+
+    Route::middleware('permission:quotation.manage')->group(function () {
+        Route::get('/quotation', [Admin\QuotationController::class, 'index'])->name('quotations.index');
+        Route::get('/quotation/{quotation}', [Admin\QuotationController::class, 'show'])->name('quotations.show');
+        Route::post('/quotation/{quotation}/harga', [Admin\QuotationController::class, 'price'])->name('quotations.price');
+        Route::post('/quotation/{quotation}/status', [Admin\QuotationController::class, 'status'])->name('quotations.status');
+        Route::post('/quotation/{quotation}/jadikan-pesanan', [Admin\QuotationController::class, 'convert'])->name('quotations.convert');
+    });
+
+    Route::middleware('permission:review.moderate')->group(function () {
+        Route::get('/review', [Admin\ReviewController::class, 'index'])->name('reviews.index');
+        Route::post('/review/{review}/visibilitas', [Admin\ReviewController::class, 'toggleVisibility'])->name('reviews.visibility');
+        Route::post('/review/{review}/balas', [Admin\ReviewController::class, 'reply'])->name('reviews.reply');
+    });
+
+    Route::middleware('permission:content.manage')->group(function () {
+        Route::resource('banner', Admin\BannerController::class)->names('banners')->except('show');
+        Route::resource('halaman', Admin\PageController::class)->names('pages')->except('show');
+        Route::resource('artikel', Admin\ArticleController::class)->names('articles')->except('show');
+        Route::resource('faq', Admin\FaqController::class)->names('faqs')->except('show');
+    });
+
+    Route::middleware('permission:customer.manage')->group(function () {
+        Route::get('/customer', [Admin\CustomerController::class, 'index'])->name('customers.index');
+        Route::get('/customer/{user}', [Admin\CustomerController::class, 'show'])->name('customers.show');
+    });
+
+    Route::middleware('permission:setting.manage')->group(function () {
+        Route::get('/pengaturan', [Admin\SettingController::class, 'edit'])->name('settings.edit');
+        Route::put('/pengaturan', [Admin\SettingController::class, 'update'])->name('settings.update');
+    });
+
+    Route::middleware('permission:user.manage')->group(function () {
+        Route::resource('user', Admin\UserController::class)->names('users');
+    });
+
+    Route::middleware('permission:audit.view')->group(function () {
+        Route::get('/audit-log', [Admin\AuditController::class, 'index'])->name('audit.index');
+    });
+});
