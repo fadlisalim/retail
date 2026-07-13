@@ -9,8 +9,8 @@
 <body class="min-h-full bg-gradient-to-br from-brand-50 to-white">
     <div class="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">
         <a href="{{ route('home') }}" class="mb-8 flex items-center justify-center gap-2">
-            <span class="grid h-10 w-10 place-items-center rounded-lg bg-brand-600 text-lg font-bold text-white">R</span>
-            <span class="text-xl font-extrabold text-brand-700">Rekasurya<span class="text-accent-500">Store</span></span>
+            <span class="grid h-10 w-10 place-items-center rounded-lg bg-brand-600 text-lg font-bold text-white">{{ mb_substr(brand(), 0, 1) }}</span>
+            <x-wordmark class="text-xl font-extrabold text-brand-700" />
         </a>
         <div class="card p-6 sm:p-8">
             <x-flash />

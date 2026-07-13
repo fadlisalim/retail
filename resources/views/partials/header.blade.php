@@ -20,9 +20,9 @@
         </button>
 
         {{-- Logo --}}
-        <a href="{{ route('home') }}" class="flex shrink-0 items-center gap-2" aria-label="Beranda Rekasurya Store">
-            <span class="grid h-9 w-9 place-items-center rounded-lg bg-brand-600 text-white font-bold">R</span>
-            <span class="hidden text-lg font-extrabold tracking-tight text-brand-700 sm:block">Rekasurya<span class="text-accent-500">Store</span></span>
+        <a href="{{ route('home') }}" class="flex shrink-0 items-center gap-2" aria-label="Beranda {{ brand() }}">
+            <span class="grid h-9 w-9 place-items-center rounded-lg bg-brand-600 text-white font-bold">{{ mb_substr(brand(), 0, 1) }}</span>
+            <x-wordmark class="hidden text-lg font-extrabold tracking-tight text-brand-700 sm:block" />
         </a>
 
         {{-- All categories (desktop mega trigger) --}}

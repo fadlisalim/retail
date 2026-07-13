@@ -11,7 +11,7 @@ class SettingSeeder extends Seeder
     {
         $settings = [
             ['company.legal_name', 'PT Rekasurya Primadaya', 'string', 'company'],
-            ['company.brand_name', 'Rekasurya Store', 'string', 'company'],
+            ['company.brand_name', 'Energi.Click', 'string', 'company'],
             ['company.npwp', '01.234.567.8-901.000', 'string', 'company'],
             ['company.address', 'Jl. Energi Surya No. 1, Jakarta Selatan 12345', 'string', 'company'],
             ['company.email', 'sales@rekasurya.test', 'string', 'company'],

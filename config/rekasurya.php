@@ -11,7 +11,9 @@
 return [
     'company' => [
         'legal_name' => env('COMPANY_LEGAL_NAME', 'PT Rekasurya Primadaya'),
-        'brand_name' => env('APP_BRAND', 'Rekasurya Store'),
+        // Storefront brand/store name (shown in the logo, title, etc.). The legal
+        // entity above stays PT Rekasurya Primadaya; this is the consumer brand.
+        'brand_name' => env('APP_BRAND', 'Energi.Click'),
         'tagline' => 'Pusat Produk Energi Terbarukan dan Kebutuhan Proyek',
         'npwp' => env('COMPANY_NPWP', '00.000.000.0-000.000'),
         'address' => env('COMPANY_ADDRESS', 'Jl. Energi Surya No. 1, Jakarta, Indonesia'),

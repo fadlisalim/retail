@@ -24,6 +24,17 @@ if (! function_exists('setting')) {
     }
 }
 
+if (! function_exists('brand')) {
+    /**
+     * The storefront brand/store name (env APP_BRAND -> config default).
+     * Distinct from the legal company name (config rekasurya.company.legal_name).
+     */
+    function brand(): string
+    {
+        return (string) config('rekasurya.company.brand_name', 'Energi.Click');
+    }
+}
+
 if (! function_exists('whatsapp_link')) {
     /**
      * Build a wa.me deep link with a prefilled message.
