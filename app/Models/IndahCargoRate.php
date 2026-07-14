@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 class IndahCargoRate extends Model
 {
     protected $fillable = [
-        'origin', 'destination_city', 'destination_code', 'province_group', 'air_per_kg', 'land_per_kg',
+        'origin', 'destination_city', 'destination_code', 'province_group', 'province', 'air_per_kg', 'land_per_kg',
     ];
 
     protected $casts = [

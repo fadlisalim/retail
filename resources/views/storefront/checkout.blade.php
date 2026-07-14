@@ -54,18 +54,18 @@
                         <x-form.input name="npwp" label="NPWP (opsional)" x-model="addr.npwp" />
                         <div>
                             <label class="input-label" for="province">Provinsi <span class="text-red-500">*</span></label>
-                            <input id="province" name="province" required x-model="addr.province" @change="loadShipping" list="provinces" class="form-input">
-                            <datalist id="provinces">
-                                @foreach (['DKI Jakarta','Jawa Barat','Jawa Tengah','Jawa Timur','Banten','DI Yogyakarta','Bali','Sumatera Utara','Sumatera Selatan','Kalimantan Timur','Sulawesi Selatan'] as $p)<option value="{{ $p }}">@endforeach
-                            </datalist>
+                            <select id="province" name="province" required x-model="addr.province" @change="onProvinceChange" class="form-select">
+                                <option value="">— Pilih provinsi —</option>
+                                <template x-for="prov in provinceList" :key="prov"><option :value="prov" x-text="prov"></option></template>
+                            </select>
                         </div>
                         <div>
                             <label class="input-label" for="city">Kota/Kabupaten <span class="text-red-500">*</span></label>
-                            <input id="city" name="city" required x-model="addr.city" @change="loadShipping" list="shipping-cities" autocomplete="off" placeholder="Ketik nama kota tujuan…" class="form-input">
-                            <datalist id="shipping-cities">
-                                @foreach ($shippingCities as $c)<option value="{{ $c }}">@endforeach
-                            </datalist>
-                            <p class="mt-1 text-xs text-gray-400">Pilih kota tujuan sesuai daftar agar ongkir Indah Cargo terhitung otomatis.</p>
+                            <select id="city" name="city" required x-model="addr.city" @change="loadShipping" class="form-select" :disabled="!addr.province">
+                                <option value="">— Pilih kota/kabupaten —</option>
+                                <template x-for="c in availableCities" :key="c"><option :value="c" x-text="c"></option></template>
+                            </select>
+                            <p class="mt-1 text-xs text-gray-400" x-show="!addr.province">Pilih provinsi dulu untuk melihat daftar kota.</p>
                         </div>
                         <x-form.input name="district" label="Kecamatan" x-model="addr.district" />
                         <x-form.input name="subdistrict" label="Kelurahan" x-model="addr.subdistrict" />
@@ -163,6 +163,14 @@ function checkout(baseSubtotal, tax) {
         shippingProvider: '', shippingService: '', shippingCost: 0, shippingConfirmed: true,
         submitting: false,
         baseSubtotal, tax,
+        citiesByProvince: @js($citiesByProvince),
+        get provinceList() { return Object.keys(this.citiesByProvince) },
+        get availableCities() { return this.citiesByProvince[this.addr.province] || [] },
+        onProvinceChange() {
+            // Drop a city that doesn't belong to the newly chosen province, then re-quote.
+            if (! this.availableCities.includes(this.addr.city)) this.addr.city = '';
+            this.loadShipping();
+        },
         get grandTotal() { return this.baseSubtotal + this.tax + (this.shippingConfirmed ? this.shippingCost : 0) },
         rupiah(n) { return 'Rp ' + Math.round(n).toLocaleString('id-ID') },
         fillAddress(a) { this.addr = Object.assign(this.addr, a); this.loadShipping() },

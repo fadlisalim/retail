@@ -180,13 +180,16 @@ class ShippingService
         $billable = $this->weights->billableGrams($ctx->totalActualGrams, $ctx->totalVolumeCm3, $divisor, 1000);
         $billableKg = max($isAir ? 1 : 10, $this->weights->toBillableKg($billable));
 
+        // Wooden-crate packing is charged per billable kg (packing_fee is the Rp/kg rate).
+        $packing = round((float) $config->packing_fee * $billableKg, 2);
+
         return new ShippingQuote(
             providerCode: $service->provider->code,
             serviceCode: $service->code,
             label: $service->provider->name.' — '.$service->name,
             type: $service->type,
             cost: round($billableKg * $perKg, 2),
-            packingFee: (float) $config->packing_fee,
+            packingFee: $packing,
             handlingFee: (float) $config->handling_fee,
             insuranceFee: round($ctx->subtotal * (float) $config->insurance_percent / 100, 2),
             billableWeightGrams: $billableKg * 1000,
