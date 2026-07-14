@@ -55,6 +55,6 @@ class RegisterController extends Controller
             $wishlist->mergeGuestIntoUser($user->id, $guestToken);
         }
 
-        return redirect()->route('account.dashboard')->with('success', 'Akun berhasil dibuat. Selamat datang di Rekasurya Store!');
+        return redirect()->route('account.dashboard')->with('success', 'Akun berhasil dibuat. Selamat datang di '.brand().'!');
     }
 }

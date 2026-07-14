@@ -14,7 +14,7 @@ return [
         // Storefront brand/store name (shown in the logo, title, etc.). The legal
         // entity above stays PT Rekasurya Primadaya; this is the consumer brand.
         'brand_name' => env('APP_BRAND', 'Energi.Click'),
-        'tagline' => 'Pusat Produk Energi Terbarukan dan Kebutuhan Proyek',
+        'tagline' => env('APP_TAGLINE', 'Energi Cerdas, Tinggal Klik!'),
         'npwp' => env('COMPANY_NPWP', '00.000.000.0-000.000'),
         'address' => env('COMPANY_ADDRESS', 'Jl. Energi Surya No. 1, Jakarta, Indonesia'),
         'email' => env('COMPANY_EMAIL', 'sales@rekasurya.test'),

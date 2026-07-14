@@ -3,7 +3,7 @@
         <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
             <div>
                 <div class="mb-3 flex items-center gap-2">
-                    <span class="grid h-9 w-9 place-items-center rounded-lg bg-brand-600 font-bold text-white">{{ mb_substr(brand(), 0, 1) }}</span>
+                    <x-logo class="h-9 w-9 shrink-0 text-brand-700" />
                     <x-wordmark class="text-lg font-extrabold text-brand-700" />
                 </div>
                 <p class="text-sm text-gray-500">{{ $siteSettings->company()['legal_name'] }} — {{ config('rekasurya.company.tagline') }}.</p>

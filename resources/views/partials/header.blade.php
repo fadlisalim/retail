@@ -21,7 +21,7 @@
 
         {{-- Logo --}}
         <a href="{{ route('home') }}" class="flex shrink-0 items-center gap-2" aria-label="Beranda {{ brand() }}">
-            <span class="grid h-9 w-9 place-items-center rounded-lg bg-brand-600 text-white font-bold">{{ mb_substr(brand(), 0, 1) }}</span>
+            <x-logo class="h-9 w-9 shrink-0 text-brand-700" />
             <x-wordmark class="hidden text-lg font-extrabold tracking-tight text-brand-700 sm:block" />
         </a>
 

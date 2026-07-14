@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @include('partials.favicons')
 
     <title>@yield('title', config('rekasurya.company.brand_name').' — '.config('rekasurya.company.tagline'))</title>
     <meta name="description" content="@yield('meta_description', 'Pusat produk energi terbarukan: panel surya, inverter, baterai lithium, paket PLTS, dan kebutuhan proyek.')">

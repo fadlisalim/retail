@@ -40,7 +40,7 @@
             </div>
         @else
             <div class="flex min-h-[220px] flex-col justify-center gap-3 rounded-2xl bg-gradient-to-r from-brand-700 to-brand-500 p-6 text-white sm:min-h-[300px] sm:p-12">
-                <h1 class="max-w-xl text-2xl font-extrabold sm:text-4xl">Pusat Produk Energi Terbarukan &amp; Kebutuhan Proyek</h1>
+                <h1 class="max-w-xl text-2xl font-extrabold sm:text-4xl">Energi Cerdas, Tinggal Klik!</h1>
                 <p class="max-w-lg text-sm text-brand-50">Panel surya, inverter, baterai lithium, paket PLTS, dan barang sisa proyek dengan harga terbaik.</p>
                 <a href="{{ route('products.index') }}" class="btn-accent mt-2 w-fit">Belanja Sekarang</a>
             </div>

@@ -4,8 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @include('partials.favicons')
     <meta name="robots" content="noindex,nofollow">
-    <title>@yield('title', 'Admin') — Rekasurya Store</title>
+    <title>@yield('title', 'Admin') — {{ brand() }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="h-full bg-gray-100 text-gray-800" x-data="{ sidebar: false }">
@@ -14,7 +15,7 @@
     <aside class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full overflow-y-auto bg-brand-800 text-brand-50 transition lg:translate-x-0"
            :class="sidebar && 'translate-x-0'">
         <div class="flex items-center gap-2 px-5 py-4">
-            <span class="grid h-9 w-9 place-items-center rounded-lg bg-white font-bold text-brand-700">{{ mb_substr(brand(), 0, 1) }}</span>
+            <span class="grid h-9 w-9 place-items-center rounded-lg bg-white text-brand-700"><x-logo class="h-6 w-6" /></span>
             <span class="font-bold">{{ brand() }} <span class="text-accent-400">Admin</span></span>
         </div>
         @php

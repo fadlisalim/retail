@@ -225,7 +225,7 @@ class Product extends Model
     public function placeholderImage(): string
     {
         $label = rawurlencode(mb_strimwidth($this->brand?->name ?? 'Rekasurya', 0, 18));
-        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600"><rect width="100%" height="100%" fill="#e6f4f1"/><text x="50%" y="50%" font-family="sans-serif" font-size="34" fill="#0f766e" text-anchor="middle" dominant-baseline="middle">'.htmlspecialchars($this->brand?->name ?? 'Rekasurya Store').'</text></svg>';
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600"><rect width="100%" height="100%" fill="#e6f4f1"/><text x="50%" y="50%" font-family="sans-serif" font-size="34" fill="#0f766e" text-anchor="middle" dominant-baseline="middle">'.htmlspecialchars($this->brand?->name ?? brand()).'</text></svg>';
 
         return 'data:image/svg+xml;charset=UTF-8,'.rawurlencode($svg);
     }
