@@ -4,9 +4,10 @@
 @section('noindex', 'noindex')
 
 @php
-    $methodLabel = \Illuminate\Support\Str::of($payment?->method ?? $order->payment_method ?? 'Transfer Bank')->replace('_', ' ')->title();
+    $methodLabel = \Illuminate\Support\Str::of($payment?->method ?? $order->payment_method ?? 'Transfer Bank')->replace('_', ' ')->upper();
     $vaNumber = $payment ? ($payment->reference ?: data_get($payment->meta, 'va_number')) : null;
     $instructions = $payment ? data_get($payment->meta, 'instructions') : null;
+    $qrisImage = $payment ? data_get($payment->meta, 'qris_image') : null;
 @endphp
 
 @section('content')
@@ -32,13 +33,24 @@
         </section>
 
         @if ($payment)
-            {{-- Reference / VA --}}
+            {{-- Static QRIS image --}}
+            @if ($qrisImage)
+                <section class="card p-6 text-center">
+                    <p class="mb-3 text-sm font-medium text-gray-700">Scan QRIS untuk membayar</p>
+                    <img src="{{ \Illuminate\Support\Str::startsWith($qrisImage, ['http', 'data:']) ? $qrisImage : asset('storage/'.$qrisImage) }}"
+                         alt="QRIS pembayaran" class="mx-auto w-full max-w-[16rem] rounded-lg border border-gray-200">
+                    <p class="mt-2 text-xs text-gray-400">Bayar sesuai total, lalu unggah bukti / konfirmasi ke admin.</p>
+                </section>
+            @endif
+
+            {{-- Reference / bank account(s) --}}
             @if ($vaNumber)
-                <section class="card p-6" x-data="{ copied: false, copy() { navigator.clipboard.writeText('{{ $vaNumber }}').then(() => { this.copied = true; setTimeout(() => this.copied = false, 2000); }); } }">
+                <section class="card p-6" x-data="{ copied: false }">
                     <p class="text-sm text-gray-500">Nomor Virtual Account / Rekening Tujuan</p>
-                    <div class="mt-2 flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                        <span class="font-mono text-lg font-bold tracking-wider text-gray-900">{{ $vaNumber }}</span>
-                        <button type="button" @click="copy()" class="btn-outline shrink-0 text-xs">
+                    <div class="mt-2 flex items-start justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                        <span x-ref="acct" class="whitespace-pre-line font-mono text-base font-bold leading-relaxed text-gray-900">{{ $vaNumber }}</span>
+                        <button type="button" class="btn-outline shrink-0 text-xs"
+                                @click="navigator.clipboard.writeText($refs.acct.innerText); copied = true; setTimeout(() => copied = false, 2000)">
                             <span x-show="! copied">Salin</span>
                             <span x-show="copied" x-cloak class="text-green-600">Tersalin!</span>
                         </button>

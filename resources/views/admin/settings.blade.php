@@ -5,7 +5,7 @@
 @section('content')
     <x-admin.page-header title="Pengaturan" subtitle="Konfigurasi toko yang dapat diubah kapan saja" />
 
-    <form method="POST" action="{{ route('admin.settings.update') }}" class="space-y-6">
+    <form method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data" class="space-y-6">
         @csrf
         @method('PUT')
 
@@ -87,10 +87,25 @@
         {{-- Payment --}}
         <div class="card p-5">
             <h2 class="mb-4 font-semibold text-gray-900">Pembayaran</h2>
-            <div>
-                <label for="payment_bank_account" class="input-label">Rekening Bank</label>
-                <textarea name="payment_bank_account" id="payment_bank_account" rows="2" placeholder="mis. BCA 1234567890 a.n. PT Rekasurya Primadaya" class="form-textarea">{{ old('payment_bank_account', $settings['payment.bank_account']) }}</textarea>
-                @error('payment_bank_account')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="sm:col-span-2">
+                    <label for="payment_bank_account" class="input-label">Rekening Bank</label>
+                    <textarea name="payment_bank_account" id="payment_bank_account" rows="3" placeholder="BNI 3355113351 a.n. REKASURYA CIPTA DAYA CV&#10;BRI 040701000954302 a.n. REKASURYA CIPTA DAYA CV" class="form-textarea">{{ old('payment_bank_account', $settings['payment.bank_account']) }}</textarea>
+                    <p class="mt-1 text-xs text-gray-400">Boleh lebih dari satu rekening — tulis satu rekening per baris.</p>
+                    @error('payment_bank_account')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label for="payment_qris_image" class="input-label">Gambar QRIS (opsional)</label>
+                    <input type="file" name="payment_qris_image" id="payment_qris_image" accept="image/png,image/jpeg" class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-brand-700">
+                    <p class="mt-1 text-xs text-gray-400">Unggah gambar QRIS statis toko (JPG/PNG). Akan ditampilkan di halaman pembayaran.</p>
+                    @error('payment_qris_image')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
+                @if (!empty($settings['payment.qris_image']))
+                    <div>
+                        <span class="input-label">QRIS saat ini</span>
+                        <img src="{{ asset('storage/'.$settings['payment.qris_image']) }}" alt="QRIS toko" class="h-32 w-32 rounded-lg border border-gray-200 object-contain">
+                    </div>
+                @endif
             </div>
         </div>
 

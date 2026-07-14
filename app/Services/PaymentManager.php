@@ -9,6 +9,7 @@ use App\Services\Payment\DemoGateway;
 use App\Services\Payment\GatewayResult;
 use App\Services\Payment\ManualTransferGateway;
 use App\Services\Payment\PaymentGateway;
+use App\Services\Payment\QrisManualGateway;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -25,8 +26,15 @@ class PaymentManager
 
     public function __construct(private readonly OrderService $orders)
     {
+        // Real, production-ready manual methods.
         $this->register(app(ManualTransferGateway::class));
-        $this->register(new DemoGateway());
+        $this->register(app(QrisManualGateway::class));
+
+        // The reference async gateway is a demo — only expose it when a secret is
+        // configured (dev/testing), never to real customers in production.
+        if (config('services.demo_gateway.secret')) {
+            $this->register(new DemoGateway());
+        }
     }
 
     public function register(PaymentGateway $gateway): void
