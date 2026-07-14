@@ -6,7 +6,7 @@
                     <span class="grid h-9 w-9 place-items-center rounded-lg bg-brand-600 font-bold text-white">{{ mb_substr(brand(), 0, 1) }}</span>
                     <x-wordmark class="text-lg font-extrabold text-brand-700" />
                 </div>
-                <p class="text-sm text-gray-500">{{ config('rekasurya.company.legal_name') }} — {{ config('rekasurya.company.tagline') }}.</p>
+                <p class="text-sm text-gray-500">{{ $siteSettings->company()['legal_name'] }} — {{ config('rekasurya.company.tagline') }}.</p>
                 <p class="mt-3 text-sm text-gray-500">{{ $siteSettings->company()['address'] }}</p>
                 <p class="mt-1 text-sm text-gray-500">{{ $siteSettings->company()['email'] }} • {{ $siteSettings->company()['phone'] }}</p>
             </div>
@@ -43,7 +43,7 @@
             </div>
         </div>
         <div class="mt-10 flex flex-col items-center justify-between gap-3 border-t border-gray-100 pt-6 text-sm text-gray-400 sm:flex-row">
-            <p>&copy; {{ now()->year }} {{ config('rekasurya.company.legal_name') }}. Seluruh hak cipta dilindungi.</p>
+            <p>&copy; {{ now()->year }} {{ $siteSettings->company()['legal_name'] }}. Seluruh hak cipta dilindungi.</p>
             <div class="flex gap-4">
                 <a href="{{ route('pages.show', 'syarat-ketentuan') }}" class="hover:text-brand-700">Syarat &amp; Ketentuan</a>
                 <a href="{{ route('pages.show', 'kebijakan-privasi') }}" class="hover:text-brand-700">Privasi</a>
