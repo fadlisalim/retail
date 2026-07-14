@@ -24,6 +24,19 @@ class CartController extends Controller
     public function index(): View
     {
         $cart = $this->cart->current()->load(['items.product.brand', 'items.variant', 'savedItems.product']);
+
+        // A product removed from the catalogue (e.g. deleted after a reseed) leaves
+        // orphaned cart rows. Drop them so the cart never dereferences a missing
+        // product and stale prices can't linger.
+        $orphanIds = $cart->items->concat($cart->savedItems)
+            ->filter(fn ($i) => ! $i->product)
+            ->pluck('id');
+        if ($orphanIds->isNotEmpty()) {
+            CartItem::whereIn('id', $orphanIds)->delete();
+            $cart->setRelation('items', $cart->items->reject(fn ($i) => ! $i->product)->values());
+            $cart->setRelation('savedItems', $cart->savedItems->reject(fn ($i) => ! $i->product)->values());
+        }
+
         $totals = $this->calculator->calculate($cart);
 
         // Split buyable vs quotation-only items for a clear checkout path (spec §14).

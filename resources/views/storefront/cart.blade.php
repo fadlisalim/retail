@@ -62,6 +62,7 @@
                     <div class="card divide-y divide-gray-100 border-teal-200">
                         <div class="bg-teal-50 px-4 py-3 text-sm font-semibold text-teal-800">Produk via Permintaan Penawaran</div>
                         @foreach ($quotationItems as $item)
+                            @continue(! $item->product)
                             <div class="flex items-center gap-3 p-4">
                                 <img src="{{ $item->product->primaryImageUrl() }}" alt="{{ $item->product->name }}" class="h-16 w-16 rounded-lg object-cover">
                                 <div class="flex-1">
@@ -79,6 +80,7 @@
                     <div class="card divide-y divide-gray-100">
                         <div class="px-4 py-3 text-sm font-semibold text-gray-700">Disimpan untuk Nanti</div>
                         @foreach ($cart->savedItems as $item)
+                            @continue(! $item->product)
                             <div class="flex items-center gap-3 p-4">
                                 <img src="{{ $item->product->primaryImageUrl() }}" alt="{{ $item->product->name }}" class="h-16 w-16 rounded-lg object-cover">
                                 <div class="flex-1"><p class="text-sm font-medium text-gray-800">{{ $item->product->name }}</p><p class="text-sm text-gray-500">{{ rupiah($item->currentUnitPrice()) }}</p></div>
