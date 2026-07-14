@@ -59,7 +59,14 @@
                                 @foreach (['DKI Jakarta','Jawa Barat','Jawa Tengah','Jawa Timur','Banten','DI Yogyakarta','Bali','Sumatera Utara','Sumatera Selatan','Kalimantan Timur','Sulawesi Selatan'] as $p)<option value="{{ $p }}">@endforeach
                             </datalist>
                         </div>
-                        <x-form.input name="city" label="Kota/Kabupaten" required x-model="addr.city" @change="loadShipping" />
+                        <div>
+                            <label class="input-label" for="city">Kota/Kabupaten <span class="text-red-500">*</span></label>
+                            <input id="city" name="city" required x-model="addr.city" @change="loadShipping" list="shipping-cities" autocomplete="off" placeholder="Ketik nama kota tujuan…" class="form-input">
+                            <datalist id="shipping-cities">
+                                @foreach ($shippingCities as $c)<option value="{{ $c }}">@endforeach
+                            </datalist>
+                            <p class="mt-1 text-xs text-gray-400">Pilih kota tujuan sesuai daftar agar ongkir Indah Cargo terhitung otomatis.</p>
+                        </div>
                         <x-form.input name="district" label="Kecamatan" x-model="addr.district" />
                         <x-form.input name="subdistrict" label="Kelurahan" x-model="addr.subdistrict" />
                         <x-form.input name="postal_code" label="Kode Pos" x-model="addr.postal_code" />
@@ -125,7 +132,7 @@
                         <div class="flex justify-between"><dt class="text-gray-500">Subtotal</dt><dd>{{ rupiah($totals->itemsSubtotal) }}</dd></div>
                         @if ($totals->couponDiscount > 0)<div class="flex justify-between text-green-600"><dt>Voucher</dt><dd>−{{ rupiah($totals->couponDiscount) }}</dd></div>@endif
                         <div class="flex justify-between"><dt class="text-gray-500">Ongkir</dt><dd x-text="shippingConfirmed ? rupiah(shippingCost) : 'Dikonfirmasi'"></dd></div>
-                        <div class="flex justify-between"><dt class="text-gray-500">PPN</dt><dd>{{ rupiah($totals->taxAmount) }}</dd></div>
+                        @if ($totals->taxAmount > 0)<div class="flex justify-between"><dt class="text-gray-500">PPN</dt><dd>{{ rupiah($totals->taxAmount) }}</dd></div>@endif
                     </dl>
                     <div class="flex justify-between border-t border-gray-100 pt-3 text-base font-bold">
                         <span>Total</span><span class="text-brand-700" x-text="rupiah(grandTotal)"></span>

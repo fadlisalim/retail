@@ -120,7 +120,7 @@
                                 <div class="flex justify-between"><dt class="text-gray-500">Asuransi</dt><dd class="text-gray-800">{{ rupiah($order->insurance_fee) }}</dd></div>
                             @endif
                             @if ((float) $order->tax_amount > 0)
-                                <div class="flex justify-between"><dt class="text-gray-500">PPN</dt><dd class="text-gray-800">{{ rupiah($order->tax_amount) }}</dd></div>
+                                @if ($order->tax_amount > 0)<div class="flex justify-between"><dt class="text-gray-500">PPN</dt><dd class="text-gray-800">{{ rupiah($order->tax_amount) }}</dd></div>@endif
                             @endif
                             <div class="flex justify-between border-t border-gray-100 pt-2 text-base font-bold">
                                 <dt class="text-gray-800">Total</dt><dd class="text-brand-700">{{ rupiah($order->grand_total) }}</dd>

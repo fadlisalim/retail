@@ -32,8 +32,10 @@ return [
     'tax' => [
         // PPN percentage. Overridable via settings table (key: tax.ppn_percent).
         'ppn_percent' => env('PPN_PERCENT', 11),
-        'enabled' => env('PPN_ENABLED', true),
-        'default_price_includes_tax' => false,
+        // PPN is OFF by default: catalogue prices already include tax, so nothing is
+        // added on top at checkout. Toggle in Admin → Pengaturan or via PPN_ENABLED.
+        'enabled' => env('PPN_ENABLED', false),
+        'default_price_includes_tax' => true,
     ],
 
     'shipping' => [

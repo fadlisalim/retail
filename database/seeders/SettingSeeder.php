@@ -17,7 +17,8 @@ class SettingSeeder extends Seeder
             ['company.email', 'sales@rekasurya.test', 'string', 'company'],
             ['company.phone', '021-5000-1234', 'string', 'company'],
             ['tax.ppn_percent', '11', 'integer', 'tax'],
-            ['tax.enabled', '1', 'boolean', 'tax'],
+            // PPN off by default: catalogue prices already include tax.
+            ['tax.enabled', '0', 'boolean', 'tax'],
             ['whatsapp.enabled', '1', 'boolean', 'whatsapp'],
             ['whatsapp.number', '628123456789', 'string', 'whatsapp'],
             ['whatsapp.greeting', 'Halo Rekasurya, saya ingin berkonsultasi mengenai produk energi terbarukan.', 'string', 'whatsapp'],

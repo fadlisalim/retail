@@ -114,7 +114,7 @@
                         <div class="flex justify-between"><dt class="text-gray-500">Diskon</dt><dd class="text-green-600">-{{ rupiah($invoice->discount) }}</dd></div>
                     @endif
                     <div class="flex justify-between"><dt class="text-gray-500">Pengiriman</dt><dd class="text-gray-800">{{ rupiah($invoice->shipping) }}</dd></div>
-                    <div class="flex justify-between"><dt class="text-gray-500">PPN</dt><dd class="text-gray-800">{{ rupiah($invoice->tax) }}</dd></div>
+                    @if ($invoice->tax > 0)<div class="flex justify-between"><dt class="text-gray-500">PPN</dt><dd class="text-gray-800">{{ rupiah($invoice->tax) }}</dd></div>@endif
                     <div class="flex justify-between border-t border-gray-200 pt-2 text-base font-bold">
                         <dt class="text-gray-900">Total</dt><dd class="text-brand-700">{{ rupiah($invoice->total) }}</dd>
                     </div>

@@ -43,6 +43,13 @@ class CheckoutController extends Controller
             'paymentMethods' => $this->payments->available(),
             // Fresh idempotency key prevents a double-clicked "Bayar" from duplicating.
             'idempotencyKey' => (string) Str::uuid(),
+            // Destination cities Indah Cargo can price, so the buyer picks a name that
+            // matches the tariff table exactly (Title-cased for display; lookup upper-cases).
+            'shippingCities' => \App\Models\IndahCargoRate::query()
+                ->select('destination_city')->distinct()->orderBy('destination_city')
+                ->pluck('destination_city')
+                ->map(fn ($c) => Str::title(mb_strtolower($c)))
+                ->all(),
         ]);
     }
 

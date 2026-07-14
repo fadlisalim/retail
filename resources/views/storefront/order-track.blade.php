@@ -60,7 +60,7 @@
                     <div class="flex justify-between"><dt class="text-gray-500">Ongkir</dt><dd>{{ $order->shipping_cost_confirmed ? rupiah($order->shipping_cost) : 'Dikonfirmasi' }}</dd></div>
                     @if ($order->packing_fee > 0)<div class="flex justify-between"><dt class="text-gray-500">Packing</dt><dd>{{ rupiah($order->packing_fee) }}</dd></div>@endif
                     @if ($order->insurance_fee > 0)<div class="flex justify-between"><dt class="text-gray-500">Asuransi</dt><dd>{{ rupiah($order->insurance_fee) }}</dd></div>@endif
-                    <div class="flex justify-between"><dt class="text-gray-500">PPN</dt><dd>{{ rupiah($order->tax_amount) }}</dd></div>
+                    @if ($order->tax_amount > 0)<div class="flex justify-between"><dt class="text-gray-500">PPN</dt><dd>{{ rupiah($order->tax_amount) }}</dd></div>@endif
                 </dl>
                 <div class="mt-2 flex justify-between border-t border-gray-100 pt-2 font-bold"><span>Total</span><span class="text-brand-700">{{ rupiah($order->grand_total) }}</span></div>
                 <p class="mt-2 text-sm">Status bayar: <span class="font-medium">{{ $order->payment_status->label() }}</span></p>

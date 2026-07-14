@@ -34,6 +34,11 @@ class CheckoutTest extends TestCase
 
     public function test_checkout_recomputes_totals_on_the_server(): void
     {
+        // PPN is off by default now; enable it explicitly to exercise the tax path.
+        $settings = app(\App\Services\SettingService::class);
+        $settings->set('tax.enabled', true, 'boolean', 'tax');
+        $settings->set('tax.ppn_percent', 11, 'integer', 'tax');
+
         $customer = $this->customer();
         $this->actingAs($customer);
         $product = $this->stockedProduct(10, ['price' => 1000000, 'is_taxable' => true]);

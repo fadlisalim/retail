@@ -133,10 +133,12 @@
                 <td class="muted">Pengiriman</td>
                 <td class="num">{{ rupiah($invoice->shipping) }}</td>
             </tr>
+            @if ($invoice->tax > 0)
             <tr>
                 <td class="muted">PPN</td>
                 <td class="num">{{ rupiah($invoice->tax) }}</td>
             </tr>
+            @endif
             <tr class="grand">
                 <td>Total</td>
                 <td class="num">{{ rupiah($invoice->total) }}</td>

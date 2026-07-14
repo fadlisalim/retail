@@ -110,7 +110,7 @@
                         @if ($totals->productDiscount > 0)<div class="flex justify-between text-green-600"><dt>Hemat promo</dt><dd>−{{ rupiah($totals->productDiscount) }}</dd></div>@endif
                         @if ($totals->couponDiscount > 0)<div class="flex justify-between text-green-600"><dt>Voucher</dt><dd>−{{ rupiah($totals->couponDiscount) }}</dd></div>@endif
                         <div class="flex justify-between text-gray-400"><dt>Ongkir</dt><dd>Dihitung saat checkout</dd></div>
-                        <div class="flex justify-between"><dt class="text-gray-500">Estimasi PPN</dt><dd>{{ rupiah($totals->taxAmount) }}</dd></div>
+                        @if ($totals->taxAmount > 0)<div class="flex justify-between"><dt class="text-gray-500">Estimasi PPN</dt><dd>{{ rupiah($totals->taxAmount) }}</dd></div>@endif
                     </dl>
                     <div class="flex justify-between border-t border-gray-100 pt-3 text-base font-bold">
                         <span>Estimasi Total</span><span class="text-brand-700">{{ rupiah($totals->grandTotal) }}</span>

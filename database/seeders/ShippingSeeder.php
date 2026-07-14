@@ -18,10 +18,10 @@ class ShippingSeeder extends Seeder
         ShippingProvider::whereIn('code', ['JNE', 'SICEPAT'])->delete();
 
         ShippingSetting::updateOrCreate(['id' => 1], [
-            'packing_fee' => 5000,
+            'packing_fee' => 0,
             'handling_fee' => 0,
-            'insurance_percent' => 0.2,
-            'free_shipping_min_subtotal' => 15000000,
+            'insurance_percent' => 0,
+            'free_shipping_min_subtotal' => null,
             'default_volumetric_divisor' => 6000,
             'weight_rounding_grams' => 1000,
         ]);
