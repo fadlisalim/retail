@@ -58,7 +58,10 @@ class CartController extends Controller
         ]);
 
         $product = Product::findOrFail($data['product_id']);
-        $variant = $data['variant_id'] ? ProductVariant::findOrFail($data['variant_id']) : null;
+        // variant_id is nullable, so it's absent from $data when the product has no
+        // variant (e.g. a quick add-to-cart). Coalesce to null instead of indexing.
+        $variantId = $data['variant_id'] ?? null;
+        $variant = $variantId ? ProductVariant::findOrFail($variantId) : null;
 
         $this->cart->addItem($product, $variant, (int) $data['quantity']);
 
