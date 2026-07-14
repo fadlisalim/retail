@@ -111,7 +111,9 @@
                             <span class="badge bg-red-100 text-red-700">Hemat {{ $product->discountPercent() }}%</span>
                         @endif
                     </div>
-                    <p class="mt-1 text-xs text-gray-400">{{ ! (bool) setting('tax.enabled', config('rekasurya.tax.enabled')) || $product->price_includes_tax ? 'Harga sudah termasuk PPN' : 'Harga belum termasuk PPN' }}</p>
+                    @if ((bool) setting('tax.enabled', config('rekasurya.tax.enabled')))
+                    <p class="mt-1 text-xs text-gray-400">{{ $product->price_includes_tax ? 'Harga sudah termasuk PPN' : 'Harga belum termasuk PPN' }}</p>
+                    @endif
                 @endif
             </div>
 

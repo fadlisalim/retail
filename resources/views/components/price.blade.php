@@ -11,6 +11,7 @@
     @endif
 </div>
 @unless ($product->requires_quotation)
-    @php($ppnOn = (bool) setting('tax.enabled', config('rekasurya.tax.enabled')))
-    <p class="text-xs text-gray-400">{{ ! $ppnOn || $product->price_includes_tax ? 'Termasuk PPN' : 'Belum termasuk PPN' }}</p>
+    @if ((bool) setting('tax.enabled', config('rekasurya.tax.enabled')))
+        <p class="text-xs text-gray-400">{{ $product->price_includes_tax ? 'Termasuk PPN' : 'Belum termasuk PPN' }}</p>
+    @endif
 @endunless
