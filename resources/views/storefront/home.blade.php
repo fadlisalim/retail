@@ -20,14 +20,37 @@
             <div class="relative overflow-hidden rounded-2xl">
                 @foreach ($heroBanners as $i => $banner)
                     <div x-show="active === {{ $i }}" x-transition class="relative">
-                        <div class="flex min-h-[220px] flex-col justify-center gap-3 bg-gradient-to-r from-brand-700 to-brand-500 p-6 text-white sm:min-h-[320px] sm:p-12">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-accent-300">{{ $banner->subtitle }}</span>
-                            <h1 class="max-w-xl text-2xl font-extrabold sm:text-4xl">{{ $banner->title }}</h1>
-                            <p class="max-w-lg text-sm text-brand-50 sm:text-base">{{ $banner->description }}</p>
-                            @if ($banner->button_url)
-                                <a href="{{ $banner->button_url }}" class="btn-accent mt-2 w-fit">{{ $banner->button_text ?: 'Belanja Sekarang' }}</a>
-                            @endif
-                        </div>
+                        @if ($banner->image_desktop_path)
+                            {{-- Image banner: uploaded artwork as the hero, optional text overlay + link --}}
+                            <a @if ($banner->button_url) href="{{ $banner->button_url }}" @endif class="relative block">
+                                <picture>
+                                    @if ($banner->image_mobile_path)
+                                        <source media="(max-width: 640px)" srcset="{{ asset('storage/'.$banner->image_mobile_path) }}">
+                                    @endif
+                                    <img src="{{ asset('storage/'.$banner->image_desktop_path) }}" alt="{{ $banner->title ?: 'Banner' }}" class="h-52 w-full object-cover sm:h-80">
+                                </picture>
+                                @if ($banner->title || $banner->description)
+                                    <div class="absolute inset-0 flex flex-col justify-center gap-2 bg-gradient-to-r from-black/60 via-black/25 to-transparent p-6 text-white sm:p-12">
+                                        <span class="text-xs font-semibold uppercase tracking-wide text-accent-300">{{ $banner->subtitle }}</span>
+                                        <h1 class="max-w-xl text-2xl font-extrabold drop-shadow sm:text-4xl">{{ $banner->title }}</h1>
+                                        <p class="max-w-lg text-sm drop-shadow sm:text-base">{{ $banner->description }}</p>
+                                        @if ($banner->button_url)
+                                            <span class="btn-accent mt-2 w-fit">{{ $banner->button_text ?: 'Belanja Sekarang' }}</span>
+                                        @endif
+                                    </div>
+                                @endif
+                            </a>
+                        @else
+                            {{-- No image: gradient + text --}}
+                            <div class="flex min-h-[220px] flex-col justify-center gap-3 bg-gradient-to-r from-brand-700 to-brand-500 p-6 text-white sm:min-h-[320px] sm:p-12">
+                                <span class="text-xs font-semibold uppercase tracking-wide text-accent-300">{{ $banner->subtitle }}</span>
+                                <h1 class="max-w-xl text-2xl font-extrabold sm:text-4xl">{{ $banner->title }}</h1>
+                                <p class="max-w-lg text-sm text-brand-50 sm:text-base">{{ $banner->description }}</p>
+                                @if ($banner->button_url)
+                                    <a href="{{ $banner->button_url }}" class="btn-accent mt-2 w-fit">{{ $banner->button_text ?: 'Belanja Sekarang' }}</a>
+                                @endif
+                            </div>
+                        @endif
                     </div>
                 @endforeach
                 @if ($heroBanners->count() > 1)
