@@ -136,6 +136,8 @@
                         <div class="flex justify-between"><dt class="text-gray-500">Subtotal</dt><dd>{{ rupiah($totals->itemsSubtotal) }}</dd></div>
                         @if ($totals->couponDiscount > 0)<div class="flex justify-between text-green-600"><dt>Voucher</dt><dd>−{{ rupiah($totals->couponDiscount) }}</dd></div>@endif
                         <div class="flex justify-between"><dt class="text-gray-500">Ongkir <span class="text-gray-400" x-show="shippingWeight > 0" x-text="'(' + shippingWeight + ' kg)'"></span></dt><dd x-text="shippingConfirmed ? rupiah(shippingCost) : 'Dikonfirmasi'"></dd></div>
+                        <div class="flex justify-between" x-show="shippingConfirmed && shippingPacking > 0"><dt class="text-gray-500">Packing kayu <span class="text-gray-400" x-show="shippingWeight > 0" x-text="'(' + shippingWeight + ' kg)'"></span></dt><dd x-text="rupiah(shippingPacking)"></dd></div>
+                        <div class="flex justify-between" x-show="shippingConfirmed && shippingExtra > 0"><dt class="text-gray-500">Biaya lain</dt><dd x-text="rupiah(shippingExtra)"></dd></div>
                         @if ($totals->taxAmount > 0)<div class="flex justify-between"><dt class="text-gray-500">PPN</dt><dd>{{ rupiah($totals->taxAmount) }}</dd></div>@endif
                     </dl>
                     <div class="flex justify-between border-t border-gray-100 pt-3 text-base font-bold">
@@ -164,7 +166,7 @@ function checkout(baseSubtotal, tax) {
     return {
         addr: { recipient_name: @js(auth()->user()?->name), recipient_phone: '', company_name: '', npwp: '', province: '', city: '', district: '', subdistrict: '', postal_code: '', address_line: '', landmark: '' },
         shippingOptions: [], loadingShipping: false,
-        shippingProvider: '', shippingService: '', shippingCost: 0, shippingConfirmed: true, shippingWeight: 0,
+        shippingProvider: '', shippingService: '', shippingCost: 0, shippingPacking: 0, shippingExtra: 0, shippingConfirmed: true, shippingWeight: 0,
         submitting: false,
         baseSubtotal, tax,
         citiesByProvince: @js($citiesByProvince),
@@ -175,7 +177,8 @@ function checkout(baseSubtotal, tax) {
             if (! this.availableCities.includes(this.addr.city)) this.addr.city = '';
             this.loadShipping();
         },
-        get grandTotal() { return this.baseSubtotal + this.tax + (this.shippingConfirmed ? this.shippingCost : 0) },
+        get shippingTotal() { return this.shippingCost + this.shippingPacking + this.shippingExtra },
+        get grandTotal() { return this.baseSubtotal + this.tax + (this.shippingConfirmed ? this.shippingTotal : 0) },
         rupiah(n) { return 'Rp ' + Math.round(n).toLocaleString('id-ID') },
         fillAddress(a) { this.addr = Object.assign(this.addr, a); this.loadShipping() },
         async loadShipping() {
@@ -193,7 +196,9 @@ function checkout(baseSubtotal, tax) {
         selectShipping(opt) {
             this.shippingProvider = opt.provider_code;
             this.shippingService = opt.service_code;
-            this.shippingCost = opt.cost + opt.packing_fee + opt.handling_fee + opt.insurance_fee;
+            this.shippingCost = opt.cost;                                  // ongkir kurir saja
+            this.shippingPacking = opt.packing_fee;                        // packing kayu (dipisah)
+            this.shippingExtra = opt.handling_fee + opt.insurance_fee;     // biaya lain (biasanya 0)
             this.shippingConfirmed = opt.confirmed;
             this.shippingWeight = (opt.billable_weight_grams || 0) / 1000;
         },
