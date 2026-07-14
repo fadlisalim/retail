@@ -49,10 +49,13 @@ class CheckoutController extends Controller
     /** AJAX: recompute shipping options for a chosen destination province. */
     public function shippingOptions(Request $request): JsonResponse
     {
-        $request->validate(['province' => ['required', 'string', 'max:100']]);
+        $request->validate([
+            'province' => ['required', 'string', 'max:100'],
+            'city' => ['nullable', 'string', 'max:100'],
+        ]);
 
         $cart = $this->cart->current()->load(['items.product', 'items.variant']);
-        $quotes = $this->shipping->quotesFor($cart, $request->get('province'));
+        $quotes = $this->shipping->quotesFor($cart, $request->get('province'), $request->get('city'));
 
         return response()->json(array_map(fn ($q) => $q->toArray() + [
             'rupiah' => rupiah($q->totalShipping()),
@@ -69,6 +72,7 @@ class CheckoutController extends Controller
             $request->province,
             $request->shipping_provider,
             $request->shipping_service,
+            $request->city,
         );
 
         if (! $quote) {

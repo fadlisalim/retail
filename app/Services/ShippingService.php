@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Cart;
+use App\Models\IndahCargoRate;
 use App\Models\ShippingService as ShippingServiceModel;
 use App\Models\ShippingSetting;
 use App\Services\Shipping\ShippingContext;
@@ -28,9 +29,9 @@ class ShippingService
     /**
      * @return ShippingQuote[]
      */
-    public function quotesFor(Cart $cart, string $destinationProvince): array
+    public function quotesFor(Cart $cart, string $destinationProvince, ?string $destinationCity = null): array
     {
-        $context = $this->contextFor($cart, $destinationProvince);
+        $context = $this->contextFor($cart, $destinationProvince, $destinationCity);
         $config = $this->config();
 
         // Pickup-only carts (e.g. project surplus that must be collected) skip courier.
@@ -64,7 +65,7 @@ class ShippingService
         return $quotes;
     }
 
-    public function contextFor(Cart $cart, string $destinationProvince): ShippingContext
+    public function contextFor(Cart $cart, string $destinationProvince, ?string $destinationCity = null): ShippingContext
     {
         $actual = 0;
         $volume = 0.0;
@@ -93,11 +94,17 @@ class ShippingService
             hasFreightItem: $hasFreight,
             hasPickupOnlyItem: $hasPickup,
             packageCount: max(1, $packages),
+            destinationCity: $destinationCity,
         );
     }
 
     private function quoteForService(ShippingServiceModel $service, ShippingContext $ctx, ShippingSetting $config): ?ShippingQuote
     {
+        // Indah Cargo prices per destination CITY (not by zone), so it has its own path.
+        if ($service->provider->driver === 'indah') {
+            return $this->indahQuote($service, $ctx, $config);
+        }
+
         $divisor = $service->volumetric_divisor ?: $config->default_volumetric_divisor;
         $billable = $this->weights->billableGrams(
             $ctx->totalActualGrams,
@@ -142,6 +149,47 @@ class ShippingService
             handlingFee: (float) $config->handling_fee,
             insuranceFee: round($ctx->subtotal * (float) $config->insurance_percent / 100, 2),
             billableWeightGrams: $billable,
+            confirmed: true,
+            estimatedDays: $service->estimated_days,
+        );
+    }
+
+    /**
+     * Indah Cargo tariff: per-kg by destination city, chosen by service (UDARA = air,
+     * DARAT = land/sea). Land/sea bills a 10 kg minimum. Falls back to no quote (then
+     * the manual "ongkir dikonfirmasi" option) when the city isn't in the tariff.
+     */
+    private function indahQuote(ShippingServiceModel $service, ShippingContext $ctx, ShippingSetting $config): ?ShippingQuote
+    {
+        if (! $ctx->destinationCity) {
+            return null;
+        }
+
+        $rate = IndahCargoRate::lookup($ctx->destinationCity);
+        if (! $rate) {
+            return null;
+        }
+
+        $isAir = $service->code === 'UDARA';
+        $perKg = (float) ($isAir ? $rate->air_per_kg : $rate->land_per_kg);
+        if ($perKg <= 0) {
+            return null;
+        }
+
+        $divisor = $service->volumetric_divisor ?: ($isAir ? 6000 : 4000);
+        $billable = $this->weights->billableGrams($ctx->totalActualGrams, $ctx->totalVolumeCm3, $divisor, 1000);
+        $billableKg = max($isAir ? 1 : 10, $this->weights->toBillableKg($billable));
+
+        return new ShippingQuote(
+            providerCode: $service->provider->code,
+            serviceCode: $service->code,
+            label: $service->provider->name.' — '.$service->name,
+            type: $service->type,
+            cost: round($billableKg * $perKg, 2),
+            packingFee: (float) $config->packing_fee,
+            handlingFee: (float) $config->handling_fee,
+            insuranceFee: round($ctx->subtotal * (float) $config->insurance_percent / 100, 2),
+            billableWeightGrams: $billableKg * 1000,
             confirmed: true,
             estimatedDays: $service->estimated_days,
         );
@@ -199,9 +247,9 @@ class ShippingService
     }
 
     /** Rebuild a quote object from a persisted selection (used at checkout confirm). */
-    public function findQuote(Cart $cart, string $province, string $providerCode, string $serviceCode): ?ShippingQuote
+    public function findQuote(Cart $cart, string $province, string $providerCode, string $serviceCode, ?string $city = null): ?ShippingQuote
     {
-        foreach ($this->quotesFor($cart, $province) as $quote) {
+        foreach ($this->quotesFor($cart, $province, $city) as $quote) {
             if ($quote->providerCode === $providerCode && $quote->serviceCode === $serviceCode) {
                 return $quote;
             }

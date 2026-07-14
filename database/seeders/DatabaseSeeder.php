@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             SettingSeeder::class,    // runtime settings
             WarehouseSeeder::class,  // warehouses
             ShippingSeeder::class,   // providers, services, zones, rates
+            IndahCargoSeeder::class, // Indah Cargo provider + per-city tariff table
             BrandSeeder::class,      // 8 brands
             CategorySeeder::class,   // category tree
             AttributeSeeder::class,  // dynamic attribute groups

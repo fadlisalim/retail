@@ -59,7 +59,7 @@
                                 @foreach (['DKI Jakarta','Jawa Barat','Jawa Tengah','Jawa Timur','Banten','DI Yogyakarta','Bali','Sumatera Utara','Sumatera Selatan','Kalimantan Timur','Sulawesi Selatan'] as $p)<option value="{{ $p }}">@endforeach
                             </datalist>
                         </div>
-                        <x-form.input name="city" label="Kota/Kabupaten" required x-model="addr.city" />
+                        <x-form.input name="city" label="Kota/Kabupaten" required x-model="addr.city" @change="loadShipping" />
                         <x-form.input name="district" label="Kecamatan" x-model="addr.district" />
                         <x-form.input name="subdistrict" label="Kelurahan" x-model="addr.subdistrict" />
                         <x-form.input name="postal_code" label="Kode Pos" x-model="addr.postal_code" />
@@ -166,7 +166,7 @@ function checkout(baseSubtotal, tax) {
                 const res = await fetch('{{ route('checkout.shipping') }}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
-                    body: JSON.stringify({ province: this.addr.province }),
+                    body: JSON.stringify({ province: this.addr.province, city: this.addr.city }),
                 });
                 this.shippingOptions = res.ok ? await res.json() : [];
             } finally { this.loadingShipping = false; }

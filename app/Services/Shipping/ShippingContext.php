@@ -16,6 +16,7 @@ final class ShippingContext
         public readonly bool $hasFreightItem,
         public readonly bool $hasPickupOnlyItem,
         public readonly int $packageCount = 1,
+        public readonly ?string $destinationCity = null,
     ) {
     }
 }
