@@ -173,6 +173,15 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::resource('brand', Admin\BrandController::class)->names('brands')->except('show');
         Route::resource('produk', Admin\ProductController::class)->names('products')->except('show');
         Route::resource('atribut', Admin\AttributeController::class)->names('attributes')->except('show');
+
+        // Product media (gallery images, datasheet PDFs, YouTube videos).
+        Route::post('produk/{produk}/gambar', [Admin\ProductMediaController::class, 'storeImage'])->name('products.image.store');
+        Route::post('produk/{produk}/gambar/{image}/utama', [Admin\ProductMediaController::class, 'setPrimaryImage'])->name('products.image.primary');
+        Route::delete('produk-gambar/{image}', [Admin\ProductMediaController::class, 'destroyImage'])->name('products.image.destroy');
+        Route::post('produk/{produk}/dokumen', [Admin\ProductMediaController::class, 'storeDocument'])->name('products.document.store');
+        Route::delete('produk-dokumen/{dokumen}', [Admin\ProductMediaController::class, 'destroyDocument'])->name('products.document.destroy');
+        Route::post('produk/{produk}/video', [Admin\ProductMediaController::class, 'storeVideo'])->name('products.video.store');
+        Route::delete('produk-video/{video}', [Admin\ProductMediaController::class, 'destroyVideo'])->name('products.video.destroy');
     });
 
     Route::middleware('permission:inventory.manage')->group(function () {

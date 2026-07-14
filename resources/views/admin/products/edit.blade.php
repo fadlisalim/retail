@@ -14,4 +14,7 @@
         @method('PUT')
         @include('admin.products._form')
     </form>
+
+    {{-- Media (gambar, PDF/datasheet, video) — dikelola terpisah dari form utama --}}
+    @include('admin.products._media')
 @endsection
