@@ -91,7 +91,11 @@
                                            @change="selectShipping(opt)">
                                     <span>
                                         <span class="font-medium text-gray-800" x-text="opt.label"></span>
-                                        <span class="block text-xs text-gray-400" x-text="opt.estimated_days ? ('Estimasi ' + opt.estimated_days) : (opt.note || '')"></span>
+                                        <span class="block text-xs text-gray-400">
+                                            <span x-text="opt.estimated_days ? ('Estimasi ' + opt.estimated_days) : (opt.note || '')"></span>
+                                            <span x-show="opt.confirmed && opt.billable_weight_grams > 0" x-text="' • Berat ' + (opt.billable_weight_grams / 1000) + ' kg'"></span>
+                                            <span x-show="opt.confirmed && opt.packing_fee > 0" x-text="' • Packing ' + rupiah(opt.packing_fee)"></span>
+                                        </span>
                                     </span>
                                 </span>
                                 <span class="font-semibold" x-text="opt.confirmed ? opt.rupiah : 'Dikonfirmasi'"></span>
@@ -131,7 +135,7 @@
                     <dl class="space-y-1 border-t border-gray-100 pt-3 text-sm">
                         <div class="flex justify-between"><dt class="text-gray-500">Subtotal</dt><dd>{{ rupiah($totals->itemsSubtotal) }}</dd></div>
                         @if ($totals->couponDiscount > 0)<div class="flex justify-between text-green-600"><dt>Voucher</dt><dd>−{{ rupiah($totals->couponDiscount) }}</dd></div>@endif
-                        <div class="flex justify-between"><dt class="text-gray-500">Ongkir</dt><dd x-text="shippingConfirmed ? rupiah(shippingCost) : 'Dikonfirmasi'"></dd></div>
+                        <div class="flex justify-between"><dt class="text-gray-500">Ongkir <span class="text-gray-400" x-show="shippingWeight > 0" x-text="'(' + shippingWeight + ' kg)'"></span></dt><dd x-text="shippingConfirmed ? rupiah(shippingCost) : 'Dikonfirmasi'"></dd></div>
                         @if ($totals->taxAmount > 0)<div class="flex justify-between"><dt class="text-gray-500">PPN</dt><dd>{{ rupiah($totals->taxAmount) }}</dd></div>@endif
                     </dl>
                     <div class="flex justify-between border-t border-gray-100 pt-3 text-base font-bold">
@@ -160,7 +164,7 @@ function checkout(baseSubtotal, tax) {
     return {
         addr: { recipient_name: @js(auth()->user()?->name), recipient_phone: '', company_name: '', npwp: '', province: '', city: '', district: '', subdistrict: '', postal_code: '', address_line: '', landmark: '' },
         shippingOptions: [], loadingShipping: false,
-        shippingProvider: '', shippingService: '', shippingCost: 0, shippingConfirmed: true,
+        shippingProvider: '', shippingService: '', shippingCost: 0, shippingConfirmed: true, shippingWeight: 0,
         submitting: false,
         baseSubtotal, tax,
         citiesByProvince: @js($citiesByProvince),
@@ -191,6 +195,7 @@ function checkout(baseSubtotal, tax) {
             this.shippingService = opt.service_code;
             this.shippingCost = opt.cost + opt.packing_fee + opt.handling_fee + opt.insurance_fee;
             this.shippingConfirmed = opt.confirmed;
+            this.shippingWeight = (opt.billable_weight_grams || 0) / 1000;
         },
     }
 }
