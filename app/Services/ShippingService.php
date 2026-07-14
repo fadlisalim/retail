@@ -69,9 +69,14 @@ class ShippingService
     {
         $actual = 0;
         $volume = 0.0;
+        $packableActual = 0;
+        $packableVolume = 0.0;
         $hasFreight = false;
         $hasPickup = false;
         $packages = 0;
+
+        // Items at/above this per-unit weight need wooden-crate packing (0 = all items).
+        $packingThreshold = (int) $this->config()->packing_min_item_grams;
 
         foreach ($cart->items as $item) {
             $product = $item->product;
@@ -79,9 +84,19 @@ class ShippingService
                 continue;
             }
             $qty = (int) $item->quantity;
-            $actual += ($item->variant?->weightGrams() ?? (int) $product->weight_grams) * $qty;
-            $volume += ((float) $product->length_cm * (float) $product->width_cm * (float) $product->height_cm) * $qty;
+            $unitWeight = $item->variant?->weightGrams() ?? (int) $product->weight_grams;
+            $unitVolume = (float) $product->length_cm * (float) $product->width_cm * (float) $product->height_cm;
+
+            $actual += $unitWeight * $qty;
+            $volume += $unitVolume * $qty;
             $packages += (int) $product->package_count * $qty;
+
+            // Only heavy-enough units contribute to the packing charge.
+            if ($packingThreshold <= 0 || $unitWeight >= $packingThreshold) {
+                $packableActual += $unitWeight * $qty;
+                $packableVolume += $unitVolume * $qty;
+            }
+
             $hasFreight = $hasFreight || $product->requires_freight;
             $hasPickup = $hasPickup || $product->pickup_only;
         }
@@ -95,6 +110,8 @@ class ShippingService
             hasPickupOnlyItem: $hasPickup,
             packageCount: max(1, $packages),
             destinationCity: $destinationCity,
+            packableActualGrams: $packableActual,
+            packableVolumeCm3: $packableVolume,
         );
     }
 
@@ -180,8 +197,11 @@ class ShippingService
         $billable = $this->weights->billableGrams($ctx->totalActualGrams, $ctx->totalVolumeCm3, $divisor, 1000);
         $billableKg = max($isAir ? 1 : 10, $this->weights->toBillableKg($billable));
 
-        // Wooden-crate packing is charged per billable kg (packing_fee is the Rp/kg rate).
-        $packing = round((float) $config->packing_fee * $billableKg, 2);
+        // Wooden-crate packing (Rp/kg) is charged only on the billable weight of items
+        // heavy enough to need crating — light items are exempt.
+        $packableGrams = $this->weights->billableGrams($ctx->packableActualGrams, $ctx->packableVolumeCm3, $divisor, 1000);
+        $packingKg = $this->weights->toBillableKg($packableGrams);
+        $packing = round((float) $config->packing_fee * $packingKg, 2);
 
         return new ShippingQuote(
             providerCode: $service->provider->code,

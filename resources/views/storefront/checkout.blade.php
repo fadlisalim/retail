@@ -136,7 +136,7 @@
                         <div class="flex justify-between"><dt class="text-gray-500">Subtotal</dt><dd>{{ rupiah($totals->itemsSubtotal) }}</dd></div>
                         @if ($totals->couponDiscount > 0)<div class="flex justify-between text-green-600"><dt>Voucher</dt><dd>−{{ rupiah($totals->couponDiscount) }}</dd></div>@endif
                         <div class="flex justify-between"><dt class="text-gray-500">Ongkir <span class="text-gray-400" x-show="shippingWeight > 0" x-text="'(' + shippingWeight + ' kg)'"></span></dt><dd x-text="shippingConfirmed ? rupiah(shippingCost) : 'Dikonfirmasi'"></dd></div>
-                        <div class="flex justify-between" x-show="shippingConfirmed && shippingPacking > 0"><dt class="text-gray-500">Packing kayu <span class="text-gray-400" x-show="shippingWeight > 0" x-text="'(' + shippingWeight + ' kg)'"></span></dt><dd x-text="rupiah(shippingPacking)"></dd></div>
+                        <div class="flex justify-between" x-show="shippingConfirmed && shippingPacking > 0"><dt class="text-gray-500">Packing kayu</dt><dd x-text="rupiah(shippingPacking)"></dd></div>
                         <div class="flex justify-between" x-show="shippingConfirmed && shippingExtra > 0"><dt class="text-gray-500">Biaya lain</dt><dd x-text="rupiah(shippingExtra)"></dd></div>
                         @if ($totals->taxAmount > 0)<div class="flex justify-between"><dt class="text-gray-500">PPN</dt><dd>{{ rupiah($totals->taxAmount) }}</dd></div>@endif
                     </dl>

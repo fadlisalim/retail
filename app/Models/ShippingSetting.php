@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ShippingSetting extends Model
 {
     protected $fillable = [
-        'packing_fee', 'handling_fee', 'insurance_percent', 'free_shipping_min_subtotal',
+        'packing_fee', 'packing_min_item_grams', 'handling_fee', 'insurance_percent', 'free_shipping_min_subtotal',
         'default_volumetric_divisor', 'weight_rounding_grams',
     ];
 

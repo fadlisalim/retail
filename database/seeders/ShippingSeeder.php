@@ -18,8 +18,10 @@ class ShippingSeeder extends Seeder
         ShippingProvider::whereIn('code', ['JNE', 'SICEPAT'])->delete();
 
         ShippingSetting::updateOrCreate(['id' => 1], [
-            // For Indah Cargo, packing_fee is the wooden-crate rate PER KG (× billable kg).
+            // For Indah Cargo, packing_fee is the wooden-crate rate PER KG (× billable kg),
+            // charged only for items weighing at least packing_min_item_grams each.
             'packing_fee' => 5000,
+            'packing_min_item_grams' => 5000,
             'handling_fee' => 0,
             'insurance_percent' => 0,
             'free_shipping_min_subtotal' => null,
