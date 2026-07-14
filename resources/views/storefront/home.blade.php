@@ -77,9 +77,14 @@
                 <a @if ($banner->button_url) href="{{ $banner->button_url }}" @endif
                    class="group relative block overflow-hidden rounded-2xl {{ $banner->spanClass() }}">
                     @if ($banner->image_desktop_path)
-                        <img src="{{ asset('storage/'.($banner->image_mobile_path ?: $banner->image_desktop_path)) }}"
-                             alt="{{ $banner->title ?: 'Banner' }}"
-                             class="h-40 w-full object-cover transition duration-300 group-hover:scale-105 sm:h-56">
+                        <picture>
+                            @if ($banner->image_mobile_path)
+                                <source media="(max-width: 640px)" srcset="{{ asset('storage/'.$banner->image_mobile_path) }}">
+                            @endif
+                            <img src="{{ asset('storage/'.$banner->image_desktop_path) }}"
+                                 alt="{{ $banner->title ?: 'Banner' }}"
+                                 class="h-40 w-full object-cover transition duration-300 group-hover:scale-105 sm:h-56">
+                        </picture>
                     @else
                         <div class="h-40 w-full bg-gradient-to-br from-brand-700 to-brand-500 sm:h-56"></div>
                     @endif
