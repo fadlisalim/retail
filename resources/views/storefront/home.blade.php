@@ -70,6 +70,31 @@
         @endif
     </section>
 
+    {{-- 2. Grid banners (baris banner 1/2/3 kolom) --}}
+    @if ($gridBanners->isNotEmpty())
+        <section class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-6">
+            @foreach ($gridBanners as $banner)
+                <a @if ($banner->button_url) href="{{ $banner->button_url }}" @endif
+                   class="group relative block overflow-hidden rounded-2xl {{ $banner->spanClass() }}">
+                    @if ($banner->image_desktop_path)
+                        <img src="{{ asset('storage/'.($banner->image_mobile_path ?: $banner->image_desktop_path)) }}"
+                             alt="{{ $banner->title ?: 'Banner' }}"
+                             class="h-40 w-full object-cover transition duration-300 group-hover:scale-105 sm:h-56">
+                    @else
+                        <div class="h-40 w-full bg-gradient-to-br from-brand-700 to-brand-500 sm:h-56"></div>
+                    @endif
+                    @if ($banner->title || $banner->description)
+                        <div class="absolute inset-0 flex flex-col justify-end gap-1 bg-gradient-to-t from-black/65 to-transparent p-4 text-white">
+                            <h3 class="text-lg font-bold drop-shadow">{{ $banner->title }}</h3>
+                            @if ($banner->description)<p class="text-xs text-white/90 drop-shadow">{{ $banner->description }}</p>@endif
+                            @if ($banner->button_url && $banner->button_text)<span class="mt-1 text-xs font-semibold text-accent-300">{{ $banner->button_text }} →</span>@endif
+                        </div>
+                    @endif
+                </a>
+            @endforeach
+        </section>
+    @endif
+
     {{-- 3. Category shortcuts --}}
     @if ($shortcutCategories->isNotEmpty())
         <section class="mt-6">
@@ -105,6 +130,28 @@
     <x-product-row title="Produk Pilihan" :products="$featured" :view-all="route('products.index', ['featured' => 1])" />
     <x-product-row title="Paket PLTS Populer" subtitle="Solusi lengkap on-grid, off-grid, & hybrid" :products="$packages" :view-all="route('products.index', ['category' => 'paket-plts'])" />
     <x-product-row title="Produk Terbaru" :products="$newest" :view-all="route('products.new')" />
+
+    {{-- Video section (YouTube landscape/portrait) --}}
+    @if ($videoBanners->isNotEmpty())
+        <section class="mt-10">
+            <h2 class="mb-4 text-lg font-bold text-gray-900 sm:text-xl">Video</h2>
+            <div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-6">
+                @foreach ($videoBanners as $banner)
+                    @php($embed = $banner->youtubeEmbedUrl())
+                    <div class="{{ $banner->spanClass() }}">
+                        @if ($banner->title)<p class="mb-1 text-sm font-semibold text-gray-700">{{ $banner->title }}</p>@endif
+                        @if ($embed)
+                            <div class="relative mx-auto w-full overflow-hidden rounded-2xl bg-black {{ $banner->is_portrait ? 'aspect-[9/16] max-w-xs' : 'aspect-video' }}">
+                                <iframe src="{{ $embed }}" class="absolute inset-0 h-full w-full" title="{{ $banner->title ?: 'Video' }}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                            </div>
+                        @elseif ($banner->button_url)
+                            <a href="{{ $banner->button_url }}" target="_blank" rel="noopener" class="text-sm text-brand-600 hover:underline">▶ {{ $banner->title ?: 'Tonton video' }}</a>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </section>
+    @endif
 
     {{-- 7. Promo & clearance banner + row --}}
     <x-product-row title="Promo & Clearance" :products="$promos" :view-all="route('promo')" />

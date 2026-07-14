@@ -18,6 +18,8 @@ class HomeController extends Controller
 
         return view('storefront.home', [
             'heroBanners' => Banner::active()->where('position', 'hero')->orderBy('sort_order')->get(),
+            'gridBanners' => Banner::active()->where('position', 'grid')->orderBy('sort_order')->get(),
+            'videoBanners' => Banner::active()->where('position', 'video')->orderBy('sort_order')->get(),
             'quotationBanner' => Banner::active()->where('position', 'quotation')->orderBy('sort_order')->first(),
             'shortcutCategories' => Category::active()->where('is_featured', true)->orderBy('sort_order')->take(12)->get(),
             'featured' => Product::published()->where('is_featured', true)->with(['brand', 'category'])->latest('published_at')->take(10)->get(),

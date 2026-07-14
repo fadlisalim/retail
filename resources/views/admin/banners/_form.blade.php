@@ -1,5 +1,12 @@
 @php
-    $positions = ['hero' => 'Hero', 'promo' => 'Promo', 'quotation' => 'Quotation'];
+    $positions = [
+        'hero' => 'Hero (banner besar atas)',
+        'grid' => 'Grid (baris banner)',
+        'video' => 'Video YouTube',
+        'promo' => 'Promo',
+        'quotation' => 'Quotation',
+    ];
+    $spans = ['full' => 'Penuh (1 per baris)', 'half' => 'Setengah (2 per baris)', 'third' => 'Sepertiga (3 per baris)'];
 @endphp
 
 <div class="grid gap-6 lg:grid-cols-3">
@@ -42,6 +49,9 @@
         <div class="card space-y-4 p-5">
             <h2 class="font-semibold text-gray-900">Pengaturan</h2>
             <x-form.select name="position" label="Posisi" :options="$positions" :selected="$banner->position" required />
+            <x-form.select name="span" label="Lebar (untuk Grid/Video)" :options="$spans" :selected="$banner->span ?? 'third'" required />
+            <x-form.checkbox name="is_portrait" label="Video potret 9:16 (untuk Shorts)" :checked="(bool) $banner->is_portrait" />
+            <p class="-mt-2 text-xs text-gray-400">Untuk posisi <strong>Video</strong>: isi <strong>URL Tombol</strong> dengan link YouTube (watch/shorts/youtu.be). Centang di atas kalau video potret.</p>
             <x-form.input type="number" min="0" name="sort_order" label="Urutan Tampil" :value="$banner->sort_order" />
             <x-form.input type="date" name="starts_at" label="Mulai (opsional)" :value="$banner->starts_at?->format('Y-m-d')" />
             <x-form.input type="date" name="ends_at" label="Berakhir (opsional)" :value="$banner->ends_at?->format('Y-m-d')" />

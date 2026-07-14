@@ -22,7 +22,7 @@ class BannerController extends Controller
 
     public function create(): View
     {
-        $banner = new Banner(['position' => 'hero', 'is_active' => true, 'sort_order' => 0]);
+        $banner = new Banner(['position' => 'hero', 'span' => 'third', 'is_active' => true, 'sort_order' => 0]);
 
         return view('admin.banners.create', compact('banner'));
     }
@@ -64,7 +64,9 @@ class BannerController extends Controller
             'description' => ['nullable', 'string'],
             'button_text' => ['nullable', 'string', 'max:255'],
             'button_url' => ['nullable', 'string', 'max:255'],
-            'position' => ['required', Rule::in(['hero', 'promo', 'quotation'])],
+            'position' => ['required', Rule::in(['hero', 'grid', 'video', 'promo', 'quotation'])],
+            'span' => ['required', Rule::in(['full', 'half', 'third'])],
+            'is_portrait' => ['boolean'],
             'is_active' => ['boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'starts_at' => ['nullable', 'date'],
@@ -74,6 +76,7 @@ class BannerController extends Controller
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
+        $data['is_portrait'] = $request->boolean('is_portrait');
         $data['sort_order'] = (int) ($data['sort_order'] ?? 0);
 
         // Banners run by whole days: a start date is active from 00:00, an end date
