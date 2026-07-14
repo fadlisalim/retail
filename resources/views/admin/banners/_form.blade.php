@@ -43,8 +43,8 @@
             <h2 class="font-semibold text-gray-900">Pengaturan</h2>
             <x-form.select name="position" label="Posisi" :options="$positions" :selected="$banner->position" required />
             <x-form.input type="number" min="0" name="sort_order" label="Urutan Tampil" :value="$banner->sort_order" />
-            <x-form.input type="datetime-local" name="starts_at" label="Mulai" :value="$banner->starts_at?->format('Y-m-d\TH:i')" />
-            <x-form.input type="datetime-local" name="ends_at" label="Berakhir" :value="$banner->ends_at?->format('Y-m-d\TH:i')" />
+            <x-form.input type="date" name="starts_at" label="Mulai (opsional)" :value="$banner->starts_at?->format('Y-m-d')" />
+            <x-form.input type="date" name="ends_at" label="Berakhir (opsional)" :value="$banner->ends_at?->format('Y-m-d')" />
             <x-form.checkbox name="is_active" label="Aktif" :checked="(bool) $banner->is_active" />
         </div>
 

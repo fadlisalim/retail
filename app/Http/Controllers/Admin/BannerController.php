@@ -76,6 +76,15 @@ class BannerController extends Controller
         $data['is_active'] = $request->boolean('is_active');
         $data['sort_order'] = (int) ($data['sort_order'] ?? 0);
 
+        // Banners run by whole days: a start date is active from 00:00, an end date
+        // through 23:59 — so a banner set to start "today" shows immediately.
+        if (! empty($data['starts_at'])) {
+            $data['starts_at'] = \Illuminate\Support\Carbon::parse($data['starts_at'])->startOfDay();
+        }
+        if (! empty($data['ends_at'])) {
+            $data['ends_at'] = \Illuminate\Support\Carbon::parse($data['ends_at'])->endOfDay();
+        }
+
         // Store uploaded images; keep existing paths when no new file is provided.
         if ($request->hasFile('image_desktop')) {
             $data['image_desktop_path'] = $request->file('image_desktop')->store('banners', 'public');
