@@ -37,7 +37,7 @@
         @if ($product->requires_quotation)
             <a href="{{ route('quotations.create', ['produk' => $product->slug]) }}" class="btn-outline mt-3 w-full text-xs">Minta Penawaran</a>
         @elseif ($product->is_purchasable && $product->inStock() && $product->product_type !== 'variable')
-            <form action="{{ route('cart.store') }}" method="POST" class="mt-3">
+            <form action="{{ route('cart.store') }}" method="POST" class="mt-3" @submit="$store.cart.submit($event)">
                 @csrf
                 <input type="hidden" name="product_id" value="{{ $product->id }}">
                 <input type="hidden" name="quantity" value="1">

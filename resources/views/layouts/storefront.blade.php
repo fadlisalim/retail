@@ -21,7 +21,7 @@
     @stack('head')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-gray-50 text-gray-800">
+<body x-data data-cart-count="{{ $cartCount }}" class="min-h-screen bg-gray-50 text-gray-800">
     <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-2 focus:rounded focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-white">Lewati ke konten</a>
 
     @include('partials.header')
@@ -33,6 +33,7 @@
 
     @include('partials.footer')
     @include('partials.mobile-nav')
+    @include('partials.mini-cart')
     @include('partials.whatsapp')
 
     @stack('scripts')

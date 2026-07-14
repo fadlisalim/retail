@@ -163,7 +163,7 @@
                 @if ($product->requires_quotation)
                     <a href="{{ route('quotations.create', ['produk' => $product->slug]) }}" class="btn-accent flex-1">Minta Penawaran</a>
                 @elseif ($product->is_purchasable)
-                    <form action="{{ route('cart.store') }}" method="POST" class="flex flex-1 gap-2">
+                    <form action="{{ route('cart.store') }}" method="POST" class="flex flex-1 gap-2" @submit="$store.cart.submit($event)">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
                         <input type="hidden" name="variant_id" :value="variantId">
@@ -359,7 +359,7 @@
     @unless ($product->requires_quotation)
         <div class="fixed inset-x-0 bottom-14 z-30 border-t border-gray-200 bg-white p-3 shadow-lg lg:hidden"
              x-data="{ price: {{ $product->effectivePrice() }}, rupiah(n){ return 'Rp '+Math.round(n).toLocaleString('id-ID') } }">
-            <form action="{{ route('cart.store') }}" method="POST" class="flex items-center gap-3">
+            <form action="{{ route('cart.store') }}" method="POST" class="flex items-center gap-3" @submit="$store.cart.submit($event)">
                 @csrf
                 <input type="hidden" name="product_id" value="{{ $product->id }}">
                 <input type="hidden" name="quantity" value="{{ $product->min_purchase }}">

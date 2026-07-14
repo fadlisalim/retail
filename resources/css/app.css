@@ -34,6 +34,11 @@
         @apply bg-gray-50 text-gray-800 antialiased;
     }
 
+    /* Hide Alpine-controlled elements until Alpine initialises them. */
+    [x-cloak] {
+        display: none !important;
+    }
+
     /* Visible focus for keyboard navigation / accessibility. */
     a:focus-visible,
     button:focus-visible,

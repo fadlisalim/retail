@@ -47,7 +47,7 @@
                                         @if ($p->requires_quotation)
                                             <a href="{{ route('quotations.create', ['produk' => $p->slug]) }}" class="btn-outline w-full text-xs">Minta Penawaran</a>
                                         @else
-                                            <form action="{{ route('cart.store') }}" method="POST">
+                                            <form action="{{ route('cart.store') }}" method="POST" @submit="$store.cart.submit($event)">
                                                 @csrf
                                                 <input type="hidden" name="product_id" value="{{ $p->id }}">
                                                 <input type="hidden" name="quantity" value="1">

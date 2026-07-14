@@ -46,6 +46,7 @@ Route::get('/produk/{slug}', [ProductController::class, 'show'])->name('products
 /* Cart */
 Route::controller(CartController::class)->group(function () {
     Route::get('/keranjang', 'index')->name('cart.index');
+    Route::get('/keranjang/mini', 'mini')->name('cart.mini');
     Route::post('/keranjang', 'store')->name('cart.store');
     Route::patch('/keranjang/{item}', 'update')->name('cart.update');
     Route::delete('/keranjang/{item}', 'destroy')->name('cart.destroy');

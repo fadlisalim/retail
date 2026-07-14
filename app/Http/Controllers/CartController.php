@@ -8,6 +8,7 @@ use App\Models\ProductVariant;
 use App\Services\CartCalculator;
 use App\Services\CartService;
 use App\Services\CouponService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -49,7 +50,7 @@ class CartController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $data = $request->validate([
             'product_id' => ['required', 'exists:products,id'],
@@ -65,11 +66,42 @@ class CartController extends Controller
 
         $this->cart->addItem($product, $variant, (int) $data['quantity']);
 
+        // AJAX "+ Keranjang" gets the mini-cart payload to open the drawer in place.
+        if ($request->expectsJson()) {
+            return response()->json($this->miniPayload());
+        }
+
         if ($request->boolean('buy_now')) {
             return redirect()->route('checkout.index');
         }
 
         return back()->with('success', 'Produk ditambahkan ke keranjang.');
+    }
+
+    /** JSON snapshot of the cart for the mini-cart drawer (opened from the icon). */
+    public function mini(): JsonResponse
+    {
+        return response()->json($this->miniPayload());
+    }
+
+    /** @return array{count:int,subtotal_formatted:string,items:array} */
+    private function miniPayload(): array
+    {
+        $cart = $this->cart->current()->load(['items.product', 'items.variant']);
+        $buyable = $this->calculator->buyableItems($cart);
+
+        return [
+            'count' => $this->cart->count(),
+            'subtotal_formatted' => rupiah($buyable->sum(fn ($i) => $i->currentUnitPrice() * $i->quantity)),
+            'items' => $buyable->map(fn ($i) => [
+                'name' => $i->product->name,
+                'variant' => $i->variant?->name,
+                'image' => $i->product->primaryImageUrl(),
+                'qty' => (int) $i->quantity,
+                'line_formatted' => rupiah($i->currentUnitPrice() * $i->quantity),
+                'url' => route('products.show', $i->product->slug),
+            ])->values()->all(),
+        ];
     }
 
     public function update(Request $request, CartItem $item): RedirectResponse
