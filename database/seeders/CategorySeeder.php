@@ -8,21 +8,25 @@ use Illuminate\Support\Str;
 
 class CategorySeeder extends Seeder
 {
-    /** Category tree: name => [children...]. */
+    /** Category tree: name => [children...]. Slugs are reused where they already exist. */
     private array $tree = [
-        'Panel Surya' => ['Monocrystalline', 'Bifacial', 'Flexible'],
-        'Inverter' => ['On-Grid', 'Off-Grid', 'Hybrid', 'Single Phase', 'Three Phase'],
-        'Baterai' => ['Lithium LiFePO4', 'Rack Mounted', 'Wall Mounted'],
+        'Panel Surya' => ['Monocrystalline', 'Polycrystalline', 'Bifacial', 'Flexible'],
+        'Inverter' => ['On-Grid', 'Off-Grid', 'Hybrid', 'Microinverter', 'Single Phase', 'Three Phase'],
+        'Baterai' => ['Lithium LiFePO4', 'Rack Mounted', 'Wall Mounted', 'All-in-One (ESS)'],
         'Solar Charge Controller' => ['MPPT', 'PWM'],
         'Paket PLTS' => ['On-Grid', 'Off-Grid', 'Hybrid', 'Rumah', 'Kantor', 'Industri'],
-        'Pompa Air Tenaga Surya' => [],
-        'PJU Tenaga Surya' => [],
-        'Aksesoris' => ['Kabel', 'Konektor', 'Proteksi', 'Mounting', 'Combiner Box'],
+        'Mounting & Rangka' => ['Atap / Rooftop', 'Ground Mounting', 'Carport / Canopy'],
+        'Kabel, Konektor & Proteksi' => ['Kabel PV', 'Konektor MC4', 'MCB / MCCB DC', 'SPD / Arrester', 'Combiner Box'],
+        'Pompa Air Tenaga Surya' => ['Submersible', 'Surface'],
+        'PJU Tenaga Surya' => ['PJU All-in-One', 'PJU Two-in-One', 'Lampu Taman', 'Lampu Sorot'],
+        'Portable Power' => ['Power Station', 'Solar Generator'],
         'Barang Sisa Proyek' => ['Baru', 'Open Box', 'Bekas Display', 'Bekas Pakai'],
-        'Spare Part' => [],
     ];
 
-    private array $featured = ['Panel Surya', 'Inverter', 'Baterai', 'Paket PLTS', 'Barang Sisa Proyek', 'Aksesoris'];
+    private array $featured = ['Panel Surya', 'Inverter', 'Baterai', 'Paket PLTS', 'PJU Tenaga Surya', 'Barang Sisa Proyek'];
+
+    /** Demo categories replaced by the tree above — deactivated (not deleted) to keep the nav clean. */
+    private array $retired = ['aksesoris', 'spare-part'];
 
     public function run(): void
     {
@@ -37,11 +41,18 @@ class CategorySeeder extends Seeder
                 $this->make($childName, $parent, $childOrder++, false, $parentName);
             }
         }
+
+        // Hide retired demo categories and their children (reversible in the admin).
+        $retiredIds = Category::whereIn('slug', $this->retired)->pluck('id');
+        Category::whereIn('slug', $this->retired)
+            ->orWhereIn('parent_id', $retiredIds)
+            ->update(['is_active' => false, 'is_featured' => false]);
     }
 
     private function make(string $name, ?Category $parent, int $order, bool $featured, ?string $parentName = null): Category
     {
         $slug = $parentName ? Str::slug($parentName.'-'.$name) : Str::slug($name);
+        $brand = config('rekasurya.company.brand_name', 'Energi.Click');
 
         $category = Category::updateOrCreate(['slug' => $slug], [
             'parent_id' => $parent?->id,
@@ -50,8 +61,8 @@ class CategorySeeder extends Seeder
             'is_featured' => $featured,
             'is_active' => true,
             'sort_order' => $order,
-            'meta_title' => "$name — Rekasurya Store",
-            'meta_description' => "Beli $name berkualitas di Rekasurya Store.",
+            'meta_title' => "$name — $brand",
+            'meta_description' => "Beli $name berkualitas di $brand.",
         ]);
 
         $category->update(['path' => $parent ? $parent->path.'/'.$category->id : (string) $category->id]);
