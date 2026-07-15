@@ -44,6 +44,7 @@
 
     <div x-data="{
         gallery: '{{ $gallery->first() }}',
+        zoom: false,
         qty: {{ $product->min_purchase }},
         variantId: {{ $product->variants->count() === 1 ? $product->variants->first()->id : 'null' }},
         variants: {{ Illuminate\Support\Js::from($variantData) }},
@@ -56,9 +57,13 @@
 
         {{-- Gallery --}}
         <div>
-            <div class="card overflow-hidden">
-                <img :src="gallery" alt="{{ $product->name }}" class="aspect-square w-full object-contain">
-            </div>
+            {{-- Main image: object-contain (never cropped) over a blurred fill of itself. --}}
+            <button type="button" @click="zoom = true" class="card group relative block w-full cursor-zoom-in overflow-hidden">
+                <div class="absolute inset-0 scale-110 bg-cover bg-center blur-2xl" :style="`background-image:url('${gallery}')`" aria-hidden="true"></div>
+                <div class="absolute inset-0 bg-white/40" aria-hidden="true"></div>
+                <img :src="gallery" alt="{{ $product->name }}" class="relative aspect-square w-full object-contain">
+                <span class="absolute bottom-2 right-2 rounded-full bg-black/50 px-2 py-1 text-[11px] text-white opacity-0 transition group-hover:opacity-100">🔍 Klik untuk zoom</span>
+            </button>
             @if ($gallery->count() > 1)
                 <div class="mt-3 flex gap-2 overflow-x-auto">
                     @foreach ($gallery as $img)
@@ -68,6 +73,14 @@
                     @endforeach
                 </div>
             @endif
+        </div>
+
+        {{-- Zoom lightbox --}}
+        <div x-show="zoom" x-cloak x-transition.opacity
+             @click="zoom = false" @keydown.escape.window="zoom = false"
+             class="fixed inset-0 z-[80] flex items-center justify-center bg-black/85 p-4">
+            <img :src="gallery" alt="{{ $product->name }}" class="max-h-[90vh] max-w-full object-contain">
+            <button type="button" @click="zoom = false" class="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/15 text-2xl text-white hover:bg-white/25" aria-label="Tutup">&times;</button>
         </div>
 
         {{-- Purchase panel --}}

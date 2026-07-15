@@ -60,6 +60,31 @@ class ProductMediaTest extends TestCase
         $this->assertCount(0, $product->fresh()->videos);
     }
 
+    public function test_admin_can_reorder_gallery_images(): void
+    {
+        Storage::fake('public');
+        $this->actingAs($this->staff());
+        $product = $this->stockedProduct(5);
+
+        $this->post(route('admin.products.image.store', $product), [
+            'images' => [
+                UploadedFile::fake()->image('a.jpg'),
+                UploadedFile::fake()->image('b.jpg'),
+                UploadedFile::fake()->image('c.jpg'),
+            ],
+        ])->assertRedirect();
+
+        // Edit page renders the gallery manager with the reorder hint.
+        $this->get(route('admin.products.edit', $product))->assertOk()->assertSee('Seret gambar');
+
+        $ids = $product->fresh()->images->pluck('id')->all();
+        // Reverse the order.
+        $this->post(route('admin.products.image.reorder', $product), ['order' => array_reverse($ids)])
+            ->assertRedirect();
+
+        $this->assertSame(array_reverse($ids), $product->fresh()->images->pluck('id')->all());
+    }
+
     public function test_rejects_non_pdf_document(): void
     {
         Storage::fake('public');

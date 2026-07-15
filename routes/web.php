@@ -205,6 +205,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         // Product media (gallery images, datasheet PDFs, YouTube videos).
         Route::post('produk/{produk}/gambar', [Admin\ProductMediaController::class, 'storeImage'])->name('products.image.store');
         Route::post('produk/{produk}/gambar/{image}/utama', [Admin\ProductMediaController::class, 'setPrimaryImage'])->name('products.image.primary');
+        Route::post('produk/{produk}/gambar/urutan', [Admin\ProductMediaController::class, 'reorderImages'])->name('products.image.reorder');
         Route::delete('produk-gambar/{image}', [Admin\ProductMediaController::class, 'destroyImage'])->name('products.image.destroy');
         Route::post('produk/{produk}/dokumen', [Admin\ProductMediaController::class, 'storeDocument'])->name('products.document.store');
         Route::delete('produk-dokumen/{dokumen}', [Admin\ProductMediaController::class, 'destroyDocument'])->name('products.document.destroy');

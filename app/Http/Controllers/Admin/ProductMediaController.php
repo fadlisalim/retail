@@ -51,6 +51,26 @@ class ProductMediaController extends Controller
         return back()->with('success', 'Gambar utama diperbarui.');
     }
 
+    /** Persist a new gallery order (array of image ids in the desired sequence). */
+    public function reorderImages(Request $request, Product $produk): RedirectResponse
+    {
+        $data = $request->validate([
+            'order' => ['required', 'array'],
+            'order.*' => ['integer'],
+        ]);
+
+        // Only touch images that belong to this product.
+        $valid = $produk->images()->pluck('id')->all();
+        $position = 0;
+        foreach ($data['order'] as $id) {
+            if (in_array((int) $id, $valid, true)) {
+                ProductImage::where('id', $id)->update(['sort_order' => ++$position]);
+            }
+        }
+
+        return back()->with('success', 'Urutan gambar disimpan.');
+    }
+
     public function destroyImage(ProductImage $image): RedirectResponse
     {
         $product = $image->product;

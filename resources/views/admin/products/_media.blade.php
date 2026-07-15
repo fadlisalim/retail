@@ -7,27 +7,60 @@
         <h2 class="font-semibold text-gray-900">Gambar Produk</h2>
 
         @if ($product->images->isNotEmpty())
-            <div class="grid grid-cols-3 gap-3 sm:grid-cols-5">
-                @foreach ($product->images as $img)
-                    <div class="group relative overflow-hidden rounded-lg border border-gray-200">
-                        <img src="{{ asset('storage/'.$img->path) }}" alt="{{ $img->alt }}" class="aspect-square w-full object-cover {{ $product->main_image_path === $img->path ? 'ring-2 ring-brand-500' : '' }}">
-                        @if ($product->main_image_path === $img->path)
-                            <span class="absolute left-1 top-1 rounded bg-brand-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">Utama</span>
-                        @endif
-                        <div class="absolute inset-x-0 bottom-0 flex divide-x divide-white/20 bg-black/55 text-[11px] text-white opacity-0 transition group-hover:opacity-100">
-                            @if ($product->main_image_path !== $img->path)
-                                <form action="{{ route('admin.products.image.primary', [$product, $img]) }}" method="POST" class="flex-1">
-                                    @csrf
-                                    <button class="w-full py-1 hover:bg-white/10">Jadikan Utama</button>
-                                </form>
-                            @endif
-                            <form action="{{ route('admin.products.image.destroy', $img) }}" method="POST" class="flex-1" onsubmit="return confirm('Hapus gambar ini?')">
-                                @csrf @method('DELETE')
-                                <button class="w-full py-1 text-red-200 hover:bg-white/10">Hapus</button>
-                            </form>
+            @php
+                $imagesData = $product->images->map(fn ($i) => [
+                    'id' => $i->id,
+                    'url' => asset('storage/'.$i->path),
+                    'isMain' => $product->main_image_path === $i->path,
+                ])->values();
+            @endphp
+            <div x-data="{
+                items: {{ Illuminate\Support\Js::from($imagesData) }},
+                dragIndex: null, dirty: false, saving: false,
+                onDrop(i) {
+                    if (this.dragIndex === null || this.dragIndex === i) return;
+                    const moved = this.items.splice(this.dragIndex, 1)[0];
+                    this.items.splice(i, 0, moved);
+                    this.dragIndex = null; this.dirty = true;
+                },
+                submit(action, method = 'POST') {
+                    const f = document.createElement('form');
+                    f.method = 'POST'; f.action = action;
+                    let html = '<input type=\'hidden\' name=\'_token\' value=\'{{ csrf_token() }}\'>';
+                    if (method !== 'POST') html += `<input type='hidden' name='_method' value='${method}'>`;
+                    f.innerHTML = html; document.body.appendChild(f); f.submit();
+                },
+                setMain(id) { this.submit(`{{ url('admin/produk/'.$product->id.'/gambar') }}/${id}/utama`); },
+                remove(id) { if (confirm('Hapus gambar ini?')) this.submit(`{{ url('admin/produk-gambar') }}/${id}`, 'DELETE'); },
+                async save() {
+                    this.saving = true;
+                    const body = new FormData();
+                    body.append('_token', '{{ csrf_token() }}');
+                    this.items.forEach(it => body.append('order[]', it.id));
+                    await fetch('{{ route('admin.products.image.reorder', $product) }}', { method: 'POST', body, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    window.location.reload();
+                },
+            }">
+                <p class="mb-2 text-xs text-gray-400">Seret gambar untuk mengubah urutan. Gambar paling depan tampil pertama di katalog.</p>
+                <div class="grid grid-cols-3 gap-3 sm:grid-cols-5">
+                    <template x-for="(img, i) in items" :key="img.id">
+                        <div draggable="true"
+                             @dragstart="dragIndex = i" @dragover.prevent @drop.prevent="onDrop(i)"
+                             class="relative cursor-move overflow-hidden rounded-lg border border-gray-200"
+                             :class="img.isMain && 'ring-2 ring-brand-500'">
+                            <img :src="img.url" class="aspect-square w-full object-cover" draggable="false">
+                            <span x-show="img.isMain" class="absolute left-1 top-1 rounded bg-brand-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">Utama</span>
+                            <div class="absolute inset-x-0 bottom-0 flex divide-x divide-white/20 bg-black/60 text-[11px] text-white">
+                                <button type="button" x-show="!img.isMain" @click="setMain(img.id)" class="flex-1 py-1.5 hover:bg-white/15">Jadikan Utama</button>
+                                <button type="button" @click="remove(img.id)" class="flex-1 py-1.5 text-red-200 hover:bg-white/15">Hapus</button>
+                            </div>
                         </div>
-                    </div>
-                @endforeach
+                    </template>
+                </div>
+                <div class="mt-3 flex items-center gap-2" x-show="dirty" x-cloak>
+                    <button type="button" class="btn-primary" @click="save()" x-text="saving ? 'Menyimpan…' : 'Simpan Urutan'" :disabled="saving"></button>
+                    <span class="text-xs text-gray-400">Urutan berubah — klik simpan.</span>
+                </div>
             </div>
         @else
             <p class="text-sm text-gray-400">Belum ada gambar. Unggah minimal satu — yang pertama jadi gambar utama.</p>
