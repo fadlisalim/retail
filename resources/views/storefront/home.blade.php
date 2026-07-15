@@ -39,7 +39,8 @@
                                     @if ($banner->image_mobile_path)
                                         <source media="(max-width: 640px)" srcset="{{ asset('storage/'.$banner->image_mobile_path) }}">
                                     @endif
-                                    <img src="{{ asset('storage/'.$banner->image_desktop_path) }}" alt="{{ $banner->title ?: 'Banner' }}" class="h-52 w-full object-cover sm:h-96">
+                                    {{-- Show the artwork in full (no crop) so nothing is cut off on mobile. --}}
+                                    <img src="{{ asset('storage/'.$banner->image_desktop_path) }}" alt="{{ $banner->title ?: 'Banner' }}" class="block h-auto w-full">
                                 </picture>
                             </a>
                         @else
