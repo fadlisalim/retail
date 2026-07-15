@@ -19,7 +19,7 @@ class Product extends Model
     protected $fillable = [
         'sku', 'name', 'slug', 'category_id', 'brand_id', 'model', 'product_type', 'condition',
         'short_description', 'description', 'specifications',
-        'price', 'sale_price', 'cost_price', 'price_status', 'price_includes_tax', 'is_taxable',
+        'price', 'sale_price', 'cost_price', 'affiliate_rate', 'price_status', 'price_includes_tax', 'is_taxable',
         'stock', 'min_stock', 'unit',
         'weight_grams', 'length_cm', 'width_cm', 'height_cm', 'package_count',
         'can_combine_package', 'requires_freight', 'pickup_only',
@@ -33,6 +33,7 @@ class Product extends Model
         'price' => 'decimal:2',
         'sale_price' => 'decimal:2',
         'cost_price' => 'decimal:2',
+        'affiliate_rate' => 'decimal:2',
         'price_includes_tax' => 'boolean',
         'is_taxable' => 'boolean',
         'can_combine_package' => 'boolean',

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Account;
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\AffiliateController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\CartController;
@@ -105,6 +106,9 @@ Route::post('/review/{review}/laporkan', [ReviewController::class, 'report'])
     ->middleware('auth')->name('reviews.report');
 Route::post('/produk/{product:slug}/tanya', [ProductController::class, 'ask'])->name('questions.store');
 
+/* Affiliate program (public landing) */
+Route::get('/afiliasi', [AffiliateController::class, 'landing'])->name('affiliate.landing');
+
 /* CMS + misc */
 Route::post('/newsletter', [ContentController::class, 'subscribe'])->name('newsletter.subscribe');
 Route::get('/artikel', [ContentController::class, 'articles'])->name('articles.index');
@@ -158,6 +162,13 @@ Route::middleware('auth')->prefix('akun')->name('account.')->group(function () {
     Route::post('/review', [Account\ReviewController::class, 'store'])->name('reviews.store');
     Route::get('/notifikasi', [Account\NotificationController::class, 'index'])->name('notifications');
     Route::post('/notifikasi/{id}/baca', [Account\NotificationController::class, 'read'])->name('notifications.read');
+
+    // Affiliate program
+    Route::get('/afiliasi', [AffiliateController::class, 'dashboard'])->name('affiliate.dashboard');
+    Route::get('/afiliasi/daftar', [AffiliateController::class, 'create'])->name('affiliate.register');
+    Route::post('/afiliasi/daftar', [AffiliateController::class, 'store'])->name('affiliate.store');
+    Route::put('/afiliasi/rekening', [AffiliateController::class, 'updateBank'])->name('affiliate.bank');
+    Route::post('/afiliasi/penarikan', [AffiliateController::class, 'requestPayout'])->name('affiliate.payout');
 });
 
 /*
@@ -205,6 +216,19 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     });
     Route::middleware('permission:payment.manage')->group(function () {
         Route::post('/pesanan/{order}/verifikasi-bayar', [Admin\OrderController::class, 'verifyPayment'])->name('orders.verify');
+    });
+
+    Route::middleware('permission:affiliate.manage')->group(function () {
+        Route::get('/afiliasi', [Admin\AffiliateController::class, 'index'])->name('affiliates.index');
+        Route::get('/afiliasi/penarikan', [Admin\AffiliatePayoutController::class, 'index'])->name('affiliates.payouts');
+        Route::post('/afiliasi/penarikan/{payout}/setujui', [Admin\AffiliatePayoutController::class, 'approve'])->name('affiliates.payouts.approve');
+        Route::post('/afiliasi/penarikan/{payout}/lunas', [Admin\AffiliatePayoutController::class, 'markPaid'])->name('affiliates.payouts.paid');
+        Route::post('/afiliasi/penarikan/{payout}/tolak', [Admin\AffiliatePayoutController::class, 'reject'])->name('affiliates.payouts.reject');
+        Route::get('/afiliasi/{affiliate}', [Admin\AffiliateController::class, 'show'])->name('affiliates.show');
+        Route::post('/afiliasi/{affiliate}/verifikasi', [Admin\AffiliateController::class, 'verify'])->name('affiliates.verify');
+        Route::post('/afiliasi/{affiliate}/tolak', [Admin\AffiliateController::class, 'reject'])->name('affiliates.reject');
+        Route::post('/afiliasi/{affiliate}/tangguhkan', [Admin\AffiliateController::class, 'suspend'])->name('affiliates.suspend');
+        Route::post('/afiliasi/{affiliate}/aktifkan', [Admin\AffiliateController::class, 'reactivate'])->name('affiliates.reactivate');
     });
 
     Route::middleware('permission:quotation.manage')->group(function () {

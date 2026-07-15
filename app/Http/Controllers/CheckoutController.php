@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CheckoutRequest;
 use App\Services\CartCalculator;
 use App\Services\CartService;
+use App\Services\AffiliateService;
 use App\Services\CheckoutService;
 use App\Services\PaymentManager;
 use App\Services\ShippingService;
@@ -22,6 +23,7 @@ class CheckoutController extends Controller
         private readonly ShippingService $shipping,
         private readonly CheckoutService $checkout,
         private readonly PaymentManager $payments,
+        private readonly AffiliateService $affiliates,
     ) {
     }
 
@@ -92,6 +94,9 @@ class CheckoutController extends Controller
         }
 
         $order = $this->checkout->place($cart, $request->validated(), $quote);
+
+        // Attribute the sale to a referring affiliate (last-click cookie), if any.
+        $this->affiliates->attributeOrder($order);
 
         // Initialise the charge (VA number / manual bank instructions).
         $payment = $order->payments()->latest()->first();

@@ -129,6 +129,7 @@ class ProductController extends Controller
             'price' => ['required', 'numeric', 'min:0'],
             'sale_price' => ['nullable', 'numeric', 'min:0'],
             'cost_price' => ['nullable', 'numeric', 'min:0'],
+            'affiliate_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'price_includes_tax' => ['boolean'],
             'is_taxable' => ['boolean'],
             'unit' => ['nullable', 'string', 'max:30'],

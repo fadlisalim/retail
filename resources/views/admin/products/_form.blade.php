@@ -34,6 +34,7 @@
             <x-form.input type="number" step="0.01" min="0" name="price" label="Harga Normal (Rp)" :value="$product->price" required />
             <x-form.input type="number" step="0.01" min="0" name="sale_price" label="Harga Promo (Rp)" :value="$product->sale_price" hint="Opsional." />
             <x-form.input type="number" step="0.01" min="0" name="cost_price" label="Harga Modal (Rp)" :value="$product->cost_price" hint="Hanya untuk internal." />
+            <x-form.input type="number" step="0.01" min="0" max="100" name="affiliate_rate" label="Komisi Afiliasi (%)" :value="$product->affiliate_rate" hint="Kosongkan untuk pakai default global." />
         </div>
         <div class="grid gap-4 sm:grid-cols-2">
             <x-form.input name="unit" label="Satuan" :value="$product->unit" placeholder="pcs" />

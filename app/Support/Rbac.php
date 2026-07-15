@@ -38,6 +38,7 @@ final class Rbac
         'setting.manage' => 'Kelola Pengaturan',
         'user.manage' => 'Kelola User Admin & Role',
         'audit.view' => 'Lihat Audit Log',
+        'affiliate.manage' => 'Kelola Afiliasi & Komisi',
     ];
 
     /** Which permissions each role receives by default. */
@@ -46,7 +47,7 @@ final class Rbac
         'admin-katalog' => ['dashboard.view', 'catalog.manage', 'price.manage', 'review.moderate'],
         'admin-sales' => ['dashboard.view', 'order.view', 'order.manage', 'quotation.manage', 'customer.manage'],
         'admin-gudang' => ['dashboard.view', 'inventory.manage', 'order.view', 'shipping.manage'],
-        'admin-keuangan' => ['dashboard.view', 'order.view', 'payment.manage'],
+        'admin-keuangan' => ['dashboard.view', 'order.view', 'payment.manage', 'affiliate.manage'],
         'customer-service' => ['dashboard.view', 'order.view', 'review.moderate', 'customer.manage', 'return.manage'],
         'admin-konten' => ['dashboard.view', 'content.manage'],
     ];

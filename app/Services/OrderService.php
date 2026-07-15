@@ -18,6 +18,7 @@ class OrderService
     public function __construct(
         private readonly StockService $stock,
         private readonly NotificationService $notifications,
+        private readonly AffiliateService $affiliates,
     ) {
     }
 
@@ -29,6 +30,13 @@ class OrderService
                 'completed_at' => $status === OrderStatus::Completed ? now() : $order->completed_at,
                 'cancelled_at' => $status === OrderStatus::Cancelled ? now() : $order->cancelled_at,
             ]);
+
+            // Affiliate commissions clear on completion, void on cancel/return.
+            if ($status === OrderStatus::Completed) {
+                $this->affiliates->approveCommissions($order);
+            } elseif (in_array($status, [OrderStatus::Cancelled, OrderStatus::Returned], true)) {
+                $this->affiliates->cancelCommissions($order);
+            }
 
             $order->statusHistories()->create([
                 'status' => $status->value,
@@ -100,6 +108,9 @@ class OrderService
                 'paid_at' => now(),
             ]);
 
+            // Record held affiliate commissions now that the sale is confirmed.
+            $this->affiliates->recordCommissions($order);
+
             $order->statusHistories()->create([
                 'status' => OrderStatus::PaymentVerified->value,
                 'changed_by' => $actor?->id,
@@ -128,6 +139,8 @@ class OrderService
                 'status' => OrderStatus::Cancelled,
                 'cancelled_at' => now(),
             ]);
+
+            $this->affiliates->cancelCommissions($order);
 
             $order->statusHistories()->create([
                 'status' => OrderStatus::Cancelled->value,

@@ -24,6 +24,11 @@ class SettingSeeder extends Seeder
             ['whatsapp.greeting', 'Halo Rekasurya, saya ingin berkonsultasi mengenai produk energi terbarukan.', 'string', 'whatsapp'],
             ['payment.bank_account', 'BCA 123-456-7890 a.n. PT Rekasurya Primadaya', 'string', 'payment'],
             ['shipping.reservation_minutes', '30', 'integer', 'shipping'],
+            // Affiliate program defaults.
+            ['affiliate.enabled', '1', 'boolean', 'affiliate'],
+            ['affiliate.default_rate', '5', 'integer', 'affiliate'],       // percent, used when a product has no rate
+            ['affiliate.min_payout', '100000', 'integer', 'affiliate'],    // minimum withdrawal (Rp)
+            ['affiliate.cookie_days', '30', 'integer', 'affiliate'],       // last-click attribution window
         ];
 
         foreach ($settings as [$key, $value, $type, $group]) {

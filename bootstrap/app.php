@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CaptureReferral;
 use App\Http\Middleware\EnsurePermission;
 use App\Http\Middleware\EnsureUserIsStaff;
 use App\Http\Middleware\SyncGuestSession;
@@ -18,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Every web request carries a stable guest token for cart/wishlist merging.
         $middleware->web(append: [
             SyncGuestSession::class,
+            CaptureReferral::class,
         ]);
 
         $middleware->alias([

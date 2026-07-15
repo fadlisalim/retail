@@ -1,0 +1,227 @@
+<?php
+
+namespace App\Services;
+
+use App\Enums\AffiliateStatus;
+use App\Enums\CommissionStatus;
+use App\Enums\PayoutStatus;
+use App\Models\Affiliate;
+use App\Models\AffiliateCommission;
+use App\Models\AffiliatePayout;
+use App\Models\Order;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+
+/**
+ * Referral attribution + commission lifecycle.
+ *
+ * Attribution is last-click via a cookie set when someone visits with ?ref=CODE.
+ * Commissions are recorded (held) when an attributed order is paid, cleared when
+ * the order completes, and voided if it is cancelled/returned.
+ */
+class AffiliateService
+{
+    public const COOKIE = 'ref';
+
+    public function __construct(private readonly SettingService $settings)
+    {
+    }
+
+    public function windowDays(): int
+    {
+        return (int) $this->settings->get('affiliate.cookie_days', 30);
+    }
+
+    public function defaultRate(): float
+    {
+        return (float) $this->settings->get('affiliate.default_rate', 5);
+    }
+
+    public function minPayout(): float
+    {
+        return (float) $this->settings->get('affiliate.min_payout', 100000);
+    }
+
+    /** Commission percentage that applies to a product (per-product override, else default). */
+    public function rateForProduct(?\App\Models\Product $product): float
+    {
+        $rate = $product?->affiliate_rate;
+
+        return $rate !== null ? (float) $rate : $this->defaultRate();
+    }
+
+    /** Record a click and drop the attribution cookie if the code maps to an active affiliate. */
+    public function trackClick(string $code, Request $request): bool
+    {
+        $affiliate = Affiliate::where('code', $code)->where('status', AffiliateStatus::Active->value)->first();
+        if (! $affiliate) {
+            return false;
+        }
+
+        Cookie::queue(Cookie::make(self::COOKIE, $affiliate->code, $this->windowDays() * 24 * 60));
+
+        $affiliate->clicks()->create([
+            'ip' => $request->ip(),
+            'user_agent' => Str::limit((string) $request->userAgent(), 500, ''),
+            'landing_url' => Str::limit($request->fullUrl(), 1000, ''),
+            'referrer' => Str::limit((string) $request->headers->get('referer'), 1000, ''),
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Attach the cookie's affiliate to a freshly created order.
+     * Skips self-purchases (an affiliate buying through their own link).
+     */
+    public function attributeOrder(Order $order): void
+    {
+        if ($order->affiliate_id) {
+            return;
+        }
+
+        $code = request()->cookie(self::COOKIE);
+        if (! $code) {
+            return;
+        }
+
+        $affiliate = Affiliate::where('code', $code)->where('status', AffiliateStatus::Active->value)->first();
+        if (! $affiliate) {
+            return;
+        }
+
+        if ($order->user_id && $affiliate->user_id === $order->user_id) {
+            return; // no self-referral
+        }
+
+        $order->update(['affiliate_id' => $affiliate->id]);
+    }
+
+    /** On payment: create held commission lines for each order item. Idempotent. */
+    public function recordCommissions(Order $order): void
+    {
+        if (! $order->affiliate_id) {
+            return;
+        }
+
+        $order->loadMissing('items.product');
+
+        foreach ($order->items as $item) {
+            $rate = $this->rateForProduct($item->product);
+            $base = (float) $item->line_total;
+            $amount = round($base * $rate / 100, 2);
+
+            if ($rate <= 0 || $amount <= 0) {
+                continue;
+            }
+
+            AffiliateCommission::firstOrCreate(
+                ['order_id' => $order->id, 'order_item_id' => $item->id],
+                [
+                    'affiliate_id' => $order->affiliate_id,
+                    'product_id' => $item->product_id,
+                    'base_amount' => $base,
+                    'rate' => $rate,
+                    'amount' => $amount,
+                    'status' => CommissionStatus::Pending,
+                ]
+            );
+        }
+    }
+
+    /** On completion: clear held commissions so they become withdrawable. */
+    public function approveCommissions(Order $order): void
+    {
+        $order->affiliateCommissions()
+            ->where('status', CommissionStatus::Pending->value)
+            ->update(['status' => CommissionStatus::Approved->value]);
+    }
+
+    /** On cancel/return: void commissions that haven't been paid out yet. */
+    public function cancelCommissions(Order $order): void
+    {
+        $order->affiliateCommissions()
+            ->whereIn('status', [CommissionStatus::Pending->value, CommissionStatus::Approved->value])
+            ->update(['status' => CommissionStatus::Cancelled->value]);
+    }
+
+    /** Generate a unique, human-friendly referral code. */
+    public function generateCode(string $seed): string
+    {
+        $base = Str::upper(Str::slug(Str::of($seed)->limit(8, ''), ''));
+        $base = preg_replace('/[^A-Z0-9]/', '', $base) ?: 'REF';
+
+        do {
+            $code = $base.Str::upper(Str::random(4));
+        } while (Affiliate::where('code', $code)->exists());
+
+        return $code;
+    }
+
+    /** Create a withdrawal request against the available balance. */
+    public function requestPayout(Affiliate $affiliate, float $amount): AffiliatePayout
+    {
+        $available = $affiliate->availableBalance();
+        $min = $this->minPayout();
+
+        if ($amount < $min) {
+            throw ValidationException::withMessages([
+                'amount' => 'Minimum penarikan adalah Rp '.number_format($min, 0, ',', '.').'.',
+            ]);
+        }
+        if ($amount > $available) {
+            throw ValidationException::withMessages([
+                'amount' => 'Jumlah melebihi saldo yang tersedia (Rp '.number_format($available, 0, ',', '.').').',
+            ]);
+        }
+        if (! $affiliate->bank_account_number) {
+            throw ValidationException::withMessages([
+                'amount' => 'Lengkapi data rekening bank terlebih dahulu.',
+            ]);
+        }
+
+        return $affiliate->payouts()->create([
+            'amount' => $amount,
+            'status' => PayoutStatus::Requested,
+            'method' => 'bank_transfer',
+            'bank_name' => $affiliate->bank_name,
+            'bank_account_number' => $affiliate->bank_account_number,
+            'bank_account_holder' => $affiliate->bank_account_holder,
+            'requested_at' => now(),
+        ]);
+    }
+
+    /**
+     * Settle a payout: mark it paid and consume approved commissions up to its amount
+     * (so the balance drops and those commissions can't be withdrawn twice).
+     */
+    public function settlePayout(AffiliatePayout $payout, ?int $actorId = null, ?string $reference = null): void
+    {
+        DB::transaction(function () use ($payout, $actorId, $reference) {
+            $remaining = (float) $payout->amount;
+
+            $commissions = $payout->affiliate->commissions()
+                ->where('status', CommissionStatus::Approved->value)
+                ->orderBy('id')
+                ->get();
+
+            foreach ($commissions as $commission) {
+                if ($remaining <= 0) {
+                    break;
+                }
+                $commission->update(['status' => CommissionStatus::Paid]);
+                $remaining -= (float) $commission->amount;
+            }
+
+            $payout->update([
+                'status' => PayoutStatus::Paid,
+                'reference' => $reference ?: $payout->reference,
+                'processed_by' => $actorId,
+                'processed_at' => now(),
+            ]);
+        });
+    }
+}

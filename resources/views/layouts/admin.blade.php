@@ -32,6 +32,7 @@
                 ['admin.quotations.index', 'Quotation', 'quotation.manage'],
                 ['admin.reviews.index', 'Review', 'review.moderate'],
                 ['admin.customers.index', 'Customer', 'customer.manage'],
+                ['admin.affiliates.index', 'Afiliasi', 'affiliate.manage'],
                 ['admin.banners.index', 'Banner', 'content.manage'],
                 ['admin.pages.index', 'Halaman', 'content.manage'],
                 ['admin.articles.index', 'Artikel', 'content.manage'],
