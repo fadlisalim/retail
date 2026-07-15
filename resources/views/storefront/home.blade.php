@@ -14,8 +14,10 @@
 @endpush
 
 @section('content')
+{{-- Mobile reorders sections via flex `order`; desktop keeps source order (sm:block). --}}
+<div class="flex flex-col sm:block">
     {{-- 1. Hero slider (auto-advance, arrows + dots) --}}
-    <section class="mt-2">
+    <section class="order-1 mt-2 sm:order-none">
         @if ($heroBanners->isNotEmpty())
             <div class="group relative overflow-hidden rounded-2xl"
                  x-data="{
@@ -85,7 +87,7 @@
 
     {{-- 2. Grid banners (baris banner 1/2/3 kolom) --}}
     @if ($gridBanners->isNotEmpty())
-        <section class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-6">
+        <section class="order-3 mt-6 grid grid-cols-1 gap-4 sm:order-none sm:grid-cols-6">
             @foreach ($gridBanners as $banner)
                 <a @if ($banner->button_url) href="{{ $banner->button_url }}" @endif
                    class="group relative block overflow-hidden rounded-2xl {{ $banner->spanClass() }}">
@@ -108,7 +110,7 @@
 
     {{-- 3. Kategori Unggulan --}}
     @if ($shortcutCategories->isNotEmpty())
-        <section class="mt-8">
+        <section class="order-4 mt-8 sm:order-none">
             <div class="mb-3 flex items-end justify-between">
                 <h2 class="text-lg font-bold text-gray-900 sm:text-xl">Kategori Unggulan</h2>
                 <a href="{{ route('products.index') }}" class="text-sm font-medium text-brand-600 hover:underline">Semua kategori →</a>
@@ -131,7 +133,7 @@
     @endif
 
     {{-- Trust bar --}}
-    <section class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <section class="order-5 mt-6 grid grid-cols-2 gap-3 sm:order-none sm:grid-cols-4">
         @foreach ([
             ['Produk Bersertifikat', 'Kualitas tier-1 & bergaransi resmi'],
             ['Konsultasi Teknis', 'Tim ahli PLTS siap membantu'],
@@ -145,8 +147,13 @@
         @endforeach
     </section>
 
-    {{-- 4-6 product carousels --}}
-    <x-product-carousel title="Produk Terpopuler" :products="$featured" :view-all="route('products.index', ['featured' => 1])" />
+    {{-- Produk Terpopuler — di mobile naik ke atas (tepat setelah hero) --}}
+    <div class="order-2 sm:order-none">
+        <x-product-carousel title="Produk Terpopuler" :products="$featured" :view-all="route('products.index', ['featured' => 1])" />
+    </div>
+
+    {{-- Sisa section — urutan sumber dipakai apa adanya di desktop --}}
+    <div class="order-6 sm:order-none">
     <x-product-carousel title="Paket PLTS Populer" subtitle="Solusi lengkap on-grid, off-grid, & hybrid" :products="$packages" :view-all="route('products.index', ['category' => 'paket-plts'])" />
     <x-product-carousel title="Produk Terbaru" :products="$newest" :view-all="route('products.new')" />
 
@@ -258,4 +265,6 @@
             </div>
         </section>
     @endif
+    </div>{{-- /order-6 sisa section --}}
+</div>{{-- /flex wrapper --}}
 @endsection
