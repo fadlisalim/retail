@@ -37,7 +37,7 @@ class AffiliateService
 
     public function defaultRate(): float
     {
-        return (float) $this->settings->get('affiliate.default_rate', 5);
+        return (float) $this->settings->get('affiliate.default_rate', 2.5);
     }
 
     public function minPayout(): float

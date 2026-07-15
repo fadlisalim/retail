@@ -116,8 +116,8 @@ class AffiliateTest extends TestCase
         $order = $this->orderWithItem($affiliate, 1_000_000, null); // no product rate
 
         $svc->recordCommissions($order);
-        // default 5% of 1,000,000 = 50,000
-        $this->assertEquals(50_000, (float) $affiliate->commissions()->first()->amount);
+        // default 2.5% of 1,000,000 = 25,000
+        $this->assertEquals(25_000, (float) $affiliate->commissions()->first()->amount);
     }
 
     public function test_self_referral_is_not_attributed(): void

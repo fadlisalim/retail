@@ -26,7 +26,7 @@ class SettingSeeder extends Seeder
             ['shipping.reservation_minutes', '30', 'integer', 'shipping'],
             // Affiliate program defaults.
             ['affiliate.enabled', '1', 'boolean', 'affiliate'],
-            ['affiliate.default_rate', '5', 'integer', 'affiliate'],       // percent, used when a product has no rate
+            ['affiliate.default_rate', '2.5', 'string', 'affiliate'],      // percent (decimals ok), used when a product has no rate
             ['affiliate.min_payout', '100000', 'integer', 'affiliate'],    // minimum withdrawal (Rp)
             ['affiliate.cookie_days', '30', 'integer', 'affiliate'],       // last-click attribution window
         ];
