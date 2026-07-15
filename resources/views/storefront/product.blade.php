@@ -68,14 +68,6 @@
                     @endforeach
                 </div>
             @endif
-            @if ($product->videos->isNotEmpty())
-                <div class="mt-4">
-                    <p class="mb-1 text-sm font-semibold text-gray-700">Video Produk</p>
-                    @foreach ($product->videos as $video)
-                        <a href="{{ $video->url }}" target="_blank" rel="noopener" class="text-sm text-brand-600 hover:underline">▶ {{ $video->title ?: 'Tonton video' }}</a>
-                    @endforeach
-                </div>
-            @endif
         </div>
 
         {{-- Purchase panel --}}
@@ -160,102 +152,123 @@
                 </div>
             @endif
 
-            {{-- Actions --}}
+            {{-- Actions: one primary CTA + WhatsApp, wishlist/compare as small icons --}}
             <div class="mt-5 flex flex-col gap-2 sm:flex-row">
                 @if ($product->requires_quotation)
                     <a href="{{ route('quotations.create', ['produk' => $product->slug]) }}" class="btn-accent flex-1">Minta Penawaran</a>
                 @elseif ($product->is_purchasable)
-                    <form action="{{ route('cart.store') }}" method="POST" class="flex flex-1 gap-2" @submit="$store.cart.submit($event)">
+                    <form action="{{ route('cart.store') }}" method="POST" class="flex-1" @submit="$store.cart.submit($event)">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
                         <input type="hidden" name="variant_id" :value="variantId">
                         <input type="hidden" name="quantity" :value="qty">
-                        <button type="submit" class="btn-outline flex-1" :disabled="stock <= 0">+ Keranjang</button>
-                        <button type="submit" name="buy_now" value="1" class="btn-primary flex-1" :disabled="stock <= 0">Beli Sekarang</button>
+                        <button type="submit" class="btn-primary w-full" :disabled="stock <= 0">Tambah Keranjang</button>
                     </form>
                 @endif
-            </div>
-            <div class="mt-2 flex flex-wrap gap-2">
                 @if ($whatsappEnabled)
-                    <a href="{{ whatsapp_link($waMsg) }}" target="_blank" rel="noopener" class="btn-outline flex-1 text-green-700">Konsultasi WhatsApp</a>
+                    <a href="{{ whatsapp_link($waMsg) }}" target="_blank" rel="noopener" class="btn-outline flex-1 text-green-700">Tanya WhatsApp</a>
                 @endif
-                <form action="{{ route('wishlist.toggle', $product->slug) }}" method="POST">@csrf<button class="btn-outline" title="Wishlist">♡ Wishlist</button></form>
-                <form action="{{ route('compare.add', $product->slug) }}" method="POST">@csrf<button class="btn-outline" title="Bandingkan">⇄ Bandingkan</button></form>
             </div>
-
-            {{-- Shipping / warranty quick info --}}
-            <dl class="mt-5 space-y-2 border-t border-gray-100 pt-4 text-sm">
-                @if ($product->warranty)<div class="flex gap-2"><dt class="w-32 text-gray-500">Garansi</dt><dd class="font-medium text-gray-700">{{ $product->warranty }}</dd></div>@endif
-                <div class="flex gap-2"><dt class="w-32 text-gray-500">Estimasi proses</dt><dd class="font-medium text-gray-700">{{ $product->estimated_processing ?: '1–3 hari kerja' }}</dd></div>
-                <div class="flex gap-2"><dt class="w-32 text-gray-500">Pengiriman</dt><dd class="font-medium text-gray-700">{{ $product->requires_freight ? 'Kargo / ongkir dikonfirmasi' : 'Reguler & kargo' }}{{ $product->pickup_only ? ' • Ambil di lokasi' : '' }}</dd></div>
-                <div class="flex gap-2"><dt class="w-32 text-gray-500">Berat</dt><dd class="font-medium text-gray-700">{{ number_format($product->weight_grams / 1000, 2) }} kg</dd></div>
-            </dl>
+            <div class="mt-2 flex gap-2 text-sm text-gray-500">
+                <form action="{{ route('wishlist.toggle', $product->slug) }}" method="POST">@csrf<button class="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-gray-50" title="Simpan ke wishlist">♡ Wishlist</button></form>
+                <form action="{{ route('compare.add', $product->slug) }}" method="POST">@csrf<button class="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-gray-50" title="Bandingkan produk">⇄ Bandingkan</button></form>
+            </div>
         </div>
     </div>
 
     {{-- Details tabs --}}
-    <div class="mt-10" x-data="{ tab: 'desc' }">
-        <div class="flex gap-1 overflow-x-auto border-b border-gray-200 text-sm">
-            @foreach (['desc' => 'Deskripsi', 'spec' => 'Spesifikasi', 'bundle' => 'Isi Paket', 'docs' => 'Dokumen', 'shipping' => 'Pengiriman & Retur'] as $key => $label)
-                @if ($key !== 'bundle' || $product->bundleItems->isNotEmpty())
-                    <button @click="tab = '{{ $key }}'" :class="tab === '{{ $key }}' ? 'border-brand-600 text-brand-700' : 'border-transparent text-gray-500'" class="whitespace-nowrap border-b-2 px-4 py-2 font-medium">{{ $label }}</button>
-                @endif
-            @endforeach
-        </div>
-
-        <div class="py-5">
-            <div x-show="tab === 'desc'" class="prose max-w-none text-sm text-gray-700">
+    <div class="mt-10 space-y-10">
+        {{-- Deskripsi --}}
+        <section>
+            <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Deskripsi</h2>
+            <div class="prose max-w-none text-sm text-gray-700">
                 {!! $product->description ?: '<p>'.e($product->short_description).'</p>' !!}
             </div>
+        </section>
 
-            <div x-show="tab === 'spec'" x-cloak>
+        {{-- Spesifikasi --}}
+        @if ($product->attributeValues->isNotEmpty() || $product->specifications)
+            <section>
+                <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Spesifikasi</h2>
                 @if ($product->attributeValues->isNotEmpty())
                     <table class="w-full max-w-2xl text-sm">
                         <tbody>
                             @foreach ($product->attributeValues->sortBy('attribute.sort_order') as $av)
                                 <tr class="border-b border-gray-100">
-                                    <th class="w-1/2 py-2 text-left font-medium text-gray-500">{{ $av->attribute->name }}</th>
-                                    <td class="py-2 text-gray-800">{{ $av->displayValue() }}</td>
+                                    <th class="w-1/2 py-2.5 text-left font-medium text-gray-500">{{ $av->attribute->name }}</th>
+                                    <td class="py-2.5 text-gray-800">{{ $av->displayValue() }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                 @else
-                    <div class="prose max-w-none text-sm text-gray-700">{!! $product->specifications ?: '<p class="text-gray-400">Belum ada spesifikasi teknis.</p>' !!}</div>
+                    <div class="prose max-w-none text-sm text-gray-700">{!! $product->specifications !!}</div>
                 @endif
-            </div>
+            </section>
+        @endif
 
-            @if ($product->bundleItems->isNotEmpty())
-                <div x-show="tab === 'bundle'" x-cloak>
-                    <ul class="divide-y divide-gray-100">
-                        @foreach ($product->bundleItems as $item)
-                            <li class="flex items-center justify-between py-2 text-sm">
-                                <span>{{ $item->component_label ? $item->component_label.': ' : '' }}<a href="{{ route('products.show', $item->component->slug) }}" class="text-brand-600 hover:underline">{{ $item->component->name }}</a></span>
-                                <span class="text-gray-500">{{ $item->quantity }} unit{{ $item->is_replaceable ? ' • dapat diganti' : '' }}</span>
-                            </li>
-                        @endforeach
-                    </ul>
-                    <p class="mt-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-500">Estimasi produksi energi bergantung pada lokasi, cuaca, orientasi, dan kondisi instalasi.</p>
+        {{-- Isi Paket --}}
+        @if ($product->bundleItems->isNotEmpty())
+            <section>
+                <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Isi Paket</h2>
+                <ul class="divide-y divide-gray-100">
+                    @foreach ($product->bundleItems as $item)
+                        <li class="flex items-center justify-between py-2 text-sm">
+                            <span>{{ $item->component_label ? $item->component_label.': ' : '' }}<a href="{{ route('products.show', $item->component->slug) }}" class="text-brand-600 hover:underline">{{ $item->component->name }}</a></span>
+                            <span class="text-gray-500">{{ $item->quantity }} unit{{ $item->is_replaceable ? ' • dapat diganti' : '' }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </section>
+        @endif
+
+        {{-- Dokumen --}}
+        @if ($product->documents->isNotEmpty())
+            <section>
+                <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Dokumen</h2>
+                <ul class="space-y-2">
+                    @foreach ($product->documents as $doc)
+                        <li>
+                            <a href="{{ asset('storage/'.$doc->path) }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-700 transition hover:border-brand-400 hover:text-brand-700">
+                                <svg class="h-5 w-5 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
+                                {{ $doc->title }}
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            </section>
+        @endif
+
+        {{-- Video --}}
+        @if ($product->videos->isNotEmpty())
+            <section>
+                <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Video Produk</h2>
+                <div class="space-y-4">
+                    @foreach ($product->videos as $video)
+                        @php($embed = $video->embedUrl())
+                        @if ($embed)
+                            <div class="mx-auto aspect-video w-full max-w-3xl overflow-hidden rounded-2xl bg-black">
+                                <iframe src="{{ $embed }}" class="h-full w-full" title="{{ $video->title ?: 'Video produk' }}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                            </div>
+                        @else
+                            <a href="{{ $video->url }}" target="_blank" rel="noopener" class="text-sm text-brand-600 hover:underline">▶ {{ $video->title ?: 'Tonton video' }}</a>
+                        @endif
+                    @endforeach
                 </div>
-            @endif
+            </section>
+        @endif
 
-            <div x-show="tab === 'docs'" x-cloak>
-                @if ($product->documents->isNotEmpty())
-                    <ul class="space-y-2">
-                        @foreach ($product->documents as $doc)
-                            <li><a href="{{ asset('storage/'.$doc->path) }}" target="_blank" rel="noopener" class="text-sm text-brand-600 hover:underline">📄 {{ $doc->title }} ({{ ucfirst($doc->type) }})</a></li>
-                        @endforeach
-                    </ul>
-                @else
-                    <p class="text-sm text-gray-400">Belum ada dokumen tersedia.</p>
-                @endif
-            </div>
-
-            <div x-show="tab === 'shipping'" x-cloak class="space-y-3 text-sm text-gray-700">
-                <p><strong>Pengiriman:</strong> {{ $product->requires_freight ? 'Barang besar/berat dikirim via kargo, ongkir dikonfirmasi setelah checkout.' : 'Reguler & kargo, ongkir dihitung otomatis berdasarkan berat & volume.' }}</p>
-                <p><strong>Kebijakan Retur:</strong> Lihat <a href="{{ route('pages.show', 'kebijakan-retur') }}" class="text-brand-600 hover:underline">kebijakan retur</a> kami. {{ $product->requiresConditionAck() ? 'Produk kondisi khusus mengikuti ketentuan pada deskripsi.' : '' }}</p>
-            </div>
-        </div>
+        {{-- Pengiriman & garansi (ringkas) --}}
+        <section>
+            <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Pengiriman &amp; Garansi</h2>
+            <dl class="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                @if ($product->warranty)<div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Garansi</dt><dd class="font-medium text-gray-700">{{ $product->warranty }}</dd></div>@endif
+                <div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Estimasi</dt><dd class="font-medium text-gray-700">{{ $product->estimated_processing ?: '1–3 hari kerja' }}</dd></div>
+                <div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Pengiriman</dt><dd class="font-medium text-gray-700">{{ $product->requires_freight ? 'Kargo (ongkir dikonfirmasi)' : 'Reguler & kargo' }}{{ $product->pickup_only ? ' • Ambil di lokasi' : '' }}</dd></div>
+                <div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Berat</dt><dd class="font-medium text-gray-700">{{ number_format($product->weight_grams / 1000, 2) }} kg</dd></div>
+            </dl>
+            <p class="mt-3 text-xs text-gray-400">Kebijakan retur: lihat <a href="{{ route('pages.show', 'kebijakan-retur') }}" class="text-brand-600 hover:underline">halaman kebijakan retur</a>.</p>
+        </section>
     </div>
 
     {{-- Reviews --}}
