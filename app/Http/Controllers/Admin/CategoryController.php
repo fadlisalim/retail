@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -89,6 +90,8 @@ class CategoryController extends Controller
             'slug' => ['required', 'string', 'max:255', Rule::unique('categories', 'slug')->ignore($category?->id)],
             'icon' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'image' => ['nullable', 'image', 'max:2048'],
+            'remove_image' => ['boolean'],
             'is_featured' => ['boolean'],
             'is_active' => ['boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
@@ -101,7 +104,32 @@ class CategoryController extends Controller
         $data['sort_order'] = (int) ($data['sort_order'] ?? 0);
         $data['parent_id'] = $data['parent_id'] ?? null;
 
+        // Image applies to main (root) categories only — mirrors where it renders on the storefront.
+        if ($data['parent_id'] === null) {
+            if ($request->hasFile('image')) {
+                $this->deleteImage($category);
+                $data['image_path'] = $request->file('image')->store('categories', 'public');
+            } elseif ($request->boolean('remove_image')) {
+                $this->deleteImage($category);
+                $data['image_path'] = null;
+            }
+        } else {
+            // Became a sub-category: drop any stored image so it doesn't linger unused.
+            $this->deleteImage($category);
+            $data['image_path'] = null;
+        }
+
+        unset($data['image'], $data['remove_image']);
+
         return $data;
+    }
+
+    /** Remove the stored category image file (if any) from the public disk. */
+    private function deleteImage(?Category $category): void
+    {
+        if ($category?->image_path) {
+            Storage::disk('public')->delete($category->image_path);
+        }
     }
 
     /** Recompute materialised depth/path from the parent after the row has an id. */
