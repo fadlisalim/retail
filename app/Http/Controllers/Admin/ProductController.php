@@ -98,6 +98,19 @@ class ProductController extends Controller
             ->with('success', 'Produk berhasil dihapus.');
     }
 
+    /** Build a unique SKU from the product name (fallback when the field is blank). */
+    private function generateSku(string $name): string
+    {
+        $base = Str::upper(Str::slug(Str::of($name)->limit(12, '')));
+        $base = preg_replace('/[^A-Z0-9]+/', '-', $base) ?: 'PRD';
+
+        do {
+            $sku = trim($base, '-').'-'.Str::upper(Str::random(4));
+        } while (Product::where('sku', $sku)->exists());
+
+        return $sku;
+    }
+
     /** Category + brand option lists shared by the create/edit forms. */
     private function formOptions(): array
     {
@@ -136,7 +149,7 @@ class ProductController extends Controller
         ]);
 
         $data = $request->validate([
-            'sku' => ['required', 'string', 'max:255', Rule::unique('products', 'sku')->ignore($product?->id)],
+            'sku' => ['nullable', 'string', 'max:255', Rule::unique('products', 'sku')->ignore($product?->id)],
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', Rule::unique('products', 'slug')->ignore($product?->id)],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
@@ -147,8 +160,8 @@ class ProductController extends Controller
             'condition' => ['required', Rule::in(['new', 'open_box', 'display_unit', 'used'])],
             'short_description' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
-            'price' => ['required', 'numeric', 'min:0'],
-            'sale_price' => ['nullable', 'numeric', 'min:0'],
+            'price' => ['required', 'numeric', 'min:0'],           // "Harga Jual"
+            'compare_price' => ['nullable', 'numeric', 'min:0'],   // "Harga Coret" (higher, optional)
             'cost_price' => ['nullable', 'numeric', 'min:0'],
             'affiliate_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'price_includes_tax' => ['boolean'],
@@ -201,6 +214,24 @@ class ProductController extends Controller
 
         if ($data['status'] === 'published' && empty($data['published_at'])) {
             $data['published_at'] = now();
+        }
+
+        // Price model: user enters selling price ("Harga Jual") + optional higher
+        // "Harga Coret". Map to columns: coret -> price (struck), jual -> sale_price.
+        $jual = (float) $data['price'];
+        $coret = $data['compare_price'] ?? null;
+        if ($coret !== null && (float) $coret > $jual) {
+            $data['price'] = (float) $coret;
+            $data['sale_price'] = $jual;
+        } else {
+            $data['price'] = $jual;
+            $data['sale_price'] = null;
+        }
+        unset($data['compare_price']);
+
+        // Auto-generate a SKU when left blank.
+        if (empty($data['sku'])) {
+            $data['sku'] = $this->generateSku($data['name']);
         }
 
         // Inline "new brand": create (or reuse) it and assign, overriding the select.

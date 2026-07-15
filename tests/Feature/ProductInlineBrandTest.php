@@ -48,6 +48,47 @@ class ProductInlineBrandTest extends TestCase
         $this->assertSame($brand->id, Product::where('sku', 'SKU-INLINE-1')->first()->brand_id);
     }
 
+    public function test_compare_price_maps_to_strikethrough_and_sale_price(): void
+    {
+        $this->actingAs($this->staff());
+
+        // Harga Jual 39jt, Harga Coret 45jt → price=45jt (struck), sale_price=39jt (charged).
+        $this->post(route('admin.products.store'), $this->payload([
+            'sku' => 'SKU-PRICE-1', 'price' => 39000000, 'compare_price' => 45000000,
+        ]))->assertRedirect();
+
+        $p = Product::where('sku', 'SKU-PRICE-1')->first();
+        $this->assertEquals(45000000, (float) $p->price);
+        $this->assertEquals(39000000, (float) $p->sale_price);
+        $this->assertTrue($p->isOnSale());
+        $this->assertEquals(39000000, $p->effectivePrice());
+    }
+
+    public function test_no_compare_price_leaves_sale_price_null(): void
+    {
+        $this->actingAs($this->staff());
+
+        $this->post(route('admin.products.store'), $this->payload([
+            'sku' => 'SKU-PRICE-2', 'price' => 10000000,
+        ]))->assertRedirect();
+
+        $p = Product::where('sku', 'SKU-PRICE-2')->first();
+        $this->assertEquals(10000000, (float) $p->price);
+        $this->assertNull($p->sale_price);
+    }
+
+    public function test_sku_is_auto_generated_when_blank(): void
+    {
+        $this->actingAs($this->staff());
+
+        $this->post(route('admin.products.store'), $this->payload([
+            'sku' => '', 'name' => 'Inverter Hybrid 6kW',
+        ]))->assertRedirect();
+
+        $p = Product::where('name', 'Inverter Hybrid 6kW')->first();
+        $this->assertNotEmpty($p->sku);
+    }
+
     public function test_existing_brand_is_reused_not_duplicated(): void
     {
         $this->actingAs($this->staff());
