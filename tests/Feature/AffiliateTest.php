@@ -199,6 +199,7 @@ class AffiliateTest extends TestCase
 
     public function test_customer_can_apply_as_affiliate(): void
     {
+        \Illuminate\Support\Facades\Storage::fake('local');
         $user = $this->customer();
 
         $this->actingAs($user)->post(route('account.affiliate.store'), [
@@ -206,6 +207,9 @@ class AffiliateTest extends TestCase
             'id_number' => '3200000000000001',
             'phone' => '08123456789',
             'address' => 'Jl. Test No. 1',
+            'npwp' => '09.876.543.2-101.000',
+            'ktp_photo' => \Illuminate\Http\UploadedFile::fake()->image('ktp.jpg'),
+            'selfie_photo' => \Illuminate\Http\UploadedFile::fake()->image('selfie.jpg'),
             'bank_name' => 'BCA',
             'bank_account_number' => '9876543210',
             'bank_account_holder' => 'Budi Afiliasi',
@@ -216,5 +220,27 @@ class AffiliateTest extends TestCase
         $this->assertNotNull($affiliate);
         $this->assertSame(AffiliateStatus::Pending, $affiliate->status);
         $this->assertNotEmpty($affiliate->code);
+        // KYC photos stored privately.
+        $this->assertNotNull($affiliate->ktp_photo_path);
+        $this->assertNotNull($affiliate->selfie_photo_path);
+        \Illuminate\Support\Facades\Storage::disk('local')->assertExists($affiliate->ktp_photo_path);
+    }
+
+    public function test_application_requires_npwp_and_photos(): void
+    {
+        $user = $this->customer();
+
+        $this->actingAs($user)->post(route('account.affiliate.store'), [
+            'full_name' => 'Tanpa Dokumen',
+            'id_number' => '3200000000000002',
+            'phone' => '08123456789',
+            'address' => 'Jl. Test No. 2',
+            'bank_name' => 'BCA',
+            'bank_account_number' => '9876543210',
+            'bank_account_holder' => 'Tanpa Dokumen',
+            'agree' => '1',
+        ])->assertSessionHasErrors(['npwp', 'ktp_photo', 'selfie_photo']);
+
+        $this->assertNull($user->fresh()->affiliate);
     }
 }

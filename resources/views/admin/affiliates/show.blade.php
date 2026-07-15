@@ -105,6 +105,37 @@
                 </dl>
             </div>
 
+            {{-- KYC documents (private) --}}
+            <div class="card space-y-3 p-5 text-sm">
+                <h2 class="font-semibold text-gray-900">Dokumen Verifikasi</h2>
+                @if ($affiliate->status->value === 'pending')
+                    <p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">Periksa keaslian KTP, selfie, & NPWP sebelum menyetujui.</p>
+                @endif
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <p class="mb-1 text-xs text-gray-400">Foto KTP</p>
+                        @if ($affiliate->ktp_photo_path)
+                            <a href="{{ route('admin.affiliates.document', [$affiliate, 'ktp']) }}" target="_blank" class="block overflow-hidden rounded-lg border border-gray-200">
+                                <img src="{{ route('admin.affiliates.document', [$affiliate, 'ktp']) }}" alt="KTP" class="h-28 w-full object-cover transition hover:opacity-90">
+                            </a>
+                        @else
+                            <p class="text-gray-400">—</p>
+                        @endif
+                    </div>
+                    <div>
+                        <p class="mb-1 text-xs text-gray-400">Foto Selfie</p>
+                        @if ($affiliate->selfie_photo_path)
+                            <a href="{{ route('admin.affiliates.document', [$affiliate, 'selfie']) }}" target="_blank" class="block overflow-hidden rounded-lg border border-gray-200">
+                                <img src="{{ route('admin.affiliates.document', [$affiliate, 'selfie']) }}" alt="Selfie" class="h-28 w-full object-cover transition hover:opacity-90">
+                            </a>
+                        @else
+                            <p class="text-gray-400">—</p>
+                        @endif
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400">Klik gambar untuk memperbesar. Dokumen bersifat rahasia.</p>
+            </div>
+
             {{-- Bank --}}
             <div class="card space-y-2 p-5 text-sm">
                 <h2 class="font-semibold text-gray-900">Rekening</h2>

@@ -15,7 +15,7 @@
                 <p class="mt-1 text-sm text-gray-500">Lengkapi data berikut. Akun afiliasi aktif setelah diverifikasi admin.</p>
             </div>
 
-            <form action="{{ route('account.affiliate.store') }}" method="POST" class="space-y-5">
+            <form action="{{ route('account.affiliate.store') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
                 @csrf
                 <div class="card space-y-4 p-5">
                     <h2 class="font-semibold text-gray-900">Data Diri</h2>
@@ -25,10 +25,29 @@
                     </div>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <x-form.input name="phone" label="No. HP / WhatsApp" :value="old('phone', $user->phone ?? '')" required />
-                        <x-form.input name="npwp" label="NPWP (opsional)" :value="old('npwp')" />
+                        <x-form.input name="npwp" label="NPWP" :value="old('npwp')" required hint="Wajib. Afiliator harus memiliki NPWP." />
                     </div>
                     <x-form.textarea name="address" label="Alamat" :value="old('address')" rows="2" required />
                     <x-form.input name="channel" label="Channel Promosi (opsional)" :value="old('channel')" placeholder="mis. Instagram @akun, komunitas, website" />
+                </div>
+
+                <div class="card space-y-4 p-5">
+                    <h2 class="font-semibold text-gray-900">Verifikasi Identitas</h2>
+                    <p class="-mt-2 text-xs text-gray-500">Data ini rahasia, hanya dipakai admin untuk verifikasi. Tidak ditampilkan ke publik.</p>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="input-label" for="ktp_photo">Foto KTP <span class="text-red-500">*</span></label>
+                            <input type="file" name="ktp_photo" id="ktp_photo" accept="image/*" class="form-input" required>
+                            @error('ktp_photo')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                            <p class="mt-1 text-xs text-gray-400">Foto KTP jelas & terbaca. Maks 4MB.</p>
+                        </div>
+                        <div>
+                            <label class="input-label" for="selfie_photo">Foto Selfie dengan KTP <span class="text-red-500">*</span></label>
+                            <input type="file" name="selfie_photo" id="selfie_photo" accept="image/*" class="form-input" required>
+                            @error('selfie_photo')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                            <p class="mt-1 text-xs text-gray-400">Selfie sambil memegang KTP. Maks 4MB.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="card space-y-4 p-5">

@@ -14,6 +14,7 @@ class Affiliate extends Model
     protected $fillable = [
         'user_id', 'code', 'status',
         'full_name', 'id_number', 'phone', 'address', 'npwp', 'channel',
+        'ktp_photo_path', 'selfie_photo_path',
         'bank_name', 'bank_account_number', 'bank_account_holder',
         'note', 'verified_at', 'verified_by',
     ];

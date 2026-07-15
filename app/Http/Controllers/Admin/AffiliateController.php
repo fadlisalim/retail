@@ -8,12 +8,28 @@ use App\Models\Affiliate;
 use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\View\View;
 
 class AffiliateController extends Controller
 {
     public function __construct(private readonly NotificationService $notifications)
     {
+    }
+
+    /** Stream a private KYC document (KTP / selfie). Admin-only via the route's permission gate. */
+    public function document(Affiliate $affiliate, string $type): StreamedResponse
+    {
+        $path = match ($type) {
+            'ktp' => $affiliate->ktp_photo_path,
+            'selfie' => $affiliate->selfie_photo_path,
+            default => null,
+        };
+
+        abort_unless($path && Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->response($path);
     }
 
     public function index(Request $request): View

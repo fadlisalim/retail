@@ -54,6 +54,7 @@
             <li>• Komisi cair setelah pesanan berstatus <strong>Selesai</strong> (aman dari retur/pembatalan).</li>
             <li>• Pembelian melalui link sendiri tidak menghasilkan komisi.</li>
             <li>• Minimum penarikan dana <strong>{{ rupiah($minPayout) }}</strong>, dibayar via transfer bank.</li>
+            <li>• Wajib memiliki <strong>NPWP</strong> serta melampirkan foto KTP & selfie untuk verifikasi identitas oleh admin.</li>
         </ul>
     </section>
 @endsection

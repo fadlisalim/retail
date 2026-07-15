@@ -242,6 +242,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/afiliasi/penarikan/{payout}/lunas', [Admin\AffiliatePayoutController::class, 'markPaid'])->name('affiliates.payouts.paid');
         Route::post('/afiliasi/penarikan/{payout}/tolak', [Admin\AffiliatePayoutController::class, 'reject'])->name('affiliates.payouts.reject');
         Route::get('/afiliasi/{affiliate}', [Admin\AffiliateController::class, 'show'])->name('affiliates.show');
+        Route::get('/afiliasi/{affiliate}/dokumen/{type}', [Admin\AffiliateController::class, 'document'])->name('affiliates.document');
         Route::post('/afiliasi/{affiliate}/verifikasi', [Admin\AffiliateController::class, 'verify'])->name('affiliates.verify');
         Route::post('/afiliasi/{affiliate}/tolak', [Admin\AffiliateController::class, 'reject'])->name('affiliates.reject');
         Route::post('/afiliasi/{affiliate}/tangguhkan', [Admin\AffiliateController::class, 'suspend'])->name('affiliates.suspend');
