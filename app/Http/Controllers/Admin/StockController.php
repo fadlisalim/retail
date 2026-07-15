@@ -38,16 +38,32 @@ class StockController extends Controller
     public function adjust(Request $request, Product $product): RedirectResponse
     {
         $data = $request->validate([
-            'delta' => ['required', 'integer', 'not_in:0'],
+            'mode' => ['required', Rule::in(['add', 'subtract', 'set'])],
+            'amount' => ['required', 'integer', 'min:0'],
             'type' => ['required', Rule::in(array_column(StockMovementType::cases(), 'value'))],
             'note' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'amount.required' => 'Isi jumlahnya dulu.',
+            'amount.integer' => 'Jumlah harus berupa angka.',
+            'amount.min' => 'Jumlah tidak boleh negatif.',
         ]);
+
+        $amount = (int) $data['amount'];
+        $delta = match ($data['mode']) {
+            'add' => $amount,
+            'subtract' => -$amount,
+            'set' => $amount - (int) $product->stock,
+        };
+
+        if ($delta === 0) {
+            return back()->with('error', 'Stok tidak berubah (jumlah sama dengan stok saat ini).');
+        }
 
         try {
             app(StockService::class)->adjust(
                 $product,
                 null,
-                (int) $data['delta'],
+                $delta,
                 StockMovementType::from($data['type']),
                 note: $data['note'] ?? null,
                 userId: auth()->id(),
@@ -56,6 +72,6 @@ class StockController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Stok "'.$product->name.'" berhasil disesuaikan.');
+        return back()->with('success', 'Stok "'.$product->name.'" kini '.$product->fresh()->stock.'.');
     }
 }

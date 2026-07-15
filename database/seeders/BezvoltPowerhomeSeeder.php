@@ -2,9 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Enums\StockMovementType;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\WarehouseStock;
+use App\Services\StockService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -82,7 +85,6 @@ HTML;
                 'unit' => 'paket',
                 'is_taxable' => true,
                 'price_includes_tax' => true,
-                'stock' => 5,
                 'weight_grams' => 65000,
                 'requires_freight' => true,
                 'warranty' => 'Garansi resmi 5 tahun',
@@ -102,7 +104,21 @@ HTML;
             ['title' => 'BEZVOLT POWERHOME 6-05'],
         );
 
+        // Set stock through the warehouse ledger (keeps ledger & cache consistent).
+        $this->setStock($product, 5);
+
         $this->command?->info('Produk BEZVOLT POWERHOME 6-05 berhasil ditambahkan/diperbarui (slug: '.$product->slug.').');
         $this->command?->warn('Ingat: upload 4 gambar produk + PDF datasheet lewat Admin → Produk → Edit.');
+    }
+
+    /** Reconcile the warehouse ledger so the product's available stock equals $target. */
+    private function setStock(Product $product, int $target): void
+    {
+        $current = (int) WarehouseStock::where('product_id', $product->id)
+            ->whereNull('product_variant_id')->sum('quantity_available');
+        $delta = $target - $current;
+        if ($delta !== 0) {
+            app(StockService::class)->adjust($product, null, $delta, StockMovementType::Purchase, note: 'Stok awal (seeder)');
+        }
     }
 }

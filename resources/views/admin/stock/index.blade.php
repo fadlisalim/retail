@@ -55,14 +55,19 @@
                             <form action="{{ route('admin.stock.adjust', $product) }}" method="POST"
                                   class="flex flex-wrap items-center gap-2">
                                 @csrf
-                                <input type="number" name="delta" required placeholder="±Qty" class="form-input w-24"
-                                       aria-label="Jumlah penyesuaian">
-                                <select name="type" class="form-select w-44" aria-label="Jenis pergerakan">
+                                <select name="mode" class="form-select w-32" aria-label="Aksi">
+                                    <option value="add">Tambah (+)</option>
+                                    <option value="subtract">Kurangi (−)</option>
+                                    <option value="set">Set ke total</option>
+                                </select>
+                                <input type="number" name="amount" min="0" required placeholder="Jumlah" class="form-input w-24"
+                                       aria-label="Jumlah">
+                                <select name="type" class="form-select w-40" aria-label="Alasan">
                                     @foreach ($types as $type)
                                         <option value="{{ $type->value }}" @selected($type->value === 'adjustment')>{{ $type->label() }}</option>
                                     @endforeach
                                 </select>
-                                <input type="text" name="note" placeholder="Catatan (opsional)" class="form-input w-44"
+                                <input type="text" name="note" placeholder="Catatan (opsional)" class="form-input w-40"
                                        aria-label="Catatan">
                                 <button type="submit" class="btn-primary">Simpan</button>
                             </form>
