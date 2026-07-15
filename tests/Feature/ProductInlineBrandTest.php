@@ -93,6 +93,21 @@ class ProductInlineBrandTest extends TestCase
         $this->assertStringNotContainsString('<th></th>', $p->specifications);
     }
 
+    public function test_products_are_always_purchasable_never_rfq(): void
+    {
+        $this->actingAs($this->staff());
+
+        // Even if the (now-removed) toggles are posted, policy wins.
+        $this->post(route('admin.products.store'), $this->payload([
+            'sku' => 'SKU-POLICY-1', 'is_purchasable' => '0', 'requires_quotation' => '1',
+        ]))->assertRedirect();
+
+        $p = Product::where('sku', 'SKU-POLICY-1')->first();
+        $this->assertTrue((bool) $p->is_purchasable);
+        $this->assertFalse((bool) $p->requires_quotation);
+        $this->assertEquals(1, $p->min_purchase);
+    }
+
     public function test_sku_is_auto_generated_when_blank(): void
     {
         $this->actingAs($this->staff());

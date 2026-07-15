@@ -107,10 +107,6 @@
                     <x-form.input type="number" step="0.01" min="0" max="100" name="affiliate_rate" label="Komisi Afiliasi (%)" :value="$product->affiliate_rate" hint="Kosongkan untuk pakai default." />
                     <x-form.input name="unit" label="Satuan" :value="$product->unit" placeholder="pcs" />
                 </div>
-                <div class="grid gap-3 sm:grid-cols-2">
-                    <x-form.checkbox name="is_taxable" label="Kena pajak (PPN)" :checked="(bool) $product->is_taxable" />
-                    <x-form.checkbox name="price_includes_tax" label="Harga sudah termasuk pajak" :checked="$product->exists ? (bool) $product->price_includes_tax : true" />
-                </div>
             </div>
 
             {{-- Stok, berat & pengiriman --}}
@@ -126,27 +122,16 @@
                     <x-form.input type="number" step="0.01" min="0" name="width_cm" label="Lebar (cm)" :value="$product->width_cm" />
                     <x-form.input type="number" step="0.01" min="0" name="height_cm" label="Tinggi (cm)" :value="$product->height_cm" />
                 </div>
-                <div class="grid gap-3 sm:grid-cols-3">
-                    <x-form.checkbox name="can_combine_package" label="Boleh digabung 1 paket" :checked="(bool) $product->can_combine_package" />
-                    <x-form.checkbox name="requires_freight" label="Wajib kargo" :checked="(bool) $product->requires_freight" />
-                    <x-form.checkbox name="pickup_only" label="Ambil di lokasi saja" :checked="(bool) $product->pickup_only" />
-                </div>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <x-form.input name="warranty" label="Garansi" :value="$product->warranty" placeholder="mis. 12 bulan" />
                     <x-form.input name="estimated_processing" label="Estimasi Proses" :value="$product->estimated_processing" placeholder="mis. 1-3 hari kerja" />
                 </div>
             </div>
 
-            {{-- Pembelian & badge --}}
+            {{-- Badge / Label --}}
             <div class="space-y-4">
-                <h3 class="text-sm font-semibold text-gray-700">Pembelian &amp; Badge</h3>
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <x-form.input type="number" min="1" name="min_purchase" label="Minimal Pembelian" :value="$product->min_purchase" />
-                    <x-form.input type="number" min="1" name="max_purchase" label="Maksimal Pembelian" :value="$product->max_purchase" hint="Kosongkan untuk tanpa batas." />
-                </div>
-                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    <x-form.checkbox name="is_purchasable" label="Dapat dibeli langsung" :checked="$product->exists ? (bool) $product->is_purchasable : true" />
-                    <x-form.checkbox name="requires_quotation" label="Perlu penawaran (RFQ)" :checked="(bool) $product->requires_quotation" />
+                <h3 class="text-sm font-semibold text-gray-700">Badge / Label</h3>
+                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <x-form.checkbox name="is_featured" label="Produk unggulan" :checked="(bool) $product->is_featured" />
                     <x-form.checkbox name="is_new" label="Produk baru" :checked="(bool) $product->is_new" />
                     <x-form.checkbox name="is_promo" label="Promo" :checked="(bool) $product->is_promo" />

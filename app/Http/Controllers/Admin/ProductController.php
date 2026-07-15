@@ -168,8 +168,6 @@ class ProductController extends Controller
             'compare_price' => ['nullable', 'numeric', 'min:0'],   // "Harga Coret" (higher, optional)
             'cost_price' => ['nullable', 'numeric', 'min:0'],
             'affiliate_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'price_includes_tax' => ['boolean'],
-            'is_taxable' => ['boolean'],
             'unit' => ['nullable', 'string', 'max:30'],
             'min_stock' => ['nullable', 'integer', 'min:0'],
             'weight_grams' => ['nullable', 'integer', 'min:0'],
@@ -177,9 +175,6 @@ class ProductController extends Controller
             'width_cm' => ['nullable', 'numeric', 'min:0'],
             'height_cm' => ['nullable', 'numeric', 'min:0'],
             'package_count' => ['nullable', 'integer', 'min:1'],
-            'can_combine_package' => ['boolean'],
-            'requires_freight' => ['boolean'],
-            'pickup_only' => ['boolean'],
             'warranty' => ['nullable', 'string', 'max:255'],
             'estimated_processing' => ['nullable', 'string', 'max:255'],
             'status' => ['required', Rule::in(['draft', 'published', 'archived'])],
@@ -187,10 +182,6 @@ class ProductController extends Controller
             'is_new' => ['boolean'],
             'is_promo' => ['boolean'],
             'is_clearance' => ['boolean'],
-            'is_purchasable' => ['boolean'],
-            'requires_quotation' => ['boolean'],
-            'min_purchase' => ['nullable', 'integer', 'min:1'],
-            'max_purchase' => ['nullable', 'integer', 'min:1'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
             'keywords' => ['nullable', 'string', 'max:500'],
@@ -198,13 +189,22 @@ class ProductController extends Controller
             'initial_stock' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        foreach ([
-            'price_includes_tax', 'is_taxable', 'can_combine_package', 'requires_freight',
-            'pickup_only', 'is_featured', 'is_new', 'is_promo', 'is_clearance',
-            'is_purchasable', 'requires_quotation',
-        ] as $flag) {
+        // Badges are still on the form.
+        foreach (['is_featured', 'is_new', 'is_promo', 'is_clearance'] as $flag) {
             $data[$flag] = $request->boolean($flag);
         }
+
+        // The following toggles were removed from the form — apply fixed policy
+        // (all products purchasable, no RFQ) and preserve other flags on edit.
+        $data['is_purchasable'] = true;
+        $data['requires_quotation'] = false;
+        $data['is_taxable'] = $product?->is_taxable ?? true;
+        $data['price_includes_tax'] = $product?->price_includes_tax ?? true;
+        $data['can_combine_package'] = $product?->can_combine_package ?? true;
+        $data['requires_freight'] = $product?->requires_freight ?? false;
+        $data['pickup_only'] = $product?->pickup_only ?? false;
+        $data['min_purchase'] = $product?->min_purchase ?? 1;
+        $data['max_purchase'] = $product?->max_purchase ?? null;
 
         // Coalesce non-nullable columns so a blank field never writes NULL.
         $data['unit'] = $data['unit'] ?: 'pcs';
@@ -214,7 +214,6 @@ class ProductController extends Controller
         $data['width_cm'] = $data['width_cm'] ?? 0;
         $data['height_cm'] = $data['height_cm'] ?? 0;
         $data['package_count'] = (int) ($data['package_count'] ?? 1);
-        $data['min_purchase'] = (int) ($data['min_purchase'] ?? 1);
 
         if ($data['status'] === 'published' && empty($data['published_at'])) {
             $data['published_at'] = now();
