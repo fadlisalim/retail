@@ -78,7 +78,7 @@ class AffiliateController extends Controller
 
         $data['user_id'] = $user->id;
         $data['status'] = AffiliateStatus::Pending;
-        $data['code'] = $this->affiliates->generateCode($data['full_name']);
+        $data['code'] = $this->affiliates->generateCode();
 
         Affiliate::create($data);
 

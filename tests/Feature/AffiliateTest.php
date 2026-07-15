@@ -237,7 +237,7 @@ class AffiliateTest extends TestCase
         $affiliate = $user->fresh()->affiliate;
         $this->assertNotNull($affiliate);
         $this->assertSame(AffiliateStatus::Pending, $affiliate->status);
-        $this->assertNotEmpty($affiliate->code);
+        $this->assertSame(6, strlen($affiliate->code));
         // KYC photos stored privately.
         $this->assertNotNull($affiliate->ktp_photo_path);
         $this->assertNotNull($affiliate->selfie_photo_path);

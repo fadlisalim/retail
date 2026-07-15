@@ -148,14 +148,11 @@ class AffiliateService
             ->update(['status' => CommissionStatus::Cancelled->value]);
     }
 
-    /** Generate a unique, human-friendly referral code. */
-    public function generateCode(string $seed): string
+    /** Generate a unique 6-char referral code (mixed-case alphanumeric, ~57B combinations). */
+    public function generateCode(): string
     {
-        $base = Str::upper(Str::slug(Str::of($seed)->limit(8, ''), ''));
-        $base = preg_replace('/[^A-Z0-9]/', '', $base) ?: 'REF';
-
         do {
-            $code = $base.Str::upper(Str::random(4));
+            $code = Str::random(6);
         } while (Affiliate::where('code', $code)->exists());
 
         return $code;
