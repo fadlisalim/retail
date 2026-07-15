@@ -17,4 +17,7 @@
 
     {{-- Media (gambar, PDF/datasheet, video) — dikelola terpisah dari form utama --}}
     @include('admin.products._media')
+
+    {{-- Varian produk (harga, stok, gambar per varian) --}}
+    @include('admin.products._variants')
 @endsection

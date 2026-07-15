@@ -36,6 +36,7 @@
     $variantData = $product->variants->map(fn ($v) => [
         'id' => $v->id, 'name' => $v->name, 'price' => $v->effectivePrice(),
         'base' => $v->effectiveBasePrice(), 'stock' => $v->stock, 'options' => $v->option_values,
+        'image' => $v->image_path ? asset('storage/'.$v->image_path) : null,
     ]);
 @endphp
 
@@ -53,6 +54,13 @@
         get price() { return this.current ? this.current.price : this.basePrice },
         get stock() { return this.current ? this.current.stock : {{ $product->stock }} },
         rupiah(n) { return 'Rp ' + Math.round(n).toLocaleString('id-ID') },
+        init() {
+            // Swap the main gallery image when a variant with its own image is picked.
+            this.$watch('variantId', (id) => {
+                const v = this.variants.find(x => x.id === id);
+                if (v && v.image) this.gallery = v.image;
+            });
+        },
     }" class="grid gap-8 lg:grid-cols-2">
 
         {{-- Gallery --}}
