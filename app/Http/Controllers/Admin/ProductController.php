@@ -102,9 +102,29 @@ class ProductController extends Controller
     private function formOptions(): array
     {
         return [
-            'categories' => Category::orderBy('name')->pluck('name', 'id')->all(),
+            'categories' => $this->categoryOptions(),
             'brands' => Brand::orderBy('name')->pluck('name', 'id')->all(),
         ];
+    }
+
+    /**
+     * Hierarchical, tree-ordered category options so parents and their children
+     * are distinguishable, e.g. "Inverter" then "Inverter › Hybrid".
+     */
+    private function categoryOptions(): array
+    {
+        $byParent = Category::orderBy('sort_order')->orderBy('name')->get()->groupBy('parent_id');
+
+        $options = [];
+        $walk = function ($parentId, string $prefix) use (&$walk, $byParent, &$options): void {
+            foreach ($byParent->get($parentId ?? '', collect()) as $cat) {
+                $options[$cat->id] = $prefix.$cat->name;
+                $walk($cat->id, $prefix.$cat->name.' › ');
+            }
+        };
+        $walk(null, '');
+
+        return $options;
     }
 
     private function validated(Request $request, ?Product $product): array
