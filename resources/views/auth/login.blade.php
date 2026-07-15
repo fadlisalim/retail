@@ -12,7 +12,7 @@
 
         <div class="flex items-center justify-between">
             <x-form.checkbox name="remember" label="Ingat saya" />
-            <a href="{{ route('quotations.create') }}" class="text-sm text-gray-400 hover:text-brand-600">Butuh penawaran?</a>
+            <a href="{{ route('password.request') }}" class="text-sm font-medium text-brand-600 hover:underline">Lupa password?</a>
         </div>
 
         <button type="submit" class="btn-primary w-full">Masuk</button>

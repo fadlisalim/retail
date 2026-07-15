@@ -5,12 +5,17 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\AffiliateStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Affiliate;
+use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class AffiliateController extends Controller
 {
+    public function __construct(private readonly NotificationService $notifications)
+    {
+    }
+
     public function index(Request $request): View
     {
         $status = $request->query('status');
@@ -58,6 +63,16 @@ class AffiliateController extends Controller
             'verified_at' => now(),
             'verified_by' => auth()->id(),
         ]);
+
+        $this->notifications->toUser(
+            $affiliate->user,
+            'Akun afiliasi disetujui 🎉',
+            "Selamat! Akun afiliasi Anda sudah aktif. Kode referral Anda: {$affiliate->code}. Mulai bagikan link Anda sekarang.",
+            route('account.affiliate.dashboard'),
+            'info',
+            true,
+            'Buka Dashboard',
+        );
 
         return back()->with('success', "Afiliator {$affiliate->full_name} diverifikasi & diaktifkan.");
     }

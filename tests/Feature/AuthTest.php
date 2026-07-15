@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
@@ -12,6 +14,8 @@ class AuthTest extends TestCase
 
     public function test_customer_can_register(): void
     {
+        Event::fake();
+
         $response = $this->post('/daftar', [
             'name' => 'Budi Santoso',
             'email' => 'budi@test.id',
@@ -20,10 +24,12 @@ class AuthTest extends TestCase
             'password_confirmation' => 'password123',
         ]);
 
-        $response->assertRedirect(route('account.dashboard'));
+        // New accounts must verify their email before the account area unlocks.
+        $response->assertRedirect(route('verification.notice'));
         $this->assertAuthenticated();
         $this->assertDatabaseHas('users', ['email' => 'budi@test.id']);
         $this->assertDatabaseHas('customer_profiles', ['user_id' => User::first()->id]);
+        Event::assertDispatched(Registered::class);
     }
 
     public function test_customer_can_login(): void

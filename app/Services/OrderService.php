@@ -22,6 +22,18 @@ class OrderService
     ) {
     }
 
+    /** Notify the buyer in-app + by email; guests (no account) get email only. */
+    private function notifyCustomer(Order $order, string $title, string $message, string $type): void
+    {
+        $url = route('orders.track', $order->public_token);
+
+        if ($order->user) {
+            $this->notifications->toUser($order->user, $title, $message, $url, $type, true, 'Lihat Pesanan');
+        } else {
+            $this->notifications->toEmail($order->customer_email, $title, $message, $url, 'Lihat Pesanan');
+        }
+    }
+
     public function changeStatus(Order $order, OrderStatus $status, ?User $actor = null, ?string $internalNote = null, ?string $customerNote = null): Order
     {
         return DB::transaction(function () use ($order, $status, $actor, $internalNote, $customerNote) {
@@ -45,13 +57,7 @@ class OrderService
                 'customer_note' => $customerNote,
             ]);
 
-            $this->notifications->toUser(
-                $order->user,
-                'Status pesanan diperbarui',
-                "Pesanan {$order->order_number} kini: {$status->label()}.",
-                route('orders.track', $order->public_token),
-                'order',
-            );
+            $this->notifyCustomer($order, 'Status pesanan diperbarui', "Pesanan {$order->order_number} kini: {$status->label()}.", 'order');
 
             return $order;
         });
@@ -77,13 +83,7 @@ class OrderService
 
             $order->payments()->latest()->first()?->update(['amount' => $order->grand_total]);
 
-            $this->notifications->toUser(
-                $order->user,
-                'Ongkir dikonfirmasi',
-                "Ongkir pesanan {$order->order_number}: ".rupiah($shippingCost).'. Silakan lanjutkan pembayaran.',
-                route('orders.track', $order->public_token),
-                'order',
-            );
+            $this->notifyCustomer($order, 'Ongkir dikonfirmasi', "Ongkir pesanan {$order->order_number}: ".rupiah($shippingCost).'. Silakan lanjutkan pembayaran.', 'order');
 
             return $order;
         });
@@ -117,13 +117,7 @@ class OrderService
                 'customer_note' => 'Pembayaran diterima dan diverifikasi.',
             ]);
 
-            $this->notifications->toUser(
-                $order->user,
-                'Pembayaran diterima',
-                "Pembayaran pesanan {$order->order_number} telah diverifikasi.",
-                route('orders.track', $order->public_token),
-                'payment',
-            );
+            $this->notifyCustomer($order, 'Pembayaran diterima', "Pembayaran pesanan {$order->order_number} telah diverifikasi.", 'payment');
 
             return $order;
         });
@@ -149,13 +143,7 @@ class OrderService
                 'customer_note' => 'Pesanan dibatalkan.',
             ]);
 
-            $this->notifications->toUser(
-                $order->user,
-                'Pesanan dibatalkan',
-                "Pesanan {$order->order_number} telah dibatalkan.",
-                route('orders.track', $order->public_token),
-                'order',
-            );
+            $this->notifyCustomer($order, 'Pesanan dibatalkan', "Pesanan {$order->order_number} telah dibatalkan.", 'order');
 
             return $order;
         });
@@ -183,13 +171,7 @@ class OrderService
                 'customer_note' => 'Pesanan dikirim. No. resi: '.$trackingNumber,
             ]);
 
-            $this->notifications->toUser(
-                $order->user,
-                'Pesanan dikirim',
-                "Pesanan {$order->order_number} sedang dikirim. Resi: {$trackingNumber}.",
-                route('orders.track', $order->public_token),
-                'shipping',
-            );
+            $this->notifyCustomer($order, 'Pesanan dikirim', "Pesanan {$order->order_number} sedang dikirim. Resi: {$trackingNumber}.", 'shipping');
 
             return $order;
         });

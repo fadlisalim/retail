@@ -9,6 +9,7 @@ use App\Services\CartService;
 use App\Services\WishlistService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Password;
@@ -47,6 +48,9 @@ class RegisterController extends Controller
             return $user;
         });
 
+        // Fires SendEmailVerificationNotification (User implements MustVerifyEmail).
+        event(new Registered($user));
+
         Auth::login($user);
         $request->session()->regenerate();
 
@@ -55,6 +59,7 @@ class RegisterController extends Controller
             $wishlist->mergeGuestIntoUser($user->id, $guestToken);
         }
 
-        return redirect()->route('account.dashboard')->with('success', 'Akun berhasil dibuat. Selamat datang di '.brand().'!');
+        return redirect()->route('verification.notice')
+            ->with('success', 'Akun berhasil dibuat. Cek email Anda untuk verifikasi.');
     }
 }

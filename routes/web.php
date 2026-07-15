@@ -3,7 +3,9 @@
 use App\Http\Controllers\Account;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\AffiliateController;
+use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
@@ -137,15 +139,30 @@ Route::middleware('guest')->group(function () {
     Route::post('/masuk', [LoginController::class, 'store'])->middleware('throttle:10,1');
     Route::get('/daftar', [RegisterController::class, 'create'])->name('register');
     Route::post('/daftar', [RegisterController::class, 'store'])->middleware('throttle:10,1');
+
+    // Password reset (forgot password)
+    Route::get('/lupa-password', [PasswordResetController::class, 'showForgot'])->name('password.request');
+    Route::post('/lupa-password', [PasswordResetController::class, 'sendLink'])->middleware('throttle:6,1')->name('password.email');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'showReset'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:6,1')->name('password.update');
 });
 Route::post('/keluar', [LoginController::class, 'destroy'])->middleware('auth')->name('logout');
+
+// Email verification
+Route::middleware('auth')->group(function () {
+    Route::get('/verifikasi-email', [EmailVerificationController::class, 'notice'])->name('verification.notice');
+    Route::get('/verifikasi-email/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware('signed')->name('verification.verify');
+    Route::post('/verifikasi-email/kirim-ulang', [EmailVerificationController::class, 'resend'])
+        ->middleware('throttle:6,1')->name('verification.send');
+});
 
 /*
 |--------------------------------------------------------------------------
 | Customer account
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth')->prefix('akun')->name('account.')->group(function () {
+Route::middleware(['auth', 'verified'])->prefix('akun')->name('account.')->group(function () {
     Route::get('/', [Account\DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profil', [Account\ProfileController::class, 'edit'])->name('profile');
     Route::put('/profil', [Account\ProfileController::class, 'update'])->name('profile.update');

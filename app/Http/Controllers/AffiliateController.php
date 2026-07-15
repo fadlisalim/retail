@@ -6,14 +6,17 @@ use App\Enums\AffiliateStatus;
 use App\Enums\CommissionStatus;
 use App\Models\Affiliate;
 use App\Services\AffiliateService;
+use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class AffiliateController extends Controller
 {
-    public function __construct(private readonly AffiliateService $affiliates)
-    {
+    public function __construct(
+        private readonly AffiliateService $affiliates,
+        private readonly NotificationService $notifications,
+    ) {
     }
 
     /** Public program landing page. */
@@ -66,6 +69,16 @@ class AffiliateController extends Controller
         $data['code'] = $this->affiliates->generateCode($data['full_name']);
 
         Affiliate::create($data);
+
+        $this->notifications->toUser(
+            $user,
+            'Pendaftaran afiliasi diterima',
+            'Terima kasih, pendaftaran afiliasi Anda sedang kami verifikasi. Kami akan memberi tahu setelah disetujui.',
+            route('account.affiliate.dashboard'),
+            'info',
+            true,
+            'Lihat Status',
+        );
 
         return redirect()->route('account.affiliate.dashboard')
             ->with('success', 'Pendaftaran afiliasi terkirim. Data Anda sedang diverifikasi admin.');

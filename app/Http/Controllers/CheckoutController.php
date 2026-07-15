@@ -7,6 +7,7 @@ use App\Services\CartCalculator;
 use App\Services\CartService;
 use App\Services\AffiliateService;
 use App\Services\CheckoutService;
+use App\Services\NotificationService;
 use App\Services\PaymentManager;
 use App\Services\ShippingService;
 use Illuminate\Http\JsonResponse;
@@ -24,6 +25,7 @@ class CheckoutController extends Controller
         private readonly CheckoutService $checkout,
         private readonly PaymentManager $payments,
         private readonly AffiliateService $affiliates,
+        private readonly NotificationService $notifications,
     ) {
     }
 
@@ -97,6 +99,16 @@ class CheckoutController extends Controller
 
         // Attribute the sale to a referring affiliate (last-click cookie), if any.
         $this->affiliates->attributeOrder($order);
+
+        // Order confirmation email (in-app for members, email for guests too).
+        $title = 'Pesanan diterima';
+        $body = "Terima kasih! Pesanan {$order->order_number} sebesar ".rupiah($order->grand_total).' telah kami terima. Silakan selesaikan pembayaran.';
+        $url = route('orders.track', $order->public_token);
+        if ($order->user) {
+            $this->notifications->toUser($order->user, $title, $body, $url, 'order', true, 'Lihat Pesanan');
+        } else {
+            $this->notifications->toEmail($order->customer_email, $title, $body, $url, 'Lihat Pesanan');
+        }
 
         // Initialise the charge (VA number / manual bank instructions).
         $payment = $order->payments()->latest()->first();

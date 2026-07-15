@@ -6,14 +6,17 @@ use App\Enums\PayoutStatus;
 use App\Http\Controllers\Controller;
 use App\Models\AffiliatePayout;
 use App\Services\AffiliateService;
+use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class AffiliatePayoutController extends Controller
 {
-    public function __construct(private readonly AffiliateService $affiliates)
-    {
+    public function __construct(
+        private readonly AffiliateService $affiliates,
+        private readonly NotificationService $notifications,
+    ) {
     }
 
     public function index(Request $request): View
@@ -52,6 +55,16 @@ class AffiliatePayoutController extends Controller
         ]);
 
         $this->affiliates->settlePayout($payout, auth()->id(), $data['reference'] ?? null);
+
+        $this->notifications->toUser(
+            $payout->affiliate->user,
+            'Penarikan dana berhasil',
+            'Penarikan komisi Anda sebesar '.rupiah($payout->amount).' telah ditransfer ke rekening Anda.',
+            route('account.affiliate.dashboard'),
+            'payment',
+            true,
+            'Lihat Dashboard',
+        );
 
         return back()->with('success', 'Penarikan ditandai lunas.');
     }
