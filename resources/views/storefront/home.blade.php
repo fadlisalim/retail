@@ -14,12 +14,24 @@
 @endpush
 
 @section('content')
-    {{-- 1. Hero banner --}}
-    <section class="mt-2" x-data="{ active: 0 }">
+    {{-- 1. Hero slider (auto-advance, arrows + dots) --}}
+    <section class="mt-2">
         @if ($heroBanners->isNotEmpty())
-            <div class="relative overflow-hidden rounded-2xl">
+            <div class="group relative overflow-hidden rounded-2xl"
+                 x-data="{
+                    active: 0,
+                    count: {{ $heroBanners->count() }},
+                    timer: null,
+                    go(i) { this.active = (i + this.count) % this.count; },
+                    next() { this.go(this.active + 1); },
+                    prev() { this.go(this.active - 1); },
+                    start() { if (this.count > 1) this.timer = setInterval(() => this.next(), 6000); },
+                    stop() { clearInterval(this.timer); },
+                 }"
+                 x-init="start()"
+                 @mouseenter="stop()" @mouseleave="start()">
                 @foreach ($heroBanners as $i => $banner)
-                    <div x-show="active === {{ $i }}" x-transition class="relative">
+                    <div x-show="active === {{ $i }}" x-transition.opacity.duration.500ms class="relative" @if ($i !== 0) style="display:none" @endif>
                         @if ($banner->image_desktop_path)
                             {{-- Image banner: uploaded artwork as the hero, optional text overlay + link --}}
                             <a @if ($banner->button_url) href="{{ $banner->button_url }}" @endif class="relative block">
@@ -27,7 +39,7 @@
                                     @if ($banner->image_mobile_path)
                                         <source media="(max-width: 640px)" srcset="{{ asset('storage/'.$banner->image_mobile_path) }}">
                                     @endif
-                                    <img src="{{ asset('storage/'.$banner->image_desktop_path) }}" alt="{{ $banner->title ?: 'Banner' }}" class="h-52 w-full object-cover sm:h-80">
+                                    <img src="{{ asset('storage/'.$banner->image_desktop_path) }}" alt="{{ $banner->title ?: 'Banner' }}" class="h-52 w-full object-cover sm:h-96">
                                 </picture>
                                 @if ($banner->title || $banner->description)
                                     <div class="absolute inset-0 flex flex-col justify-center gap-2 bg-gradient-to-r from-black/60 via-black/25 to-transparent p-6 text-white sm:p-12">
@@ -42,7 +54,7 @@
                             </a>
                         @else
                             {{-- No image: gradient + text --}}
-                            <div class="flex min-h-[220px] flex-col justify-center gap-3 bg-gradient-to-r from-brand-700 to-brand-500 p-6 text-white sm:min-h-[320px] sm:p-12">
+                            <div class="flex min-h-[220px] flex-col justify-center gap-3 bg-gradient-to-r from-brand-700 to-brand-500 p-6 text-white sm:min-h-[384px] sm:p-12">
                                 <span class="text-xs font-semibold uppercase tracking-wide text-accent-300">{{ $banner->subtitle }}</span>
                                 <h1 class="max-w-xl text-2xl font-extrabold sm:text-4xl">{{ $banner->title }}</h1>
                                 <p class="max-w-lg text-sm text-brand-50 sm:text-base">{{ $banner->description }}</p>
@@ -54,9 +66,19 @@
                     </div>
                 @endforeach
                 @if ($heroBanners->count() > 1)
+                    {{-- Prev / next arrows (appear on hover, always tappable on mobile) --}}
+                    <button type="button" @click="prev()" aria-label="Banner sebelumnya"
+                            class="absolute left-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/80 text-gray-800 shadow transition hover:bg-white sm:opacity-0 sm:group-hover:opacity-100">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+                    </button>
+                    <button type="button" @click="next()" aria-label="Banner berikutnya"
+                            class="absolute right-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/80 text-gray-800 shadow transition hover:bg-white sm:opacity-0 sm:group-hover:opacity-100">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+                    </button>
+                    {{-- Dots --}}
                     <div class="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
                         @foreach ($heroBanners as $i => $b)
-                            <button @click="active = {{ $i }}" :class="active === {{ $i }} ? 'bg-white' : 'bg-white/50'" class="h-2 w-2 rounded-full" aria-label="Banner {{ $i + 1 }}"></button>
+                            <button type="button" @click="go({{ $i }})" :class="active === {{ $i }} ? 'w-6 bg-white' : 'w-2 bg-white/60'" class="h-2 rounded-full transition-all" aria-label="Banner {{ $i + 1 }}"></button>
                         @endforeach
                     </div>
                 @endif
@@ -100,16 +122,24 @@
         </section>
     @endif
 
-    {{-- 3. Category shortcuts --}}
+    {{-- 3. Kategori Unggulan --}}
     @if ($shortcutCategories->isNotEmpty())
-        <section class="mt-6">
+        <section class="mt-8">
+            <div class="mb-3 flex items-end justify-between">
+                <h2 class="text-lg font-bold text-gray-900 sm:text-xl">Kategori Unggulan</h2>
+                <a href="{{ route('products.index') }}" class="text-sm font-medium text-brand-600 hover:underline">Semua kategori →</a>
+            </div>
             <div class="grid grid-cols-3 gap-3 sm:grid-cols-6">
                 @foreach ($shortcutCategories as $cat)
-                    <a href="{{ route('categories.show', $cat->slug) }}" class="card flex flex-col items-center gap-2 p-3 text-center transition hover:border-brand-400 hover:shadow">
-                        <span class="grid h-12 w-12 place-items-center rounded-full bg-brand-50 text-brand-600">
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+                    <a href="{{ route('categories.show', $cat->slug) }}" class="card group flex flex-col items-center gap-2 p-3 text-center transition hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md">
+                        <span class="grid h-14 w-14 place-items-center overflow-hidden rounded-full bg-brand-50 text-brand-600 transition group-hover:bg-brand-100">
+                            @if ($cat->image_path ?? false)
+                                <img src="{{ asset('storage/'.$cat->image_path) }}" alt="{{ $cat->name }}" class="h-full w-full object-cover">
+                            @else
+                                <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+                            @endif
                         </span>
-                        <span class="text-xs font-medium text-gray-700">{{ $cat->name }}</span>
+                        <span class="line-clamp-2 text-xs font-medium text-gray-700">{{ $cat->name }}</span>
                     </a>
                 @endforeach
             </div>
@@ -121,7 +151,7 @@
         @foreach ([
             ['Produk Bersertifikat', 'Kualitas tier-1 & bergaransi resmi'],
             ['Konsultasi Teknis', 'Tim ahli PLTS siap membantu'],
-            ['Harga Transparan', 'Termasuk info PPN & ongkir'],
+            ['Harga Transparan', 'Harga sudah termasuk pajak'],
             ['Layanan Instalasi', 'Survei & pemasangan profesional'],
         ] as [$t, $d])
             <div class="card flex items-start gap-2 p-3">
@@ -131,10 +161,10 @@
         @endforeach
     </section>
 
-    {{-- 4-6 product rows --}}
-    <x-product-row title="Produk Pilihan" :products="$featured" :view-all="route('products.index', ['featured' => 1])" />
-    <x-product-row title="Paket PLTS Populer" subtitle="Solusi lengkap on-grid, off-grid, & hybrid" :products="$packages" :view-all="route('products.index', ['category' => 'paket-plts'])" />
-    <x-product-row title="Produk Terbaru" :products="$newest" :view-all="route('products.new')" />
+    {{-- 4-6 product carousels --}}
+    <x-product-carousel title="Produk Terpopuler" :products="$featured" :view-all="route('products.index', ['featured' => 1])" />
+    <x-product-carousel title="Paket PLTS Populer" subtitle="Solusi lengkap on-grid, off-grid, & hybrid" :products="$packages" :view-all="route('products.index', ['category' => 'paket-plts'])" />
+    <x-product-carousel title="Produk Terbaru" :products="$newest" :view-all="route('products.new')" />
 
     {{-- Video section (YouTube landscape/portrait) --}}
     @if ($videoBanners->isNotEmpty())
@@ -158,27 +188,33 @@
         </section>
     @endif
 
-    {{-- 7. Promo & clearance banner + row --}}
-    <x-product-row title="Promo & Clearance" :products="$promos" :view-all="route('promo')" />
+    {{-- 7. Promo & clearance --}}
+    <x-product-carousel title="Promo & Clearance" :products="$promos" :view-all="route('promo')" />
 
     {{-- 8. Project surplus --}}
-    <x-product-row title="Barang Sisa Proyek" subtitle="Kondisi jelas, harga hemat" :products="$surplus" :view-all="route('surplus')" />
+    <x-product-carousel title="Barang Sisa Proyek" subtitle="Kondisi jelas, harga hemat" :products="$surplus" :view-all="route('surplus')" />
 
-    {{-- 9. Brands --}}
+    {{-- 9. Brand Terpopuler --}}
     @if ($brands->isNotEmpty())
-        <section class="mt-8">
-            <h2 class="mb-3 text-lg font-bold text-gray-900 sm:text-xl">Belanja Berdasarkan Brand</h2>
+        <section class="mt-10">
+            <h2 class="mb-3 text-lg font-bold text-gray-900 sm:text-xl">Brand Terpopuler</h2>
             <div class="grid grid-cols-3 gap-3 sm:grid-cols-6">
                 @foreach ($brands as $brand)
-                    <a href="{{ route('brands.show', $brand->slug) }}" class="card grid place-items-center p-4 text-center text-sm font-semibold text-gray-600 transition hover:border-brand-400 hover:text-brand-700">{{ $brand->name }}</a>
+                    <a href="{{ route('brands.show', $brand->slug) }}" class="card grid h-20 place-items-center p-4 text-center transition hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md">
+                        @if ($brand->logo_path ?? false)
+                            <img src="{{ asset('storage/'.$brand->logo_path) }}" alt="{{ $brand->name }}" class="max-h-12 max-w-full object-contain">
+                        @else
+                            <span class="text-sm font-semibold text-gray-600 transition group-hover:text-brand-700">{{ $brand->name }}</span>
+                        @endif
+                    </a>
                 @endforeach
             </div>
         </section>
     @endif
 
     {{-- 10-11 most viewed / top rated --}}
-    <x-product-row title="Paling Banyak Dilihat" :products="$mostViewed" />
-    <x-product-row title="Rating Terbaik" :products="$topRated" />
+    <x-product-carousel title="Paling Banyak Dilihat" :products="$mostViewed" />
+    <x-product-carousel title="Rating Terbaik" :products="$topRated" />
 
     {{-- 13. Services / consultation --}}
     <section class="mt-10 grid gap-4 rounded-2xl bg-gray-900 p-6 text-white sm:grid-cols-2 sm:p-10">
