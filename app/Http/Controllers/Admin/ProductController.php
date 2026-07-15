@@ -155,6 +155,10 @@ class ProductController extends Controller
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
             'new_brand' => ['nullable', 'string', 'max:255'],
+            'spec_key' => ['nullable', 'array'],
+            'spec_key.*' => ['nullable', 'string', 'max:255'],
+            'spec_value' => ['nullable', 'array'],
+            'spec_value.*' => ['nullable', 'string', 'max:1000'],
             'model' => ['nullable', 'string', 'max:255'],
             'product_type' => ['required', Rule::in(['simple', 'variable', 'bundle', 'service'])],
             'condition' => ['required', Rule::in(['new', 'open_box', 'display_unit', 'used'])],
@@ -233,6 +237,21 @@ class ProductController extends Controller
         if (empty($data['sku'])) {
             $data['sku'] = $this->generateSku($data['name']);
         }
+
+        // Build the specifications HTML table from the atribut/nilai rows.
+        $keys = $request->input('spec_key', []);
+        $values = $request->input('spec_value', []);
+        $rows = [];
+        foreach ($keys as $i => $key) {
+            $key = trim((string) $key);
+            $val = trim((string) ($values[$i] ?? ''));
+            if ($key === '' && $val === '') {
+                continue;
+            }
+            $rows[] = '<tr><th>'.e($key).'</th><td>'.e($val).'</td></tr>';
+        }
+        $data['specifications'] = $rows ? '<table><tbody>'.implode('', $rows).'</tbody></table>' : null;
+        unset($data['spec_key'], $data['spec_value']);
 
         // Inline "new brand": create (or reuse) it and assign, overriding the select.
         if ($request->filled('new_brand')) {

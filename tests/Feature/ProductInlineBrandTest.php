@@ -77,6 +77,22 @@ class ProductInlineBrandTest extends TestCase
         $this->assertNull($p->sale_price);
     }
 
+    public function test_specifications_built_from_rows(): void
+    {
+        $this->actingAs($this->staff());
+
+        $this->post(route('admin.products.store'), $this->payload([
+            'sku' => 'SKU-SPEC-1',
+            'spec_key' => ['Daya Output', 'Tegangan', ''],       // last row blank → skipped
+            'spec_value' => ['6000 W', '51.2 V', ''],
+        ]))->assertRedirect();
+
+        $p = Product::where('sku', 'SKU-SPEC-1')->first();
+        $this->assertStringContainsString('<th>Daya Output</th><td>6000 W</td>', $p->specifications);
+        $this->assertStringContainsString('<th>Tegangan</th><td>51.2 V</td>', $p->specifications);
+        $this->assertStringNotContainsString('<th></th>', $p->specifications);
+    }
+
     public function test_sku_is_auto_generated_when_blank(): void
     {
         $this->actingAs($this->staff());

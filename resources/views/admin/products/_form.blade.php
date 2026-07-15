@@ -6,6 +6,18 @@
     // Friendly price model: "Harga Jual" (what the customer pays) + optional "Harga Coret".
     $sellPrice = $product->isOnSale() ? $product->sale_price : $product->price;
     $comparePrice = $product->isOnSale() ? $product->price : null;
+
+    // Parse existing specifications HTML table back into editable rows.
+    $specRows = [];
+    if ($product->specifications) {
+        preg_match_all('/<tr>\s*<th>(.*?)<\/th>\s*<td>(.*?)<\/td>\s*<\/tr>/s', $product->specifications, $m, PREG_SET_ORDER);
+        foreach ($m as $row) {
+            $specRows[] = ['key' => html_entity_decode(strip_tags($row[1])), 'value' => html_entity_decode(strip_tags($row[2]))];
+        }
+    }
+    if (empty($specRows)) {
+        $specRows = [['key' => '', 'value' => '']];
+    }
 @endphp
 
 <div class="space-y-6">
@@ -41,6 +53,26 @@
         @unless ($product->exists)
             <x-form.input type="number" min="0" name="initial_stock" label="Stok Awal" value="0" hint="Jumlah stok saat ini. Bisa diubah lewat menu Stok." />
         @endunless
+    </div>
+
+    {{-- Spesifikasi teknis (baris atribut/nilai → tabel) --}}
+    <div class="card space-y-3 p-5" x-data="{ rows: {{ Illuminate\Support\Js::from($specRows) }} }">
+        <div>
+            <h2 class="font-semibold text-gray-900">Spesifikasi Teknis</h2>
+            <p class="text-xs text-gray-400">Isi atribut &amp; nilai. Tampil sebagai tabel di tab "Spesifikasi" halaman produk.</p>
+        </div>
+        <div class="space-y-2">
+            <template x-for="(row, i) in rows" :key="i">
+                <div class="flex items-center gap-2">
+                    <input type="text" :name="`spec_key[${i}]`" x-model="row.key" placeholder="Atribut (cth: Daya Output)" class="form-input flex-1">
+                    <input type="text" :name="`spec_value[${i}]`" x-model="row.value" placeholder="Nilai (cth: 6000 W)" class="form-input flex-1">
+                    <button type="button" @click="rows.splice(i, 1)" class="shrink-0 rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600" aria-label="Hapus baris">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
+                    </button>
+                </div>
+            </template>
+        </div>
+        <button type="button" @click="rows.push({ key: '', value: '' })" class="btn-outline text-sm">+ Tambah baris</button>
     </div>
 
     {{-- ===== Advanced (collapsed) ===== --}}
