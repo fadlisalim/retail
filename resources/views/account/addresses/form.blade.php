@@ -17,7 +17,15 @@
             <h1 class="text-xl font-bold text-gray-800">{{ $address->exists ? 'Ubah Alamat' : 'Tambah Alamat' }}</h1>
 
             <section class="card p-6">
-                <form action="{{ $address->exists ? route('account.addresses.update', $address) : route('account.addresses.store') }}" method="POST" class="grid gap-4 sm:grid-cols-2">
+                <form action="{{ $address->exists ? route('account.addresses.update', $address) : route('account.addresses.store') }}" method="POST" class="grid gap-4 sm:grid-cols-2"
+                      x-data="{
+                          citiesByProvince: {{ Illuminate\Support\Js::from($citiesByProvince) }},
+                          province: @js(old('province', $address->province)),
+                          city: @js(old('city', $address->city)),
+                          get provinceList() { return Object.keys(this.citiesByProvince) },
+                          get availableCities() { return this.citiesByProvince[this.province] || [] },
+                          onProvinceChange() { if (!this.availableCities.includes(this.city)) this.city = '' },
+                      }">
                     @csrf
                     @if ($address->exists)
                         @method('PUT')
@@ -32,11 +40,27 @@
                     <x-form.input name="company_name" label="Nama Perusahaan" :value="$address->company_name" />
 
                     <x-form.input name="npwp" label="NPWP" :value="$address->npwp" />
-                    <x-form.input name="province" label="Provinsi" :value="$address->province" required />
 
-                    <x-form.input name="city" label="Kota / Kabupaten" :value="$address->city" required />
+                    {{-- Provinsi & Kota mengacu data Indah Cargo agar ongkir bisa dihitung. --}}
+                    <div>
+                        <label class="input-label" for="province">Provinsi <span class="text-red-500">*</span></label>
+                        <select id="province" name="province" required x-model="province" @change="onProvinceChange" class="form-select">
+                            <option value="">— Pilih provinsi —</option>
+                            <template x-for="prov in provinceList" :key="prov"><option :value="prov" x-text="prov"></option></template>
+                        </select>
+                        @error('province')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="input-label" for="city">Kota / Kabupaten <span class="text-red-500">*</span></label>
+                        <select id="city" name="city" required x-model="city" class="form-select" :disabled="!province">
+                            <option value="">— Pilih kota/kabupaten —</option>
+                            <template x-for="c in availableCities" :key="c"><option :value="c" x-text="c"></option></template>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-400" x-show="!province">Pilih provinsi dulu.</p>
+                        @error('city')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
                     <x-form.input name="district" label="Kecamatan" :value="$address->district" />
-
                     <x-form.input name="subdistrict" label="Kelurahan / Desa" :value="$address->subdistrict" />
                     <x-form.input name="postal_code" label="Kode Pos" :value="$address->postal_code" />
 

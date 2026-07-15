@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Account;
 
 use App\Http\Controllers\Controller;
 use App\Models\CustomerAddress;
+use App\Models\IndahCargoRate;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,10 @@ class AddressController extends Controller
 
     public function create(): View
     {
-        return view('account.addresses.form', ['address' => new CustomerAddress()]);
+        return view('account.addresses.form', [
+            'address' => new CustomerAddress(),
+            'citiesByProvince' => IndahCargoRate::citiesByProvince(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -34,7 +38,10 @@ class AddressController extends Controller
     {
         $this->authorizeAddress($alamat);
 
-        return view('account.addresses.form', ['address' => $alamat]);
+        return view('account.addresses.form', [
+            'address' => $alamat,
+            'citiesByProvince' => IndahCargoRate::citiesByProvince(),
+        ]);
     }
 
     public function update(Request $request, CustomerAddress $alamat): RedirectResponse
@@ -62,7 +69,12 @@ class AddressController extends Controller
             'company_name' => ['nullable', 'string', 'max:150'],
             'npwp' => ['nullable', 'string', 'max:30'],
             'province' => ['required', 'string', 'max:100'],
-            'city' => ['required', 'string', 'max:100'],
+            'city' => ['required', 'string', 'max:100', function ($attribute, $value, $fail) use ($request) {
+                $cities = IndahCargoRate::citiesByProvince()[$request->input('province')] ?? [];
+                if (! in_array($value, $cities, true)) {
+                    $fail('Kota/kabupaten harus dipilih dari daftar (sesuai jangkauan Indah Cargo).');
+                }
+            }],
             'district' => ['nullable', 'string', 'max:100'],
             'subdistrict' => ['nullable', 'string', 'max:100'],
             'postal_code' => ['nullable', 'string', 'max:10'],

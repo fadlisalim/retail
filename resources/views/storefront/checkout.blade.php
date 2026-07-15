@@ -22,67 +22,44 @@
                         <x-form.input name="customer_email" label="Email" type="email" required :value="auth()->user()?->email" />
                         <x-form.input name="customer_phone" label="No. HP / WhatsApp" required :value="auth()->user()?->whatsapp" />
                     </div>
-                    @guest
-                        <p class="mt-2 text-xs text-gray-400">Sudah punya akun? <a href="{{ route('login') }}" class="text-brand-600 underline">Masuk</a> untuk checkout lebih cepat.</p>
-                    @endguest
                 </section>
 
-                {{-- Address --}}
+                {{-- Address: only a saved shipping address may be used (Indah-valid). --}}
                 <section class="card p-4">
-                    <h2 class="mb-3 font-semibold text-gray-800">2. Alamat Pengiriman</h2>
+                    <div class="mb-3 flex items-center justify-between">
+                        <h2 class="font-semibold text-gray-800">2. Alamat Pengiriman</h2>
+                        <a href="{{ route('account.addresses.create') }}" class="text-sm font-medium text-brand-600 hover:underline">+ Tambah Alamat</a>
+                    </div>
+                    <input type="hidden" name="address_id" x-model="addressId">
                     @if ($addresses->isNotEmpty())
-                        <div class="mb-3 space-y-2">
+                        <div class="space-y-2">
                             @foreach ($addresses as $addr)
-                                <label class="flex cursor-pointer items-start gap-2 rounded-lg border border-gray-200 p-2 text-sm hover:border-brand-400">
-                                    <input type="radio" name="saved_address" class="mt-1"
-                                           @change="fillAddress({{ Illuminate\Support\Js::from([
-                                               'recipient_name' => $addr->recipient_name, 'recipient_phone' => $addr->phone,
-                                               'company_name' => $addr->company_name, 'npwp' => $addr->npwp,
-                                               'province' => $addr->province, 'city' => $addr->city, 'district' => $addr->district,
-                                               'subdistrict' => $addr->subdistrict, 'postal_code' => $addr->postal_code,
-                                               'address_line' => $addr->address_line, 'landmark' => $addr->landmark,
-                                           ]) }})">
-                                    <span><strong>{{ $addr->label }}</strong> — {{ $addr->recipient_name }}<br><span class="text-gray-500">{{ $addr->fullAddress() }}</span></span>
+                                <label class="flex cursor-pointer items-start gap-2 rounded-lg border p-3 text-sm"
+                                       :class="addressId == {{ $addr->id }} ? 'border-brand-500 bg-brand-50' : 'border-gray-200 hover:border-brand-400'">
+                                    <input type="radio" name="address_choice" class="mt-1" value="{{ $addr->id }}" @checked($addr->is_default)
+                                           @change="selectAddress({{ $addr->id }}, {{ Illuminate\Support\Js::from($addr->province) }}, {{ Illuminate\Support\Js::from($addr->city) }})">
+                                    <span>
+                                        <strong>{{ $addr->label }}</strong> — {{ $addr->recipient_name }}
+                                        @if ($addr->phone)<span class="text-gray-400">• {{ $addr->phone }}</span>@endif
+                                        <br><span class="text-gray-500">{{ $addr->fullAddress() }}</span>
+                                    </span>
                                 </label>
                             @endforeach
                         </div>
+                        <p class="mt-2 text-xs text-gray-400">Alamat diambil dari akun Anda. <a href="{{ route('account.addresses.index') }}" class="text-brand-600 hover:underline">Kelola alamat</a>.</p>
+                    @else
+                        <div class="rounded-lg border border-dashed border-gray-300 p-6 text-center">
+                            <p class="text-sm text-gray-500">Anda belum punya alamat pengiriman tersimpan.</p>
+                            <p class="mt-1 text-xs text-gray-400">Tambah alamat dulu (provinsi &amp; kota mengikuti jangkauan Indah Cargo) agar ongkir bisa dihitung.</p>
+                            <a href="{{ route('account.addresses.create') }}" class="btn-primary mt-3">Tambah Alamat</a>
+                        </div>
                     @endif
-                    <div class="grid gap-3 sm:grid-cols-2">
-                        <x-form.input name="recipient_name" label="Nama Penerima" required x-model="addr.recipient_name" />
-                        <x-form.input name="recipient_phone" label="No. Telepon Penerima" x-model="addr.recipient_phone" />
-                        <x-form.input name="company_name" label="Nama Perusahaan (opsional)" x-model="addr.company_name" />
-                        <x-form.input name="npwp" label="NPWP (opsional)" x-model="addr.npwp" />
-                        <div>
-                            <label class="input-label" for="province">Provinsi <span class="text-red-500">*</span></label>
-                            <select id="province" name="province" required x-model="addr.province" @change="onProvinceChange" class="form-select">
-                                <option value="">— Pilih provinsi —</option>
-                                <template x-for="prov in provinceList" :key="prov"><option :value="prov" x-text="prov"></option></template>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="input-label" for="city">Kota/Kabupaten <span class="text-red-500">*</span></label>
-                            <select id="city" name="city" required x-model="addr.city" @change="loadShipping" class="form-select" :disabled="!addr.province">
-                                <option value="">— Pilih kota/kabupaten —</option>
-                                <template x-for="c in availableCities" :key="c"><option :value="c" x-text="c"></option></template>
-                            </select>
-                            <p class="mt-1 text-xs text-gray-400" x-show="!addr.province">Pilih provinsi dulu untuk melihat daftar kota.</p>
-                        </div>
-                        <x-form.input name="district" label="Kecamatan" x-model="addr.district" />
-                        <x-form.input name="subdistrict" label="Kelurahan" x-model="addr.subdistrict" />
-                        <x-form.input name="postal_code" label="Kode Pos" x-model="addr.postal_code" />
-                    </div>
-                    <div class="mt-3">
-                        <x-form.textarea name="address_line" label="Alamat Lengkap" required rows="2" x-model="addr.address_line" />
-                    </div>
-                    <div class="mt-3">
-                        <x-form.input name="landmark" label="Patokan (opsional)" x-model="addr.landmark" />
-                    </div>
                 </section>
 
                 {{-- Shipping --}}
                 <section class="card p-4">
                     <h2 class="mb-3 font-semibold text-gray-800">3. Pengiriman</h2>
-                    <p x-show="!shippingOptions.length" class="text-sm text-gray-400">Isi provinsi untuk melihat opsi pengiriman.</p>
+                    <p x-show="!shippingOptions.length" class="text-sm text-gray-400">Pilih alamat pengiriman untuk melihat opsi &amp; ongkir.</p>
                     <div class="space-y-2" x-show="shippingOptions.length">
                         <template x-for="opt in shippingOptions" :key="opt.provider_code + opt.service_code">
                             <label class="flex cursor-pointer items-center justify-between rounded-lg border border-gray-200 p-3 text-sm hover:border-brand-400">
@@ -164,23 +141,23 @@
 <script>
 function checkout(baseSubtotal, tax) {
     return {
-        addr: { recipient_name: @js(auth()->user()?->name), recipient_phone: '', company_name: '', npwp: '', province: '', city: '', district: '', subdistrict: '', postal_code: '', address_line: '', landmark: '' },
+        addressId: @js($defaultAddress?->id ?? ''),
+        addr: { province: @js($defaultAddress?->province ?? ''), city: @js($defaultAddress?->city ?? '') },
         shippingOptions: [], loadingShipping: false,
         shippingProvider: '', shippingService: '', shippingCost: 0, shippingPacking: 0, shippingExtra: 0, shippingConfirmed: true, shippingWeight: 0,
         submitting: false,
         baseSubtotal, tax,
-        citiesByProvince: @js($citiesByProvince),
-        get provinceList() { return Object.keys(this.citiesByProvince) },
-        get availableCities() { return this.citiesByProvince[this.addr.province] || [] },
-        onProvinceChange() {
-            // Drop a city that doesn't belong to the newly chosen province, then re-quote.
-            if (! this.availableCities.includes(this.addr.city)) this.addr.city = '';
-            this.loadShipping();
-        },
+        init() { if (this.addr.province) this.loadShipping(); },
         get shippingTotal() { return this.shippingCost + this.shippingPacking + this.shippingExtra },
         get grandTotal() { return this.baseSubtotal + this.tax + (this.shippingConfirmed ? this.shippingTotal : 0) },
         rupiah(n) { return 'Rp ' + Math.round(n).toLocaleString('id-ID') },
-        fillAddress(a) { this.addr = Object.assign(this.addr, a); this.loadShipping() },
+        selectAddress(id, province, city) {
+            this.addressId = id;
+            this.addr.province = province;
+            this.addr.city = city;
+            this.shippingProvider = ''; this.shippingService = ''; this.shippingCost = 0; this.shippingPacking = 0; this.shippingExtra = 0;
+            this.loadShipping();
+        },
         async loadShipping() {
             if (!this.addr.province) return;
             this.loadingShipping = true;

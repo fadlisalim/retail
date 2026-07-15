@@ -3,12 +3,13 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class CheckoutRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user() !== null;
     }
 
     public function rules(): array
@@ -18,17 +19,8 @@ class CheckoutRequest extends FormRequest
             'customer_email' => ['required', 'email', 'max:191'],
             'customer_phone' => ['required', 'string', 'max:30'],
 
-            'recipient_name' => ['required', 'string', 'max:150'],
-            'recipient_phone' => ['nullable', 'string', 'max:30'],
-            'company_name' => ['nullable', 'string', 'max:150'],
-            'npwp' => ['nullable', 'string', 'max:30'],
-            'province' => ['required', 'string', 'max:100'],
-            'city' => ['required', 'string', 'max:100'],
-            'district' => ['nullable', 'string', 'max:100'],
-            'subdistrict' => ['nullable', 'string', 'max:100'],
-            'postal_code' => ['nullable', 'string', 'max:10'],
-            'address_line' => ['required', 'string', 'max:500'],
-            'landmark' => ['nullable', 'string', 'max:255'],
+            // Shipping address must be one saved to the logged-in user's account.
+            'address_id' => ['required', 'integer', Rule::exists('customer_addresses', 'id')->where('user_id', $this->user()?->id)],
 
             'shipping_provider' => ['required', 'string', 'max:40'],
             'shipping_service' => ['required', 'string', 'max:40'],
@@ -44,6 +36,8 @@ class CheckoutRequest extends FormRequest
     {
         return [
             'agree_terms.accepted' => 'Anda harus menyetujui syarat dan ketentuan.',
+            'address_id.required' => 'Pilih alamat pengiriman terlebih dahulu.',
+            'address_id.exists' => 'Alamat pengiriman tidak valid.',
         ];
     }
 }

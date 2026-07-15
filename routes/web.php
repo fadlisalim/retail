@@ -61,8 +61,8 @@ Route::controller(CartController::class)->group(function () {
     Route::post('/keranjang/catatan', 'note')->name('cart.note');
 });
 
-/* Checkout */
-Route::controller(CheckoutController::class)->group(function () {
+/* Checkout — requires login + a saved shipping address */
+Route::controller(CheckoutController::class)->middleware('auth')->group(function () {
     Route::get('/checkout', 'index')->name('checkout.index');
     Route::post('/checkout/ongkir', 'shippingOptions')->name('checkout.shipping');
     Route::post('/checkout', 'store')->middleware('throttle:20,1')->name('checkout.store');

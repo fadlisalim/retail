@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CustomerAddress;
 use App\Models\WarehouseStock;
 use App\Services\CartService;
 use App\Services\CheckoutService;
@@ -72,6 +73,44 @@ class CheckoutTest extends TestCase
 
         $this->assertSame($first->id, $second->id);
         $this->assertDatabaseCount('orders', 1);
+    }
+
+    public function test_guest_cannot_access_checkout(): void
+    {
+        $this->get(route('checkout.index'))->assertRedirect(route('login'));
+    }
+
+    public function test_checkout_store_requires_a_saved_address(): void
+    {
+        $this->actingAs($this->customer());
+        $product = $this->stockedProduct(5, ['price' => 100000]);
+        app(CartService::class)->addItem($product, null, 1);
+
+        $this->post(route('checkout.store'), [
+            'customer_name' => 'A', 'customer_email' => 'a@a.id', 'customer_phone' => '628',
+            'shipping_provider' => 'JNE', 'shipping_service' => 'REG', 'payment_method' => 'manual_transfer',
+            'idempotency_key' => 'k1', 'agree_terms' => '1',
+        ])->assertSessionHasErrors('address_id');
+    }
+
+    public function test_cannot_checkout_with_another_users_address(): void
+    {
+        $other = $this->customer();
+        $othersAddress = CustomerAddress::create([
+            'user_id' => $other->id, 'label' => 'Rumah', 'recipient_name' => 'X', 'phone' => '628',
+            'province' => 'JAWA BARAT', 'city' => 'Bandung', 'address_line' => 'Jl. X',
+        ]);
+
+        $this->actingAs($this->customer());
+        $product = $this->stockedProduct(5, ['price' => 100000]);
+        app(CartService::class)->addItem($product, null, 1);
+
+        $this->post(route('checkout.store'), [
+            'customer_name' => 'A', 'customer_email' => 'a@a.id', 'customer_phone' => '628',
+            'address_id' => $othersAddress->id,
+            'shipping_provider' => 'JNE', 'shipping_service' => 'REG', 'payment_method' => 'manual_transfer',
+            'idempotency_key' => 'k2', 'agree_terms' => '1',
+        ])->assertSessionHasErrors('address_id');
     }
 
     public function test_checkout_reserves_stock(): void

@@ -16,6 +16,24 @@ class IndahCargoRate extends Model
         'land_per_kg' => 'decimal:2',
     ];
 
+    /**
+     * Province => [cities] map from the tariff table. Cities are Title-cased for
+     * display; the rate lookup upper-cases again. Used by the address & checkout
+     * pickers so destinations always match a real Indah Cargo tariff.
+     */
+    public static function citiesByProvince(): array
+    {
+        return static::query()
+            ->select('province', 'destination_city')
+            ->orderBy('province')->orderBy('destination_city')
+            ->get()
+            ->groupBy('province')
+            ->map(fn ($rows) => $rows->pluck('destination_city')
+                ->map(fn ($c) => Str::title(mb_strtolower($c)))->unique()->values()->all())
+            ->sortKeys()
+            ->all();
+    }
+
     /** Normalise a free-text city name to match the tariff table. */
     public static function normalizeCity(string $city): string
     {

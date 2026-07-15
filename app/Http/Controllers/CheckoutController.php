@@ -40,25 +40,18 @@ class CheckoutController extends Controller
 
         $totals = $this->calculator->calculate($cart);
 
+        $addresses = auth()->user()->addresses()->orderByDesc('is_default')->get();
+
         return view('storefront.checkout', [
             'cart' => $cart,
             'totals' => $totals,
-            'addresses' => auth()->user()?->addresses ?? collect(),
+            'addresses' => $addresses,
+            'defaultAddress' => $addresses->firstWhere('is_default', true) ?? $addresses->first(),
             'paymentMethods' => $this->payments->available(),
             // Fresh idempotency key prevents a double-clicked "Bayar" from duplicating.
             'idempotencyKey' => (string) Str::uuid(),
-            // Province -> cities map from the Indah tariff table, so the buyer picks a
-            // province and only that province's destination cities are offered (Title-cased
-            // for display; the rate lookup upper-cases again).
-            'citiesByProvince' => \App\Models\IndahCargoRate::query()
-                ->select('province', 'destination_city')
-                ->orderBy('province')->orderBy('destination_city')
-                ->get()
-                ->groupBy('province')
-                ->map(fn ($rows) => $rows->pluck('destination_city')
-                    ->map(fn ($c) => Str::title(mb_strtolower($c)))->unique()->values()->all())
-                ->sortKeys()
-                ->all(),
+            // Province -> cities map from the Indah tariff table so shipping can be quoted.
+            'citiesByProvince' => \App\Models\IndahCargoRate::citiesByProvince(),
         ]);
     }
 
@@ -82,20 +75,38 @@ class CheckoutController extends Controller
     {
         $cart = $this->cart->current()->load(['items.product', 'items.variant']);
 
+        // Shipping destination comes from a saved address only (validated to the user).
+        $address = $request->user()->addresses()->findOrFail($request->integer('address_id'));
+
         // Rebuild the chosen quote server-side; never trust a price from the form.
         $quote = $this->shipping->findQuote(
             $cart,
-            $request->province,
+            $address->province,
             $request->shipping_provider,
             $request->shipping_service,
-            $request->city,
+            $address->city,
         );
 
         if (! $quote) {
             return back()->withInput()->with('error', 'Opsi pengiriman tidak valid. Silakan pilih ulang.');
         }
 
-        $order = $this->checkout->place($cart, $request->validated(), $quote);
+        // Copy the saved address into the order's shipping details.
+        $data = $request->validated() + [
+            'recipient_name' => $address->recipient_name,
+            'recipient_phone' => $address->phone,
+            'company_name' => $address->company_name,
+            'npwp' => $address->npwp,
+            'province' => $address->province,
+            'city' => $address->city,
+            'district' => $address->district,
+            'subdistrict' => $address->subdistrict,
+            'postal_code' => $address->postal_code,
+            'address_line' => $address->address_line,
+            'landmark' => $address->landmark,
+        ];
+
+        $order = $this->checkout->place($cart, $data, $quote);
 
         // Attribute the sale to a referring affiliate (last-click cookie), if any.
         $this->affiliates->attributeOrder($order);
