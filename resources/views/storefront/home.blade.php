@@ -33,24 +33,14 @@
                 @foreach ($heroBanners as $i => $banner)
                     <div x-show="active === {{ $i }}" x-transition.opacity.duration.500ms class="relative" @if ($i !== 0) style="display:none" @endif>
                         @if ($banner->image_desktop_path)
-                            {{-- Image banner: uploaded artwork as the hero, optional text overlay + link --}}
-                            <a @if ($banner->button_url) href="{{ $banner->button_url }}" @endif class="relative block">
+                            {{-- Image-only banner: the uploaded artwork IS the design, just wrap it in the link. --}}
+                            <a @if ($banner->button_url) href="{{ $banner->button_url }}" @endif class="block">
                                 <picture>
                                     @if ($banner->image_mobile_path)
                                         <source media="(max-width: 640px)" srcset="{{ asset('storage/'.$banner->image_mobile_path) }}">
                                     @endif
                                     <img src="{{ asset('storage/'.$banner->image_desktop_path) }}" alt="{{ $banner->title ?: 'Banner' }}" class="h-52 w-full object-cover sm:h-96">
                                 </picture>
-                                @if ($banner->title || $banner->description)
-                                    <div class="absolute inset-0 flex flex-col justify-center gap-2 bg-gradient-to-r from-black/60 via-black/25 to-transparent p-6 text-white sm:p-12">
-                                        <span class="text-xs font-semibold uppercase tracking-wide text-accent-300">{{ $banner->subtitle }}</span>
-                                        <h1 class="max-w-xl text-2xl font-extrabold drop-shadow sm:text-4xl">{{ $banner->title }}</h1>
-                                        <p class="max-w-lg text-sm drop-shadow sm:text-base">{{ $banner->description }}</p>
-                                        @if ($banner->button_url)
-                                            <span class="btn-accent mt-2 w-fit">{{ $banner->button_text ?: 'Belanja Sekarang' }}</span>
-                                        @endif
-                                    </div>
-                                @endif
                             </a>
                         @else
                             {{-- No image: gradient + text --}}
@@ -109,13 +99,6 @@
                         </picture>
                     @else
                         <div class="h-40 w-full bg-gradient-to-br from-brand-700 to-brand-500 sm:h-56"></div>
-                    @endif
-                    @if ($banner->title || $banner->description)
-                        <div class="absolute inset-0 flex flex-col justify-end gap-1 bg-gradient-to-t from-black/65 to-transparent p-4 text-white">
-                            <h3 class="text-lg font-bold drop-shadow">{{ $banner->title }}</h3>
-                            @if ($banner->description)<p class="text-xs text-white/90 drop-shadow">{{ $banner->description }}</p>@endif
-                            @if ($banner->button_url && $banner->button_text)<span class="mt-1 text-xs font-semibold text-accent-300">{{ $banner->button_text }} →</span>@endif
-                        </div>
                     @endif
                 </a>
             @endforeach
