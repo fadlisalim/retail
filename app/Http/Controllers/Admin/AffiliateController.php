@@ -120,4 +120,22 @@ class AffiliateController extends Controller
 
         return back()->with('success', 'Afiliator diaktifkan kembali.');
     }
+
+    /** Permanently delete an affiliate — only if it has no commission history (accounting integrity). */
+    public function destroy(Affiliate $affiliate): RedirectResponse
+    {
+        if ($affiliate->commissions()->exists()) {
+            return back()->with('error', 'Afiliator memiliki riwayat komisi dan tidak dapat dihapus. Gunakan "Tangguhkan" untuk menonaktifkan.');
+        }
+
+        // Remove private KYC files, then the record.
+        foreach ([$affiliate->ktp_photo_path, $affiliate->selfie_photo_path] as $path) {
+            if ($path) {
+                Storage::disk('local')->delete($path);
+            }
+        }
+        $affiliate->delete();
+
+        return redirect()->route('admin.affiliates.index')->with('success', 'Afiliator dihapus permanen.');
+    }
 }

@@ -90,6 +90,16 @@
                         <form action="{{ route('admin.affiliates.reject', $affiliate) }}" method="POST">@csrf<button class="btn-outline w-full text-red-600">Tolak</button></form>
                     @endif
                 </div>
+
+                <div class="mt-3 border-t border-gray-100 pt-3">
+                    <form action="{{ route('admin.affiliates.destroy', $affiliate) }}" method="POST"
+                          onsubmit="return confirm('Hapus afiliator ini secara permanen? Tindakan ini tidak bisa dibatalkan.');">
+                        @csrf
+                        @method('DELETE')
+                        <button class="w-full rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50">Hapus Afiliator</button>
+                    </form>
+                    <p class="mt-1 text-xs text-gray-400">Hanya bisa dihapus jika belum ada riwayat komisi. Untuk menonaktifkan sementara, gunakan Tangguhkan.</p>
+                </div>
             </div>
 
             {{-- KYC data --}}

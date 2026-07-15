@@ -197,6 +197,24 @@ class AffiliateTest extends TestCase
         $this->actingAs($admin)->get(route('admin.affiliates.show', $affiliate))->assertOk();
     }
 
+    public function test_admin_can_delete_clean_affiliate_but_not_one_with_commissions(): void
+    {
+        $this->seed(RoleSeeder::class);
+        $admin = User::factory()->create(['is_staff' => true, 'is_active' => true]);
+        $admin->roles()->attach(Role::where('slug', 'admin-keuangan')->first());
+
+        // Clean affiliate → deletable
+        $clean = $this->activeAffiliate();
+        $this->actingAs($admin)->delete(route('admin.affiliates.destroy', $clean))->assertRedirect(route('admin.affiliates.index'));
+        $this->assertNull($clean->fresh());
+
+        // Affiliate with a commission → protected
+        $withCommission = $this->activeAffiliate();
+        app(AffiliateService::class)->recordCommissions($this->orderWithItem($withCommission, 1_000_000, 5));
+        $this->actingAs($admin)->delete(route('admin.affiliates.destroy', $withCommission))->assertRedirect();
+        $this->assertNotNull($withCommission->fresh());
+    }
+
     public function test_customer_can_apply_as_affiliate(): void
     {
         \Illuminate\Support\Facades\Storage::fake('local');

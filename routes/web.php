@@ -247,6 +247,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/afiliasi/{affiliate}/tolak', [Admin\AffiliateController::class, 'reject'])->name('affiliates.reject');
         Route::post('/afiliasi/{affiliate}/tangguhkan', [Admin\AffiliateController::class, 'suspend'])->name('affiliates.suspend');
         Route::post('/afiliasi/{affiliate}/aktifkan', [Admin\AffiliateController::class, 'reactivate'])->name('affiliates.reactivate');
+        Route::delete('/afiliasi/{affiliate}', [Admin\AffiliateController::class, 'destroy'])->name('affiliates.destroy');
     });
 
     Route::middleware('permission:quotation.manage')->group(function () {
