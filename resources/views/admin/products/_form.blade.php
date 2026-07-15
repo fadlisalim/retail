@@ -152,8 +152,9 @@
         </div>
     </div>
 
-    <div class="flex items-center gap-2">
+    {{-- Sticky action bar — always reachable while scrolling the long form. --}}
+    <div class="sticky bottom-0 z-20 -mx-4 flex items-center gap-2 border-t border-gray-200 bg-white/95 px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.04)] sm:-mx-6 sm:px-6">
         <button type="submit" class="btn-primary">Simpan Produk</button>
-        <a href="{{ route('admin.products.index') }}" class="btn-outline">Batal</a>
+        <a href="{{ route('admin.products.index') }}" class="btn-outline">Kembali ke Daftar</a>
     </div>
 </div>

@@ -73,8 +73,9 @@ class ProductController extends Controller
             );
         }
 
-        return redirect()->route('admin.products.index')
-            ->with('success', 'Produk berhasil ditambahkan.');
+        // Stay on the product (its edit page) so images/media can be added next.
+        return redirect()->route('admin.products.edit', $product)
+            ->with('success', 'Produk berhasil disimpan. Silakan tambahkan gambar & media di bawah.');
     }
 
     public function edit(Product $produk): View
@@ -86,8 +87,8 @@ class ProductController extends Controller
     {
         $produk->update($this->validated($request, $produk));
 
-        return redirect()->route('admin.products.index')
-            ->with('success', 'Produk berhasil diperbarui.');
+        // Stay on the product after saving.
+        return back()->with('success', 'Produk berhasil diperbarui.');
     }
 
     public function destroy(Product $produk): RedirectResponse
