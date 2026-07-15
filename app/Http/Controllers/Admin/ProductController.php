@@ -141,6 +141,7 @@ class ProductController extends Controller
             'slug' => ['required', 'string', 'max:255', Rule::unique('products', 'slug')->ignore($product?->id)],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
+            'new_brand' => ['nullable', 'string', 'max:255'],
             'model' => ['nullable', 'string', 'max:255'],
             'product_type' => ['required', Rule::in(['simple', 'variable', 'bundle', 'service'])],
             'condition' => ['required', Rule::in(['new', 'open_box', 'display_unit', 'used'])],
@@ -202,7 +203,16 @@ class ProductController extends Controller
             $data['published_at'] = now();
         }
 
-        unset($data['initial_stock']);
+        // Inline "new brand": create (or reuse) it and assign, overriding the select.
+        if ($request->filled('new_brand')) {
+            $name = trim($request->input('new_brand'));
+            $brand = Brand::firstOrCreate(
+                ['slug' => Str::slug($name)],
+                ['name' => $name, 'is_active' => true],
+            );
+            $data['brand_id'] = $brand->id;
+        }
+        unset($data['new_brand'], $data['initial_stock']);
 
         return $data;
     }

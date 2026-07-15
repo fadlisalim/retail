@@ -15,7 +15,10 @@
         <x-form.input name="slug" label="Slug" :value="$product->slug" hint="Kosongkan untuk membuat otomatis dari nama." />
         <div class="grid gap-4 sm:grid-cols-3">
             <x-form.select name="category_id" label="Kategori" :options="$categories" :selected="$product->category_id" placeholder="— Pilih kategori —" />
-            <x-form.select name="brand_id" label="Brand" :options="$brands" :selected="$product->brand_id" placeholder="— Pilih brand —" />
+            <div>
+                <x-form.select name="brand_id" label="Brand" :options="$brands" :selected="$product->brand_id" placeholder="— Pilih brand —" />
+                <x-form.input name="new_brand" label="atau Brand Baru" :value="old('new_brand')" placeholder="Ketik nama brand baru" class="mt-2" hint="Kalau brand belum ada, ketik di sini — otomatis dibuat." />
+            </div>
             <x-form.input name="model" label="Model" :value="$product->model" />
         </div>
         <div class="grid gap-4 sm:grid-cols-3">
