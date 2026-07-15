@@ -1,4 +1,6 @@
 import Alpine from 'alpinejs';
+import 'trix';
+import 'trix/dist/trix.css';
 
 // Alpine powers the lightweight interactions: mega-menu, mobile drawer,
 // search autocomplete, gallery, quantity steppers, sticky purchase bar.

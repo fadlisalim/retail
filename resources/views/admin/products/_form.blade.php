@@ -28,7 +28,7 @@
         </div>
 
         <x-form.textarea name="short_description" label="Deskripsi Singkat" :value="$product->short_description" rows="2" hint="Ringkasan 1-2 kalimat. Maksimal 500 karakter." />
-        <x-form.textarea name="description" label="Deskripsi Lengkap" :value="$product->description" rows="8" />
+        <x-form.richtext name="description" label="Deskripsi Lengkap" :value="$product->description" hint="Gunakan tombol format (tebal, daftar, dll.) — tidak perlu menulis kode HTML." />
     </div>
 
     {{-- Harga & stok --}}
