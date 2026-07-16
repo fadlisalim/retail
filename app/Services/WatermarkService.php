@@ -5,11 +5,12 @@ namespace App\Services;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Stamps a repeated, diagonal "energi.click" watermark across an image using GD.
+ * Optimises and watermarks an image using GD, in a single re-encode pass:
+ *  1. downscale oversized images to an optimum max dimension (keeps aspect ratio),
+ *  2. stamp a light, tiled diagonal "energi.click" watermark,
+ *  3. re-save with sensible compression.
  *
- * The pattern is tiled at low opacity with a subtle dark shadow so the brand
- * mark stays legible on both light and dark product photos while protecting the
- * image from casual reuse. Operates in place on the stored file.
+ * Operates in place on the stored file.
  */
 class WatermarkService
 {
@@ -48,6 +49,7 @@ class WatermarkService
             return false;
         }
 
+        $img = $this->downscale($img);
         $this->stampTiled($img, $text ?? (string) config('rekasurya.company.brand_name', 'Energi.Click'));
 
         $ok = $this->save($img, $full, $ext);
@@ -75,11 +77,45 @@ class WatermarkService
     private function save(\GdImage $img, string $full, string $ext): bool
     {
         return match ($ext) {
-            'jpg', 'jpeg' => imagejpeg($img, $full, 88),
-            'png' => imagepng($img, $full),
-            'webp' => \function_exists('imagewebp') ? imagewebp($img, $full, 88) : false,
+            'jpg', 'jpeg' => imagejpeg($img, $full, 85),
+            'png' => imagepng($img, $full, 6),
+            'webp' => \function_exists('imagewebp') ? imagewebp($img, $full, 85) : false,
             default => false,
         };
+    }
+
+    /**
+     * Downscale an oversized image to the configured max dimension (longest side),
+     * preserving aspect ratio and transparency. Returns the original when small
+     * enough (never upscales).
+     */
+    private function downscale(\GdImage $img): \GdImage
+    {
+        $max = (int) config('rekasurya.media.max_image_dimension', 1600);
+        $w = imagesx($img);
+        $h = imagesy($img);
+        $longest = max($w, $h);
+
+        if ($max <= 0 || $longest <= $max) {
+            return $img;
+        }
+
+        $scale = $max / $longest;
+        $nw = max(1, (int) round($w * $scale));
+        $nh = max(1, (int) round($h * $scale));
+
+        $dst = imagecreatetruecolor($nw, $nh);
+        // Preserve transparency (PNG/WebP) through the resample.
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+        imagefilledrectangle($dst, 0, 0, $nw, $nh, imagecolorallocatealpha($dst, 0, 0, 0, 127));
+        imagecopyresampled($dst, $img, 0, 0, 0, 0, $nw, $nh, $w, $h);
+        imagedestroy($img);
+
+        // Re-enable blending so the watermark text composites correctly.
+        imagealphablending($dst, true);
+
+        return $dst;
     }
 
     /**

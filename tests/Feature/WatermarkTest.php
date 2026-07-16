@@ -39,6 +39,32 @@ class WatermarkTest extends TestCase
         $this->assertSame(400, $h);
     }
 
+    public function test_apply_downscales_oversized_images(): void
+    {
+        Storage::fake('public');
+        $path = 'products/big.jpg';
+        $this->makeImage($path, 3000, 2000);
+
+        $this->assertTrue(app(WatermarkService::class)->apply($path));
+
+        [$w, $h] = getimagesize(Storage::disk('public')->path($path));
+        $this->assertSame(1600, $w);          // longest side clamped to the max
+        $this->assertSame(1067, $h);          // aspect ratio preserved
+    }
+
+    public function test_apply_does_not_upscale_small_images(): void
+    {
+        Storage::fake('public');
+        $path = 'products/small.jpg';
+        $this->makeImage($path, 500, 400);
+
+        app(WatermarkService::class)->apply($path);
+
+        [$w, $h] = getimagesize(Storage::disk('public')->path($path));
+        $this->assertSame(500, $w);
+        $this->assertSame(400, $h);
+    }
+
     public function test_apply_returns_false_for_missing_file(): void
     {
         Storage::fake('public');

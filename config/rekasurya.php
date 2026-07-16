@@ -59,6 +59,12 @@ return [
         'new_product_days' => 30, // product flagged "new" if published within N days
     ],
 
+    'media' => [
+        // Uploaded product images are downscaled so the longest side is at most
+        // this many pixels (0 = keep original size). Good for fast pages + zoom.
+        'max_image_dimension' => (int) env('MEDIA_MAX_IMAGE_DIMENSION', 1600),
+    ],
+
     'demo' => [
         // When true, seeded demo credentials are shown on the login screen.
         'expose_credentials' => env('DEMO_EXPOSE_CREDENTIALS', true),
