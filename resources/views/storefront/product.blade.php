@@ -207,7 +207,7 @@
         <section>
             <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Deskripsi</h2>
             <div class="prose max-w-none text-sm text-gray-700">
-                {!! $product->description ?: '<p>'.e($product->short_description).'</p>' !!}
+                {!! linkify_buttons($product->description ?: '<p>'.e($product->short_description).'</p>') !!}
             </div>
         </section>
 
