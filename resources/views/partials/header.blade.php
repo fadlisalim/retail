@@ -5,8 +5,10 @@
         <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-1.5 text-xs">
             <p>{{ config('rekasurya.company.tagline') }}</p>
             <nav class="flex items-center gap-4" aria-label="Menu utilitas">
+                <a href="{{ route('products.index') }}" class="hover:text-accent-400">Semua Produk</a>
                 <a href="{{ route('promo') }}" class="hover:text-accent-400">Promo</a>
                 <a href="{{ route('clearance') }}" class="hover:text-accent-400">Clearance</a>
+                <a href="{{ route('affiliate.landing') }}" class="font-semibold text-accent-300 hover:text-accent-400">Afiliator</a>
                 <a href="{{ route('quotations.create') }}" class="hover:text-accent-400">Permintaan Penawaran</a>
                 <a href="{{ route('faq') }}" class="hover:text-accent-400">Bantuan</a>
             </nav>
