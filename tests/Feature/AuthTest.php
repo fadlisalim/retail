@@ -32,6 +32,39 @@ class AuthTest extends TestCase
         Event::assertDispatched(Registered::class);
     }
 
+    public function test_registration_revives_a_soft_deleted_account(): void
+    {
+        Event::fake();
+
+        // An old account with this email was deleted (soft delete).
+        $old = User::factory()->create(['email' => 'kembali@test.id', 'name' => 'Nama Lama']);
+        $old->delete();
+
+        $this->post('/daftar', [
+            'name' => 'Nama Baru',
+            'email' => 'kembali@test.id',
+            'whatsapp' => '08123456789',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertRedirect(route('verification.notice'));
+
+        // The same row is revived (not a duplicate) with the new details.
+        $this->assertSame(1, User::withTrashed()->where('email', 'kembali@test.id')->count());
+        $revived = User::where('email', 'kembali@test.id')->first();
+        $this->assertNull($revived->deleted_at);
+        $this->assertSame('Nama Baru', $revived->name);
+    }
+
+    public function test_registration_rejects_an_active_email(): void
+    {
+        User::factory()->create(['email' => 'aktif@test.id', 'is_active' => true]);
+
+        $this->from('/daftar')->post('/daftar', [
+            'name' => 'Coba', 'email' => 'aktif@test.id', 'whatsapp' => '0812',
+            'password' => 'password123', 'password_confirmation' => 'password123',
+        ])->assertRedirect('/daftar')->assertSessionHasErrors('email');
+    }
+
     public function test_customer_can_login(): void
     {
         $user = User::factory()->create(['email' => 'a@test.id', 'password' => 'password123', 'is_active' => true]);
