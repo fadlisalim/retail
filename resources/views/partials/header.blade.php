@@ -1,5 +1,5 @@
 @php($waConsult = whatsapp_link($siteSettings->get('whatsapp.greeting', 'Halo Rekasurya, saya ingin berkonsultasi.')))
-<header class="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur" x-data="{ mobileMenu: false, mega: false }">
+<header class="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur" x-data="{ mega: false }">
     {{-- Top utility strip (desktop) --}}
     <div class="hidden border-b border-gray-100 bg-brand-700 text-white lg:block">
         <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-1.5 text-xs">
@@ -14,11 +14,6 @@
     </div>
 
     <div class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
-        {{-- Mobile menu toggle --}}
-        <button type="button" class="lg:hidden" @click="mobileMenu = true" aria-label="Buka menu">
-            <svg class="h-7 w-7 text-gray-700" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"/></svg>
-        </button>
-
         {{-- Logo --}}
         <a href="{{ route('home') }}" class="flex shrink-0 items-center gap-2" aria-label="Beranda {{ brand() }}">
             <x-logo class="h-9 w-9 shrink-0 text-brand-700" />
@@ -105,28 +100,4 @@
         </div>
     </nav>
 
-    {{-- Mobile drawer --}}
-    <div x-show="mobileMenu" x-cloak class="fixed inset-0 z-50 lg:hidden">
-        <div class="absolute inset-0 bg-black/40" @click="mobileMenu=false"></div>
-        <div class="absolute left-0 top-0 h-full w-80 max-w-[85%] overflow-y-auto bg-white p-4 shadow-xl" x-transition:enter="transition" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0">
-            <div class="mb-4 flex items-center justify-between">
-                <span class="font-bold text-brand-700">Semua Kategori</span>
-                <button @click="mobileMenu=false" aria-label="Tutup"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>
-            </div>
-            <ul class="space-y-1">
-                @foreach($navCategories as $cat)
-                    <li>
-                        <a href="{{ route('categories.show', $cat->slug) }}" class="block rounded-lg px-3 py-2 font-medium text-gray-700 hover:bg-brand-50">{{ $cat->name }}</a>
-                        @if($cat->activeChildren->isNotEmpty())
-                            <ul class="ml-3 border-l border-gray-100 pl-3">
-                                @foreach($cat->activeChildren as $child)
-                                    <li><a href="{{ route('categories.show', $child->slug) }}" class="block rounded px-2 py-1.5 text-sm text-gray-600 hover:bg-brand-50">{{ $child->name }}</a></li>
-                                @endforeach
-                            </ul>
-                        @endif
-                    </li>
-                @endforeach
-            </ul>
-        </div>
-    </div>
 </header>
