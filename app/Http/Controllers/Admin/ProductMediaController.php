@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductDocument;
 use App\Models\ProductImage;
 use App\Models\ProductVideo;
+use App\Services\WatermarkService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -18,7 +19,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class ProductMediaController extends Controller
 {
-    public function storeImage(Request $request, Product $produk): RedirectResponse
+    public function storeImage(Request $request, Product $produk, WatermarkService $watermark): RedirectResponse
     {
         $request->validate([
             'images' => ['required', 'array', 'max:12'],
@@ -28,10 +29,15 @@ class ProductMediaController extends Controller
         $next = (int) ($produk->images()->max('sort_order') ?? 0);
         foreach ($request->file('images') as $file) {
             $path = $file->store('products', 'public');
+
+            // Stamp the brand watermark onto the freshly stored file.
+            $stamped = $watermark->apply($path);
+
             $produk->images()->create([
                 'path' => $path,
                 'alt' => $produk->name,
                 'sort_order' => ++$next,
+                'watermarked_at' => $stamped ? now() : null,
             ]);
         }
 
