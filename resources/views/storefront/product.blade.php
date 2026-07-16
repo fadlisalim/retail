@@ -94,7 +94,8 @@
         {{-- Purchase panel --}}
         <div>
             <div class="mb-2 flex flex-wrap gap-1">
-                @foreach ($product->badges() as $badge)<x-badge :label="$badge" />@endforeach
+                {{-- Condition is shown as a labeled line below, not as a badge here. --}}
+                @foreach ($product->badges(includeCondition: false) as $badge)<x-badge :label="$badge" />@endforeach
             </div>
 
             @if ($product->brand)
@@ -197,6 +198,18 @@
             <div class="mt-2 flex gap-2 text-sm text-gray-500">
                 <form action="{{ route('wishlist.toggle', $product->slug) }}" method="POST">@csrf<button class="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-gray-50" title="Simpan ke wishlist">♡ Wishlist</button></form>
                 <form action="{{ route('compare.add', $product->slug) }}" method="POST">@csrf<button class="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-gray-50" title="Bandingkan produk">⇄ Bandingkan</button></form>
+            </div>
+
+            {{-- Condition, shown as a clear labeled line. --}}
+            <div class="mt-3 border-t border-gray-100 pt-3 text-sm">
+                <span class="text-gray-500">Kondisi:</span>
+                <span class="font-semibold text-gray-800">{{ $product->conditionEnum()->label() }}</span>
+                @if ($product->warranty)
+                    <span class="text-gray-300">•</span>
+                    @php $warranty = preg_replace('/^garansi\s*/i', '', trim($product->warranty)); @endphp
+                    <span class="text-gray-500">Garansi:</span>
+                    <span class="font-medium text-gray-700">{{ $warranty ?: $product->warranty }}</span>
+                @endif
             </div>
         </div>
     </div>

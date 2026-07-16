@@ -196,12 +196,12 @@ class Product extends Model
     }
 
     /** Badge labels shown on cards/detail (section 10). */
-    public function badges(): array
+    public function badges(bool $includeCondition = true): array
     {
         $badges = [];
         if (filled($this->badge_text)) $badges[] = $this->badge_text;
         if ($this->is_clearance) $badges[] = 'Clearance';
-        if ($this->condition !== ProductCondition::New->value) {
+        if ($includeCondition && $this->condition !== ProductCondition::New->value) {
             $badges[] = $this->conditionEnum()->label();
         }
         if ($this->is_new) $badges[] = 'Baru';
