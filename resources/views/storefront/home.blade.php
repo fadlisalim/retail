@@ -123,7 +123,7 @@
 
     {{-- 2. Grid banners (baris banner 1/2/3 kolom) --}}
     @if ($gridBanners->isNotEmpty())
-        <section class="order-4 mt-6 grid grid-cols-1 gap-4 sm:order-none sm:grid-cols-6">
+        <section class="order-4 mt-6 grid grid-cols-1 items-start gap-4 sm:order-none sm:grid-cols-6">
             @foreach ($gridBanners as $banner)
                 <a @if ($banner->button_url) href="{{ $banner->button_url }}" @endif
                    class="group relative block overflow-hidden rounded-2xl {{ $banner->spanClass() }}">
@@ -132,9 +132,10 @@
                             @if ($banner->image_mobile_path)
                                 <source media="(max-width: 640px)" srcset="{{ asset('storage/'.$banner->image_mobile_path) }}">
                             @endif
+                            {{-- Show the full artwork (no crop) — the uploaded image defines its own ratio (mis. 3:1 / 2:1). --}}
                             <img src="{{ asset('storage/'.$banner->image_desktop_path) }}"
                                  alt="{{ $banner->title ?: 'Banner' }}"
-                                 class="h-40 w-full object-cover transition duration-300 group-hover:scale-105 sm:h-56">
+                                 class="block h-auto w-full transition duration-300 group-hover:scale-105">
                         </picture>
                     @else
                         <div class="h-40 w-full bg-gradient-to-br from-brand-700 to-brand-500 sm:h-56"></div>
