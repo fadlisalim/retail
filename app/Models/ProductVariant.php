@@ -49,4 +49,25 @@ class ProductVariant extends Model
     {
         return (int) ($this->weight_grams ?? $this->product->weight_grams);
     }
+
+    public function lengthCm(): float
+    {
+        return (float) ($this->length_cm ?? $this->product->length_cm);
+    }
+
+    public function widthCm(): float
+    {
+        return (float) ($this->width_cm ?? $this->product->width_cm);
+    }
+
+    public function heightCm(): float
+    {
+        return (float) ($this->height_cm ?? $this->product->height_cm);
+    }
+
+    /** Per-unit shipping volume (cm³), using variant dimensions when set. */
+    public function volumeCm3(): float
+    {
+        return $this->lengthCm() * $this->widthCm() * $this->heightCm();
+    }
 }

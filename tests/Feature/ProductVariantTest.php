@@ -63,4 +63,40 @@ class ProductVariantTest extends TestCase
         $this->delete(route('admin.products.variant.destroy', $variant))->assertRedirect();
         $this->assertEquals(0, $product->fresh()->variants()->count());
     }
+
+    public function test_variant_weight_and_dimensions_are_saved(): void
+    {
+        Storage::fake('public');
+        $this->actingAs($this->staff());
+        $product = $this->stockedProduct(0, ['product_type' => 'simple', 'price' => 500000]);
+
+        $this->post(route('admin.products.variant.store', $product), [
+            'name' => '100 Wp',
+            'price' => 500000,
+            'stock' => 3,
+            'weight_grams' => 12500,
+            'length_cm' => 102,
+            'width_cm' => 67,
+            'height_cm' => 3,
+        ])->assertRedirect();
+
+        $variant = $product->fresh()->variants->first();
+        $this->assertSame(12500, $variant->weightGrams());
+        $this->assertEqualsWithDelta(102 * 67 * 3, $variant->volumeCm3(), 0.01);
+    }
+
+    public function test_variant_dimensions_fall_back_to_product_when_blank(): void
+    {
+        $product = Product::factory()->create([
+            'weight_grams' => 8000, 'length_cm' => 50, 'width_cm' => 40, 'height_cm' => 5,
+        ]);
+        $variant = ProductVariant::create([
+            'product_id' => $product->id, 'sku' => 'V-FALLBACK', 'name' => 'X',
+            'price' => 1000, 'is_active' => true, 'sort_order' => 1,
+        ]);
+
+        // No variant-specific values → inherits the product's weight & volume.
+        $this->assertSame(8000, $variant->weightGrams());
+        $this->assertEqualsWithDelta(50 * 40 * 5, $variant->volumeCm3(), 0.01);
+    }
 }

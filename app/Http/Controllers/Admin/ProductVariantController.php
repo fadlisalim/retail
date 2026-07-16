@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\StockService;
+use App\Services\WatermarkService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -18,13 +19,17 @@ use Illuminate\Support\Str;
  */
 class ProductVariantController extends Controller
 {
-    public function store(Request $request, Product $produk): RedirectResponse
+    public function store(Request $request, Product $produk, WatermarkService $watermark): RedirectResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'price' => ['required', 'numeric', 'min:0'],
             'sale_price' => ['nullable', 'numeric', 'min:0'],
             'stock' => ['nullable', 'integer', 'min:0'],
+            'weight_grams' => ['nullable', 'integer', 'min:0'],
+            'length_cm' => ['nullable', 'numeric', 'min:0'],
+            'width_cm' => ['nullable', 'numeric', 'min:0'],
+            'height_cm' => ['nullable', 'numeric', 'min:0'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
@@ -34,9 +39,15 @@ class ProductVariantController extends Controller
             'option_values' => ['Varian' => $data['name']],
             'price' => $data['price'],
             'sale_price' => $data['sale_price'] ?? null,
+            'weight_grams' => $data['weight_grams'] ?? null,
+            'length_cm' => $data['length_cm'] ?? null,
+            'width_cm' => $data['width_cm'] ?? null,
+            'height_cm' => $data['height_cm'] ?? null,
             'is_active' => true,
             'sort_order' => (int) ($produk->variants()->max('sort_order') ?? 0) + 1,
-            'image_path' => $request->hasFile('image') ? $request->file('image')->store('products', 'public') : null,
+            'image_path' => $request->hasFile('image')
+                ? tap($request->file('image')->store('products', 'public'), fn ($p) => $watermark->apply($p))
+                : null,
         ]);
 
         if (! empty($data['stock'])) {
@@ -51,13 +62,17 @@ class ProductVariantController extends Controller
         return back()->with('success', 'Varian "'.$variant->name.'" ditambahkan.');
     }
 
-    public function update(Request $request, ProductVariant $varian): RedirectResponse
+    public function update(Request $request, ProductVariant $varian, WatermarkService $watermark): RedirectResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'price' => ['required', 'numeric', 'min:0'],
             'sale_price' => ['nullable', 'numeric', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
+            'weight_grams' => ['nullable', 'integer', 'min:0'],
+            'length_cm' => ['nullable', 'numeric', 'min:0'],
+            'width_cm' => ['nullable', 'numeric', 'min:0'],
+            'height_cm' => ['nullable', 'numeric', 'min:0'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
@@ -66,12 +81,17 @@ class ProductVariantController extends Controller
             'option_values' => ['Varian' => $data['name']],
             'price' => $data['price'],
             'sale_price' => $data['sale_price'] ?? null,
+            'weight_grams' => $data['weight_grams'] ?? null,
+            'length_cm' => $data['length_cm'] ?? null,
+            'width_cm' => $data['width_cm'] ?? null,
+            'height_cm' => $data['height_cm'] ?? null,
         ];
         if ($request->hasFile('image')) {
             if ($varian->image_path) {
                 Storage::disk('public')->delete($varian->image_path);
             }
             $attrs['image_path'] = $request->file('image')->store('products', 'public');
+            $watermark->apply($attrs['image_path']);
         }
         $varian->update($attrs);
 

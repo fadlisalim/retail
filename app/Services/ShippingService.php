@@ -85,7 +85,9 @@ class ShippingService
             }
             $qty = (int) $item->quantity;
             $unitWeight = $item->variant?->weightGrams() ?? (int) $product->weight_grams;
-            $unitVolume = (float) $product->length_cm * (float) $product->width_cm * (float) $product->height_cm;
+            $unitVolume = $item->variant
+                ? $item->variant->volumeCm3()
+                : (float) $product->length_cm * (float) $product->width_cm * (float) $product->height_cm;
 
             $actual += $unitWeight * $qty;
             $volume += $unitVolume * $qty;

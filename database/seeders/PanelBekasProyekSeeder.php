@@ -89,9 +89,11 @@ HTML;
             ],
         );
 
+        // Per-variant weight & dimensions for accurate shipping. 100 Wp taken from
+        // the module label (12,5 kg / 1020×670×30 mm); 50 Wp estimated (adjustable).
         $variants = [
-            ['name' => '50 Wp', 'sku' => 'PANEL-BEKAS-50', 'price' => 170000],
-            ['name' => '100 Wp', 'sku' => 'PANEL-BEKAS-100', 'price' => 500000],
+            ['name' => '50 Wp', 'sku' => 'PANEL-BEKAS-50', 'price' => 170000, 'weight' => 5000, 'l' => 67, 'w' => 54, 'h' => 3],
+            ['name' => '100 Wp', 'sku' => 'PANEL-BEKAS-100', 'price' => 500000, 'weight' => 12500, 'l' => 102, 'w' => 67, 'h' => 3],
         ];
 
         foreach ($variants as $i => $v) {
@@ -103,6 +105,10 @@ HTML;
                     'option_values' => ['Daya' => $v['name']],
                     'price' => $v['price'],
                     'sale_price' => null,
+                    'weight_grams' => $v['weight'],
+                    'length_cm' => $v['l'],
+                    'width_cm' => $v['w'],
+                    'height_cm' => $v['h'],
                     'is_active' => true,
                     'sort_order' => $i,
                 ],
