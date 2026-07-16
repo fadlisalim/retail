@@ -201,7 +201,6 @@
         </a>
     </div>
 
-    <x-product-carousel title="Paket PLTS Populer" subtitle="Solusi lengkap on-grid, off-grid, & hybrid" :products="$packages" :view-all="route('products.index', ['category' => 'paket-plts'])" />
     <x-product-carousel title="Produk Terbaru" :products="$newest" :view-all="route('products.new')" />
 
     {{-- Video section (YouTube landscape/portrait) --}}

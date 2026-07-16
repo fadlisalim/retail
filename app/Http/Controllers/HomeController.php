@@ -23,7 +23,6 @@ class HomeController extends Controller
             'quotationBanner' => Banner::active()->where('position', 'quotation')->orderBy('sort_order')->first(),
             'shortcutCategories' => Category::active()->where('is_featured', true)->orderBy('sort_order')->take(12)->get(),
             'featured' => Product::published()->where('is_featured', true)->with(['brand', 'category'])->latest('published_at')->take(10)->get(),
-            'packages' => Product::published()->where('product_type', 'bundle')->with(['brand', 'category'])->take(8)->get(),
             'newest' => Product::published()->where('is_new', true)->with(['brand', 'category'])->latest('published_at')->take(10)->get(),
             'promos' => Product::published()->whereNotNull('sale_price')->where('is_clearance', false)->with(['brand', 'category'])->take(10)->get(),
             'clearance' => Product::published()
