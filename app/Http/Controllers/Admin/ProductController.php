@@ -162,7 +162,7 @@ class ProductController extends Controller
             'spec_value.*' => ['nullable', 'string', 'max:1000'],
             'model' => ['nullable', 'string', 'max:255'],
             'product_type' => ['required', Rule::in(['simple', 'variable', 'bundle', 'service'])],
-            'condition' => ['required', Rule::in(['new', 'open_box', 'display_unit', 'used'])],
+            'condition' => ['required', Rule::in(['new', 'new_minor_defect', 'open_box', 'display_unit', 'used'])],
             'short_description' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
             'price' => ['required', 'numeric', 'min:0'],           // "Harga Jual"
