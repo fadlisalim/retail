@@ -144,6 +144,50 @@ class ProductInlineBrandTest extends TestCase
         $this->assertNull(Product::where('sku', 'SKU-BADGE-2')->first()->badge_text);
     }
 
+    public function test_index_shows_fast_edit_control(): void
+    {
+        $this->actingAs($this->staff());
+        $this->post(route('admin.products.store'), $this->payload(['sku' => 'SKU-FE-0']))->assertRedirect();
+
+        $this->get(route('admin.products.index'))->assertOk()->assertSee('Edit cepat');
+    }
+
+    public function test_fast_edit_updates_price_commission_status_and_stock(): void
+    {
+        $this->actingAs($this->staff());
+        $product = $this->stockedProduct(5, ['product_type' => 'simple', 'price' => 1000000, 'status' => 'draft']);
+
+        $this->put(route('admin.products.quick', $product), [
+            'price' => 1900000,
+            'compare_price' => 2700000,   // coret > jual → struck price
+            'affiliate_rate' => 7.5,
+            'status' => 'published',
+            'stock' => 12,
+        ])->assertRedirect();
+
+        $product->refresh();
+        $this->assertEquals(2700000, (float) $product->price);
+        $this->assertEquals(1900000, (float) $product->sale_price);
+        $this->assertEquals(7.5, (float) $product->affiliate_rate);
+        $this->assertSame('published', $product->status);
+        $this->assertNotNull($product->published_at);
+        $this->assertEquals(12, $product->fresh()->stock);
+    }
+
+    public function test_fast_edit_ignores_stock_for_variable_products(): void
+    {
+        $this->actingAs($this->staff());
+        $product = $this->stockedProduct(0, ['product_type' => 'variable', 'price' => 500000]);
+        $before = $product->stock;
+
+        $this->put(route('admin.products.quick', $product), [
+            'price' => 500000, 'status' => 'published', 'stock' => 99,
+        ])->assertRedirect();
+
+        // Variable stock is managed per variant — the posted stock is ignored.
+        $this->assertEquals($before, $product->fresh()->stock);
+    }
+
     public function test_existing_brand_is_reused_not_duplicated(): void
     {
         $this->actingAs($this->staff());

@@ -99,6 +99,51 @@ class ProductController extends Controller
             ->with('success', 'Produk berhasil dihapus.');
     }
 
+    /**
+     * Inline "fast edit" from the product list: price, stock, affiliate commission
+     * and status — without opening the full form.
+     */
+    public function quickUpdate(Request $request, Product $produk, StockService $stock): RedirectResponse
+    {
+        $data = $request->validate([
+            'price' => ['required', 'numeric', 'min:0'],           // Harga Jual
+            'compare_price' => ['nullable', 'numeric', 'min:0'],   // Harga Coret
+            'affiliate_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'status' => ['required', Rule::in(['draft', 'published', 'archived'])],
+            'stock' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        // Price model: "Harga Jual" + optional higher "Harga Coret" (same mapping as the full form).
+        $jual = (float) $data['price'];
+        $coret = $data['compare_price'] ?? null;
+        if ($coret !== null && (float) $coret > $jual) {
+            $produk->price = (float) $coret;
+            $produk->sale_price = $jual;
+        } else {
+            $produk->price = $jual;
+            $produk->sale_price = null;
+        }
+
+        $rate = $data['affiliate_rate'] ?? null;
+        $produk->affiliate_rate = ($rate === null || $rate === '') ? null : (float) $rate;
+
+        $produk->status = $data['status'];
+        if ($data['status'] === 'published' && ! $produk->published_at) {
+            $produk->published_at = now();
+        }
+        $produk->save();
+
+        // Stock is editable only for non-variable products (variable stock lives per variant).
+        if ($produk->product_type !== 'variable' && $request->filled('stock')) {
+            $delta = (int) $data['stock'] - (int) $produk->stock;
+            if ($delta !== 0) {
+                $stock->adjust($produk, null, $delta, StockMovementType::Adjustment, note: 'Edit cepat', userId: auth()->id());
+            }
+        }
+
+        return back()->with('success', 'Produk "'.$produk->name.'" diperbarui.');
+    }
+
     /** Build a unique SKU from the product name (fallback when the field is blank). */
     private function generateSku(string $name): string
     {

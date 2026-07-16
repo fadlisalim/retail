@@ -203,6 +203,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::resource('kategori', Admin\CategoryController::class)->names('categories')->except('show');
         Route::resource('brand', Admin\BrandController::class)->names('brands')->except('show');
         Route::resource('produk', Admin\ProductController::class)->names('products')->except('show');
+        Route::put('produk/{produk}/cepat', [Admin\ProductController::class, 'quickUpdate'])->name('products.quick');
         Route::resource('atribut', Admin\AttributeController::class)->names('attributes')->except('show');
 
         // Product media (gallery images, datasheet PDFs, YouTube videos).

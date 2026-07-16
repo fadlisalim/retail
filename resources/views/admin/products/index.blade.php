@@ -41,8 +41,22 @@
                     <th class="px-4 py-3 text-right">Aksi</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse ($products as $product)
+            @forelse ($products as $product)
+                @php
+                    $statusBadge = [
+                        'draft' => 'bg-gray-100 text-gray-600',
+                        'published' => 'bg-green-100 text-green-700',
+                        'archived' => 'bg-red-100 text-red-700',
+                    ][$product->status] ?? 'bg-gray-100 text-gray-600';
+                    $statusLabel = ['draft' => 'Draft', 'published' => 'Terbit', 'archived' => 'Arsip'][$product->status] ?? $product->status;
+                    $stockClass = $product->stock <= 0
+                        ? 'font-semibold text-red-600'
+                        : ($product->isLowStock() ? 'font-semibold text-amber-600' : 'text-gray-700');
+                    $sellPrice = $product->isOnSale() ? $product->sale_price : $product->price;
+                    $comparePrice = $product->isOnSale() ? $product->price : null;
+                    $isVariable = $product->product_type === 'variable';
+                @endphp
+                <tbody class="border-t border-gray-100" x-data="{ open: false }">
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-3">
@@ -62,26 +76,16 @@
                             @endif
                         </td>
                         <td class="px-4 py-3 text-center">
-                            @php
-                                $stockClass = $product->stock <= 0
-                                    ? 'font-semibold text-red-600'
-                                    : ($product->isLowStock() ? 'font-semibold text-amber-600' : 'text-gray-700');
-                            @endphp
-                            <span class="{{ $stockClass }}">{{ $product->stock }}</span>
+                            <span class="{{ $stockClass }}">{{ $isVariable ? $product->stock.'*' : $product->stock }}</span>
                         </td>
                         <td class="px-4 py-3 text-center">
-                            @php
-                                $statusBadge = [
-                                    'draft' => 'bg-gray-100 text-gray-600',
-                                    'published' => 'bg-green-100 text-green-700',
-                                    'archived' => 'bg-red-100 text-red-700',
-                                ][$product->status] ?? 'bg-gray-100 text-gray-600';
-                                $statusLabel = ['draft' => 'Draft', 'published' => 'Terbit', 'archived' => 'Arsip'][$product->status] ?? $product->status;
-                            @endphp
                             <span class="badge {{ $statusBadge }}">{{ $statusLabel }}</span>
                         </td>
                         <td class="px-4 py-3 text-right whitespace-nowrap">
-                            <a href="{{ route('admin.products.edit', $product) }}" class="text-brand-700 hover:underline">Edit</a>
+                            <button type="button" @click="open = !open" class="font-medium text-amber-600 hover:underline" :class="open && 'text-amber-700'">
+                                <span x-show="!open">Edit cepat</span><span x-show="open" x-cloak>Tutup</span>
+                            </button>
+                            <a href="{{ route('admin.products.edit', $product) }}" class="ml-3 text-brand-700 hover:underline">Edit</a>
                             <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="ml-3 inline"
                                   onsubmit="return confirm('Hapus produk ini?')">
                                 @csrf
@@ -90,10 +94,56 @@
                             </form>
                         </td>
                     </tr>
-                @empty
+
+                    {{-- Fast-edit row --}}
+                    <tr x-show="open" x-cloak class="bg-amber-50/40">
+                        <td colspan="6" class="px-4 py-4">
+                            <form action="{{ route('admin.products.quick', $product) }}" method="POST"
+                                  class="flex flex-wrap items-end gap-3">
+                                @csrf
+                                @method('PUT')
+                                <div>
+                                    <label class="input-label text-xs">Harga Jual (Rp)</label>
+                                    <input type="number" step="0.01" min="0" name="price" value="{{ old('price', $sellPrice) }}" required class="form-input w-36">
+                                </div>
+                                <div>
+                                    <label class="input-label text-xs">Harga Coret</label>
+                                    <input type="number" step="0.01" min="0" name="compare_price" value="{{ old('compare_price', $comparePrice) }}" placeholder="—" class="form-input w-36">
+                                </div>
+                                <div>
+                                    <label class="input-label text-xs">Stok</label>
+                                    @if ($isVariable)
+                                        <input type="number" value="{{ $product->stock }}" disabled class="form-input w-24 bg-gray-100" title="Stok varian diatur per varian di halaman Edit">
+                                    @else
+                                        <input type="number" min="0" name="stock" value="{{ $product->stock }}" class="form-input w-24">
+                                    @endif
+                                </div>
+                                <div>
+                                    <label class="input-label text-xs">Komisi Afiliasi (%)</label>
+                                    <input type="number" step="0.01" min="0" max="100" name="affiliate_rate" value="{{ $product->affiliate_rate }}" placeholder="default {{ rtrim(rtrim(number_format((float) setting('affiliate.default_rate', 2.5), 1), '0'), '.') }}%" class="form-input w-32">
+                                </div>
+                                <div>
+                                    <label class="input-label text-xs">Status</label>
+                                    <select name="status" class="form-select w-32">
+                                        @foreach (['draft' => 'Draft', 'published' => 'Terbit', 'archived' => 'Arsip'] as $val => $lbl)
+                                            <option value="{{ $val }}" @selected($product->status === $val)>{{ $lbl }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn-primary">Simpan</button>
+                                <button type="button" @click="open = false" class="btn-outline">Batal</button>
+                                @if ($isVariable)
+                                    <p class="w-full text-xs text-amber-600">*Stok produk varian diatur per varian di halaman Edit.</p>
+                                @endif
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            @empty
+                <tbody>
                     <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">Belum ada produk.</td></tr>
-                @endforelse
-            </tbody>
+                </tbody>
+            @endforelse
         </table>
     </div>
 
