@@ -137,9 +137,13 @@
                     <div class="flex flex-wrap gap-2">
                         @foreach ($product->variants as $variant)
                             <button type="button" @click="variantId = {{ $variant->id }}"
-                                    :class="variantId === {{ $variant->id }} ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-300 text-gray-600'"
-                                    class="rounded-lg border px-3 py-1.5 text-sm" @disabled($variant->stock <= 0)>
-                                {{ $variant->name }}
+                                    :class="variantId === {{ $variant->id }} ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500' : 'border-gray-300 text-gray-600 hover:border-brand-400'"
+                                    class="flex items-center gap-2 rounded-lg border py-1.5 pr-3 text-sm {{ $variant->image_path ? 'pl-1.5' : 'pl-3' }} disabled:opacity-40"
+                                    @disabled($variant->stock <= 0)>
+                                @if ($variant->image_path)
+                                    <img src="{{ asset('storage/'.$variant->image_path) }}" alt="{{ $variant->name }}" class="h-9 w-9 shrink-0 rounded object-cover" loading="lazy">
+                                @endif
+                                <span class="font-medium">{{ $variant->name }}</span>
                             </button>
                         @endforeach
                     </div>
