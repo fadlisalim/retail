@@ -85,39 +85,56 @@
         @endif
     </section>
 
-    {{-- CLEARANCE — dedicated band, placed right after the hero on both mobile & desktop. --}}
-    @if ($clearance->isNotEmpty())
-        <section class="order-2 mt-6 overflow-hidden rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 via-orange-50 to-white p-4 sm:order-none sm:p-6"
-                 x-data="{ scroll(dir) { const t = $refs.clearanceTrack; t.scrollBy({ left: dir * (t.clientWidth * 0.85), behavior: 'smooth' }); } }">
-            <div class="mb-4 flex items-end justify-between gap-3">
-                <div class="min-w-0">
-                    <div class="flex items-center gap-2">
-                        <span class="inline-flex items-center gap-1 rounded-full bg-red-600 px-3 py-1 text-sm font-extrabold uppercase tracking-wide text-white shadow-sm">
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z"/></svg>
-                            Clearance
-                        </span>
+    {{-- CLEARANCE + PROMO — two side-by-side panels, right after the hero. --}}
+    @if ($clearance->isNotEmpty() || $promos->isNotEmpty())
+        <section class="order-2 mt-6 grid gap-4 sm:order-none lg:grid-cols-2">
+            {{-- Clearance panel --}}
+            @if ($clearance->isNotEmpty())
+                <div class="overflow-hidden rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 via-orange-50 to-white p-4 sm:p-5"
+                     x-data="{ scroll(dir) { const t = $refs.track; t.scrollBy({ left: dir * (t.clientWidth * 0.85), behavior: 'smooth' }); } }">
+                    <div class="mb-3 flex items-end justify-between gap-2">
+                        <div class="min-w-0">
+                            <span class="inline-flex items-center gap-1 rounded-full bg-red-600 px-3 py-1 text-sm font-extrabold uppercase tracking-wide text-white shadow-sm">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z"/></svg>
+                                Clearance
+                            </span>
+                            <p class="mt-1 truncate text-xs text-gray-600">Stok terbatas • <span class="font-semibold text-red-600">Jaminan Harga Termurah!</span></p>
+                        </div>
+                        <a href="{{ route('clearance') }}" class="shrink-0 text-xs font-semibold text-red-600 hover:underline">Lihat semua →</a>
                     </div>
-                    <p class="mt-1 text-sm text-gray-600">Stok terbatas • Kondisi jelas • <span class="font-semibold text-red-600">Jaminan Harga Termurah!</span></p>
+                    <div x-ref="track" class="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        @foreach ($clearance as $product)
+                            <div class="w-[47%] shrink-0 snap-start sm:w-[31%] lg:w-[47%] xl:w-[31%]">
+                                <x-product-card :product="$product" />
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
-                <div class="flex shrink-0 items-center gap-2">
-                    <a href="{{ route('clearance') }}" class="text-sm font-semibold text-red-600 hover:underline">Lihat semua →</a>
-                    <div class="hidden items-center gap-1 sm:flex">
-                        <button type="button" @click="scroll(-1)" aria-label="Sebelumnya" class="grid h-8 w-8 place-items-center rounded-full border border-red-200 bg-white text-red-600 transition hover:bg-red-600 hover:text-white">
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
-                        </button>
-                        <button type="button" @click="scroll(1)" aria-label="Berikutnya" class="grid h-8 w-8 place-items-center rounded-full border border-red-200 bg-white text-red-600 transition hover:bg-red-600 hover:text-white">
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
-                        </button>
+            @endif
+
+            {{-- Promo panel --}}
+            @if ($promos->isNotEmpty())
+                <div class="overflow-hidden rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 via-teal-50 to-white p-4 sm:p-5"
+                     x-data="{ scroll(dir) { const t = $refs.track; t.scrollBy({ left: dir * (t.clientWidth * 0.85), behavior: 'smooth' }); } }">
+                    <div class="mb-3 flex items-end justify-between gap-2">
+                        <div class="min-w-0">
+                            <span class="inline-flex items-center gap-1 rounded-full bg-brand-600 px-3 py-1 text-sm font-extrabold uppercase tracking-wide text-white shadow-sm">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z"/></svg>
+                                Promo &amp; Penawaran
+                            </span>
+                            <p class="mt-1 truncate text-xs text-gray-600">Harga spesial • <span class="font-semibold text-brand-700">Hemat lebih banyak!</span></p>
+                        </div>
+                        <a href="{{ route('promo') }}" class="shrink-0 text-xs font-semibold text-brand-700 hover:underline">Lihat semua →</a>
+                    </div>
+                    <div x-ref="track" class="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        @foreach ($promos as $product)
+                            <div class="w-[47%] shrink-0 snap-start sm:w-[31%] lg:w-[47%] xl:w-[31%]">
+                                <x-product-card :product="$product" />
+                            </div>
+                        @endforeach
                     </div>
                 </div>
-            </div>
-            <div x-ref="clearanceTrack" class="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                @foreach ($clearance as $product)
-                    <div class="w-[46%] shrink-0 snap-start sm:w-[31%] md:w-[23%] lg:w-[18.5%]">
-                        <x-product-card :product="$product" />
-                    </div>
-                @endforeach
-            </div>
+            @endif
         </section>
     @endif
 
@@ -224,9 +241,6 @@
             </div>
         </section>
     @endif
-
-    {{-- 7. Promo --}}
-    <x-product-carousel title="Promo & Penawaran" :products="$promos" :view-all="route('promo')" />
 
     {{-- 9. Brand Terpopuler --}}
     @if ($brands->isNotEmpty())
