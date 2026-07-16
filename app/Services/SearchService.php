@@ -101,6 +101,10 @@ class SearchService
         if (! empty($f['clearance'])) {
             $query->where('is_clearance', true);
         }
+        // Keep clearance/surplus deals out of normal category browsing.
+        if (! empty($f['exclude_clearance'])) {
+            $query->where(fn ($q) => $q->where('is_clearance', false)->orWhereNull('is_clearance'));
+        }
         if (! empty($f['featured'])) {
             $query->where('is_featured', true);
         }
