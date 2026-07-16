@@ -151,13 +151,14 @@ Route::middleware('guest')->group(function () {
 });
 Route::post('/keluar', [LoginController::class, 'destroy'])->middleware('auth')->name('logout');
 
-// Email verification
+// Email verification — the link & resend must work WITHOUT being logged in,
+// because customers verify before they can log in.
+Route::get('/verifikasi-email/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+    ->middleware('signed')->name('verification.verify');
+Route::post('/verifikasi-email/kirim-ulang', [EmailVerificationController::class, 'resend'])
+    ->middleware('throttle:6,1')->name('verification.send');
 Route::middleware('auth')->group(function () {
     Route::get('/verifikasi-email', [EmailVerificationController::class, 'notice'])->name('verification.notice');
-    Route::get('/verifikasi-email/{id}/{hash}', [EmailVerificationController::class, 'verify'])
-        ->middleware('signed')->name('verification.verify');
-    Route::post('/verifikasi-email/kirim-ulang', [EmailVerificationController::class, 'resend'])
-        ->middleware('throttle:6,1')->name('verification.send');
 });
 
 /*

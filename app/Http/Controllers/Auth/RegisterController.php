@@ -10,7 +10,6 @@ use App\Services\WishlistService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -75,15 +74,15 @@ class RegisterController extends Controller
         // Fires SendEmailVerificationNotification (User implements MustVerifyEmail).
         event(new Registered($user));
 
-        Auth::login($user);
-        $request->session()->regenerate();
-
+        // Merge guest cart/wishlist into the account (by id — no login needed).
         if ($guestToken) {
             $cart->mergeGuestIntoUser($user->id, $guestToken);
             $wishlist->mergeGuestIntoUser($user->id, $guestToken);
         }
 
-        return redirect()->route('verification.notice')
-            ->with('success', 'Akun berhasil dibuat. Cek email Anda untuk verifikasi.');
+        // Verification is required BEFORE login — do not auto-login. Send them to
+        // the login page with a prompt to verify via the email we just sent.
+        return redirect()->route('login')
+            ->with('success', 'Akun berhasil dibuat. Kami telah mengirim tautan verifikasi ke '.$user->email.'. Silakan verifikasi email Anda, lalu masuk.');
     }
 }

@@ -18,6 +18,22 @@
         <button type="submit" class="btn-primary w-full">Masuk</button>
     </form>
 
+    {{-- Resend verification (shown after a "belum diverifikasi" login attempt). --}}
+    <div x-data="{ open: {{ request('verify') ? 'true' : 'false' }} }" class="mt-4">
+        <button type="button" @click="open = !open" class="text-sm font-medium text-brand-600 hover:underline">
+            Belum menerima email verifikasi?
+        </button>
+        <div x-show="open" x-cloak class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <p class="mb-2 text-sm text-amber-800">Masukkan email &amp; kata sandi Anda untuk kirim ulang tautan verifikasi.</p>
+            <form action="{{ route('verification.send') }}" method="POST" class="space-y-2">
+                @csrf
+                <input type="email" name="email" value="{{ request('verify') }}" placeholder="Email" required class="form-input">
+                <input type="password" name="password" placeholder="Kata sandi" required class="form-input">
+                <button type="submit" class="btn-outline w-full">Kirim Ulang Tautan Verifikasi</button>
+            </form>
+        </div>
+    </div>
+
     @if (config('rekasurya.demo.expose_credentials'))
         <div class="mt-6 rounded-lg border border-dashed border-brand-300 bg-brand-50 p-3 text-xs text-brand-800">
             <p class="mb-1 font-semibold">Akun demo (development):</p>

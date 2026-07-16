@@ -77,7 +77,8 @@ class EmailFlowTest extends TestCase
             'hash' => sha1($user->email),
         ]);
 
-        $this->actingAs($user)->get($url)->assertRedirect(route('account.dashboard'));
+        // The link works without being logged in (customers verify before first login).
+        $this->get($url)->assertRedirect(route('login'));
         $this->assertNotNull($user->fresh()->email_verified_at);
     }
 

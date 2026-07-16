@@ -40,8 +40,19 @@ class LoginController extends Controller
             ]);
         }
 
-        $request->session()->regenerate();
         $user = Auth::user();
+
+        // Customers must verify their email before they can log in. (Staff accounts
+        // are internal and exempt.)
+        if (! $user->isStaffMember() && ! $user->hasVerifiedEmail()) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Email Anda belum diverifikasi. Cek kotak masuk untuk tautan verifikasi, atau kirim ulang di bawah.',
+            ])->redirectTo(route('login').'?verify='.urlencode($credentials['email']));
+        }
+
+        $request->session()->regenerate();
         $user->forceFill(['last_login_at' => now(), 'last_login_ip' => $request->ip()])->save();
 
         LoginActivity::create([

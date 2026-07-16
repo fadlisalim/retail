@@ -24,9 +24,9 @@ class AuthTest extends TestCase
             'password_confirmation' => 'password123',
         ]);
 
-        // New accounts must verify their email before the account area unlocks.
-        $response->assertRedirect(route('verification.notice'));
-        $this->assertAuthenticated();
+        // New accounts must verify their email BEFORE logging in — no auto-login.
+        $response->assertRedirect(route('login'));
+        $this->assertGuest();
         $this->assertDatabaseHas('users', ['email' => 'budi@test.id']);
         $this->assertDatabaseHas('customer_profiles', ['user_id' => User::first()->id]);
         Event::assertDispatched(Registered::class);
@@ -46,7 +46,7 @@ class AuthTest extends TestCase
             'whatsapp' => '08123456789',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-        ])->assertRedirect(route('verification.notice'));
+        ])->assertRedirect(route('login'));
 
         // The same row is revived (not a duplicate) with the new details.
         $this->assertSame(1, User::withTrashed()->where('email', 'kembali@test.id')->count());
@@ -72,6 +72,31 @@ class AuthTest extends TestCase
         $this->post('/masuk', ['email' => 'a@test.id', 'password' => 'password123'])
             ->assertRedirect();
         $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_unverified_customer_cannot_login(): void
+    {
+        User::factory()->unverified()->create([
+            'email' => 'belum@test.id', 'password' => 'password123', 'is_active' => true,
+        ]);
+
+        $this->from('/masuk')->post('/masuk', ['email' => 'belum@test.id', 'password' => 'password123'])
+            ->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
+
+    public function test_verification_link_verifies_without_login(): void
+    {
+        $user = User::factory()->unverified()->create(['email' => 'verif@test.id']);
+
+        $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'verification.verify', now()->addHour(),
+            ['id' => $user->id, 'hash' => sha1($user->email)],
+        );
+
+        $this->get($url)->assertRedirect(route('login'));
+        $this->assertNotNull($user->fresh()->email_verified_at);
+        $this->assertGuest();  // verifying does not log the user in
     }
 
     public function test_login_fails_with_wrong_password(): void
