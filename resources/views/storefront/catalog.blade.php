@@ -89,7 +89,7 @@
                 {{-- Condition --}}
                 <div class="border-b border-gray-100 py-3">
                     <p class="mb-2 text-sm font-semibold text-gray-700">Kondisi</p>
-                    @foreach (['new' => 'Baru', 'new_minor_defect' => 'Baru - Minor Defect', 'open_box' => 'Open Box', 'display_unit' => 'Bekas Display', 'used' => 'Bekas Pakai'] as $val => $label)
+                    @foreach (['new' => 'Baru', 'new_minor_defect' => 'Baru - Minor Defect', 'new_project_surplus' => 'Baru - Sisa Proyek', 'open_box' => 'Open Box', 'display_unit' => 'Bekas Display', 'used' => 'Bekas Pakai'] as $val => $label)
                         <label class="flex items-center gap-2 text-sm text-gray-600">
                             <input type="checkbox" name="condition[]" value="{{ $val }}" @checked(in_array($val, (array)($filters['condition'] ?? []))) class="rounded text-brand-600 focus:ring-brand-500">
                             {{ $label }}

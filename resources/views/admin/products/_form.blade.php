@@ -1,6 +1,6 @@
 @php
     $productTypes = ['simple' => 'Sederhana', 'variable' => 'Varian', 'bundle' => 'Paket (Bundle)', 'service' => 'Jasa/Layanan'];
-    $conditions = ['new' => 'Baru', 'new_minor_defect' => 'Baru - Minor Defect', 'open_box' => 'Open Box', 'display_unit' => 'Bekas Display', 'used' => 'Bekas Pakai'];
+    $conditions = ['new' => 'Baru', 'new_minor_defect' => 'Baru - Minor Defect', 'new_project_surplus' => 'Baru - Sisa Proyek', 'open_box' => 'Open Box', 'display_unit' => 'Bekas Display', 'used' => 'Bekas Pakai'];
     $statuses = ['draft' => 'Draft', 'published' => 'Terbit', 'archived' => 'Arsip'];
 
     // Friendly price model: "Harga Jual" (what the customer pays) + optional "Harga Coret".

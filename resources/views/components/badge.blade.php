@@ -4,6 +4,8 @@
         'Clearance' => 'bg-red-100 text-red-700',
         'Promo' => 'bg-accent-500/10 text-accent-600',
         'Baru' => 'bg-brand-100 text-brand-700',
+        'Baru - Minor Defect' => 'bg-amber-100 text-amber-700',
+        'Baru - Sisa Proyek' => 'bg-amber-100 text-amber-700',
         'Open Box' => 'bg-amber-100 text-amber-700',
         'Bekas Display' => 'bg-amber-100 text-amber-700',
         'Bekas Pakai' => 'bg-gray-200 text-gray-700',
