@@ -91,21 +91,21 @@ class WatermarkService
         $h = imagesy($img);
 
         // Scale font to the image so small and large photos look consistent.
-        $fontSize = max(12, (int) round(min($w, $h) * 0.045));
+        $fontSize = max(11, (int) round(min($w, $h) * 0.038));
         $angle = 30;
 
-        // Semi-transparent white text with a soft dark shadow for legibility.
-        // GD alpha: 0 = opaque, 127 = fully transparent.
-        $white = imagecolorallocatealpha($img, 255, 255, 255, 92);
-        $shadow = imagecolorallocatealpha($img, 0, 0, 0, 105);
+        // Very light, barely-there mark. GD alpha: 0 = opaque, 127 = transparent.
+        $white = imagecolorallocatealpha($img, 255, 255, 255, 112);
+        $shadow = imagecolorallocatealpha($img, 0, 0, 0, 118);
 
         // Measure one label to space the tiling grid.
         $box = imagettfbbox($fontSize, $angle, $this->fontPath, $text);
         $textW = abs($box[2] - $box[0]);
         $textH = abs($box[7] - $box[1]);
 
-        $stepX = max(120, (int) ($textW + $fontSize * 3));
-        $stepY = max(90, (int) ($textH + $fontSize * 4));
+        // Sparse spacing — plenty of breathing room between marks.
+        $stepX = max(240, (int) ($textW + $fontSize * 9));
+        $stepY = max(220, (int) ($textH + $fontSize * 11));
 
         // Start off-canvas so the pattern fills edge to edge even with rotation.
         for ($y = -$stepY; $y < $h + $stepY; $y += $stepY) {
