@@ -79,6 +79,18 @@
         </div>
     </div>
 
+    {{-- Mobile quick links (below search) --}}
+    <div class="flex items-center gap-2 px-4 pb-2 lg:hidden">
+        <a href="{{ route('products.index') }}" class="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-600">
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+            Semua Produk
+        </a>
+        <a href="{{ route('affiliate.landing') }}" class="inline-flex items-center gap-1 rounded-full border border-accent-400 bg-accent-500/10 px-3 py-1 text-xs font-semibold text-accent-600">
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+            Afiliator
+        </a>
+    </div>
+
     {{-- Desktop category bar / mega menu --}}
     <nav class="relative hidden border-t border-gray-100 lg:block" aria-label="Kategori">
         <div class="mx-auto flex max-w-7xl items-center gap-5 px-6 py-2 text-sm">
