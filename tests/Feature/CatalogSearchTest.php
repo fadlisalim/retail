@@ -44,19 +44,18 @@ class CatalogSearchTest extends TestCase
         $this->get('/kategori/panel-surya')->assertOk()->assertSee('PanelX')->assertDontSee('InverterY');
     }
 
-    public function test_category_browsing_hides_clearance_items(): void
+    public function test_category_browsing_shows_clearance_items_too(): void
     {
         $cat = Category::factory()->create(['slug' => 'panel-surya']);
         Product::factory()->create(['name' => 'PanelBaru', 'category_id' => $cat->id, 'status' => 'published', 'is_clearance' => false]);
         Product::factory()->create(['name' => 'PanelClearance', 'category_id' => $cat->id, 'status' => 'published', 'is_clearance' => true]);
 
-        // Clearance items are surfaced only on the homepage/clearance page, not category browsing.
+        // Clearance items appear in their category too (and also on the clearance page).
         $this->get('/kategori/panel-surya')
             ->assertOk()
             ->assertSee('PanelBaru')
-            ->assertDontSee('PanelClearance');
+            ->assertSee('PanelClearance');
 
-        // …but the dedicated clearance page still shows them.
         $this->get('/barang-clearance')->assertOk()->assertSee('PanelClearance');
     }
 }

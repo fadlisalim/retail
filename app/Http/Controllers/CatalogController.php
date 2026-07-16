@@ -43,9 +43,7 @@ class CatalogController extends Controller
             $category->ancestors(),
         );
 
-        // Clearance / surplus deals live in their own homepage section and the
-        // /clearance page — keep them out of regular category browsing.
-        return $this->render($request->merge(['category' => $category->slug, 'exclude_clearance' => 1]), [
+        return $this->render($request->merge(['category' => $category->slug]), [
             'title' => $category->meta_title ?: $category->name,
             'metaDescription' => $category->meta_description,
             'category' => $category,
@@ -98,7 +96,7 @@ class CatalogController extends Controller
     {
         $filters = $request->only([
             'q', 'category', 'brand', 'price_min', 'price_max', 'condition',
-            'in_stock', 'ready', 'quotation', 'promo', 'new', 'clearance', 'exclude_clearance', 'featured',
+            'in_stock', 'ready', 'quotation', 'promo', 'new', 'clearance', 'featured',
             'rating_min', 'sort', 'attr',
         ]);
 
