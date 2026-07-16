@@ -85,6 +85,25 @@ class ProductMediaTest extends TestCase
         $this->assertSame(array_reverse($ids), $product->fresh()->images->pluck('id')->all());
     }
 
+    public function test_admin_can_set_primary_image(): void
+    {
+        Storage::fake('public');
+        $this->actingAs($this->staff());
+        $product = $this->stockedProduct(5);
+
+        $this->post(route('admin.products.image.store', $product), [
+            'images' => [UploadedFile::fake()->image('a.jpg'), UploadedFile::fake()->image('b.jpg')],
+        ])->assertRedirect();
+
+        $second = $product->fresh()->images()->orderBy('sort_order')->skip(1)->first();
+
+        // The route binds the product by slug (its route key) — the same URL the UI builds.
+        $this->post(route('admin.products.image.primary', ['produk' => $product, 'image' => $second]))
+            ->assertRedirect();
+
+        $this->assertSame($second->path, $product->fresh()->main_image_path);
+    }
+
     public function test_rejects_non_pdf_document(): void
     {
         Storage::fake('public');

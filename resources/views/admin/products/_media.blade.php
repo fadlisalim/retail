@@ -30,7 +30,7 @@
                     if (method !== 'POST') html += `<input type='hidden' name='_method' value='${method}'>`;
                     f.innerHTML = html; document.body.appendChild(f); f.submit();
                 },
-                setMain(id) { this.submit(`{{ url('admin/produk/'.$product->id.'/gambar') }}/${id}/utama`); },
+                setMain(id) { this.submit(`{{ url('admin/produk/'.$product->getRouteKey().'/gambar') }}/${id}/utama`); },
                 remove(id) { if (confirm('Hapus gambar ini?')) this.submit(`{{ url('admin/produk-gambar') }}/${id}`, 'DELETE'); },
                 async save() {
                     this.saving = true;
