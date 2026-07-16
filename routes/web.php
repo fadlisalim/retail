@@ -40,6 +40,7 @@ Route::get('/pencarian', [SearchController::class, 'index'])->name('search');
 Route::get('/api/pencarian/suggest', [SearchController::class, 'suggest'])
     ->middleware('throttle:60,1')->name('search.suggest');
 
+Route::get('/kategori', [CatalogController::class, 'categories'])->name('categories.index');
 Route::get('/kategori/{category:slug}', [CatalogController::class, 'category'])->name('categories.show');
 Route::get('/brand/{brand:slug}', [CatalogController::class, 'brand'])->name('brands.show');
 

@@ -22,6 +22,18 @@ class CatalogController extends Controller
         ]);
     }
 
+    /** Directory of all active categories with their sub-categories. */
+    public function categories(): View
+    {
+        $categories = Category::active()
+            ->whereNull('parent_id')
+            ->with(['activeChildren' => fn ($q) => $q->orderBy('sort_order')])
+            ->orderBy('sort_order')
+            ->get();
+
+        return view('storefront.categories', ['categories' => $categories]);
+    }
+
     public function category(Request $request, Category $category): View
     {
         abort_unless($category->is_active, 404);

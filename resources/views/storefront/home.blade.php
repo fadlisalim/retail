@@ -113,7 +113,7 @@
         <section class="order-4 mt-8 sm:order-none">
             <div class="mb-3 flex items-end justify-between">
                 <h2 class="text-lg font-bold text-gray-900 sm:text-xl">Kategori Unggulan</h2>
-                <a href="{{ route('products.index') }}" class="text-sm font-medium text-brand-600 hover:underline">Semua kategori →</a>
+                <a href="{{ route('categories.index') }}" class="text-sm font-medium text-brand-600 hover:underline">Semua kategori →</a>
             </div>
             <div class="grid grid-cols-3 gap-3 sm:grid-cols-6">
                 @foreach ($shortcutCategories as $cat)

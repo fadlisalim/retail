@@ -3,7 +3,7 @@
     <div class="mx-auto grid max-w-lg grid-cols-5">
         @php($nav = [
             ['home', 'Beranda', 'M2.25 12 12 3l9.75 9M4.5 9.75V21h5.25v-6h4.5v6H19.5V9.75'],
-            ['products.index', 'Kategori', 'M3.75 6h16.5M3.75 12h16.5m-16.5 6h16.5'],
+            ['categories.index', 'Kategori', 'M3.75 6h16.5M3.75 12h16.5m-16.5 6h16.5'],
         ])
         @foreach($nav as [$route, $label, $path])
             <a href="{{ route($route) }}" class="flex flex-col items-center gap-0.5 py-2 text-[11px] {{ request()->routeIs($route) ? 'text-brand-700' : 'text-gray-500' }}">
