@@ -29,6 +29,9 @@
         @endif
     </form>
 
+    @php
+        $defaultAffiliateRate = (float) setting('affiliate.default_rate', 2.5);
+    @endphp
     <div class="card overflow-x-auto">
         <table class="w-full text-sm">
             <thead>
@@ -37,6 +40,7 @@
                     <th class="px-4 py-3">Kategori</th>
                     <th class="px-4 py-3 text-right">Harga</th>
                     <th class="px-4 py-3 text-center">Stok</th>
+                    <th class="px-4 py-3 text-center">Komisi</th>
                     <th class="px-4 py-3 text-center">Status</th>
                     <th class="px-4 py-3 text-right">Aksi</th>
                 </tr>
@@ -55,6 +59,7 @@
                     $sellPrice = $product->isOnSale() ? $product->sale_price : $product->price;
                     $comparePrice = $product->isOnSale() ? $product->price : null;
                     $isVariable = $product->product_type === 'variable';
+                    $fmtRate = fn ($r) => rtrim(rtrim(number_format((float) $r, 2, ',', '.'), '0'), ',').'%';
                 @endphp
                 <tbody class="border-t border-gray-100" x-data="{ open: false }">
                     <tr class="hover:bg-gray-50">
@@ -79,6 +84,13 @@
                             <span class="{{ $stockClass }}">{{ $isVariable ? $product->stock.'*' : $product->stock }}</span>
                         </td>
                         <td class="px-4 py-3 text-center">
+                            @if ($product->affiliate_rate !== null)
+                                <span class="font-semibold text-gray-800">{{ $fmtRate($product->affiliate_rate) }}</span>
+                            @else
+                                <span class="text-gray-400" title="Pakai komisi default">{{ $fmtRate($defaultAffiliateRate) }}</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 text-center">
                             <span class="badge {{ $statusBadge }}">{{ $statusLabel }}</span>
                         </td>
                         <td class="px-4 py-3 text-right whitespace-nowrap">
@@ -97,7 +109,7 @@
 
                     {{-- Fast-edit row --}}
                     <tr x-show="open" x-cloak class="bg-amber-50/40">
-                        <td colspan="6" class="px-4 py-4">
+                        <td colspan="7" class="px-4 py-4">
                             <form action="{{ route('admin.products.quick', $product) }}" method="POST"
                                   class="flex flex-wrap items-end gap-3">
                                 @csrf
@@ -141,7 +153,7 @@
                 </tbody>
             @empty
                 <tbody>
-                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">Belum ada produk.</td></tr>
+                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">Belum ada produk.</td></tr>
                 </tbody>
             @endforelse
         </table>

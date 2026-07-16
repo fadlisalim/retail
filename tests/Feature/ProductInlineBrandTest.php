@@ -152,6 +152,17 @@ class ProductInlineBrandTest extends TestCase
         $this->get(route('admin.products.index'))->assertOk()->assertSee('Edit cepat');
     }
 
+    public function test_index_shows_affiliate_commission_column(): void
+    {
+        $this->actingAs($this->staff());
+        $withRate = $this->stockedProduct(0, ['name' => 'ProdukKomisi', 'affiliate_rate' => 7.5]);
+
+        $this->get(route('admin.products.index'))
+            ->assertOk()
+            ->assertSee('Komisi')      // column header
+            ->assertSee('7,5%');       // the product's own rate
+    }
+
     public function test_fast_edit_updates_price_commission_status_and_stock(): void
     {
         $this->actingAs($this->staff());
