@@ -24,7 +24,7 @@ class Product extends Model
         'weight_grams', 'length_cm', 'width_cm', 'height_cm', 'package_count',
         'can_combine_package', 'requires_freight', 'pickup_only',
         'warranty', 'estimated_processing', 'main_image_path',
-        'status', 'is_featured', 'is_new', 'is_promo', 'is_clearance',
+        'status', 'is_featured', 'is_new', 'is_promo', 'is_clearance', 'badge_text',
         'is_purchasable', 'requires_quotation', 'min_purchase', 'max_purchase',
         'meta_title', 'meta_description', 'keywords', 'canonical_url', 'published_at',
     ];
@@ -199,6 +199,7 @@ class Product extends Model
     public function badges(): array
     {
         $badges = [];
+        if (filled($this->badge_text)) $badges[] = $this->badge_text;
         if ($this->is_clearance) $badges[] = 'Clearance';
         if ($this->condition !== ProductCondition::New->value) {
             $badges[] = $this->conditionEnum()->label();

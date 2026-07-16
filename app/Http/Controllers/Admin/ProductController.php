@@ -183,6 +183,7 @@ class ProductController extends Controller
             'is_new' => ['boolean'],
             'is_promo' => ['boolean'],
             'is_clearance' => ['boolean'],
+            'badge_text' => ['nullable', 'string', 'max:60'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
             'keywords' => ['nullable', 'string', 'max:500'],
@@ -206,6 +207,9 @@ class ProductController extends Controller
         $data['pickup_only'] = $product?->pickup_only ?? false;
         $data['min_purchase'] = $product?->min_purchase ?? 1;
         $data['max_purchase'] = $product?->max_purchase ?? null;
+
+        // Store an empty custom tag as NULL so no blank badge renders.
+        $data['badge_text'] = trim((string) ($data['badge_text'] ?? '')) ?: null;
 
         // Coalesce non-nullable columns so a blank field never writes NULL.
         $data['unit'] = $data['unit'] ?: 'pcs';

@@ -137,6 +137,9 @@
                     <x-form.checkbox name="is_promo" label="Promo" :checked="(bool) $product->is_promo" />
                     <x-form.checkbox name="is_clearance" label="Clearance" :checked="(bool) $product->is_clearance" />
                 </div>
+                <x-form.input name="badge_text" label="Tag Kustom" :value="$product->badge_text" maxlength="60"
+                              placeholder="mis. JAMINAN HARGA TERMURAH"
+                              hint="Teks tag khusus yang tampil di kartu & halaman produk. Kosongkan bila tidak perlu." />
             </div>
 
             {{-- SEO --}}

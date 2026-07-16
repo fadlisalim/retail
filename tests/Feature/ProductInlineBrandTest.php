@@ -120,6 +120,30 @@ class ProductInlineBrandTest extends TestCase
         $this->assertNotEmpty($p->sku);
     }
 
+    public function test_custom_badge_text_is_saved_and_shown_in_badges(): void
+    {
+        $this->actingAs($this->staff());
+
+        $this->post(route('admin.products.store'), $this->payload([
+            'sku' => 'SKU-BADGE-1', 'badge_text' => 'JAMINAN HARGA TERMURAH',
+        ]))->assertRedirect();
+
+        $p = Product::where('sku', 'SKU-BADGE-1')->first();
+        $this->assertSame('JAMINAN HARGA TERMURAH', $p->badge_text);
+        $this->assertContains('JAMINAN HARGA TERMURAH', $p->badges());
+    }
+
+    public function test_blank_badge_text_is_stored_as_null(): void
+    {
+        $this->actingAs($this->staff());
+
+        $this->post(route('admin.products.store'), $this->payload([
+            'sku' => 'SKU-BADGE-2', 'badge_text' => '   ',
+        ]))->assertRedirect();
+
+        $this->assertNull(Product::where('sku', 'SKU-BADGE-2')->first()->badge_text);
+    }
+
     public function test_existing_brand_is_reused_not_duplicated(): void
     {
         $this->actingAs($this->staff());

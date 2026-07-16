@@ -12,6 +12,8 @@
         'Ambil di Lokasi' => 'bg-slate-100 text-slate-700',
         'Minta Penawaran' => 'bg-teal-100 text-teal-700',
     ];
-    $classes = $map[$label] ?? 'bg-brand-100 text-brand-700';
+    // Trust/price-guarantee tags (e.g. "JAMINAN HARGA TERMURAH") get a strong emerald look.
+    $isGuarantee = (bool) preg_match('/\b(jaminan|termurah|garansi harga)\b/i', $label);
+    $classes = $map[$label] ?? ($isGuarantee ? 'bg-emerald-600 text-white shadow-sm' : 'bg-brand-100 text-brand-700');
 @endphp
 <span class="badge {{ $classes }}">{{ $label }}</span>
