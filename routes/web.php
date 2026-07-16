@@ -34,7 +34,9 @@ Route::get('/produk', [CatalogController::class, 'index'])->name('products.index
 Route::get('/promo', [CatalogController::class, 'promo'])->name('promo');
 Route::get('/produk-baru', [CatalogController::class, 'newest'])->name('products.new');
 Route::get('/barang-clearance', [CatalogController::class, 'clearance'])->name('clearance');
-Route::get('/barang-sisa-proyek', [CatalogController::class, 'surplus'])->name('surplus');
+// "Barang sisa proyek" is now a product condition, not a category/page — keep the
+// old URL alive by redirecting to Clearance.
+Route::redirect('/barang-sisa-proyek', '/barang-clearance', 301)->name('surplus');
 
 Route::get('/pencarian', [SearchController::class, 'index'])->name('search');
 Route::get('/api/pencarian/suggest', [SearchController::class, 'suggest'])

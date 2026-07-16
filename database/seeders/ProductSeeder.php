@@ -225,15 +225,17 @@ class ProductSeeder extends Seeder
 
     private function seedSurplus(): void
     {
+        // Surplus is now expressed via product condition (not a category), so each
+        // item lives in its real product category and carries the right condition.
         $items = [
-            ['SRP-PNL-01', 'Panel Surya 450Wp (Sisa Proyek)', 'barang-sisa-proyek-baru', 'new', 950000, 30, false, 'Kelebihan stok proyek PLTS 100kWp.'],
-            ['SRP-INV-01', 'Inverter Hybrid 5kW (Open Box)', 'barang-sisa-proyek-open-box', 'open_box', 9900000, 3, true, 'Kardus pernah dibuka, unit tidak pernah dipakai.'],
-            ['SRP-INV-02', 'Inverter On-Grid 3kW (Bekas Display)', 'barang-sisa-proyek-bekas-display', 'display_unit', 4900000, 2, true, 'Bekas pajangan showroom, fungsi normal.'],
-            ['SRP-BAT-01', 'Baterai LiFePO4 5kWh (Bekas Pakai)', 'barang-sisa-proyek-bekas-pakai', 'used', 12000000, 4, true, 'Bekas pakai 1 tahun, SOH 92%.'],
-            ['SRP-SCC-01', 'MPPT 60A (Open Box)', 'barang-sisa-proyek-open-box', 'open_box', 1950000, 6, false, 'Open box, garansi toko 6 bulan.'],
-            ['SRP-PNL-02', 'Panel Bifacial 560Wp (Sisa Proyek)', 'barang-sisa-proyek-baru', 'new', 1350000, 20, false, 'Sisa proyek komersial, kondisi baru.'],
-            ['SRP-MNT-01', 'Rail Mounting (Bekas Pakai)', 'barang-sisa-proyek-bekas-pakai', 'used', 180000, 50, false, 'Bekas bongkaran, masih kokoh.'],
-            ['SRP-CMB-01', 'Combiner Box (Bekas Display)', 'barang-sisa-proyek-bekas-display', 'display_unit', 850000, 3, false, 'Bekas display pameran.'],
+            ['SRP-PNL-01', 'Panel Surya 450Wp (Sisa Proyek)', 'panel-surya-monocrystalline', 'new_project_surplus', 950000, 30, false, 'Kelebihan stok proyek PLTS 100kWp.'],
+            ['SRP-INV-01', 'Inverter Hybrid 5kW (Open Box)', 'inverter-hybrid', 'open_box', 9900000, 3, true, 'Kardus pernah dibuka, unit tidak pernah dipakai.'],
+            ['SRP-INV-02', 'Inverter On-Grid 3kW (Bekas Display)', 'inverter-on-grid', 'display_unit', 4900000, 2, true, 'Bekas pajangan showroom, fungsi normal.'],
+            ['SRP-BAT-01', 'Baterai LiFePO4 5kWh (Bekas Pakai)', 'baterai-lithium-lifepo4', 'used', 12000000, 4, true, 'Bekas pakai 1 tahun, SOH 92%.'],
+            ['SRP-SCC-01', 'MPPT 60A (Open Box)', 'solar-charge-controller-mppt', 'open_box', 1950000, 6, false, 'Open box, garansi toko 6 bulan.'],
+            ['SRP-PNL-02', 'Panel Bifacial 560Wp (Sisa Proyek)', 'panel-surya-bifacial', 'new_project_surplus', 1350000, 20, false, 'Sisa proyek komersial, kondisi baru.'],
+            ['SRP-MNT-01', 'Rail Mounting (Bekas Pakai)', 'mounting-rangka-atap-rooftop', 'used', 180000, 50, false, 'Bekas bongkaran, masih kokoh.'],
+            ['SRP-CMB-01', 'Combiner Box (Bekas Display)', 'kabel-konektor-proteksi-combiner-box', 'display_unit', 850000, 3, false, 'Bekas display pameran.'],
         ];
 
         foreach ($items as [$sku, $name, $categorySlug, $condition, $price, $stock, $negotiable, $reason]) {
@@ -248,10 +250,10 @@ class ProductSeeder extends Seeder
                 'item_location' => 'Gudang Jakarta',
                 'available_quantity' => $stock,
                 'purchase_year' => now()->year - 1,
-                'remaining_warranty' => $condition === 'new' ? '12 tahun' : '3-6 bulan garansi toko',
+                'remaining_warranty' => str_starts_with($condition, 'new') ? '12 tahun' : '3-6 bulan garansi toko',
                 'completeness' => 'Unit + manual',
                 'defect_notes' => $condition === 'used' ? 'Terdapat goresan pemakaian wajar.' : 'Tidak ada cacat fungsi.',
-                'is_returnable' => $condition === 'new',
+                'is_returnable' => str_starts_with($condition, 'new'),
                 'is_negotiable' => $negotiable,
                 'pickup_required' => false,
                 'auto_shipping' => true,

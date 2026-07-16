@@ -20,13 +20,16 @@ class CategorySeeder extends Seeder
         'Pompa Air Tenaga Surya' => ['Submersible', 'Surface'],
         'PJU Tenaga Surya' => ['PJU All-in-One', 'PJU Two-in-One', 'Lampu Taman', 'Lampu Sorot'],
         'Portable Power' => ['Power Station', 'Solar Generator'],
-        'Barang Sisa Proyek' => ['Baru', 'Open Box', 'Bekas Display', 'Bekas Pakai'],
     ];
 
-    private array $featured = ['Panel Surya', 'Inverter', 'Baterai', 'Paket PLTS', 'PJU Tenaga Surya', 'Barang Sisa Proyek'];
+    private array $featured = ['Panel Surya', 'Inverter', 'Baterai', 'Paket PLTS', 'PJU Tenaga Surya'];
 
-    /** Demo categories replaced by the tree above — deactivated (not deleted) to keep the nav clean. */
-    private array $retired = ['aksesoris', 'spare-part'];
+    /**
+     * Demo/removed categories — deactivated (not deleted) to keep the nav clean.
+     * "Barang Sisa Proyek" is retired: surplus is now expressed via product
+     * condition (e.g. "Baru - Sisa Proyek"), not a category.
+     */
+    private array $retired = ['aksesoris', 'spare-part', 'barang-sisa-proyek'];
 
     public function run(): void
     {

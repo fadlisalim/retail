@@ -6,7 +6,7 @@
             <p>{{ config('rekasurya.company.tagline') }}</p>
             <nav class="flex items-center gap-4" aria-label="Menu utilitas">
                 <a href="{{ route('promo') }}" class="hover:text-accent-400">Promo</a>
-                <a href="{{ route('surplus') }}" class="hover:text-accent-400">Barang Sisa Proyek</a>
+                <a href="{{ route('clearance') }}" class="hover:text-accent-400">Clearance</a>
                 <a href="{{ route('quotations.create') }}" class="hover:text-accent-400">Permintaan Penawaran</a>
                 <a href="{{ route('faq') }}" class="hover:text-accent-400">Bantuan</a>
             </nav>

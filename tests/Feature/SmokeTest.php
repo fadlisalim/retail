@@ -26,7 +26,9 @@ class SmokeTest extends TestCase
         $this->get('/')->assertOk();
         $this->get('/produk')->assertOk();
         $this->get('/promo')->assertOk();
-        $this->get('/barang-sisa-proyek')->assertOk();
+        $this->get('/barang-clearance')->assertOk();
+        // Old surplus URL now redirects to Clearance (condition-based, not a category).
+        $this->get('/barang-sisa-proyek')->assertRedirect('/barang-clearance');
         $this->get('/pencarian?q=inverter')->assertOk();
         $this->get('/permintaan-penawaran')->assertOk();
         $this->get('/faq')->assertOk();

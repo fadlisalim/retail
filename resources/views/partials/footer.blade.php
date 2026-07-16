@@ -17,7 +17,6 @@
                     <li><a href="{{ route('promo') }}" class="hover:text-brand-700">Promo</a></li>
                     <li><a href="{{ route('products.new') }}" class="hover:text-brand-700">Produk Baru</a></li>
                     <li><a href="{{ route('clearance') }}" class="hover:text-brand-700">Clearance</a></li>
-                    <li><a href="{{ route('surplus') }}" class="hover:text-brand-700">Barang Sisa Proyek</a></li>
                 </ul>
             </div>
             <div>

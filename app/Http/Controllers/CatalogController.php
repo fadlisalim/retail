@@ -93,18 +93,6 @@ class CatalogController extends Controller
         ]);
     }
 
-    public function surplus(Request $request): View
-    {
-        // Project surplus = clearance or non-new condition items.
-        $category = Category::where('slug', 'barang-sisa-proyek')->first();
-
-        return $this->render($request->merge($category ? ['category' => $category->slug] : ['clearance' => 1]), [
-            'title' => 'Barang Sisa Proyek',
-            'heading' => 'Barang Sisa Proyek',
-            'breadcrumbs' => [['label' => 'Barang Sisa Proyek']],
-        ]);
-    }
-
     /** Shared catalog renderer: runs the search, builds filter facets, returns the grid view. */
     private function render(Request $request, array $view): View
     {
