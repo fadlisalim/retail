@@ -154,6 +154,16 @@
 
     {{-- Sisa section — urutan sumber dipakai apa adanya di desktop --}}
     <div class="order-6 sm:order-none">
+    {{-- Akses cepat ke katalog lengkap --}}
+    <div class="mt-8 flex justify-center">
+        <a href="{{ route('products.index') }}"
+           class="inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-8 py-3 text-base font-semibold text-brand-700 transition hover:border-brand-400 hover:bg-brand-100">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+            Lihat Semua Produk
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
+        </a>
+    </div>
+
     <x-product-carousel title="Paket PLTS Populer" subtitle="Solusi lengkap on-grid, off-grid, & hybrid" :products="$packages" :view-all="route('products.index', ['category' => 'paket-plts'])" />
     <x-product-carousel title="Produk Terbaru" :products="$newest" :view-all="route('products.new')" />
 
