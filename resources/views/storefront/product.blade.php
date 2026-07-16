@@ -188,11 +188,11 @@
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
                         <input type="hidden" name="variant_id" :value="variantId">
                         <input type="hidden" name="quantity" :value="qty">
-                        <button type="submit" class="btn-primary w-full" :disabled="stock <= 0">Tambah Keranjang</button>
+                        <button type="submit" class="btn-primary w-full" :disabled="stock <= 0">Tambah ke Keranjang</button>
                     </form>
                 @endif
                 @if ($whatsappEnabled)
-                    <a href="{{ whatsapp_link($waMsg) }}" target="_blank" rel="noopener" class="btn-outline flex-1 text-green-700">Tanya WhatsApp</a>
+                    <a href="{{ whatsapp_link($waMsg) }}" target="_blank" rel="noopener" class="btn-outline flex-1 text-green-700">Konsultasi via WhatsApp</a>
                 @endif
             </div>
             <div class="mt-2 flex gap-2 text-sm text-gray-500">

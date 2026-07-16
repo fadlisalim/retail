@@ -40,6 +40,18 @@
         display: none !important;
     }
 
+    /* Respect users who prefer reduced motion (accessibility). */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+
     /* Visible focus for keyboard navigation / accessibility. */
     a:focus-visible,
     button:focus-visible,
@@ -74,7 +86,8 @@
     .form-input,
     .form-select,
     .form-textarea {
-        @apply w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500;
+        /* text-base (16px) on mobile stops iOS from auto-zooming on focus; text-sm from sm+. */
+        @apply w-full rounded-lg border-gray-300 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm;
     }
     .badge {
         @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
