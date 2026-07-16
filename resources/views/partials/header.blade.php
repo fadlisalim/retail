@@ -56,8 +56,8 @@
             </div>
         </form>
 
-        {{-- Action icons --}}
-        <div class="flex items-center gap-1 sm:gap-2">
+        {{-- Action icons (desktop only — on mobile these live in the bottom nav) --}}
+        <div class="hidden items-center gap-1 sm:gap-2 lg:flex">
             <a href="{{ route('compare.index') }}" class="relative hidden rounded-lg p-2 text-gray-600 hover:bg-gray-100 sm:block" aria-label="Perbandingan">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5 7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"/></svg>
                 @if($compareCount)<span class="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-accent-500 px-1 text-[10px] font-bold text-white">{{ $compareCount }}</span>@endif
