@@ -218,24 +218,24 @@
         </section>
     @endif
 
-    {{-- 3. Kategori Unggulan --}}
+    {{-- 3. Kategori — semua kategori, scrollable horizontal --}}
     @if ($shortcutCategories->isNotEmpty())
         <section class="order-5 mt-8 sm:order-none">
             <div class="mb-3 flex items-end justify-between">
-                <h2 class="text-lg font-bold text-gray-900 sm:text-xl">Kategori Unggulan</h2>
+                <h2 class="text-lg font-bold text-gray-900 sm:text-xl">Kategori</h2>
                 <a href="{{ route('categories.index') }}" class="text-sm font-medium text-brand-600 hover:underline">Semua kategori →</a>
             </div>
-            <div class="grid grid-cols-3 gap-3 sm:grid-cols-6">
+            <div class="flex snap-x gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 @foreach ($shortcutCategories as $cat)
-                    <a href="{{ route('categories.show', $cat->slug) }}" class="card group flex flex-col items-center gap-2 p-3 text-center transition hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md">
-                        <span class="grid h-14 w-14 place-items-center overflow-hidden rounded-full bg-brand-50 text-brand-600 transition group-hover:bg-brand-100">
+                    <a href="{{ route('categories.show', $cat->slug) }}" class="group flex w-[4.5rem] shrink-0 snap-start flex-col items-center gap-2 text-center sm:w-24">
+                        <span class="grid h-16 w-16 place-items-center overflow-hidden rounded-full bg-brand-50 text-brand-600 ring-1 ring-brand-100 transition group-hover:bg-brand-100 sm:h-20 sm:w-20">
                             @if ($cat->image_path ?? false)
                                 <img src="{{ asset('storage/'.$cat->image_path) }}" alt="{{ $cat->name }}" class="h-full w-full object-cover">
                             @else
-                                <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+                                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
                             @endif
                         </span>
-                        <span class="line-clamp-2 text-xs font-medium text-gray-700">{{ $cat->name }}</span>
+                        <span class="line-clamp-2 text-xs font-medium leading-tight text-gray-700">{{ $cat->name }}</span>
                     </a>
                 @endforeach
             </div>

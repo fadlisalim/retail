@@ -21,7 +21,8 @@ class HomeController extends Controller
             'gridBanners' => Banner::active()->where('position', 'grid')->orderBy('sort_order')->get(),
             'videoBanners' => Banner::active()->where('position', 'video')->orderBy('sort_order')->get(),
             'quotationBanner' => Banner::active()->where('position', 'quotation')->orderBy('sort_order')->first(),
-            'shortcutCategories' => Category::active()->where('is_featured', true)->orderBy('sort_order')->take(12)->get(),
+            // All top-level categories, shown as a horizontally scrollable card row.
+            'shortcutCategories' => Category::active()->whereNull('parent_id')->orderBy('sort_order')->get(),
             'featured' => Product::published()->where('is_featured', true)->with(['brand', 'category'])->latest('published_at')->take(10)->get(),
             'newest' => Product::published()->where('is_new', true)->with(['brand', 'category'])->latest('published_at')->take(10)->get(),
             'promos' => Product::published()->whereNotNull('sale_price')->where('is_clearance', false)->with(['brand', 'category'])->take(10)->get(),
