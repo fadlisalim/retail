@@ -8,14 +8,19 @@
 
     <title>@yield('title', config('rekasurya.company.brand_name').' — '.config('rekasurya.company.tagline'))</title>
     <meta name="description" content="@yield('meta_description', 'Pusat produk energi terbarukan: panel surya, inverter, baterai lithium, paket PLTS, dan kebutuhan proyek.')">
+    @hasSection('meta_keywords')<meta name="keywords" content="@yield('meta_keywords')">@endif
     <link rel="canonical" href="@yield('canonical', url()->current())">
     @hasSection('noindex')<meta name="robots" content="noindex,nofollow">@endif
 
-    {{-- Open Graph / Twitter --}}
+    {{-- Open Graph / Twitter — powers WhatsApp / social link previews --}}
     <meta property="og:type" content="@yield('og_type', 'website')">
+    <meta property="og:site_name" content="{{ config('rekasurya.company.brand_name') }}">
+    <meta property="og:url" content="@yield('canonical', url()->current())">
     <meta property="og:title" content="@yield('title', config('rekasurya.company.brand_name'))">
     <meta property="og:description" content="@yield('meta_description', config('rekasurya.company.tagline'))">
     <meta property="og:image" content="@yield('og_image', asset('images/og-default.png'))">
+    @hasSection('og_image_dimensions')@yield('og_image_dimensions')@endif
+    @hasSection('og_image_alt')<meta property="og:image:alt" content="@yield('og_image_alt')">@endif
     <meta name="twitter:card" content="summary_large_image">
 
     @stack('head')

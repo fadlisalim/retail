@@ -1,9 +1,20 @@
 @extends('layouts.storefront')
 @section('title', $product->meta_title ?: $product->name)
-@section('meta_description', $product->meta_description ?: \Illuminate\Support\Str::limit(strip_tags($product->short_description ?? ''), 155))
+@php
+    $ogPriceLabel = $product->requires_quotation
+        ? 'Minta penawaran'
+        : rupiah($product->effectivePrice());
+    $ogBaseDesc = $product->meta_description ?: \Illuminate\Support\Str::limit(strip_tags($product->short_description ?? ''), 130);
+@endphp
+@section('meta_description', $ogPriceLabel.' — '.$ogBaseDesc)
+@if ($product->keywords)@section('meta_keywords', $product->keywords)@endif
 @section('canonical', $product->canonical_url ?: route('products.show', $product->slug))
 @section('og_type', 'product')
-@section('og_image', $product->primaryImageUrl())
+{{-- Real uploaded image only — a data-URI placeholder can't be previewed by WhatsApp. --}}
+@if ($product->main_image_path)
+    @section('og_image', $product->primaryImageUrl())
+    @section('og_image_alt', $product->name)
+@endif
 
 @push('head')
 <script type="application/ld+json">
@@ -113,6 +124,40 @@
                     <span class="flex items-center gap-1"><x-stars :rating="$product->rating_avg" /> {{ number_format($product->rating_avg, 1) }} ({{ $product->rating_count }})</span>
                 @endif
                 @if ($product->sold_count > 0)<span>• {{ $product->sold_count }} terjual</span>@endif
+            </div>
+
+            {{-- Bagikan / share link --}}
+            <div class="mt-3 flex flex-wrap items-center gap-2"
+                 x-data="{
+                    url: @js(route('products.show', $product->slug)),
+                    title: @js($product->name),
+                    copied: false,
+                    canShare: typeof navigator !== 'undefined' && !!navigator.share,
+                    waHref() { return 'https://wa.me/?text=' + encodeURIComponent(this.title + ' — ' + this.url); },
+                    async copy() {
+                        try { await navigator.clipboard.writeText(this.url); } catch (e) {}
+                        this.copied = true; setTimeout(() => this.copied = false, 2000);
+                    },
+                    async native() {
+                        try { await navigator.share({ title: this.title, text: this.title, url: this.url }); } catch (e) {}
+                    },
+                 }">
+                <span class="text-sm text-gray-500">Bagikan:</span>
+                <a :href="waHref()" target="_blank" rel="noopener" aria-label="Bagikan produk via WhatsApp"
+                   class="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700 transition hover:bg-green-100">
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24z"/></svg>
+                    WhatsApp
+                </a>
+                <button type="button" @click="copy()" aria-label="Salin link produk"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:border-brand-400 hover:text-brand-700">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/></svg>
+                    <span x-text="copied ? 'Tersalin!' : 'Salin Link'"></span>
+                </button>
+                <button type="button" x-show="canShare" x-cloak @click="native()" aria-label="Bagikan ke aplikasi lain"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:border-brand-400 hover:text-brand-700">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"/></svg>
+                    Lainnya
+                </button>
             </div>
 
             {{-- Price --}}

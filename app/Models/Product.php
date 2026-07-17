@@ -57,6 +57,69 @@ class Product extends Model
         return 'slug';
     }
 
+    protected static function booted(): void
+    {
+        // Auto-fill SEO keywords when none were provided (new products, seeders,
+        // or admin saves that leave the field blank). Admin-entered keywords win.
+        static::saving(function (self $product) {
+            if (blank($product->keywords)) {
+                $product->keywords = $product->generateKeywords();
+            }
+        });
+    }
+
+    /**
+     * Build a comma-separated SEO keyword string from the product's own data
+     * (name, brand, category, model, condition) plus domain terms. Also feeds
+     * the products fulltext index, so it improves on-site search too. Capped to
+     * the column length (500).
+     */
+    public function generateKeywords(): string
+    {
+        $terms = collect([
+            $this->name,
+            $this->brand?->name,
+            $this->category?->name,
+            $this->category?->parent?->name,
+            $this->model,
+        ]);
+
+        if ($this->condition && $this->condition !== ProductCondition::New->value) {
+            $terms->push($this->conditionEnum()->label());
+        }
+        if ($this->is_clearance) {
+            $terms->push('clearance', 'harga termurah', 'diskon');
+        }
+        if ($this->requires_quotation) {
+            $terms->push('minta penawaran', 'harga grosir', 'proyek');
+        }
+
+        // Domain terms so products surface for broad renewable-energy queries.
+        $terms->push('energi surya', 'tenaga surya', 'panel surya', 'PLTS', 'energi terbarukan', brand());
+
+        // Significant single words from the name widen keyword coverage.
+        $nameWords = collect(preg_split('/[^\p{L}\p{N}]+/u', (string) $this->name, -1, PREG_SPLIT_NO_EMPTY))
+            ->filter(fn ($w) => mb_strlen($w) >= 4);
+
+        $keywords = $terms->concat($nameWords)
+            ->filter()
+            ->map(fn ($t) => mb_strtolower(trim((string) $t)))
+            ->unique()
+            ->values();
+
+        // Join, then trim to whole keywords under the 500-char column limit.
+        $out = '';
+        foreach ($keywords as $kw) {
+            $candidate = $out === '' ? $kw : $out.', '.$kw;
+            if (mb_strlen($candidate) > 490) {
+                break;
+            }
+            $out = $candidate;
+        }
+
+        return $out;
+    }
+
     /* ------------------------------------------------------------------ */
     /* Relationships                                                       */
     /* ------------------------------------------------------------------ */
