@@ -70,7 +70,10 @@
                 <div class="absolute inset-0 scale-110 bg-cover bg-center blur-2xl" :style="`background-image:url('${gallery}')`" aria-hidden="true"></div>
                 <div class="absolute inset-0 bg-white/40" aria-hidden="true"></div>
                 <img :src="gallery" alt="{{ $product->name }}" class="relative aspect-square w-full object-contain">
-                <span class="absolute bottom-2 right-2 rounded-full bg-black/50 px-2 py-1 text-[11px] text-white opacity-0 transition group-hover:opacity-100">🔍 Klik untuk zoom</span>
+                <span class="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-[11px] text-white opacity-0 transition group-hover:opacity-100">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.2-5.2m1.95-4.55a6.75 6.75 0 1 1-13.5 0 6.75 6.75 0 0 1 13.5 0ZM10.5 7.5v6m3-3h-6"/></svg>
+                    Klik untuk zoom
+                </span>
             </button>
             @if ($gallery->count() > 1)
                 <div class="mt-3 flex gap-2 overflow-x-auto">
@@ -196,8 +199,8 @@
                 @endif
             </div>
             <div class="mt-2 flex gap-2 text-sm text-gray-500">
-                <form action="{{ route('wishlist.toggle', $product->slug) }}" method="POST">@csrf<button class="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-gray-50" title="Simpan ke wishlist">♡ Wishlist</button></form>
-                <form action="{{ route('compare.add', $product->slug) }}" method="POST">@csrf<button class="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-gray-50" title="Bandingkan produk">⇄ Bandingkan</button></form>
+                <form action="{{ route('wishlist.toggle', $product->slug) }}" method="POST">@csrf<button class="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-gray-50" aria-label="Simpan ke wishlist" title="Simpan ke wishlist"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/></svg>Wishlist</button></form>
+                <form action="{{ route('compare.add', $product->slug) }}" method="POST">@csrf<button class="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-gray-50" aria-label="Bandingkan produk" title="Bandingkan produk"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5 7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"/></svg>Bandingkan</button></form>
             </div>
 
             {{-- Condition, shown as a clear labeled line. --}}
@@ -212,121 +215,200 @@
                 @endif
             </div>
         </div>
+
+        {{-- Mobile sticky purchase bar — shares the purchase Alpine scope; sits above the bottom nav. --}}
+        <div class="fixed inset-x-0 bottom-14 z-30 border-t border-gray-200 bg-white px-4 py-2.5 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] lg:hidden">
+            <div class="mx-auto flex max-w-7xl items-center gap-3">
+                <div class="min-w-0 flex-1">
+                    @if ($product->requires_quotation)
+                        <p class="text-sm font-bold text-brand-700">Via Penawaran</p>
+                    @else
+                        <p class="truncate text-lg font-extrabold text-gray-900" x-text="rupiah(price)"></p>
+                    @endif
+                </div>
+                @if ($product->requires_quotation)
+                    <a href="{{ route('quotations.create', ['produk' => $product->slug]) }}" class="btn-accent shrink-0">Minta Penawaran</a>
+                @elseif ($product->is_purchasable)
+                    <form action="{{ route('cart.store') }}" method="POST" @submit="$store.cart.submit($event)" class="shrink-0">
+                        @csrf
+                        <input type="hidden" name="product_id" value="{{ $product->id }}">
+                        <input type="hidden" name="variant_id" :value="variantId">
+                        <input type="hidden" name="quantity" :value="qty">
+                        <button type="submit" class="btn-primary" :disabled="stock <= 0" x-text="stock <= 0 ? 'Stok Habis' : 'Tambah ke Keranjang'"></button>
+                    </form>
+                @endif
+            </div>
+        </div>
     </div>
 
-    {{-- Details tabs --}}
-    <div class="mt-10 space-y-10">
-        {{-- Deskripsi --}}
-        <section>
-            <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Deskripsi</h2>
-            <div class="prose max-w-none text-sm text-gray-700">
-                {!! linkify_buttons($product->description ?: '<p>'.e($product->short_description).'</p>') !!}
-            </div>
-        </section>
+    {{-- Detail sections: tabs on desktop, accordion on mobile --}}
+    @php
+        $tabs = ['deskripsi' => 'Deskripsi'];
+        if ($product->attributeValues->isNotEmpty() || $product->specifications) $tabs['spesifikasi'] = 'Spesifikasi';
+        if ($product->bundleItems->isNotEmpty()) $tabs['isi'] = 'Isi Paket';
+        if ($product->documents->isNotEmpty()) $tabs['dokumen'] = 'Dokumen';
+        if ($product->videos->isNotEmpty()) $tabs['video'] = 'Video';
+        $tabs['pengiriman'] = 'Pengiriman & Garansi';
+        $firstTab = array_key_first($tabs);
+    @endphp
+    <div class="mt-10" x-data="{ tab: '{{ $firstTab }}' }">
+        {{-- Desktop tab bar --}}
+        <div role="tablist" class="hidden gap-1 overflow-x-auto border-b border-gray-200 lg:flex">
+            @foreach ($tabs as $key => $label)
+                <button type="button" role="tab" :aria-selected="tab === '{{ $key }}'" @click="tab = '{{ $key }}'"
+                        :class="tab === '{{ $key }}' ? 'border-brand-600 text-brand-700' : 'border-transparent text-gray-500 hover:text-gray-800'"
+                        class="shrink-0 border-b-2 px-4 py-3 text-sm font-semibold transition">{{ $label }}</button>
+            @endforeach
+        </div>
 
-        {{-- Spesifikasi --}}
-        @if ($product->attributeValues->isNotEmpty() || $product->specifications)
+        <div class="divide-y divide-gray-100 lg:divide-y-0">
+            {{-- Deskripsi --}}
             <section>
-                <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Spesifikasi</h2>
-                @if ($product->attributeValues->isNotEmpty())
-                    <table class="w-full max-w-2xl text-sm">
-                        <tbody>
-                            @foreach ($product->attributeValues->sortBy('attribute.sort_order') as $av)
-                                <tr class="border-b border-gray-100">
-                                    <th class="w-1/2 py-2.5 text-left font-medium text-gray-500">{{ $av->attribute->name }}</th>
-                                    <td class="py-2.5 text-gray-800">{{ $av->displayValue() }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                @else
-                    <div class="prose max-w-none text-sm text-gray-700">{!! $product->specifications !!}</div>
-                @endif
-            </section>
-        @endif
-
-        {{-- Isi Paket --}}
-        @if ($product->bundleItems->isNotEmpty())
-            <section>
-                <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Isi Paket</h2>
-                <ul class="divide-y divide-gray-100">
-                    @foreach ($product->bundleItems as $item)
-                        <li class="flex items-center justify-between py-2 text-sm">
-                            <span>{{ $item->component_label ? $item->component_label.': ' : '' }}<a href="{{ route('products.show', $item->component->slug) }}" class="text-brand-600 hover:underline">{{ $item->component->name }}</a></span>
-                            <span class="text-gray-500">{{ $item->quantity }} unit{{ $item->is_replaceable ? ' • dapat diganti' : '' }}</span>
-                        </li>
-                    @endforeach
-                </ul>
-            </section>
-        @endif
-
-        {{-- Dokumen --}}
-        @if ($product->documents->isNotEmpty())
-            <section>
-                <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Dokumen</h2>
-                <ul class="space-y-2">
-                    @foreach ($product->documents as $doc)
-                        <li>
-                            <a href="{{ asset('storage/'.$doc->path) }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-700 transition hover:border-brand-400 hover:text-brand-700">
-                                <svg class="h-5 w-5 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
-                                {{ $doc->title }}
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
-            </section>
-        @endif
-
-        {{-- Video --}}
-        @if ($product->videos->isNotEmpty())
-            <section>
-                <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Video Produk</h2>
-                <div class="space-y-4">
-                    @foreach ($product->videos as $video)
-                        @php($embed = $video->embedUrl())
-                        @if ($embed)
-                            <div class="mx-auto aspect-video w-full max-w-3xl overflow-hidden rounded-2xl bg-black">
-                                <iframe src="{{ $embed }}" class="h-full w-full" title="{{ $video->title ?: 'Video produk' }}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-                            </div>
-                        @else
-                            <a href="{{ $video->url }}" target="_blank" rel="noopener" class="text-sm text-brand-600 hover:underline">▶ {{ $video->title ?: 'Tonton video' }}</a>
-                        @endif
-                    @endforeach
+                <button type="button" @click="tab = tab === 'deskripsi' ? '' : 'deskripsi'" :aria-expanded="tab === 'deskripsi'" class="flex w-full items-center justify-between py-4 text-left lg:hidden">
+                    <span class="font-semibold text-gray-800">Deskripsi</span>
+                    <svg class="h-5 w-5 shrink-0 text-gray-400 transition" :class="tab === 'deskripsi' && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+                </button>
+                <div x-show="tab === 'deskripsi'" x-cloak class="pb-6 lg:pt-6">
+                    <div class="prose max-w-none text-sm text-gray-700">
+                        {!! linkify_buttons($product->description ?: '<p>'.e($product->short_description).'</p>') !!}
+                    </div>
                 </div>
             </section>
-        @endif
 
-        {{-- Pengiriman & garansi (ringkas) --}}
-        <section>
-            <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Pengiriman &amp; Garansi</h2>
-            <dl class="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-                @if ($product->warranty)<div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Garansi</dt><dd class="font-medium text-gray-700">{{ $product->warranty }}</dd></div>@endif
-                <div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Estimasi</dt><dd class="font-medium text-gray-700">{{ $product->estimated_processing ?: '1–3 hari kerja' }}</dd></div>
-                <div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Pengiriman</dt><dd class="font-medium text-gray-700">{{ $product->requires_freight ? 'Kargo (ongkir dikonfirmasi)' : 'Reguler & kargo' }}{{ $product->pickup_only ? ' • Ambil di lokasi' : '' }}</dd></div>
-                <div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Berat</dt><dd class="font-medium text-gray-700">{{ number_format($product->weight_grams / 1000, 2) }} kg</dd></div>
-            </dl>
-            <p class="mt-3 text-xs text-gray-400">Kebijakan retur: lihat <a href="{{ route('pages.show', 'kebijakan-retur') }}" class="text-brand-600 hover:underline">halaman kebijakan retur</a>.</p>
-        </section>
+            {{-- Spesifikasi --}}
+            @if ($product->attributeValues->isNotEmpty() || $product->specifications)
+                <section>
+                    <button type="button" @click="tab = tab === 'spesifikasi' ? '' : 'spesifikasi'" :aria-expanded="tab === 'spesifikasi'" class="flex w-full items-center justify-between py-4 text-left lg:hidden">
+                        <span class="font-semibold text-gray-800">Spesifikasi</span>
+                        <svg class="h-5 w-5 shrink-0 text-gray-400 transition" :class="tab === 'spesifikasi' && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+                    </button>
+                    <div x-show="tab === 'spesifikasi'" x-cloak class="pb-6 lg:pt-6">
+                        @if ($product->attributeValues->isNotEmpty())
+                            <div class="overflow-x-auto">
+                                <table class="w-full max-w-2xl text-sm">
+                                    <tbody>
+                                        @foreach ($product->attributeValues->sortBy('attribute.sort_order') as $av)
+                                            <tr class="border-b border-gray-100">
+                                                <th class="w-2/5 py-2.5 pr-4 text-left align-top font-medium text-gray-500">{{ $av->attribute->name }}</th>
+                                                <td class="py-2.5 align-top text-gray-800">{{ $av->displayValue() }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <div class="prose max-w-none text-sm text-gray-700">{!! $product->specifications !!}</div>
+                        @endif
+                    </div>
+                </section>
+            @endif
+
+            {{-- Isi Paket --}}
+            @if ($product->bundleItems->isNotEmpty())
+                <section>
+                    <button type="button" @click="tab = tab === 'isi' ? '' : 'isi'" :aria-expanded="tab === 'isi'" class="flex w-full items-center justify-between py-4 text-left lg:hidden">
+                        <span class="font-semibold text-gray-800">Isi Paket</span>
+                        <svg class="h-5 w-5 shrink-0 text-gray-400 transition" :class="tab === 'isi' && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+                    </button>
+                    <div x-show="tab === 'isi'" x-cloak class="pb-6 lg:pt-6">
+                        <ul class="divide-y divide-gray-100">
+                            @foreach ($product->bundleItems as $item)
+                                <li class="flex items-center justify-between py-2 text-sm">
+                                    <span>{{ $item->component_label ? $item->component_label.': ' : '' }}<a href="{{ route('products.show', $item->component->slug) }}" class="text-brand-600 hover:underline">{{ $item->component->name }}</a></span>
+                                    <span class="text-gray-500">{{ $item->quantity }} unit{{ $item->is_replaceable ? ' • dapat diganti' : '' }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </section>
+            @endif
+
+            {{-- Dokumen --}}
+            @if ($product->documents->isNotEmpty())
+                <section>
+                    <button type="button" @click="tab = tab === 'dokumen' ? '' : 'dokumen'" :aria-expanded="tab === 'dokumen'" class="flex w-full items-center justify-between py-4 text-left lg:hidden">
+                        <span class="font-semibold text-gray-800">Dokumen</span>
+                        <svg class="h-5 w-5 shrink-0 text-gray-400 transition" :class="tab === 'dokumen' && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+                    </button>
+                    <div x-show="tab === 'dokumen'" x-cloak class="pb-6 lg:pt-6">
+                        <ul class="space-y-2">
+                            @foreach ($product->documents as $doc)
+                                <li>
+                                    <a href="{{ asset('storage/'.$doc->path) }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-700 transition hover:border-brand-400 hover:text-brand-700">
+                                        <svg class="h-5 w-5 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
+                                        {{ $doc->title }}
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </section>
+            @endif
+
+            {{-- Video --}}
+            @if ($product->videos->isNotEmpty())
+                <section>
+                    <button type="button" @click="tab = tab === 'video' ? '' : 'video'" :aria-expanded="tab === 'video'" class="flex w-full items-center justify-between py-4 text-left lg:hidden">
+                        <span class="font-semibold text-gray-800">Video</span>
+                        <svg class="h-5 w-5 shrink-0 text-gray-400 transition" :class="tab === 'video' && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+                    </button>
+                    <div x-show="tab === 'video'" x-cloak class="pb-6 lg:pt-6">
+                        <div class="space-y-4">
+                            @foreach ($product->videos as $video)
+                                @php($embed = $video->embedUrl())
+                                @if ($embed)
+                                    <div class="mx-auto aspect-video w-full max-w-3xl overflow-hidden rounded-2xl bg-black">
+                                        <iframe src="{{ $embed }}" class="h-full w-full" title="{{ $video->title ?: 'Video produk' }}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                                    </div>
+                                @else
+                                    <a href="{{ $video->url }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-sm text-brand-600 hover:underline"><svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>{{ $video->title ?: 'Tonton video' }}</a>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+                </section>
+            @endif
+
+            {{-- Pengiriman & garansi --}}
+            <section>
+                <button type="button" @click="tab = tab === 'pengiriman' ? '' : 'pengiriman'" :aria-expanded="tab === 'pengiriman'" class="flex w-full items-center justify-between py-4 text-left lg:hidden">
+                    <span class="font-semibold text-gray-800">Pengiriman &amp; Garansi</span>
+                    <svg class="h-5 w-5 shrink-0 text-gray-400 transition" :class="tab === 'pengiriman' && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+                </button>
+                <div x-show="tab === 'pengiriman'" x-cloak class="pb-6 lg:pt-6">
+                    <dl class="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                        @if ($product->warranty)<div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Garansi</dt><dd class="font-medium text-gray-700">{{ $product->warranty }}</dd></div>@endif
+                        <div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Estimasi</dt><dd class="font-medium text-gray-700">{{ $product->estimated_processing ?: '1–3 hari kerja' }}</dd></div>
+                        <div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Pengiriman</dt><dd class="font-medium text-gray-700">{{ $product->requires_freight ? 'Kargo (ongkir dikonfirmasi)' : 'Reguler & kargo' }}{{ $product->pickup_only ? ' • Ambil di lokasi' : '' }}</dd></div>
+                        <div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Berat</dt><dd class="font-medium text-gray-700">{{ number_format($product->weight_grams / 1000, 2) }} kg</dd></div>
+                    </dl>
+                    <p class="mt-3 text-xs text-gray-400">Kebijakan retur: lihat <a href="{{ route('pages.show', 'kebijakan-retur') }}" class="text-brand-600 hover:underline">halaman kebijakan retur</a>.</p>
+                </div>
+            </section>
+        </div>
     </div>
 
     {{-- Reviews --}}
     <section class="mt-10" id="ulasan">
         <h2 class="mb-4 text-lg font-bold text-gray-900">Rating &amp; Ulasan</h2>
-        <div class="grid gap-6 md:grid-cols-[240px_1fr]">
-            <div class="card p-4 text-center">
-                <p class="text-4xl font-extrabold text-gray-900">{{ number_format($product->rating_avg, 1) }}</p>
-                <x-stars :rating="$product->rating_avg" class="justify-center" />
-                <p class="mt-1 text-sm text-gray-500">{{ $product->rating_count }} ulasan</p>
-                <div class="mt-3 space-y-1">
-                    @foreach ($ratingDistribution as $star => $n)
-                        <div class="flex items-center gap-2 text-xs">
-                            <span class="w-3 text-gray-500">{{ $star }}</span>
-                            <div class="h-2 flex-1 overflow-hidden rounded bg-gray-100"><div class="h-full bg-amber-400" style="width: {{ $product->rating_count ? ($n / $product->rating_count * 100) : 0 }}%"></div></div>
-                            <span class="w-6 text-right text-gray-400">{{ $n }}</span>
-                        </div>
-                    @endforeach
+        <div class="grid gap-6 @if ($product->rating_count > 0) md:grid-cols-[240px_1fr] @endif">
+            {{-- Rating summary only when there are ratings (avoid a big empty "0.0" block). --}}
+            @if ($product->rating_count > 0)
+                <div class="card p-4 text-center">
+                    <p class="text-4xl font-extrabold text-gray-900">{{ number_format($product->rating_avg, 1) }}</p>
+                    <x-stars :rating="$product->rating_avg" class="justify-center" />
+                    <p class="mt-1 text-sm text-gray-500">{{ $product->rating_count }} ulasan</p>
+                    <div class="mt-3 space-y-1">
+                        @foreach ($ratingDistribution as $star => $n)
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="w-3 text-gray-500">{{ $star }}</span>
+                                <div class="h-2 flex-1 overflow-hidden rounded bg-gray-100"><div class="h-full bg-amber-400" style="width: {{ $product->rating_count ? ($n / $product->rating_count * 100) : 0 }}%"></div></div>
+                                <span class="w-6 text-right text-gray-400">{{ $n }}</span>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
-            </div>
+            @endif
 
             <div>
                 @if ($canReview)
@@ -369,7 +451,7 @@
                             <div class="mt-2 rounded-lg bg-brand-50 p-2 text-sm text-brand-800"><strong>Rekasurya:</strong> {{ $review->admin_reply }}</div>
                         @endif
                         @auth
-                            <form action="{{ route('reviews.helpful', $review) }}" method="POST" class="mt-1 inline">@csrf<button class="text-xs text-gray-400 hover:text-brand-600">👍 Membantu ({{ $review->helpful_count }})</button></form>
+                            <form action="{{ route('reviews.helpful', $review) }}" method="POST" class="mt-1 inline">@csrf<button class="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-brand-600"><svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H14.23c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904M6.633 10.5a2.25 2.25 0 0 0-2.25 2.25v6a2.25 2.25 0 0 0 2.25 2.25H6.75"/></svg>Membantu ({{ $review->helpful_count }})</button></form>
                         @endauth
                     </article>
                 @empty
@@ -408,20 +490,6 @@
     <x-product-row title="Produk Serupa" :products="$similar" />
     <x-product-row title="Terakhir Dilihat" :products="$recentlyViewed" />
 
-    {{-- Mobile sticky purchase bar --}}
-    @unless ($product->requires_quotation)
-        <div class="fixed inset-x-0 bottom-14 z-30 border-t border-gray-200 bg-white p-3 shadow-lg lg:hidden"
-             x-data="{ price: {{ $product->effectivePrice() }}, rupiah(n){ return 'Rp '+Math.round(n).toLocaleString('id-ID') } }">
-            <form action="{{ route('cart.store') }}" method="POST" class="flex items-center gap-3" @submit="$store.cart.submit($event)">
-                @csrf
-                <input type="hidden" name="product_id" value="{{ $product->id }}">
-                <input type="hidden" name="quantity" value="{{ $product->min_purchase }}">
-                <div class="flex-1">
-                    <p class="text-xs text-gray-400">Harga</p>
-                    <p class="text-lg font-bold text-gray-900">{{ rupiah($product->effectivePrice()) }}</p>
-                </div>
-                <button class="btn-primary" @if(!$product->inStock()) disabled @endif>+ Keranjang</button>
-            </form>
-        </div>
-    @endunless
+    {{-- Spacer so the mobile sticky purchase bar never covers the last content. --}}
+    <div class="h-24 lg:hidden" aria-hidden="true"></div>
 @endsection
