@@ -23,12 +23,18 @@
                  x-data="{
                     active: 0,
                     count: {{ $heroBanners->count() }},
+                    progress: 0,
                     timer: null,
-                    go(i) { this.active = (i + this.count) % this.count; },
+                    tick: null,
+                    go(i) { this.active = (i + this.count) % this.count; this.progress = 0; },
                     next() { this.go(this.active + 1); },
-                    prev() { this.go(this.active - 1); },
-                    start() { if (this.count > 1) this.timer = setInterval(() => this.next(), 6000); },
-                    stop() { clearInterval(this.timer); },
+                    start() {
+                        if (this.count <= 1) return;
+                        this.progress = 0;
+                        this.timer = setInterval(() => this.next(), 6000);
+                        this.tick = setInterval(() => { this.progress = Math.min(100, this.progress + 100 / 120); }, 50);
+                    },
+                    stop() { clearInterval(this.timer); clearInterval(this.tick); },
                  }"
                  x-init="start()"
                  @mouseenter="stop()" @mouseleave="start()">
@@ -59,19 +65,20 @@
                     </div>
                 @endforeach
                 @if ($heroBanners->count() > 1)
-                    {{-- Prev / next arrows (appear on hover, always tappable on mobile) --}}
-                    <button type="button" @click="prev()" aria-label="Banner sebelumnya"
-                            class="absolute left-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/80 text-gray-800 shadow transition hover:bg-white sm:opacity-0 sm:group-hover:opacity-100">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
-                    </button>
-                    <button type="button" @click="next()" aria-label="Banner berikutnya"
-                            class="absolute right-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/80 text-gray-800 shadow transition hover:bg-white sm:opacity-0 sm:group-hover:opacity-100">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
-                    </button>
-                    {{-- Dots --}}
-                    <div class="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+                    {{-- Auto-advance loader (top-right): ring fills over the 6s interval,
+                         resets on each slide; center shows the slide counter. No arrows. --}}
+                    <div class="pointer-events-none absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/25 backdrop-blur-sm">
+                        <svg class="h-9 w-9 -rotate-90" viewBox="0 0 36 36" aria-hidden="true">
+                            <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="2.5"/>
+                            <circle cx="18" cy="18" r="15" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"
+                                    stroke-dasharray="94.25" :stroke-dashoffset="94.25 * (1 - progress / 100)"/>
+                        </svg>
+                        <span class="absolute text-[10px] font-bold text-white" x-text="(active + 1) + '/' + count"></span>
+                    </div>
+                    {{-- Clickable dots (navigate). Dark pill keeps them visible on any banner. --}}
+                    <div class="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2 rounded-full bg-black/25 px-2.5 py-1.5 backdrop-blur-sm">
                         @foreach ($heroBanners as $i => $b)
-                            <button type="button" @click="go({{ $i }})" :class="active === {{ $i }} ? 'w-6 bg-white' : 'w-2 bg-white/60'" class="h-2 rounded-full transition-all" aria-label="Banner {{ $i + 1 }}"></button>
+                            <button type="button" @click="go({{ $i }})" :class="active === {{ $i }} ? 'w-6 bg-white' : 'w-2 bg-white/70'" class="h-2 rounded-full transition-all" aria-label="Ke banner {{ $i + 1 }}"></button>
                         @endforeach
                     </div>
                 @endif
@@ -147,7 +154,7 @@
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z"/></svg>
                                 Clearance
                             </span>
-                            <p class="mt-1 truncate text-xs text-gray-600">Stok terbatas • <span class="font-semibold text-red-600">Jaminan Harga Termurah!</span></p>
+                            <p class="mt-1 truncate text-xs text-gray-600">Stok terbatas • <span class="font-semibold text-red-600">Paling Murah!</span></p>
                         </div>
                         <a href="{{ route('clearance') }}" class="shrink-0 text-xs font-semibold text-red-600 hover:underline">Lihat semua →</a>
                     </div>

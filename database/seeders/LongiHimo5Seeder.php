@@ -90,7 +90,7 @@ HTML;
                 'height_cm' => 3.5,
                 'requires_freight' => true,
                 'warranty' => 'Garansi 5 tahun',
-                'badge_text' => 'JAMINAN HARGA TERMURAH',
+                'badge_text' => 'Paling Murah!',
                 'is_clearance' => true,
                 'is_promo' => true,
                 'is_featured' => true,
@@ -105,7 +105,7 @@ HTML;
         $this->setStock($product, 10);
 
         $this->command?->info('Produk LONGi Hi-MO 5 540 Wp (Clearance) berhasil ditambahkan/diperbarui (slug: '.$product->slug.').');
-        $this->command?->warn('Harga: Rp 2.700.000 → Rp 1.900.000 • Stok 10 pcs • Tag: JAMINAN HARGA TERMURAH.');
+        $this->command?->warn('Harga: Rp 2.700.000 → Rp 1.900.000 • Stok 10 pcs • Tag: Paling Murah!.');
         $this->command?->warn('Ingat: upload gambar produk + PDF datasheet lewat Admin → Produk → Edit.');
     }
 

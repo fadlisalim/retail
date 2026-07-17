@@ -196,12 +196,14 @@ class Product extends Model
     }
 
     /** Badge labels shown on cards/detail (section 10). */
-    public function badges(bool $includeCondition = true): array
+    public function badges(bool $includeCondition = true, bool $includeCustom = true): array
     {
         // Ordered by display priority so cards (which show the first ~2) surface the
         // most important first: custom tag, Clearance, Promo, Stok Terbatas, Baru.
+        // The card renders the custom tag as a separate inline chip (near the price),
+        // so it passes $includeCustom = false to keep the image overlay uncluttered.
         $badges = [];
-        if (filled($this->badge_text)) $badges[] = $this->badge_text;
+        if ($includeCustom && filled($this->badge_text)) $badges[] = $this->badge_text;
         if ($this->is_clearance) $badges[] = 'Clearance';
         if ($this->isOnSale()) $badges[] = 'Promo';
         if ($this->isLowStock()) $badges[] = 'Stok Terbatas';
