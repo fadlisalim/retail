@@ -94,6 +94,7 @@ class CartController extends Controller
             'count' => $this->cart->count(),
             'subtotal_formatted' => rupiah($buyable->sum(fn ($i) => $i->currentUnitPrice() * $i->quantity)),
             'items' => $buyable->map(fn ($i) => [
+                'id' => (int) $i->id,
                 'name' => $i->product->name,
                 'variant' => $i->variant?->name,
                 'image' => $i->product->primaryImageUrl(),

@@ -62,6 +62,7 @@ Alpine.store('cart', {
     count: 0,
     open: false,
     loading: false,
+    busy: false,
     items: [],
     subtotal: '',
     error: '',
@@ -128,6 +129,38 @@ Alpine.store('cart', {
             this.error = 'Gagal memuat keranjang.';
         } finally {
             this.loading = false;
+        }
+    },
+
+    /** Re-pull the drawer state from the server (after a mutation). */
+    async refresh() {
+        try {
+            const res = await fetch('/keranjang/mini', { headers: { Accept: 'application/json' } });
+            if (res.ok) this.apply(await res.json());
+        } catch (err) {
+            /* keep the current view on network error */
+        }
+    },
+
+    /** Remove one line from the cart, then refresh the drawer. */
+    async remove(id) {
+        if (this.busy) return;
+        this.busy = true;
+        this.error = '';
+        try {
+            const res = await fetch(`/keranjang/${id}`, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': this.csrf(), Accept: 'application/json' },
+            });
+            if (res.ok) {
+                await this.refresh();
+            } else {
+                this.error = 'Gagal menghapus produk dari keranjang.';
+            }
+        } catch (err) {
+            this.error = 'Terjadi kesalahan jaringan. Coba lagi.';
+        } finally {
+            this.busy = false;
         }
     },
 });

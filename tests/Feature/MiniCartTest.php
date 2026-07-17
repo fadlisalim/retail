@@ -20,9 +20,10 @@ class MiniCartTest extends TestCase
         ]);
 
         $res->assertOk()
-            ->assertJsonStructure(['count', 'subtotal_formatted', 'items' => [['name', 'image', 'qty', 'line_formatted', 'url']]])
+            ->assertJsonStructure(['count', 'subtotal_formatted', 'items' => [['id', 'name', 'image', 'qty', 'line_formatted', 'url']]])
             ->assertJsonPath('count', 2)
-            ->assertJsonPath('items.0.qty', 2);
+            ->assertJsonPath('items.0.qty', 2)
+            ->assertJsonPath('items.0.id', \App\Models\CartItem::first()->id);
     }
 
     public function test_mini_endpoint_returns_current_cart(): void
