@@ -53,7 +53,7 @@ HTML;
 </tbody></table>
 HTML;
 
-        $product = Product::updateOrCreate(
+        $product = Product::firstOrCreate(
             ['slug' => 'bezvolt-hybrid-inverter-6kw-single-phase'],
             [
                 'sku' => 'BEZVOLT-INV-6KW-S6K',
@@ -82,7 +82,10 @@ HTML;
         );
 
         // Set stock through the warehouse ledger (keeps ledger & cache consistent).
-        $this->setStock($product, 8);
+        // Seed opening stock only for a newly created product — never reset admin's stock on re-runs.
+        if ($product->wasRecentlyCreated) {
+            $this->setStock($product, 8);
+        }
 
         $this->command?->info('Produk BEZVOLT Hybrid Inverter 6kW berhasil ditambahkan/diperbarui (slug: '.$product->slug.').');
         $this->command?->warn('Ingat: upload gambar produk + PDF datasheet (& video YouTube bila ada) lewat Admin → Produk → Edit.');

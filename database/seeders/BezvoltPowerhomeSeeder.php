@@ -67,7 +67,7 @@ HTML;
 </tbody></table>
 HTML;
 
-        $product = Product::updateOrCreate(
+        $product = Product::firstOrCreate(
             ['slug' => 'bezvolt-powerhome-6-05'],
             [
                 'sku' => 'BEZVOLT-POWERHOME-6-05',
@@ -105,7 +105,10 @@ HTML;
         );
 
         // Set stock through the warehouse ledger (keeps ledger & cache consistent).
-        $this->setStock($product, 5);
+        // Seed opening stock only for a newly created product — never reset admin's stock on re-runs.
+        if ($product->wasRecentlyCreated) {
+            $this->setStock($product, 5);
+        }
 
         $this->command?->info('Produk BEZVOLT POWERHOME 6-05 berhasil ditambahkan/diperbarui (slug: '.$product->slug.').');
         $this->command?->warn('Ingat: upload 4 gambar produk + PDF datasheet lewat Admin → Produk → Edit.');

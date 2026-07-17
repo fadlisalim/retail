@@ -203,8 +203,8 @@ class ProductSeeder extends Seeder
                 'description' => '<p>Paket lengkap siap pasang. Hasil produksi energi bergantung pada lokasi, cuaca, orientasi, dan kondisi instalasi.</p>',
             ]);
 
-            // Bundle components (where available in the catalog).
-            $map = [
+            // Bundle components only for a newly created package (don't reset existing composition).
+            $map = ! $pkg->wasRecentlyCreated ? [] : [
                 'Panel Surya' => ['PNL-MONO-550', 6, false],
                 'Inverter' => ['INV-HYB-5K', 1, true],
                 'Baterai' => ['BAT-LFP-5K', 1, true],
@@ -245,7 +245,7 @@ class ProductSeeder extends Seeder
                 'weight_grams' => 20000, 'requires_freight' => true, 'short' => $reason, 'stock' => $stock,
             ]);
 
-            $product->conditionDetail()->updateOrCreate([], [
+            if ($product->wasRecentlyCreated) $product->conditionDetail()->updateOrCreate([], [
                 'reason_for_sale' => $reason,
                 'item_location' => 'Gudang Jakarta',
                 'available_quantity' => $stock,
@@ -285,7 +285,10 @@ class ProductSeeder extends Seeder
     private function make(array $data): Product
     {
         $slug = Str::slug($data['name']);
-        $product = Product::updateOrCreate(['sku' => $data['sku']], [
+        // firstOrCreate (not updateOrCreate): create the product only if its SKU is
+        // missing. Re-running this seeder on a deploy must NEVER overwrite a product
+        // that admin has since edited (price, description, flags, etc.).
+        $product = Product::firstOrCreate(['sku' => $data['sku']], [
             'name' => $data['name'],
             'slug' => $slug,
             'category_id' => $this->categories[$data['category']] ?? null,
@@ -324,10 +327,12 @@ class ProductSeeder extends Seeder
         ]);
 
         // Initial stock through the ledger so warehouse_stocks + movements stay consistent.
-        $target = (int) ($data['stock'] ?? 0);
-        $delta = $target - (int) $product->stock;
-        if ($delta > 0) {
-            $this->stock->adjust($product, null, $delta, StockMovementType::Purchase, note: 'Stok awal seeder');
+        // Only for a NEW product — re-runs must not touch admin's adjusted stock.
+        if ($product->wasRecentlyCreated) {
+            $target = (int) ($data['stock'] ?? 0);
+            if ($target > 0) {
+                $this->stock->adjust($product, null, $target, StockMovementType::Purchase, note: 'Stok awal seeder');
+            }
         }
 
         if (! empty($data['attributes'])) {

@@ -51,7 +51,7 @@ HTML;
 </tbody></table>
 HTML;
 
-        $product = Product::updateOrCreate(
+        $product = Product::firstOrCreate(
             ['slug' => 'baterai-lithium-power-wall-bezvolt-5120wh'],
             [
                 'sku' => 'BEZVOLT-POWERWALL-5120',
@@ -83,7 +83,10 @@ HTML;
         );
 
         // Set stock through the warehouse ledger (keeps ledger & cache consistent).
-        $this->setStock($product, 23);
+        // Seed opening stock only for a newly created product — never reset admin's stock on re-runs.
+        if ($product->wasRecentlyCreated) {
+            $this->setStock($product, 23);
+        }
 
         $this->command?->info('Produk Baterai Power Wall BEZVOLT 5.12kWh berhasil ditambahkan/diperbarui (slug: '.$product->slug.').');
         $this->command?->warn('Ingat: upload gambar produk + PDF datasheet lewat Admin → Produk → Edit.');

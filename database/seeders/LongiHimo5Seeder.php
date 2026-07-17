@@ -69,7 +69,7 @@ HTML;
 </tbody></table>
 HTML;
 
-        $product = Product::updateOrCreate(
+        $product = Product::firstOrCreate(
             ['slug' => 'panel-surya-longi-himo5-540wp-clearance'],
             [
                 'sku' => 'LONGI-HIMO5-540-CLR',
@@ -102,9 +102,13 @@ HTML;
             ],
         );
 
-        $this->setStock($product, 10);
+        // Only seed the opening stock for a NEW product. On re-runs (deploys) the
+        // product already exists, so we must not reset stock that admin has adjusted.
+        if ($product->wasRecentlyCreated) {
+            $this->setStock($product, 10);
+        }
 
-        $this->command?->info('Produk LONGi Hi-MO 5 540 Wp (Clearance) berhasil ditambahkan/diperbarui (slug: '.$product->slug.').');
+        $this->command?->info('Produk LONGi Hi-MO 5 540 Wp (Clearance) '.($product->wasRecentlyCreated ? 'ditambahkan' : 'sudah ada, dilewati').' (slug: '.$product->slug.').');
         $this->command?->warn('Harga: Rp 2.700.000 → Rp 1.900.000 • Stok 10 pcs • Tag: Paling Murah!.');
         $this->command?->warn('Ingat: upload gambar produk + PDF datasheet lewat Admin → Produk → Edit.');
     }

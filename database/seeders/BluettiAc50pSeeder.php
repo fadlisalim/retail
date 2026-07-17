@@ -65,7 +65,7 @@ HTML;
 </tbody></table>
 HTML;
 
-        $product = Product::updateOrCreate(
+        $product = Product::firstOrCreate(
             ['slug' => 'bluetti-ac50p'],
             [
                 'sku' => 'BLUETTI-AC50P',
@@ -96,7 +96,10 @@ HTML;
             ],
         );
 
-        $this->setStock($product, 0);
+        // Seed opening stock only for a newly created product — never reset admin's stock on re-runs.
+        if ($product->wasRecentlyCreated) {
+            $this->setStock($product, 0);
+        }
 
         $this->command?->info('Produk BLUETTI AC50P berhasil ditambahkan/diperbarui (slug: '.$product->slug.').');
         $this->command?->warn('Harga: Rp 9.219.000 → Rp 8.299.000. Stok 0 — atur lewat menu Stok. Upload gambar lewat Admin → Produk → Edit.');
