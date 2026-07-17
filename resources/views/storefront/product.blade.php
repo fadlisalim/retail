@@ -241,13 +241,30 @@
         </div>
     </div>
 
+    {{-- Video — tampil langsung (tanpa tab) agar pelanggan bisa langsung memutar. --}}
+    @if ($product->videos->isNotEmpty())
+        <section class="mt-8">
+            <h2 class="mb-3 text-base font-bold text-gray-900 sm:text-lg">Video Produk</h2>
+            <div class="space-y-4">
+                @foreach ($product->videos as $video)
+                    @if ($video->embedUrl())
+                        <div class="mx-auto aspect-video w-full max-w-2xl overflow-hidden rounded-2xl bg-black">
+                            <iframe src="{{ $video->embedUrl() }}" class="h-full w-full" title="{{ $video->title ?: 'Video produk' }}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                        </div>
+                    @else
+                        <a href="{{ $video->url }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-sm text-brand-600 hover:underline"><svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>{{ $video->title ?: 'Tonton video' }}</a>
+                    @endif
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     {{-- Detail sections: tabs on desktop, accordion on mobile --}}
     @php
         $tabs = ['deskripsi' => 'Deskripsi'];
         if ($product->attributeValues->isNotEmpty() || $product->specifications) $tabs['spesifikasi'] = 'Spesifikasi';
         if ($product->bundleItems->isNotEmpty()) $tabs['isi'] = 'Isi Paket';
         if ($product->documents->isNotEmpty()) $tabs['dokumen'] = 'Dokumen';
-        if ($product->videos->isNotEmpty()) $tabs['video'] = 'Video';
         $tabs['pengiriman'] = 'Pengiriman & Garansi';
         $firstTab = array_key_first($tabs);
     @endphp
@@ -341,30 +358,6 @@
                                 </li>
                             @endforeach
                         </ul>
-                    </div>
-                </section>
-            @endif
-
-            {{-- Video --}}
-            @if ($product->videos->isNotEmpty())
-                <section>
-                    <button type="button" @click="tab = tab === 'video' ? '' : 'video'" :aria-expanded="tab === 'video'" class="flex w-full items-center justify-between py-4 text-left lg:hidden">
-                        <span class="font-semibold text-gray-800">Video</span>
-                        <svg class="h-5 w-5 shrink-0 text-gray-400 transition" :class="tab === 'video' && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
-                    </button>
-                    <div x-show="tab === 'video'" x-cloak class="pb-6 lg:pt-6">
-                        <div class="space-y-4">
-                            @foreach ($product->videos as $video)
-                                @php($embed = $video->embedUrl())
-                                @if ($embed)
-                                    <div class="mx-auto aspect-video w-full max-w-3xl overflow-hidden rounded-2xl bg-black">
-                                        <iframe src="{{ $embed }}" class="h-full w-full" title="{{ $video->title ?: 'Video produk' }}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-                                    </div>
-                                @else
-                                    <a href="{{ $video->url }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-sm text-brand-600 hover:underline"><svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>{{ $video->title ?: 'Tonton video' }}</a>
-                                @endif
-                            @endforeach
-                        </div>
                     </div>
                 </section>
             @endif
