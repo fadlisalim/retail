@@ -10,17 +10,14 @@
 @if ($product->keywords)@section('meta_keywords', $product->keywords)@endif
 @section('canonical', $product->canonical_url ?: route('products.show', $product->slug))
 @section('og_type', 'product')
-{{-- Real uploaded image only — a data-URI placeholder can't be previewed by WhatsApp. --}}
-@if ($product->main_image_path)
-    @section('og_image', $product->primaryImageUrl())
-    @section('og_image_alt', $product->name)
-    @php $ogInfo = @getimagesize(public_path('storage/'.$product->main_image_path)) ?: null; @endphp
-    @if ($ogInfo)
-        @section('og_image_type', $ogInfo['mime'])
-        @section('og_image_width', $ogInfo[0])
-        @section('og_image_height', $ogInfo[1])
-    @endif
-@endif
+{{-- Landscape 1200x630 share card (product photo + name + price on a branded
+     canvas). WhatsApp renders the LARGE preview for 1.91:1 images; a raw square
+     product photo would only show as a small side thumbnail. --}}
+@section('og_image', route('products.og', $product))
+@section('og_image_type', 'image/png')
+@section('og_image_width', '1200')
+@section('og_image_height', '630')
+@section('og_image_alt', $product->name)
 
 @push('head')
 <script type="application/ld+json">

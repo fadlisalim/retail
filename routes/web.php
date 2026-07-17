@@ -16,6 +16,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductOgImageController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SearchController;
@@ -48,6 +49,9 @@ Route::get('/brand/{brand:slug}', [CatalogController::class, 'brand'])->name('br
 
 // Product detail resolves slug manually (to support old-slug redirects).
 Route::get('/produk/{slug}', [ProductController::class, 'show'])->name('products.show');
+// 1200x630 social-share (og:image) card for a product — landscape so WhatsApp
+// renders the LARGE preview even when the product photo is square.
+Route::get('/produk/{product:slug}/og.png', ProductOgImageController::class)->name('products.og');
 
 /* Cart */
 Route::controller(CartController::class)->group(function () {
