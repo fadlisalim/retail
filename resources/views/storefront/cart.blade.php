@@ -5,10 +5,12 @@
 @section('content')
     <h1 class="mb-4 text-xl font-bold text-gray-900 sm:text-2xl">Keranjang Belanja</h1>
 
-    @if ($cart->items->isEmpty() && $quotationItems->isEmpty())
+    @if ($cart->items->isEmpty() && $cart->savedItems->isEmpty())
         <div class="card grid place-items-center gap-3 p-12 text-center">
+            <svg class="h-16 w-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke-width="1.3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg>
             <p class="text-lg font-semibold text-gray-700">Keranjang Anda kosong</p>
-            <a href="{{ route('products.index') }}" class="btn-primary">Mulai Belanja</a>
+            <p class="text-sm text-gray-500">Belum ada produk. Yuk mulai jelajahi katalog energi surya kami.</p>
+            <a href="{{ route('products.index') }}" class="btn-primary mt-1">Mulai Belanja</a>
         </div>
     @else
         <div class="grid gap-6 lg:grid-cols-[1fr_340px]">
@@ -37,15 +39,15 @@
                                             </label>
                                         </form>
                                     @elseif ($item->product->requiresConditionAck())
-                                        <span class="mt-1 text-xs text-green-600">✔ Kondisi disetujui</span>
+                                        <span class="mt-1 inline-flex items-center gap-1 text-xs text-green-600"><svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>Kondisi disetujui</span>
                                     @endif
 
                                     <div class="mt-2 flex items-center gap-3">
                                         <form action="{{ route('cart.update', $item) }}" method="POST" class="inline-flex items-center rounded-lg border border-gray-300">
                                             @csrf @method('PATCH')
-                                            <button name="quantity" value="{{ $item->quantity - 1 }}" class="px-2 py-1 text-gray-500">−</button>
-                                            <span class="w-10 text-center text-sm">{{ $item->quantity }}</span>
-                                            <button name="quantity" value="{{ $item->quantity + 1 }}" class="px-2 py-1 text-gray-500">+</button>
+                                            <button type="submit" name="quantity" value="{{ max(1, $item->quantity - 1) }}" class="px-2 py-1 text-gray-500 disabled:opacity-40" aria-label="Kurangi jumlah" @disabled($item->quantity <= 1)>−</button>
+                                            <span class="w-10 text-center text-sm" aria-live="polite">{{ $item->quantity }}</span>
+                                            <button type="submit" name="quantity" value="{{ $item->quantity + 1 }}" class="px-2 py-1 text-gray-500" aria-label="Tambah jumlah">+</button>
                                         </form>
                                         <form action="{{ route('cart.save', $item) }}" method="POST">@csrf<button class="text-xs text-gray-400 hover:text-brand-600">Simpan untuk nanti</button></form>
                                         <form action="{{ route('cart.destroy', $item) }}" method="POST">@csrf @method('DELETE')<button class="text-xs text-red-400 hover:text-red-600">Hapus</button></form>
@@ -102,7 +104,13 @@
                         <button class="btn-outline text-sm">Pakai</button>
                     </form>
                     @if ($cart->coupon_code)
-                        <form action="{{ route('cart.coupon.remove') }}" method="POST"><button class="text-xs text-red-500">@csrf @method('DELETE') Lepas voucher "{{ $cart->coupon_code }}"</button></form>
+                        <form action="{{ route('cart.coupon.remove') }}" method="POST">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="text-xs text-red-500 hover:underline">Lepas voucher "{{ $cart->coupon_code }}"</button>
+                        </form>
+                        @if ($totals->couponDiscount <= 0 && ! $totals->couponFreeShipping)
+                            <p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700" role="alert">Voucher "{{ $cart->coupon_code }}" belum berlaku untuk belanja saat ini.</p>
+                        @endif
                     @endif
 
                     <dl class="space-y-1 border-t border-gray-100 pt-3 text-sm">
