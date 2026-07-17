@@ -95,48 +95,52 @@
     {{-- Customer journey selector — help retail vs project buyers pick a path. --}}
     <section class="order-2 mt-6 sm:order-none" aria-labelledby="journey-heading">
         <h2 id="journey-heading" class="sr-only">Mulai dari kebutuhan Anda</h2>
-        <div class="grid gap-3 sm:grid-cols-3">
+        {{-- Mobile: thin single-line rows (icon + title + chevron). Desktop: full cards. --}}
+        <div class="grid gap-2 sm:grid-cols-3 sm:gap-3">
             {{-- Beli produk --}}
             <a href="{{ route('products.index') }}"
-               class="card group flex items-start gap-3 p-4 transition hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md">
-                <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-600">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg>
+               class="card group flex items-center gap-3 p-3 transition hover:border-brand-400 hover:shadow-md sm:items-start sm:p-4 sm:hover:-translate-y-0.5">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-600 sm:h-11 sm:w-11">
+                    <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg>
                 </span>
-                <span class="min-w-0">
+                <span class="min-w-0 flex-1">
                     <span class="block font-semibold text-gray-900">Beli Produk</span>
-                    <span class="mt-0.5 block text-sm text-gray-500">Sudah tahu produk yang dibutuhkan? Belanja langsung dari katalog.</span>
-                    <span class="mt-2 inline-flex items-center gap-1 text-sm font-medium text-brand-600 group-hover:gap-1.5">Lihat Katalog
+                    <span class="mt-0.5 hidden text-sm text-gray-500 sm:block">Sudah tahu produk yang dibutuhkan? Belanja langsung dari katalog.</span>
+                    <span class="mt-2 hidden items-center gap-1 text-sm font-medium text-brand-600 group-hover:gap-1.5 sm:inline-flex">Lihat Katalog
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
                     </span>
                 </span>
+                <svg class="h-5 w-5 shrink-0 text-gray-300 sm:hidden" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
             </a>
             {{-- Pasang PLTS --}}
             <a href="{{ route('categories.show', 'paket-plts') }}"
-               class="card group flex items-start gap-3 p-4 transition hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md">
-                <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-600">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+               class="card group flex items-center gap-3 p-3 transition hover:border-brand-400 hover:shadow-md sm:items-start sm:p-4 sm:hover:-translate-y-0.5">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-600 sm:h-11 sm:w-11">
+                    <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
                 </span>
-                <span class="min-w-0">
+                <span class="min-w-0 flex-1">
                     <span class="block font-semibold text-gray-900">Pasang PLTS</span>
-                    <span class="mt-0.5 block text-sm text-gray-500">Solusi lengkap tenaga surya untuk rumah, kantor, atau toko.</span>
-                    <span class="mt-2 inline-flex items-center gap-1 text-sm font-medium text-brand-600 group-hover:gap-1.5">Pilih Paket PLTS
+                    <span class="mt-0.5 hidden text-sm text-gray-500 sm:block">Solusi lengkap tenaga surya untuk rumah, kantor, atau toko.</span>
+                    <span class="mt-2 hidden items-center gap-1 text-sm font-medium text-brand-600 group-hover:gap-1.5 sm:inline-flex">Pilih Paket PLTS
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
                     </span>
                 </span>
+                <svg class="h-5 w-5 shrink-0 text-gray-300 sm:hidden" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
             </a>
             {{-- Kebutuhan proyek --}}
             <a href="{{ route('quotations.create') }}"
-               class="card group flex items-start gap-3 p-4 transition hover:-translate-y-0.5 hover:border-accent-400 hover:shadow-md">
-                <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-accent-500/10 text-accent-600">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
+               class="card group flex items-center gap-3 p-3 transition hover:border-accent-400 hover:shadow-md sm:items-start sm:p-4 sm:hover:-translate-y-0.5">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent-500/10 text-accent-600 sm:h-11 sm:w-11">
+                    <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
                 </span>
-                <span class="min-w-0">
+                <span class="min-w-0 flex-1">
                     <span class="block font-semibold text-gray-900">Kebutuhan Proyek</span>
-                    <span class="mt-0.5 block text-sm text-gray-500">Untuk kontraktor, perusahaan, & pengadaan skala besar.</span>
-                    <span class="mt-2 inline-flex items-center gap-1 text-sm font-medium text-accent-600 group-hover:gap-1.5">Minta Penawaran
+                    <span class="mt-0.5 hidden text-sm text-gray-500 sm:block">Untuk kontraktor, perusahaan, & pengadaan skala besar.</span>
+                    <span class="mt-2 hidden items-center gap-1 text-sm font-medium text-accent-600 group-hover:gap-1.5 sm:inline-flex">Minta Penawaran
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
                     </span>
                 </span>
+                <svg class="h-5 w-5 shrink-0 text-gray-300 sm:hidden" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
             </a>
         </div>
     </section>
