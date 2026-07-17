@@ -14,6 +14,12 @@
 @if ($product->main_image_path)
     @section('og_image', $product->primaryImageUrl())
     @section('og_image_alt', $product->name)
+    @php $ogInfo = @getimagesize(public_path('storage/'.$product->main_image_path)) ?: null; @endphp
+    @if ($ogInfo)
+        @section('og_image_type', $ogInfo['mime'])
+        @section('og_image_width', $ogInfo[0])
+        @section('og_image_height', $ogInfo[1])
+    @endif
 @endif
 
 @push('head')

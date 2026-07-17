@@ -20,7 +20,11 @@
     <meta property="og:description" content="@yield('meta_description', config('rekasurya.company.tagline'))">
     <meta property="og:image" content="@yield('og_image', asset('images/og-default.png'))">
     <meta property="og:image:secure_url" content="@yield('og_image', asset('images/og-default.png'))">
-    @hasSection('og_image_dimensions')@yield('og_image_dimensions')@endif
+    {{-- Explicit type + dimensions are what make WhatsApp render the LARGE image
+         card on the first scrape (without them it falls back to a small icon). --}}
+    <meta property="og:image:type" content="@yield('og_image_type', 'image/png')">
+    <meta property="og:image:width" content="@yield('og_image_width', '1200')">
+    <meta property="og:image:height" content="@yield('og_image_height', '630')">
     @hasSection('og_image_alt')<meta property="og:image:alt" content="@yield('og_image_alt')">@endif
     <meta name="twitter:card" content="summary_large_image">
 
