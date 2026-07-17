@@ -90,7 +90,7 @@ HTML;
                 'height_cm' => 3.5,
                 'requires_freight' => true,
                 'warranty' => 'Garansi 5 tahun',
-                'badge_text' => 'Paling Murah!',
+                'badge_text' => 'Termurah!',
                 'is_clearance' => true,
                 'is_promo' => true,
                 'is_featured' => true,

@@ -48,15 +48,16 @@
             <x-price :product="$product" compact />
         </div>
 
-        <div class="mt-1.5 flex items-center gap-2 text-xs text-gray-400">
-            @if ($product->inStock())
-                <span class="inline-flex items-center gap-1 text-green-600"><span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>Stok tersedia</span>
-            @elseif ($product->requires_quotation)
-                <span class="text-teal-600">Via penawaran</span>
-            @else
-                <span class="text-red-500">Stok habis</span>
-            @endif
-            @if ($product->sold_count > 0)<span>• {{ $product->sold_count }} terjual</span>@endif
-        </div>
+        {{-- "Stok tersedia" dihilangkan; hanya tampilkan status non-normal + jumlah terjual. --}}
+        @if (! $product->inStock() || $product->requires_quotation || $product->sold_count > 0)
+            <div class="mt-1.5 flex items-center gap-2 text-xs text-gray-400">
+                @if ($product->requires_quotation)
+                    <span class="text-teal-600">Via penawaran</span>
+                @elseif (! $product->inStock())
+                    <span class="text-red-500">Stok habis</span>
+                @endif
+                @if ($product->sold_count > 0)<span>{{ $product->sold_count }} terjual</span>@endif
+            </div>
+        @endif
     </div>
 </article>

@@ -28,8 +28,9 @@
                 </div>
             </div>
         </div>
+        {{-- Full-bleed on mobile (-mx-4) with px-4 so the first card still aligns with the page. --}}
         <div x-ref="track"
-             class="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+             class="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-4 pb-2 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             @foreach ($products->take(12) as $product)
                 <div class="w-[46%] shrink-0 snap-start sm:w-[31%] md:w-[23%] lg:w-[18.5%]">
                     <x-product-card :product="$product" />

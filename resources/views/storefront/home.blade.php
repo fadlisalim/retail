@@ -143,10 +143,10 @@
 
     {{-- CLEARANCE + PROMO — two side-by-side panels, right after the hero. --}}
     @if ($clearance->isNotEmpty() || $promos->isNotEmpty())
-        <section class="order-2 mt-6 grid gap-4 sm:order-none lg:grid-cols-2">
+        <section class="order-2 -mx-4 mt-6 grid gap-4 sm:mx-0 sm:order-none lg:grid-cols-2">
             {{-- Clearance panel --}}
             @if ($clearance->isNotEmpty())
-                <div class="overflow-hidden rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 via-orange-50 to-white p-4 sm:p-5"
+                <div class="overflow-hidden border-y border-red-200 bg-gradient-to-br from-red-50 via-orange-50 to-white p-4 sm:rounded-2xl sm:border sm:p-5"
                      x-data="{ scroll(dir) { const t = $refs.track; t.scrollBy({ left: dir * (t.clientWidth * 0.85), behavior: 'smooth' }); } }">
                     <div class="mb-3 flex items-end justify-between gap-2">
                         <div class="min-w-0">
@@ -154,7 +154,7 @@
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z"/></svg>
                                 Clearance
                             </span>
-                            <p class="mt-1 truncate text-xs text-gray-600">Stok terbatas • <span class="font-semibold text-red-600">Paling Murah!</span></p>
+                            <p class="mt-1 truncate text-xs text-gray-600">Stok terbatas • <span class="font-semibold text-red-600">Termurah!</span></p>
                         </div>
                         <a href="{{ route('clearance') }}" class="shrink-0 text-xs font-semibold text-red-600 hover:underline">Lihat semua →</a>
                     </div>
@@ -170,7 +170,7 @@
 
             {{-- Promo panel --}}
             @if ($promos->isNotEmpty())
-                <div class="overflow-hidden rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 via-teal-50 to-white p-4 sm:p-5"
+                <div class="overflow-hidden border-y border-brand-200 bg-gradient-to-br from-brand-50 via-teal-50 to-white p-4 sm:rounded-2xl sm:border sm:p-5"
                      x-data="{ scroll(dir) { const t = $refs.track; t.scrollBy({ left: dir * (t.clientWidth * 0.85), behavior: 'smooth' }); } }">
                     <div class="mb-3 flex items-end justify-between gap-2">
                         <div class="min-w-0">

@@ -177,7 +177,7 @@
                     <a href="{{ route('products.index') }}" class="btn-outline mt-2">Lihat semua produk</a>
                 </div>
             @else
-                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                <div class="-mx-4 grid grid-cols-2 gap-2 px-2 sm:mx-0 sm:grid-cols-3 sm:gap-3 sm:px-0 xl:grid-cols-4">
                     @foreach ($products as $product)
                         <x-product-card :product="$product" />
                     @endforeach
