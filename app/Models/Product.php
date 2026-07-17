@@ -198,15 +198,17 @@ class Product extends Model
     /** Badge labels shown on cards/detail (section 10). */
     public function badges(bool $includeCondition = true): array
     {
+        // Ordered by display priority so cards (which show the first ~2) surface the
+        // most important first: custom tag, Clearance, Promo, Stok Terbatas, Baru.
         $badges = [];
         if (filled($this->badge_text)) $badges[] = $this->badge_text;
         if ($this->is_clearance) $badges[] = 'Clearance';
+        if ($this->isOnSale()) $badges[] = 'Promo';
+        if ($this->isLowStock()) $badges[] = 'Stok Terbatas';
+        if ($this->is_new) $badges[] = 'Baru';
         if ($includeCondition && $this->condition !== ProductCondition::New->value) {
             $badges[] = $this->conditionEnum()->label();
         }
-        if ($this->is_new) $badges[] = 'Baru';
-        if ($this->isOnSale()) $badges[] = 'Promo';
-        if ($this->isLowStock()) $badges[] = 'Stok Terbatas';
         if ($this->conditionDetail?->is_negotiable) $badges[] = 'Harga Nego';
         if ($this->pickup_only) $badges[] = 'Ambil di Lokasi';
         if ($this->requires_quotation) $badges[] = 'Minta Penawaran';

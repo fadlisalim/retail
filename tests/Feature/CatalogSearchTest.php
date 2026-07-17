@@ -58,4 +58,16 @@ class CatalogSearchTest extends TestCase
 
         $this->get('/barang-clearance')->assertOk()->assertSee('PanelClearance');
     }
+
+    public function test_active_filter_chips_render(): void
+    {
+        Category::factory()->create(['slug' => 'panel-surya']);
+        Product::factory()->create(['name' => 'PanelX', 'status' => 'published']);
+
+        $this->get('/produk?condition[]=new_minor_defect&price_min=1000000')
+            ->assertOk()
+            ->assertSee('Filter aktif')
+            ->assertSee('Baru - Minor Defect')
+            ->assertSee('Hapus semua');
+    }
 }

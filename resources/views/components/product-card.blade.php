@@ -1,14 +1,23 @@
 @props(['product'])
 <article class="card group flex flex-col overflow-hidden transition hover:shadow-md">
-    <a href="{{ route('products.show', $product->slug) }}" class="relative block aspect-square overflow-hidden bg-gray-50">
-        <img src="{{ $product->primaryImageUrl() }}" alt="{{ $product->name }}" loading="lazy"
-             class="h-full w-full object-cover transition duration-300 group-hover:scale-105">
-        <div class="absolute left-2 top-2 flex flex-col gap-1">
+    <div class="relative">
+        <a href="{{ route('products.show', $product->slug) }}" class="block aspect-square overflow-hidden bg-gray-50">
+            <img src="{{ $product->primaryImageUrl() }}" alt="{{ $product->name }}" loading="lazy"
+                 class="h-full w-full object-cover transition duration-300 group-hover:scale-105">
+        </a>
+        <div class="pointer-events-none absolute left-2 top-2 flex flex-col gap-1">
             @foreach (array_slice($product->badges(), 0, 2) as $badge)
                 <x-badge :label="$badge" />
             @endforeach
         </div>
-    </a>
+        <form action="{{ route('wishlist.toggle', $product->slug) }}" method="POST" class="absolute right-2 top-2">
+            @csrf
+            <button type="submit" title="Simpan ke wishlist" aria-label="Simpan {{ $product->name }} ke wishlist"
+                    class="grid h-8 w-8 place-items-center rounded-full bg-white/90 text-gray-500 shadow-sm transition hover:text-red-500 focus-visible:ring-2 focus-visible:ring-brand-500">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/></svg>
+            </button>
+        </form>
+    </div>
     <div class="flex flex-1 flex-col gap-1 p-3">
         @if ($product->brand)
             <a href="{{ route('brands.show', $product->brand->slug) }}" class="text-xs font-medium text-brand-600 hover:underline">{{ $product->brand->name }}</a>

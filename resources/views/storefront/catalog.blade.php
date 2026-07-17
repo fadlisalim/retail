@@ -28,6 +28,48 @@
         </form>
     </div>
 
+    {{-- Active filter chips --}}
+    @php
+        $qc = request()->query();
+        $mkUrl = fn ($params) => url()->current().(! empty($params) ? '?'.http_build_query($params) : '');
+        $clean = fn ($c) => collect($c)->reject(fn ($v) => $v === [] || $v === null || $v === '')->all();
+        $condMap = ['new' => 'Baru', 'new_minor_defect' => 'Baru - Minor Defect', 'new_project_surplus' => 'Baru - Sisa Proyek', 'open_box' => 'Open Box', 'display_unit' => 'Bekas Display', 'used' => 'Bekas Pakai'];
+        $flagLabels = ['in_stock' => 'Stok tersedia', 'ready' => 'Siap kirim', 'promo' => 'Sedang promo', 'new' => 'Produk baru', 'clearance' => 'Clearance', 'quotation' => 'Minta penawaran'];
+        $chips = [];
+        if (! empty($qc['q'])) $chips[] = ['label' => '"'.$qc['q'].'"', 'url' => $mkUrl($clean(collect($qc)->except('q')))];
+        if (! empty($qc['category']) && empty($category)) {
+            $catName = \App\Models\Category::where('slug', $qc['category'])->value('name') ?? $qc['category'];
+            $chips[] = ['label' => $catName, 'url' => $mkUrl($clean(collect($qc)->except('category')))];
+        }
+        foreach ((array) ($qc['brand'] ?? []) as $bs) {
+            $rest = array_values(array_diff((array) $qc['brand'], [$bs]));
+            $chips[] = ['label' => optional($brands->firstWhere('slug', $bs))->name ?? $bs, 'url' => $mkUrl($clean(collect($qc)->put('brand', $rest)))];
+        }
+        foreach ((array) ($qc['condition'] ?? []) as $cs) {
+            $rest = array_values(array_diff((array) $qc['condition'], [$cs]));
+            $chips[] = ['label' => $condMap[$cs] ?? $cs, 'url' => $mkUrl($clean(collect($qc)->put('condition', $rest)))];
+        }
+        if ((($qc['price_min'] ?? '') !== '') || (($qc['price_max'] ?? '') !== '')) {
+            $chips[] = ['label' => 'Harga '.(($qc['price_min'] ?? '') !== '' ? rupiah($qc['price_min']) : '0').' – '.(($qc['price_max'] ?? '') !== '' ? rupiah($qc['price_max']) : 'maks'), 'url' => $mkUrl($clean(collect($qc)->except(['price_min', 'price_max'])))];
+        }
+        if (! empty($qc['rating_min'])) $chips[] = ['label' => $qc['rating_min'].'+ bintang', 'url' => $mkUrl($clean(collect($qc)->except('rating_min')))];
+        foreach ($flagLabels as $fk => $fl) {
+            if (! empty($qc[$fk])) $chips[] = ['label' => $fl, 'url' => $mkUrl($clean(collect($qc)->except($fk)))];
+        }
+    @endphp
+    @if (count($chips))
+        <div class="mb-4 flex flex-wrap items-center gap-2">
+            <span class="text-xs font-medium text-gray-500">Filter aktif:</span>
+            @foreach ($chips as $chip)
+                <a href="{{ $chip['url'] }}" class="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 transition hover:border-red-300 hover:text-red-600">
+                    {{ $chip['label'] }}
+                    <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                </a>
+            @endforeach
+            <a href="{{ url()->current() }}" class="text-xs font-medium text-brand-600 hover:underline">Hapus semua</a>
+        </div>
+    @endif
+
     <div class="lg:grid lg:grid-cols-[260px_1fr] lg:gap-6" x-data="{ drawer: false }">
         {{-- Mobile filter button --}}
         <button @click="drawer = true" class="btn-outline mb-4 w-full lg:hidden">
@@ -119,8 +161,8 @@
                     @endforeach
                 </div>
 
-                <div class="flex gap-2 pt-2">
-                    <button type="submit" class="btn-primary flex-1">Terapkan</button>
+                <div class="sticky bottom-0 -mx-4 mt-2 flex gap-2 border-t border-gray-100 bg-white px-4 py-3 lg:static lg:mx-0 lg:border-0 lg:p-0 lg:pt-2">
+                    <button type="submit" class="btn-primary flex-1">Tampilkan {{ $products->total() }} Produk</button>
                     <a href="{{ url()->current() }}" class="btn-outline">Reset</a>
                 </div>
             </form>
