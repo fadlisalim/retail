@@ -6,8 +6,8 @@ use App\Models\Order;
 use App\Models\User;
 use App\Notifications\SystemNotification;
 use App\Services\OrderService;
-use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Auth\Notifications\VerifyEmail;
+use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -27,7 +27,7 @@ class EmailFlowTest extends TestCase
         $this->post(route('password.email'), ['email' => 'reset@test.id'])
             ->assertSessionHas('status');
 
-        Notification::assertSentTo($user, ResetPassword::class);
+        Notification::assertSentTo($user, ResetPasswordNotification::class);
     }
 
     public function test_password_can_be_reset(): void
@@ -57,7 +57,7 @@ class EmailFlowTest extends TestCase
             'password_confirmation' => 'password123',
         ]);
 
-        Notification::assertSentTo(User::where('email', 'verify@test.id')->first(), VerifyEmail::class);
+        Notification::assertSentTo(User::where('email', 'verify@test.id')->first(), VerifyEmailNotification::class);
     }
 
     public function test_unverified_user_is_blocked_from_account(): void

@@ -47,7 +47,7 @@ class SystemNotification extends Notification
             $mail->action($this->actionText ?? 'Lihat Detail', str_starts_with($this->url, 'http') ? $this->url : url($this->url));
         }
 
-        return $mail->salutation('Salam, '.config('app.name'));
+        return $mail->salutation('Salam,'."\n".brand());
     }
 
     public function toArray(object $notifiable): array

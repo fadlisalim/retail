@@ -10,13 +10,24 @@
         ['route' => 'account.notifications', 'pattern' => 'account.notifications*', 'label' => 'Notifikasi', 'icon' => 'M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0'],
         ['route' => 'account.profile', 'pattern' => 'account.profile*', 'label' => 'Profil', 'icon' => 'M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'],
     ];
+    $activeLabel = 'Menu Akun';
+    foreach ($navItems as $it) { if (request()->routeIs($it['pattern'])) { $activeLabel = $it['label']; break; } }
 @endphp
-<aside class="lg:sticky lg:top-24 lg:self-start" aria-label="Menu akun">
+<aside x-data="{ open: window.matchMedia('(min-width: 1024px)').matches }"
+       x-init="window.addEventListener('resize', () => { if (window.matchMedia('(min-width: 1024px)').matches) open = true })"
+       class="lg:sticky lg:top-24 lg:self-start" aria-label="Menu akun">
     <div class="card overflow-hidden">
         <div class="border-b border-gray-100 bg-brand-50 px-4 py-3">
             <p class="text-xs uppercase tracking-wide text-brand-600">Akun Saya</p>
             <p class="truncate font-semibold text-brand-800">{{ auth()->user()->name }}</p>
         </div>
+        {{-- Mobile toggle: collapsed by default so page content is visible without scrolling. --}}
+        <button type="button" @click="open = !open" :aria-expanded="open"
+                class="flex w-full items-center justify-between border-b border-gray-100 px-4 py-3 text-sm font-medium text-gray-700 lg:hidden">
+            <span x-text="open ? 'Tutup menu' : '{{ $activeLabel }}'">{{ $activeLabel }}</span>
+            <svg class="h-5 w-5 shrink-0 text-gray-400 transition" :class="open && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+        </button>
+        <div x-show="open" x-cloak>
         <nav class="p-2">
             <ul class="space-y-0.5">
                 @foreach ($navItems as $item)
@@ -45,5 +56,6 @@
                 </button>
             </form>
         </div>
+        </div>{{-- /collapsible --}}
     </div>
 </aside>

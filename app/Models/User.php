@@ -35,6 +35,18 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    /** Send the Indonesian email-verification notification. */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new \App\Notifications\VerifyEmailNotification);
+    }
+
+    /** Send the Indonesian password-reset notification. */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+    }
+
     public function profile(): HasOne
     {
         return $this->hasOne(CustomerProfile::class);
