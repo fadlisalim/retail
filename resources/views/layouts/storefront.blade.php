@@ -19,6 +19,7 @@
     <meta property="og:title" content="@yield('title', config('rekasurya.company.brand_name'))">
     <meta property="og:description" content="@yield('meta_description', config('rekasurya.company.tagline'))">
     <meta property="og:image" content="@yield('og_image', asset('images/og-default.png'))">
+    <meta property="og:image:secure_url" content="@yield('og_image', asset('images/og-default.png'))">
     @hasSection('og_image_dimensions')@yield('og_image_dimensions')@endif
     @hasSection('og_image_alt')<meta property="og:image:alt" content="@yield('og_image_alt')">@endif
     <meta name="twitter:card" content="summary_large_image">
