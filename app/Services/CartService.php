@@ -114,12 +114,13 @@ class CartService
         ]);
     }
 
-    public function updateQuantity(CartItem $item, int $quantity): void
+    /** Returns the quantity actually applied (0 if the item was removed). */
+    public function updateQuantity(CartItem $item, int $quantity): int
     {
         if ($quantity < 1) {
             $item->delete();
 
-            return;
+            return 0;
         }
 
         $product = $item->product;
@@ -130,6 +131,8 @@ class CartService
 
         $this->assertStock($product, $item->variant, $quantity);
         $item->update(['quantity' => $quantity]);
+
+        return $quantity;
     }
 
     public function removeItem(CartItem $item): void

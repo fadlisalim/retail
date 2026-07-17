@@ -104,38 +104,94 @@ class CartController extends Controller
         ];
     }
 
-    public function update(Request $request, CartItem $item): RedirectResponse
+    public function update(Request $request, CartItem $item): RedirectResponse|JsonResponse
     {
         $this->authorizeItem($item);
         $data = $request->validate(['quantity' => ['required', 'integer', 'min:0', 'max:9999']]);
+        $requested = (int) $data['quantity'];
 
-        $this->cart->updateQuantity($item, (int) $data['quantity']);
+        $applied = $this->cart->updateQuantity($item, $requested);
 
-        return back()->with('success', 'Keranjang diperbarui.');
+        // Clamp feedback (min/max purchase). Only when the item wasn't removed.
+        $notice = null;
+        if ($requested >= 1 && $applied !== $requested) {
+            $unit = $item->product?->unit ?: 'pcs';
+            $notice = $applied < $requested
+                ? "Jumlah disesuaikan ke maksimum {$applied} {$unit}."
+                : "Jumlah disesuaikan ke minimum {$applied} {$unit}.";
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json($this->cartStatePayload($notice));
+        }
+
+        return back()->with($notice ? 'warning' : 'success', $notice ?: 'Keranjang diperbarui.');
     }
 
-    public function destroy(CartItem $item): RedirectResponse
+    public function destroy(Request $request, CartItem $item): RedirectResponse|JsonResponse
     {
         $this->authorizeItem($item);
         $this->cart->removeItem($item);
 
+        if ($request->expectsJson()) {
+            return response()->json($this->cartStatePayload('Produk dihapus dari keranjang.'));
+        }
+
         return back()->with('success', 'Produk dihapus dari keranjang.');
     }
 
-    public function saveForLater(CartItem $item): RedirectResponse
+    public function saveForLater(Request $request, CartItem $item): RedirectResponse|JsonResponse
     {
         $this->authorizeItem($item);
         $this->cart->saveForLater($item, true);
 
+        if ($request->expectsJson()) {
+            return response()->json($this->cartStatePayload('Produk disimpan untuk nanti.'));
+        }
+
         return back()->with('success', 'Produk disimpan untuk nanti.');
     }
 
-    public function moveToCart(CartItem $item): RedirectResponse
+    public function moveToCart(Request $request, CartItem $item): RedirectResponse|JsonResponse
     {
         $this->authorizeItem($item);
         $this->cart->saveForLater($item, false);
 
+        if ($request->expectsJson()) {
+            return response()->json($this->cartStatePayload('Produk dipindah ke keranjang.'));
+        }
+
         return back()->with('success', 'Produk dipindah ke keranjang.');
+    }
+
+    /**
+     * Full server-recomputed cart state for AJAX mutations on the cart page:
+     * per-line totals, the summary figures, and the badge count. All money is
+     * formatted server-side so the client never computes prices.
+     */
+    private function cartStatePayload(?string $notice = null): array
+    {
+        $cart = $this->cart->current()->load(['items.product', 'items.variant']);
+        $totals = $this->calculator->calculate($cart);
+        $buyable = $this->calculator->buyableItems($cart);
+
+        return [
+            'count' => $this->cart->count(),
+            'notice' => $notice,
+            'empty' => $buyable->isEmpty(),
+            'lines' => $buyable->mapWithKeys(fn ($i) => [(string) $i->id => [
+                'quantity' => (int) $i->quantity,
+                'line_formatted' => rupiah($i->currentUnitPrice() * $i->quantity),
+            ]])->all(),
+            'summary' => [
+                'item_count' => $totals->itemCount(),
+                'subtotal' => rupiah($totals->itemsSubtotal),
+                'product_discount' => $totals->productDiscount > 0 ? rupiah($totals->productDiscount) : null,
+                'coupon_discount' => $totals->couponDiscount > 0 ? rupiah($totals->couponDiscount) : null,
+                'tax' => $totals->taxAmount > 0 ? rupiah($totals->taxAmount) : null,
+                'grand_total' => rupiah($totals->grandTotal),
+            ],
+        ];
     }
 
     public function acknowledge(CartItem $item): RedirectResponse

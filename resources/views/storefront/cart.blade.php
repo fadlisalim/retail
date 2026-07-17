@@ -13,7 +13,21 @@
             <a href="{{ route('products.index') }}" class="btn-primary mt-1">Mulai Belanja</a>
         </div>
     @else
-        <div class="grid gap-6 lg:grid-cols-[1fr_340px]">
+        @php
+            $summaryData = [
+                'item_count' => $totals->itemCount(),
+                'subtotal' => rupiah($totals->itemsSubtotal),
+                'product_discount' => $totals->productDiscount > 0 ? rupiah($totals->productDiscount) : null,
+                'coupon_discount' => $totals->couponDiscount > 0 ? rupiah($totals->couponDiscount) : null,
+                'tax' => $totals->taxAmount > 0 ? rupiah($totals->taxAmount) : null,
+                'grand_total' => rupiah($totals->grandTotal),
+            ];
+        @endphp
+        <div class="grid gap-6 lg:grid-cols-[1fr_340px]" x-data="cartPage(@js($summaryData))">
+            {{-- Toast (AJAX feedback) --}}
+            <div x-show="toast" x-cloak x-transition role="status" aria-live="polite"
+                 class="fixed inset-x-0 bottom-20 z-50 mx-auto w-max max-w-[90%] rounded-lg px-4 py-2 text-sm text-white shadow-lg lg:bottom-6"
+                 :class="toastErr ? 'bg-red-600' : 'bg-gray-900'" x-text="toast"></div>
             <div class="space-y-4">
                 {{-- Buyable items --}}
                 @php($buyable = $cart->items->filter(fn($i) => $i->product && !$i->product->requires_quotation))
@@ -21,7 +35,7 @@
                     <div class="card divide-y divide-gray-100">
                         <div class="px-4 py-3 text-sm font-semibold text-gray-700">Produk untuk Checkout</div>
                         @foreach ($buyable as $item)
-                            <div class="flex gap-3 p-4">
+                            <div class="flex gap-3 p-4" data-cartrow="{{ $item->id }}">
                                 <a href="{{ route('products.show', $item->product->slug) }}" class="shrink-0">
                                     <img src="{{ $item->product->primaryImageUrl() }}" alt="{{ $item->product->name }}" class="h-20 w-20 rounded-lg object-cover">
                                 </a>
@@ -43,17 +57,17 @@
                                     @endif
 
                                     <div class="mt-2 flex items-center gap-3">
-                                        <form action="{{ route('cart.update', $item) }}" method="POST" class="inline-flex items-center rounded-lg border border-gray-300">
+                                        <form action="{{ route('cart.update', $item) }}" method="POST" class="inline-flex items-center rounded-lg border border-gray-300" @submit.prevent="mutate($event)">
                                             @csrf @method('PATCH')
-                                            <button type="submit" name="quantity" value="{{ max(1, $item->quantity - 1) }}" class="px-2 py-1 text-gray-500 disabled:opacity-40" aria-label="Kurangi jumlah" @disabled($item->quantity <= 1)>−</button>
-                                            <span class="w-10 text-center text-sm" aria-live="polite">{{ $item->quantity }}</span>
-                                            <button type="submit" name="quantity" value="{{ $item->quantity + 1 }}" class="px-2 py-1 text-gray-500" aria-label="Tambah jumlah">+</button>
+                                            <button type="submit" name="quantity" value="{{ max(1, $item->quantity - 1) }}" data-dec="{{ $item->id }}" class="px-2 py-1 text-gray-500 disabled:opacity-40" aria-label="Kurangi jumlah" @disabled($item->quantity <= 1)>−</button>
+                                            <span class="w-10 text-center text-sm" data-qty="{{ $item->id }}" aria-live="polite">{{ $item->quantity }}</span>
+                                            <button type="submit" name="quantity" value="{{ $item->quantity + 1 }}" data-inc="{{ $item->id }}" class="px-2 py-1 text-gray-500" aria-label="Tambah jumlah">+</button>
                                         </form>
-                                        <form action="{{ route('cart.save', $item) }}" method="POST">@csrf<button class="text-xs text-gray-400 hover:text-brand-600">Simpan untuk nanti</button></form>
-                                        <form action="{{ route('cart.destroy', $item) }}" method="POST">@csrf @method('DELETE')<button class="text-xs text-red-400 hover:text-red-600">Hapus</button></form>
+                                        <form action="{{ route('cart.save', $item) }}" method="POST" @submit.prevent="mutate($event)">@csrf<button class="text-xs text-gray-400 hover:text-brand-600">Simpan untuk nanti</button></form>
+                                        <form action="{{ route('cart.destroy', $item) }}" method="POST" @submit.prevent="mutate($event)">@csrf @method('DELETE')<button class="text-xs text-red-400 hover:text-red-600">Hapus</button></form>
                                     </div>
                                 </div>
-                                <div class="text-right text-sm font-bold text-gray-900">{{ rupiah($item->currentUnitPrice() * $item->quantity) }}</div>
+                                <div class="text-right text-sm font-bold text-gray-900" data-line="{{ $item->id }}">{{ rupiah($item->currentUnitPrice() * $item->quantity) }}</div>
                             </div>
                         @endforeach
                     </div>
@@ -114,14 +128,14 @@
                     @endif
 
                     <dl class="space-y-1 border-t border-gray-100 pt-3 text-sm">
-                        <div class="flex justify-between"><dt class="text-gray-500">Subtotal ({{ $totals->itemCount() }} item)</dt><dd>{{ rupiah($totals->itemsSubtotal) }}</dd></div>
-                        @if ($totals->productDiscount > 0)<div class="flex justify-between text-green-600"><dt>Hemat promo</dt><dd>−{{ rupiah($totals->productDiscount) }}</dd></div>@endif
-                        @if ($totals->couponDiscount > 0)<div class="flex justify-between text-green-600"><dt>Voucher</dt><dd>−{{ rupiah($totals->couponDiscount) }}</dd></div>@endif
+                        <div class="flex justify-between"><dt class="text-gray-500">Subtotal (<span x-text="s.item_count"></span> item)</dt><dd x-text="s.subtotal"></dd></div>
+                        <div class="flex justify-between text-green-600" x-show="s.product_discount"><dt>Hemat promo</dt><dd>−<span x-text="s.product_discount"></span></dd></div>
+                        <div class="flex justify-between text-green-600" x-show="s.coupon_discount"><dt>Voucher</dt><dd>−<span x-text="s.coupon_discount"></span></dd></div>
                         <div class="flex justify-between text-gray-400"><dt>Ongkir</dt><dd>Dihitung saat checkout</dd></div>
-                        @if ($totals->taxAmount > 0)<div class="flex justify-between"><dt class="text-gray-500">Estimasi PPN</dt><dd>{{ rupiah($totals->taxAmount) }}</dd></div>@endif
+                        <div class="flex justify-between" x-show="s.tax"><dt class="text-gray-500">Estimasi PPN</dt><dd x-text="s.tax"></dd></div>
                     </dl>
                     <div class="flex justify-between border-t border-gray-100 pt-3 text-base font-bold">
-                        <span>Estimasi Total</span><span class="text-brand-700">{{ rupiah($totals->grandTotal) }}</span>
+                        <span>Estimasi Total</span><span class="text-brand-700" x-text="s.grand_total"></span>
                     </div>
 
                     @if ($buyable->isNotEmpty())
@@ -133,3 +147,64 @@
         </div>
     @endif
 @endsection
+
+@push('scripts')
+<script>
+function cartPage(summary) {
+    return {
+        s: summary,
+        toast: '', toastErr: false, _t: null,
+        showToast(msg, isErr = false) {
+            this.toast = msg; this.toastErr = isErr;
+            clearTimeout(this._t);
+            this._t = setTimeout(() => { this.toast = ''; }, 3000);
+        },
+        /* Intercept qty/remove/save forms → server-authoritative AJAX update, no reload. */
+        async mutate(e) {
+            const form = e.target;
+            const submitter = e.submitter;
+            const row = form.closest('[data-cartrow]');
+            const body = new FormData(form);
+            if (submitter && submitter.name) body.append(submitter.name, submitter.value); // qty from the clicked button
+            if (submitter) submitter.disabled = true;
+            if (row) row.classList.add('opacity-60', 'pointer-events-none');
+            try {
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
+                    body,
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) { this.showToast(data.message || 'Gagal memperbarui keranjang.', true); return; }
+                this.apply(data);
+                if (data.notice) this.showToast(data.notice);
+            } catch (err) {
+                this.showToast('Terjadi kesalahan jaringan. Coba lagi.', true);
+            } finally {
+                if (submitter) submitter.disabled = false;
+                if (row) row.classList.remove('opacity-60', 'pointer-events-none');
+            }
+        },
+        apply(data) {
+            if (data.empty) { window.location.reload(); return; } // fall back to server-rendered empty/saved state
+            const lines = data.lines || {};
+            for (const [id, line] of Object.entries(lines)) {
+                const q = document.querySelector('[data-qty="' + id + '"]');
+                const lt = document.querySelector('[data-line="' + id + '"]');
+                const dec = document.querySelector('[data-dec="' + id + '"]');
+                const inc = document.querySelector('[data-inc="' + id + '"]');
+                if (q) q.textContent = line.quantity;
+                if (lt) lt.textContent = line.line_formatted;
+                if (dec) { dec.value = Math.max(1, line.quantity - 1); dec.disabled = line.quantity <= 1; }
+                if (inc) inc.value = line.quantity + 1;
+            }
+            document.querySelectorAll('[data-cartrow]').forEach(el => {
+                if (!lines[el.getAttribute('data-cartrow')]) el.remove(); // removed / saved-for-later
+            });
+            this.s = data.summary;
+            if (window.Alpine && window.Alpine.store('cart')) window.Alpine.store('cart').count = data.count;
+        },
+    };
+}
+</script>
+@endpush
