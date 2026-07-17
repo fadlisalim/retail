@@ -24,7 +24,7 @@
                 $arrowIcon = 'M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3';
             @endphp
             @if (! $aff)
-                <section class="relative overflow-hidden rounded-xl bg-gradient-to-br from-red-600 via-rose-600 to-red-700 p-5 text-white shadow-md sm:p-6" aria-label="Ajakan gabung program afiliasi">
+                <section class="relative -mx-4 overflow-hidden rounded-none bg-gradient-to-br from-red-600 via-rose-600 to-red-700 p-5 text-white shadow-md sm:mx-0 sm:rounded-xl sm:p-6" aria-label="Ajakan gabung program afiliasi">
                     {{-- Pinging "look at me" dot — auto-disabled under prefers-reduced-motion. --}}
                     <span class="absolute right-4 top-4 flex h-3 w-3">
                         <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
@@ -53,7 +53,7 @@
                     </div>
                 </section>
             @elseif ($aff->isActive())
-                <a href="{{ route('account.affiliate.dashboard') }}" class="block rounded-xl border border-brand-200 bg-brand-50 p-5 transition hover:bg-brand-100/60" aria-label="Buka dashboard afiliasi">
+                <a href="{{ route('account.affiliate.dashboard') }}" class="-mx-4 block rounded-none border-y border-brand-200 bg-brand-50 p-5 transition hover:bg-brand-100/60 sm:mx-0 sm:rounded-xl sm:border" aria-label="Buka dashboard afiliasi">
                     <div class="flex items-center justify-between gap-4">
                         <div class="flex items-center gap-3">
                             <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-brand-100">
@@ -76,7 +76,7 @@
                     </div>
                 </a>
             @elseif ($aff->status === \App\Enums\AffiliateStatus::Pending)
-                <a href="{{ route('account.affiliate.dashboard') }}" class="block rounded-xl border border-amber-200 bg-amber-50 p-5 transition hover:bg-amber-100/60" aria-label="Cek status pendaftaran afiliasi">
+                <a href="{{ route('account.affiliate.dashboard') }}" class="-mx-4 block rounded-none border-y border-amber-200 bg-amber-50 p-5 transition hover:bg-amber-100/60 sm:mx-0 sm:rounded-xl sm:border" aria-label="Cek status pendaftaran afiliasi">
                     <div class="flex items-center gap-3">
                         <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-amber-100">
                             <svg class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
@@ -90,7 +90,7 @@
                     </div>
                 </a>
             @else
-                <a href="{{ route('account.affiliate.dashboard') }}" class="block rounded-xl border border-gray-200 bg-gray-50 p-5 transition hover:bg-gray-100" aria-label="Lihat status afiliasi">
+                <a href="{{ route('account.affiliate.dashboard') }}" class="-mx-4 block rounded-none border-y border-gray-200 bg-gray-50 p-5 transition hover:bg-gray-100 sm:mx-0 sm:rounded-xl sm:border" aria-label="Lihat status afiliasi">
                     <div class="flex items-center gap-3">
                         <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gray-200">
                             <svg class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">

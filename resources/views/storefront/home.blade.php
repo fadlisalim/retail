@@ -19,7 +19,7 @@
     {{-- 1. Hero slider (auto-advance, arrows + dots) --}}
     <section class="order-1 mt-2 sm:order-none">
         @if ($heroBanners->isNotEmpty())
-            <div class="group relative overflow-hidden rounded-2xl"
+            <div class="group relative -mx-4 grid overflow-hidden rounded-none sm:mx-0 sm:rounded-2xl"
                  x-data="{
                     active: 0,
                     count: {{ $heroBanners->count() }},
@@ -33,7 +33,7 @@
                  x-init="start()"
                  @mouseenter="stop()" @mouseleave="start()">
                 @foreach ($heroBanners as $i => $banner)
-                    <div x-show="active === {{ $i }}" x-transition.opacity.duration.500ms class="relative" @if ($i !== 0) style="display:none" @endif>
+                    <div x-show="active === {{ $i }}" x-transition.opacity.duration.500ms class="relative [grid-area:1/1]" @if ($i !== 0) style="display:none" @endif>
                         @if ($banner->image_desktop_path)
                             {{-- Image-only banner: the uploaded artwork IS the design, just wrap it in the link. --}}
                             <a @if ($banner->button_url) href="{{ $banner->button_url }}" @endif class="block">
@@ -77,7 +77,7 @@
                 @endif
             </div>
         @else
-            <div class="flex min-h-[220px] flex-col justify-center gap-3 rounded-2xl bg-gradient-to-r from-brand-700 to-brand-500 p-6 text-white sm:min-h-[300px] sm:p-12">
+            <div class="-mx-4 flex min-h-[220px] flex-col justify-center gap-3 rounded-none bg-gradient-to-r from-brand-700 to-brand-500 p-6 text-white sm:mx-0 sm:min-h-[300px] sm:rounded-2xl sm:p-12">
                 <h1 class="max-w-xl text-2xl font-extrabold sm:text-4xl">Energi Cerdas, Tinggal Klik!</h1>
                 <p class="max-w-lg text-sm text-brand-50">Panel surya, inverter, baterai lithium, paket PLTS, dan barang sisa proyek dengan harga terbaik.</p>
                 <a href="{{ route('products.index') }}" class="btn-accent mt-2 w-fit">Belanja Sekarang</a>
@@ -189,10 +189,10 @@
 
     {{-- 2. Grid banners (baris banner 1/2/3 kolom) --}}
     @if ($gridBanners->isNotEmpty())
-        <section class="order-4 mt-6 grid grid-cols-1 items-start gap-4 sm:order-none sm:grid-cols-6">
+        <section class="order-4 -mx-4 mt-6 grid grid-cols-1 items-start gap-4 sm:mx-0 sm:order-none sm:grid-cols-6">
             @foreach ($gridBanners as $banner)
                 <a @if ($banner->button_url) href="{{ $banner->button_url }}" @endif
-                   class="group relative block overflow-hidden rounded-2xl {{ $banner->spanClass() }}">
+                   class="group relative block overflow-hidden rounded-none sm:rounded-2xl {{ $banner->spanClass() }}">
                     @if ($banner->image_desktop_path)
                         <picture>
                             @if ($banner->image_mobile_path)
