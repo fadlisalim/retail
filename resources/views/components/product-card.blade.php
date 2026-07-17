@@ -5,13 +5,6 @@
             <img src="{{ $product->primaryImageUrl() }}" alt="{{ $product->name }}" loading="lazy"
                  class="h-full w-full object-cover transition duration-300 group-hover:scale-105">
         </a>
-        {{-- Status badges only (Clearance/Promo/condition). The custom price tag is
-             moved out of the image, to a compact chip near the price, to reduce clutter. --}}
-        <div class="pointer-events-none absolute left-2 top-2 flex flex-col gap-1">
-            @foreach (array_slice($product->badges(true, false), 0, 2) as $badge)
-                <x-badge :label="$badge" />
-            @endforeach
-        </div>
         <form action="{{ route('wishlist.toggle', $product->slug) }}" method="POST" class="absolute right-2 top-2">
             @csrf
             <button type="submit" title="Simpan ke wishlist" aria-label="Simpan {{ $product->name }} ke wishlist"
@@ -26,16 +19,25 @@
         @endif
         <a href="{{ route('products.show', $product->slug) }}" class="line-clamp-2 min-h-[2.5rem] text-sm font-medium text-gray-800 hover:text-brand-700">{{ $product->name }}</a>
 
-        @if ($product->rating_count > 0)
-            <x-stars :rating="$product->rating_avg" :count="$product->rating_count" />
+        {{-- Badges live BELOW the image (not overlaid) so they never cover the
+             product artwork — which is often an infographic with its own text. --}}
+        @php($cardBadges = array_slice($product->badges(true, false), 0, 3))
+        @if (filled($product->badge_text) || count($cardBadges))
+            <div class="flex flex-wrap items-center gap-1">
+                @foreach ($cardBadges as $badge)
+                    <x-badge :label="$badge" />
+                @endforeach
+                @if (filled($product->badge_text))
+                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200 shadow-sm">
+                        <svg class="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
+                        {{ $product->badge_text }}
+                    </span>
+                @endif
+            </div>
         @endif
 
-        @if (filled($product->badge_text))
-            {{-- Price-trust tag as a small inline chip (no longer overlapping the image). --}}
-            <span class="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
-                <svg class="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
-                {{ $product->badge_text }}
-            </span>
+        @if ($product->rating_count > 0)
+            <x-stars :rating="$product->rating_avg" :count="$product->rating_count" />
         @endif
 
         <div class="mt-auto pt-2">
