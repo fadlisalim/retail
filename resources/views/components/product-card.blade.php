@@ -5,7 +5,17 @@
             <img src="{{ $product->primaryImageUrl() }}" alt="{{ $product->name }}" loading="lazy"
                  class="h-full w-full object-cover transition duration-300 group-hover:scale-105">
         </a>
-        <form action="{{ route('wishlist.toggle', $product->slug) }}" method="POST" class="absolute right-2 top-2">
+        {{-- One highest-priority badge only, top-left. --}}
+        @php($topBadge = array_values($product->badges())[0] ?? null)
+        @if ($topBadge)
+            <div class="pointer-events-none absolute left-2 top-2"><x-badge :label="$topBadge" /></div>
+        @endif
+        {{-- Discount percentage as a square badge, top-right. --}}
+        @if ($product->isOnSale())
+            <span class="pointer-events-none absolute right-2 top-2 rounded-md bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white shadow-sm">-{{ $product->discountPercent() }}%</span>
+        @endif
+        {{-- Wishlist moved to bottom-right so it never overlaps the discount badge. --}}
+        <form action="{{ route('wishlist.toggle', $product->slug) }}" method="POST" class="absolute bottom-2 right-2">
             @csrf
             <button type="submit" title="Simpan ke wishlist" aria-label="Simpan {{ $product->name }} ke wishlist"
                     class="grid h-8 w-8 place-items-center rounded-full bg-white/90 text-gray-500 shadow-sm transition hover:text-red-500 focus-visible:ring-2 focus-visible:ring-brand-500">
@@ -19,29 +29,13 @@
         @endif
         <a href="{{ route('products.show', $product->slug) }}" class="line-clamp-2 min-h-[2.5rem] text-sm font-medium text-gray-800 hover:text-brand-700">{{ $product->name }}</a>
 
-        {{-- Badges live BELOW the image (not overlaid) so they never cover the
-             product artwork — which is often an infographic with its own text. --}}
-        @php($cardBadges = array_slice($product->badges(true, false), 0, 3))
-        @if (filled($product->badge_text) || count($cardBadges))
-            <div class="flex flex-wrap items-center gap-1">
-                @foreach ($cardBadges as $badge)
-                    <x-badge :label="$badge" />
-                @endforeach
-                @if (filled($product->badge_text))
-                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200 shadow-sm">
-                        <svg class="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
-                        {{ $product->badge_text }}
-                    </span>
-                @endif
-            </div>
-        @endif
-
         @if ($product->rating_count > 0)
             <x-stars :rating="$product->rating_avg" :count="$product->rating_count" />
         @endif
 
         <div class="mt-auto pt-2">
-            <x-price :product="$product" />
+            {{-- Discount % is shown as a corner badge on the image, not next to the price. --}}
+            <x-price :product="$product" :show-discount="false" />
         </div>
 
         <div class="mt-2 flex items-center gap-2 text-xs text-gray-400">

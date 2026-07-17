@@ -1,4 +1,4 @@
-@props(['product'])
+@props(['product', 'showDiscount' => true])
 <div class="flex flex-wrap items-baseline gap-2">
     @if ($product->requires_quotation || $product->price_status === 'call_for_price')
         <span class="text-lg font-bold text-brand-700">Minta Penawaran</span>
@@ -6,7 +6,9 @@
         <span class="text-lg font-extrabold text-gray-900">{{ rupiah($product->effectivePrice()) }}</span>
         @if ($product->isOnSale())
             <span class="text-sm text-gray-400 line-through">{{ rupiah($product->price) }}</span>
-            <span class="badge bg-red-100 text-red-700">-{{ $product->discountPercent() }}%</span>
+            @if ($showDiscount)
+                <span class="badge bg-red-100 text-red-700">-{{ $product->discountPercent() }}%</span>
+            @endif
         @endif
     @endif
 </div>
