@@ -21,20 +21,19 @@ class WatermarkTest extends TestCase
         imagedestroy($im);
     }
 
-    public function test_apply_changes_file_but_preserves_dimensions(): void
+    public function test_apply_optimises_file_and_preserves_dimensions(): void
     {
         Storage::fake('public');
         $path = 'products/wm.jpg';
         $this->makeImage($path);
 
-        $before = Storage::disk('public')->get($path);
-        $ok = app(WatermarkService::class)->apply($path);
+        $result = app(WatermarkService::class)->apply($path);
 
-        $this->assertTrue($ok);
-        $after = Storage::disk('public')->get($path);
-        $this->assertNotSame($before, $after, 'File bytes should change after watermarking.');
+        // Returns the final (possibly re-encoded) storage path.
+        $this->assertNotNull($result);
+        $this->assertTrue(Storage::disk('public')->exists($result));
 
-        [$w, $h] = getimagesize(Storage::disk('public')->path($path));
+        [$w, $h] = getimagesize(Storage::disk('public')->path($result));
         $this->assertSame(400, $w);
         $this->assertSame(400, $h);
     }
@@ -45,11 +44,12 @@ class WatermarkTest extends TestCase
         $path = 'products/big.jpg';
         $this->makeImage($path, 3000, 2000);
 
-        $this->assertTrue(app(WatermarkService::class)->apply($path));
+        $result = app(WatermarkService::class)->apply($path);
+        $this->assertNotNull($result);
 
-        [$w, $h] = getimagesize(Storage::disk('public')->path($path));
-        $this->assertSame(1600, $w);          // longest side clamped to the max
-        $this->assertSame(1067, $h);          // aspect ratio preserved
+        [$w, $h] = getimagesize(Storage::disk('public')->path($result));
+        $this->assertSame(1280, $w);          // longest side clamped to the max
+        $this->assertSame(853, $h);           // aspect ratio preserved
     }
 
     public function test_apply_does_not_upscale_small_images(): void
@@ -58,17 +58,18 @@ class WatermarkTest extends TestCase
         $path = 'products/small.jpg';
         $this->makeImage($path, 500, 400);
 
-        app(WatermarkService::class)->apply($path);
+        $result = app(WatermarkService::class)->apply($path);
+        $this->assertNotNull($result);
 
-        [$w, $h] = getimagesize(Storage::disk('public')->path($path));
+        [$w, $h] = getimagesize(Storage::disk('public')->path($result));
         $this->assertSame(500, $w);
         $this->assertSame(400, $h);
     }
 
-    public function test_apply_returns_false_for_missing_file(): void
+    public function test_apply_returns_null_for_missing_file(): void
     {
         Storage::fake('public');
-        $this->assertFalse(app(WatermarkService::class)->apply('products/nope.jpg'));
+        $this->assertNull(app(WatermarkService::class)->apply('products/nope.jpg'));
     }
 
     public function test_command_stamps_unmarked_images_and_is_idempotent(): void

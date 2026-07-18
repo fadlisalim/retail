@@ -46,7 +46,7 @@ class ProductVariantController extends Controller
             'is_active' => true,
             'sort_order' => (int) ($produk->variants()->max('sort_order') ?? 0) + 1,
             'image_path' => $request->hasFile('image')
-                ? tap($request->file('image')->store('products', 'public'), fn ($p) => $watermark->apply($p))
+                ? ($watermark->apply($p = $request->file('image')->store('products', 'public')) ?? $p)
                 : null,
         ]);
 
@@ -90,8 +90,8 @@ class ProductVariantController extends Controller
             if ($varian->image_path) {
                 Storage::disk('public')->delete($varian->image_path);
             }
-            $attrs['image_path'] = $request->file('image')->store('products', 'public');
-            $watermark->apply($attrs['image_path']);
+            $stored = $request->file('image')->store('products', 'public');
+            $attrs['image_path'] = $watermark->apply($stored) ?? $stored;
         }
         $varian->update($attrs);
 

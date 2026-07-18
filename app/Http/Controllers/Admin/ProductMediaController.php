@@ -30,14 +30,15 @@ class ProductMediaController extends Controller
         foreach ($request->file('images') as $file) {
             $path = $file->store('products', 'public');
 
-            // Stamp the brand watermark onto the freshly stored file.
-            $stamped = $watermark->apply($path);
+            // Optimise + watermark the freshly stored file. This may re-encode to
+            // a smaller format (WebP) and return a new path — store that path.
+            $optimised = $watermark->apply($path);
 
             $produk->images()->create([
-                'path' => $path,
+                'path' => $optimised ?? $path,
                 'alt' => $produk->name,
                 'sort_order' => ++$next,
-                'watermarked_at' => $stamped ? now() : null,
+                'watermarked_at' => $optimised ? now() : null,
             ]);
         }
 

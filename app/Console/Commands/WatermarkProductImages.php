@@ -58,8 +58,15 @@ class WatermarkProductImages extends Command
                     continue;
                 }
 
-                if ($watermark->apply($image->path)) {
-                    $image->forceFill(['watermarked_at' => now()])->save();
+                $result = $watermark->apply($image->path);
+                if ($result !== null) {
+                    // The optimiser may re-encode to a lighter format (WebP) and
+                    // return a new path; keep the DB — and any main image that
+                    // pointed at the old file — in sync.
+                    if ($result !== $image->path && $image->product && $image->product->main_image_path === $image->path) {
+                        $image->product->update(['main_image_path' => $result]);
+                    }
+                    $image->forceFill(['path' => $result, 'watermarked_at' => now()])->save();
                     $done++;
                 } else {
                     $skipped++;

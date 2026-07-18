@@ -61,8 +61,12 @@ return [
 
     'media' => [
         // Uploaded product images are downscaled so the longest side is at most
-        // this many pixels (0 = keep original size). Good for fast pages + zoom.
-        'max_image_dimension' => (int) env('MEDIA_MAX_IMAGE_DIMENSION', 1600),
+        // this many pixels (0 = keep original size). 1280px stays crisp for the
+        // gallery + zoom while keeping files light.
+        'max_image_dimension' => (int) env('MEDIA_MAX_IMAGE_DIMENSION', 1280),
+        // Re-encode quality (0–100) for the optimised WebP/JPEG output. 80 keeps
+        // photos sharp ("tidak pecah") at a fraction of the original file size.
+        'image_quality' => (int) env('MEDIA_IMAGE_QUALITY', 80),
     ],
 
     'demo' => [

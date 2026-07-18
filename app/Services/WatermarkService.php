@@ -8,9 +8,11 @@ use Illuminate\Support\Facades\Storage;
  * Optimises and watermarks an image using GD, in a single re-encode pass:
  *  1. downscale oversized images to an optimum max dimension (keeps aspect ratio),
  *  2. stamp a light, tiled diagonal "energi.click" watermark,
- *  3. re-save with sensible compression.
+ *  3. re-encode as WebP (much smaller than PNG/JPEG at the same quality, and it
+ *     keeps transparency) so uploaded photos stay light and sharp.
  *
- * Operates in place on the stored file.
+ * The output may use a different extension than the source (e.g. a heavy PNG
+ * photo becomes a small .webp), so {@see apply()} returns the FINAL storage path.
  */
 class WatermarkService
 {
@@ -28,17 +30,42 @@ class WatermarkService
     }
 
     /**
-     * Watermark a stored file in place. Returns true on success.
+     * Optimise + watermark a stored image. May re-encode to a smaller format
+     * (WebP) and therefore change the file extension; the original is deleted
+     * when that happens. Returns the FINAL storage path on success, or null on
+     * failure (in which case the original file is left untouched).
      */
-    public function apply(string $path, string $disk = 'public', ?string $text = null): bool
+    public function apply(string $path, string $disk = 'public', ?string $text = null): ?string
+    {
+        return $this->reencode($path, $disk, function (\GdImage $img) use ($text): void {
+            $this->stampTiled($img, $text ?? (string) config('rekasurya.company.brand_name', 'Energi.Click'));
+        });
+    }
+
+    /**
+     * Optimise an EXISTING stored image (downscale + re-encode to a lighter
+     * format) WITHOUT adding a watermark — used to shrink already-watermarked
+     * files in bulk. Returns the final path, or null on failure.
+     */
+    public function optimize(string $path, string $disk = 'public'): ?string
+    {
+        return $this->reencode($path, $disk, null);
+    }
+
+    /**
+     * Shared re-encode pipeline: load → downscale → (optional mutate) → encode
+     * to the most efficient format. Returns the FINAL storage path (extension
+     * may change), deleting the original when it does, or null on failure.
+     */
+    private function reencode(string $path, string $disk, ?\Closure $mutate): ?string
     {
         if (! $this->isSupported()) {
-            return false;
+            return null;
         }
 
         $storage = Storage::disk($disk);
         if (! $storage->exists($path)) {
-            return false;
+            return null;
         }
 
         $full = $storage->path($path);
@@ -46,16 +73,39 @@ class WatermarkService
 
         $img = $this->load($full, $ext);
         if (! $img) {
-            return false;
+            return null;
         }
 
         $img = $this->downscale($img);
-        $this->stampTiled($img, $text ?? (string) config('rekasurya.company.brand_name', 'Energi.Click'));
+        $hasAlpha = $this->hasAlpha($img, $ext);
 
-        $ok = $this->save($img, $full, $ext);
+        if ($mutate) {
+            $mutate($img);
+        }
+
+        // Pick the most efficient encoder for this environment/content.
+        [$newExt, $encoder] = $this->chooseFormat($hasAlpha);
+
+        $newPath = $newExt === $ext ? $path : preg_replace('/\.[^.]+$/', '.'.$newExt, $path);
+        $newFull = $storage->path($newPath);
+
+        // Keep transparency through the final encode.
+        imagealphablending($img, false);
+        imagesavealpha($img, true);
+
+        $ok = $encoder($img, $newFull);
         imagedestroy($img);
 
-        return $ok;
+        if (! $ok) {
+            return null;
+        }
+
+        // Drop the original when the re-encode changed the extension (png -> webp).
+        if ($newPath !== $path && $storage->exists($path)) {
+            $storage->delete($path);
+        }
+
+        return $newPath;
     }
 
     private function load(string $full, string $ext): \GdImage|false
@@ -74,14 +124,52 @@ class WatermarkService
         return $img ?: false;
     }
 
-    private function save(\GdImage $img, string $full, string $ext): bool
+    /**
+     * Choose the output format + encoder. WebP is preferred everywhere it's
+     * available (best size, keeps alpha). Otherwise fall back to PNG for images
+     * with transparency and JPEG for opaque photos.
+     *
+     * @return array{0: string, 1: callable(\GdImage, string): bool}
+     */
+    private function chooseFormat(bool $hasAlpha): array
     {
-        return match ($ext) {
-            'jpg', 'jpeg' => imagejpeg($img, $full, 85),
-            'png' => imagepng($img, $full, 6),
-            'webp' => \function_exists('imagewebp') ? imagewebp($img, $full, 85) : false,
-            default => false,
-        };
+        $quality = (int) config('rekasurya.media.image_quality', 80);
+
+        if (\function_exists('imagewebp')) {
+            return ['webp', fn (\GdImage $img, string $f): bool => imagewebp($img, $f, $quality)];
+        }
+
+        if ($hasAlpha) {
+            return ['png', fn (\GdImage $img, string $f): bool => imagepng($img, $f, 6)];
+        }
+
+        return ['jpg', fn (\GdImage $img, string $f): bool => imagejpeg($img, $f, max(78, $quality + 2))];
+    }
+
+    /**
+     * Sample the image for any semi/fully transparent pixels. Only PNG/WebP
+     * sources can carry an alpha channel, so JPEG short-circuits to false.
+     */
+    private function hasAlpha(\GdImage $img, string $ext): bool
+    {
+        if (! \in_array($ext, ['png', 'webp'], true)) {
+            return false;
+        }
+
+        $w = imagesx($img);
+        $h = imagesy($img);
+        $stepX = max(1, (int) ($w / 64));
+        $stepY = max(1, (int) ($h / 64));
+
+        for ($y = 0; $y < $h; $y += $stepY) {
+            for ($x = 0; $x < $w; $x += $stepX) {
+                if (((imagecolorat($img, $x, $y) >> 24) & 0x7F) > 0) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
