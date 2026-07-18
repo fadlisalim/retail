@@ -20,6 +20,8 @@ class ProductController extends Controller
     {
         $q = trim((string) $request->query('q', ''));
         $status = $request->query('status');
+        $categoryId = $request->query('category');
+        $brandId = $request->query('brand');
 
         $products = Product::with(['brand', 'category'])
             ->when($q !== '', function ($query) use ($q) {
@@ -29,11 +31,31 @@ class ProductController extends Controller
                 });
             })
             ->when($status, fn ($query) => $query->where('status', $status))
+            ->when($categoryId, function ($query) use ($categoryId) {
+                // Match the picked category (and its whole subtree) via primary or
+                // additional categories — so a parent lists sub-category products too.
+                if ($cat = Category::find($categoryId)) {
+                    $ids = $cat->descendantIds();
+                    $query->where(function ($sub) use ($ids) {
+                        $sub->whereIn('category_id', $ids)
+                            ->orWhereHas('categories', fn ($c) => $c->whereIn('categories.id', $ids));
+                    });
+                }
+            })
+            ->when($brandId, fn ($query) => $query->where('brand_id', $brandId))
             ->latest('id')
             ->paginate(20)
             ->withQueryString();
 
-        return view('admin.products.index', compact('products', 'q', 'status'));
+        return view('admin.products.index', [
+            'products' => $products,
+            'q' => $q,
+            'status' => $status,
+            'categoryId' => $categoryId,
+            'brandId' => $brandId,
+            'categoryOptions' => $this->categoryOptions(),
+            'brandOptions' => Brand::orderBy('name')->pluck('name', 'id'),
+        ]);
     }
 
     public function create(): View

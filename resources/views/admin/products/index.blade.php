@@ -10,9 +10,27 @@
     </x-admin.page-header>
 
     <form method="GET" class="mb-4 flex flex-wrap items-end gap-3">
-        <div class="min-w-[220px] flex-1">
+        <div class="min-w-[200px] flex-1">
             <label class="input-label" for="q">Cari</label>
             <input type="search" name="q" id="q" value="{{ $q }}" placeholder="Nama atau SKU" class="form-input">
+        </div>
+        <div>
+            <label class="input-label" for="category">Kategori</label>
+            <select name="category" id="category" class="form-select">
+                <option value="">Semua kategori</option>
+                @foreach ($categoryOptions as $cid => $clabel)
+                    <option value="{{ $cid }}" @selected((string) $categoryId === (string) $cid)>{{ $clabel }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="input-label" for="brand">Brand</label>
+            <select name="brand" id="brand" class="form-select">
+                <option value="">Semua brand</option>
+                @foreach ($brandOptions as $bid => $blabel)
+                    <option value="{{ $bid }}" @selected((string) $brandId === (string) $bid)>{{ $blabel }}</option>
+                @endforeach
+            </select>
         </div>
         <div>
             <label class="input-label" for="status">Status</label>
@@ -24,7 +42,7 @@
             </select>
         </div>
         <button type="submit" class="btn-primary">Filter</button>
-        @if ($q !== '' || $status)
+        @if ($q !== '' || $status || $categoryId || $brandId)
             <a href="{{ route('admin.products.index') }}" class="btn-outline">Reset</a>
         @endif
     </form>
@@ -36,13 +54,13 @@
         <table class="w-full text-sm">
             <thead>
                 <tr class="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                    <th class="px-4 py-3">Aksi</th>
                     <th class="px-4 py-3">Produk</th>
                     <th class="px-4 py-3">Kategori</th>
                     <th class="px-4 py-3 text-right">Harga</th>
                     <th class="px-4 py-3 text-center">Stok</th>
                     <th class="px-4 py-3 text-center">Komisi</th>
                     <th class="px-4 py-3 text-center">Status</th>
-                    <th class="px-4 py-3 text-right">Aksi</th>
                 </tr>
             </thead>
             @forelse ($products as $product)
@@ -63,6 +81,23 @@
                 @endphp
                 <tbody class="border-t border-gray-100" x-data="{ open: false }">
                     <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 align-top">
+                            <div class="flex items-center gap-1.5 whitespace-nowrap">
+                                <button type="button" @click="open = !open"
+                                        class="rounded-md bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 transition hover:bg-amber-100"
+                                        :class="open && 'bg-amber-100'">
+                                    <span x-show="!open">Edit cepat</span><span x-show="open" x-cloak>Tutup</span>
+                                </button>
+                                <a href="{{ route('admin.products.edit', $product) }}"
+                                   class="rounded-md bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 transition hover:bg-brand-100">Edit</a>
+                                <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="inline"
+                                      onsubmit="return confirm('Hapus produk ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="rounded-md bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 transition hover:bg-red-100">Hapus</button>
+                                </form>
+                            </div>
+                        </td>
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-3">
                                 <img src="{{ $product->primaryImageUrl() }}" alt="{{ $product->name }}"
@@ -92,18 +127,6 @@
                         </td>
                         <td class="px-4 py-3 text-center">
                             <span class="badge {{ $statusBadge }}">{{ $statusLabel }}</span>
-                        </td>
-                        <td class="px-4 py-3 text-right whitespace-nowrap">
-                            <button type="button" @click="open = !open" class="font-medium text-amber-600 hover:underline" :class="open && 'text-amber-700'">
-                                <span x-show="!open">Edit cepat</span><span x-show="open" x-cloak>Tutup</span>
-                            </button>
-                            <a href="{{ route('admin.products.edit', $product) }}" class="ml-3 text-brand-700 hover:underline">Edit</a>
-                            <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="ml-3 inline"
-                                  onsubmit="return confirm('Hapus produk ini?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:underline">Hapus</button>
-                            </form>
                         </td>
                     </tr>
 
