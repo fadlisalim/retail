@@ -18,4 +18,4 @@
     $isGuarantee = (bool) preg_match('/\b(jaminan|termurah|murah|garansi harga)\b/i', $label);
     $classes = $map[$label] ?? ($isGuarantee ? 'bg-emerald-600 text-white shadow-sm' : 'bg-brand-100 text-brand-700');
 @endphp
-<span class="badge {{ $classes }}">{{ $label }}</span>
+<span {{ $attributes->merge(['class' => 'badge '.$classes]) }}>{{ $label }}</span>

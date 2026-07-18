@@ -9,14 +9,15 @@
                  class="h-full w-full object-cover transition duration-300 group-hover:scale-105">
         </div>
 
-        {{-- Top row: one priority badge (left) + discount (right). One flex row so
-             they can never overlap; the left badge clips if unusually long. --}}
-        <div class="pointer-events-none absolute inset-x-2 top-2 flex items-start justify-between gap-2">
+        {{-- Top row: one priority badge (left) + discount (right), tucked flush into
+             the card corners (squared outer corner, rounded inner) — marketplace style.
+             One flex row so they can never overlap; the left badge clips if long. --}}
+        <div class="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between">
             <div class="flex min-w-0 overflow-hidden">
-                @if ($topBadge)<x-badge :label="$topBadge" />@endif
+                @if ($topBadge)<x-badge :label="$topBadge" class="rounded-none rounded-br-lg" />@endif
             </div>
             @if ($product->isOnSale())
-                <span class="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-red-600 py-0.5 pl-1 pr-1.5 text-xs font-bold text-white shadow-sm">
+                <span class="inline-flex shrink-0 items-center gap-0.5 rounded-none rounded-bl-lg bg-red-600 py-1 pl-1.5 pr-2 text-xs font-bold text-white shadow-sm">
                     <svg class="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z"/></svg>
                     -{{ $product->discountPercent() }}%
                 </span>
