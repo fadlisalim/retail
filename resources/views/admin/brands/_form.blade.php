@@ -18,6 +18,22 @@
     </div>
 
     <div class="space-y-5">
+        <div class="card space-y-3 p-5">
+            <h2 class="font-semibold text-gray-900">Logo Brand</h2>
+            @if ($brand->logo_path)
+                <div class="flex items-center gap-3">
+                    <img src="{{ asset('storage/'.$brand->logo_path) }}" alt="{{ $brand->name }}" class="h-16 w-16 rounded-lg border border-gray-200 object-contain p-1">
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-600">
+                        <input type="checkbox" name="remove_logo" value="1" class="rounded border-gray-300 text-brand-600">
+                        Hapus logo
+                    </label>
+                </div>
+            @endif
+            <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml" class="form-input">
+            @error('logo')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+            <p class="text-xs text-gray-400">PNG/JPG/WebP/SVG, maks 2MB. Disarankan latar transparan.</p>
+        </div>
+
         <div class="card space-y-4 p-5">
             <h2 class="font-semibold text-gray-900">Pengaturan</h2>
             <x-form.input type="number" name="sort_order" label="Urutan Tampil" :value="$brand->sort_order" min="0" />

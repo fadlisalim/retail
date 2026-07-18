@@ -9,7 +9,7 @@
         </x-slot:actions>
     </x-admin.page-header>
 
-    <form action="{{ route('admin.brands.store') }}" method="POST">
+    <form action="{{ route('admin.brands.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
         @include('admin.brands._form')
     </form>
