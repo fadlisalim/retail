@@ -31,7 +31,7 @@
                 @endif
                 <input type="file" name="image_desktop" id="image_desktop" accept="image/*" class="form-input">
                 @error('image_desktop')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                <p class="mt-1 text-xs text-gray-400">Maks 2MB. Kosongkan untuk mempertahankan gambar.</p>
+                <p class="mt-1 text-xs text-gray-400">Maks {{ round(config('rekasurya.media.max_upload_kb', 15360) / 1024) }}MB. Otomatis dioptimasi ke WebP. Kosongkan untuk mempertahankan gambar.</p>
             </div>
             <div>
                 <label class="input-label" for="image_mobile">Gambar Mobile</label>
@@ -40,7 +40,7 @@
                 @endif
                 <input type="file" name="image_mobile" id="image_mobile" accept="image/*" class="form-input">
                 @error('image_mobile')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                <p class="mt-1 text-xs text-gray-400">Maks 2MB. Kosongkan untuk mempertahankan gambar.</p>
+                <p class="mt-1 text-xs text-gray-400">Maks {{ round(config('rekasurya.media.max_upload_kb', 15360) / 1024) }}MB. Otomatis dioptimasi ke WebP. Kosongkan untuk mempertahankan gambar.</p>
             </div>
         </div>
     </div>

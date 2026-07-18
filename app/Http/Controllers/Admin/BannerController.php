@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Banner;
+use App\Services\WatermarkService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -71,8 +73,8 @@ class BannerController extends Controller
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
-            'image_desktop' => ['nullable', 'image', 'max:2048'],
-            'image_mobile' => ['nullable', 'image', 'max:2048'],
+            'image_desktop' => ['nullable', 'image', 'max:'.(int) config('rekasurya.media.max_upload_kb', 15360)],
+            'image_mobile' => ['nullable', 'image', 'max:'.(int) config('rekasurya.media.max_upload_kb', 15360)],
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
@@ -89,11 +91,18 @@ class BannerController extends Controller
         }
 
         // Store uploaded images; keep existing paths when no new file is provided.
-        if ($request->hasFile('image_desktop')) {
-            $data['image_desktop_path'] = $request->file('image_desktop')->store('banners', 'public');
-        }
-        if ($request->hasFile('image_mobile')) {
-            $data['image_mobile_path'] = $request->file('image_mobile')->store('banners', 'public');
+        // Each is downscaled + re-encoded to WebP (no watermark) so heavy PNG
+        // banners load fast; the old file is removed when replaced.
+        $optimizer = app(WatermarkService::class);
+        foreach (['image_desktop' => 'image_desktop_path', 'image_mobile' => 'image_mobile_path'] as $field => $column) {
+            if (! $request->hasFile($field)) {
+                continue;
+            }
+            if ($banner?->{$column}) {
+                Storage::disk('public')->delete($banner->{$column});
+            }
+            $stored = $request->file($field)->store('banners', 'public');
+            $data[$column] = $optimizer->optimize($stored) ?? $stored;
         }
 
         unset($data['image_desktop'], $data['image_mobile']);
