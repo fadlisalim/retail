@@ -42,10 +42,14 @@
                             <p class="mt-1 text-xs text-gray-400">Foto KTP jelas & terbaca. Maks 4MB.</p>
                         </div>
                         <div>
-                            <label class="input-label" for="selfie_photo">Foto Selfie dengan KTP <span class="text-red-500">*</span></label>
+                            <label class="input-label" for="selfie_photo">Foto Selfie <span class="font-semibold text-amber-700">sambil memegang KTP</span> <span class="text-red-500">*</span></label>
                             <input type="file" name="selfie_photo" id="selfie_photo" accept="image/*" class="form-input" required>
                             @error('selfie_photo')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                            <p class="mt-1 text-xs text-gray-400">Selfie sambil memegang KTP. Maks 4MB.</p>
+                            {{-- Highlighted requirement: the selfie is only valid while holding the KTP. --}}
+                            <div class="mt-1.5 flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2">
+                                <svg class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="1.9" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>
+                                <p class="text-xs leading-snug text-amber-800"><span class="font-bold">Wajib</span>: wajah &amp; KTP terlihat jelas dalam satu foto — <span class="font-semibold">selfie sambil memegang KTP</span>. Foto tanpa KTP akan ditolak. Maks 4MB.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
