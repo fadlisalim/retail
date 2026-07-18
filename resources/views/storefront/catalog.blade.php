@@ -4,6 +4,12 @@
 @if(!empty($noindex))@section('noindex', 'noindex')@endif
 
 @section('content')
+    @if (($brandBanners ?? collect())->isNotEmpty())
+        <div class="mb-4">
+            <x-banner-slider :banners="$brandBanners" />
+        </div>
+    @endif
+
     <x-breadcrumbs :items="$breadcrumbs ?? []" />
 
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">

@@ -5,6 +5,7 @@
         'video' => 'Video YouTube',
         'promo' => 'Promo',
         'quotation' => 'Quotation',
+        'brand' => 'Brand (slider di halaman brand)',
     ];
     $spans = ['full' => 'Penuh (1 per baris)', 'half' => 'Setengah (2 per baris)', 'third' => 'Sepertiga (3 per baris)'];
 @endphp
@@ -48,7 +49,15 @@
     <div class="space-y-5">
         <div class="card space-y-4 p-5">
             <h2 class="font-semibold text-gray-900">Pengaturan</h2>
-            <x-form.select name="position" label="Posisi" :options="$positions" :selected="$banner->position" required />
+            <div x-data="{ pos: '{{ old('position', $banner->position ?? 'hero') }}' }" class="space-y-4">
+                <x-form.select name="position" label="Posisi" :options="$positions" :selected="$banner->position" required x-model="pos" />
+                {{-- Brand target: only shown/relevant for the "brand" position. --}}
+                <div x-show="pos === 'brand'" x-cloak>
+                    <x-form.select name="brand_id" label="Brand" :options="$brands" :selected="$banner->brand_id"
+                                   placeholder="— Semua halaman brand —" />
+                    <p class="mt-1 text-xs text-gray-400">Pilih brand agar slider hanya muncul di halaman brand itu. Kosongkan = tampil di semua halaman brand.</p>
+                </div>
+            </div>
             <x-form.select name="span" label="Lebar (untuk Grid/Video)" :options="$spans" :selected="$banner->span ?? 'third'" required />
             <x-form.checkbox name="is_portrait" label="Video potret 9:16 (untuk Shorts)" :checked="(bool) $banner->is_portrait" />
             <p class="-mt-2 text-xs text-gray-400">Untuk posisi <strong>Video</strong>: isi <strong>URL Tombol</strong> dengan link YouTube (watch/shorts/youtu.be). Centang di atas kalau video potret.</p>

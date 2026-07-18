@@ -4,14 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Banner extends Model
 {
     protected $fillable = [
         'title', 'subtitle', 'description', 'image_desktop_path', 'image_mobile_path',
-        'button_text', 'button_url', 'position', 'span', 'is_portrait', 'is_active', 'sort_order',
+        'button_text', 'button_url', 'position', 'brand_id', 'span', 'is_portrait', 'is_active', 'sort_order',
         'starts_at', 'ends_at',
     ];
+
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
+    }
 
     protected $casts = [
         'is_active' => 'boolean',

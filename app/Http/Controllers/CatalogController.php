@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Banner;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Services\SearchService;
@@ -68,11 +69,20 @@ class CatalogController extends Controller
     {
         abort_unless($brand->is_active, 404);
 
+        // Banners for this brand's page: brand-specific first, then any global
+        // brand banner (brand_id null). Rendered as a slider above the grid.
+        $brandBanners = Banner::active()
+            ->where('position', 'brand')
+            ->where(fn ($q) => $q->where('brand_id', $brand->id)->orWhereNull('brand_id'))
+            ->orderBy('sort_order')
+            ->get();
+
         return $this->render($request->merge(['brand' => $brand->slug]), [
             'title' => $brand->meta_title ?: 'Produk '.$brand->name,
             'metaDescription' => $brand->meta_description,
             'heading' => 'Brand: '.$brand->name,
             'breadcrumbs' => [['label' => 'Brand'], ['label' => $brand->name]],
+            'brandBanners' => $brandBanners,
         ]);
     }
 
@@ -124,6 +134,7 @@ class CatalogController extends Controller
             'heading' => $view['title'] ?? 'Produk',
             'metaDescription' => null,
             'breadcrumbs' => [],
+            'brandBanners' => collect(),
         ], $view));
     }
 
