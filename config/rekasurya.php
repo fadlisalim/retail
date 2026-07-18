@@ -74,6 +74,12 @@ return [
         'max_upload_kb' => (int) env('MEDIA_MAX_UPLOAD_KB', 15360),
     ],
 
+    'orders' => [
+        // Unpaid orders awaiting payment are auto-cancelled after this many hours
+        // (stock released, commissions voided). 0 disables auto-cancel.
+        'payment_window_hours' => (int) env('ORDER_PAYMENT_WINDOW_HOURS', 24),
+    ],
+
     'demo' => [
         // When true, seeded demo credentials are shown on the login screen.
         'expose_credentials' => env('DEMO_EXPOSE_CREDENTIALS', true),

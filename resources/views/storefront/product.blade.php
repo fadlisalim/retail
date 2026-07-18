@@ -357,7 +357,7 @@
         $tabs = ['deskripsi' => 'Deskripsi'];
         if ($product->attributeValues->isNotEmpty() || $product->specifications) $tabs['spesifikasi'] = 'Spesifikasi';
         if ($product->bundleItems->isNotEmpty()) $tabs['isi'] = 'Isi Paket';
-        if ($product->documents->isNotEmpty()) $tabs['dokumen'] = 'Dokumen';
+        if ($product->documents->isNotEmpty()) $tabs['dokumen'] = 'Dokumen ('.$product->documents->count().')';
         $tabs['pengiriman'] = 'Pengiriman & Garansi';
         $firstTab = array_key_first($tabs);
     @endphp

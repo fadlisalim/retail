@@ -17,3 +17,6 @@ Artisan::command('stock:release-expired', function (StockService $stock) {
 
 // Runs via the single system cron entry (see README → cron & queue).
 Schedule::command('stock:release-expired')->everyFiveMinutes();
+
+// Auto-cancel unpaid orders past the payment window (default 24h).
+Schedule::command('orders:expire-unpaid')->hourly();
