@@ -269,8 +269,12 @@ Add a **single** system cron entry for the Laravel scheduler:
 * * * * * cd /path/to/rekasurya && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-The scheduler runs `stock:release-expired` every 5 minutes to free stock held by carts
-that entered payment but never completed.
+With that one entry in place, the scheduler runs everything automatically:
+
+- `stock:release-expired` every 5 minutes — frees stock held by carts that entered
+  payment but never completed.
+- `orders:expire-unpaid` hourly — auto-cancels orders still awaiting payment past the
+  payment window (`ORDER_PAYMENT_WINDOW_HOURS`, default 24h), releasing their stock.
 
 Notifications and other deferred work use the queue. Run a worker (VPS):
 
