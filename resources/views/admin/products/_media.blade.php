@@ -71,7 +71,7 @@
             <div>
                 <label class="input-label" for="images">Tambah gambar (bisa banyak)</label>
                 <input id="images" type="file" name="images[]" accept="image/jpeg,image/png,image/webp" multiple required class="text-sm">
-                <p class="mt-1 text-xs text-gray-400">JPG/PNG/WEBP, maks 5 MB per file.</p>
+                <p class="mt-1 text-xs text-gray-400">JPG/PNG/WEBP, maks {{ round(config('rekasurya.media.max_upload_kb', 15360) / 1024) }} MB per file. Otomatis dioptimasi ke WebP.</p>
             </div>
             <button class="btn-primary">Unggah Gambar</button>
         </form>

@@ -30,7 +30,7 @@ class ProductVariantController extends Controller
             'length_cm' => ['nullable', 'numeric', 'min:0'],
             'width_cm' => ['nullable', 'numeric', 'min:0'],
             'height_cm' => ['nullable', 'numeric', 'min:0'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:'.(int) config('rekasurya.media.max_upload_kb', 15360)],
         ]);
 
         $variant = $produk->variants()->create([
@@ -73,7 +73,7 @@ class ProductVariantController extends Controller
             'length_cm' => ['nullable', 'numeric', 'min:0'],
             'width_cm' => ['nullable', 'numeric', 'min:0'],
             'height_cm' => ['nullable', 'numeric', 'min:0'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:'.(int) config('rekasurya.media.max_upload_kb', 15360)],
         ]);
 
         $attrs = [

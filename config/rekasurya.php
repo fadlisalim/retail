@@ -67,6 +67,11 @@ return [
         // Re-encode quality (0–100) for the optimised WebP/JPEG output. 80 keeps
         // photos sharp ("tidak pecah") at a fraction of the original file size.
         'image_quality' => (int) env('MEDIA_IMAGE_QUALITY', 80),
+        // Max accepted upload size (KB) for a product/variant image. The original
+        // can be large (it's re-encoded to a few hundred KB WebP afterwards), so
+        // this only needs to clear the biggest source file. NOTE: the server's PHP
+        // upload_max_filesize / post_max_size must be >= this too.
+        'max_upload_kb' => (int) env('MEDIA_MAX_UPLOAD_KB', 15360),
     ],
 
     'demo' => [

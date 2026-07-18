@@ -23,7 +23,7 @@ class ProductMediaController extends Controller
     {
         $request->validate([
             'images' => ['required', 'array', 'max:12'],
-            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:'.(int) config('rekasurya.media.max_upload_kb', 15360)],
         ]);
 
         $next = (int) ($produk->images()->max('sort_order') ?? 0);
