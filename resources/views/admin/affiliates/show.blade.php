@@ -87,7 +87,17 @@
                         <form action="{{ route('admin.affiliates.suspend', $affiliate) }}" method="POST">@csrf<button class="btn-outline w-full">Tangguhkan</button></form>
                     @endif
                     @if ($affiliate->status->value === 'pending')
-                        <form action="{{ route('admin.affiliates.reject', $affiliate) }}" method="POST">@csrf<button class="btn-outline w-full text-red-600">Tolak</button></form>
+                        <details class="group">
+                            <summary class="btn-outline w-full cursor-pointer list-none text-center text-red-600 [&::-webkit-details-marker]:hidden">Tolak…</summary>
+                            <form action="{{ route('admin.affiliates.reject', $affiliate) }}" method="POST" class="mt-2 space-y-2">
+                                @csrf
+                                <textarea name="note" rows="3" required minlength="5" maxlength="1000"
+                                          class="form-input w-full text-sm"
+                                          placeholder="Alasan penolakan (wajib) — dikirim ke email & notifikasi pendaftar. Mis: Foto selfie tidak memegang KTP.">{{ old('note') }}</textarea>
+                                @error('note')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+                                <button class="btn-outline w-full text-red-600">Kirim Penolakan &amp; Email</button>
+                            </form>
+                        </details>
                     @endif
                 </div>
 

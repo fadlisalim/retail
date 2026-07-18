@@ -9,6 +9,7 @@ use App\Services\AffiliateService;
 use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class AffiliateController extends Controller
@@ -34,7 +35,10 @@ class AffiliateController extends Controller
     /** Registration form (auth). */
     public function create(): View|RedirectResponse
     {
-        if (auth()->user()->affiliate) {
+        $affiliate = auth()->user()->affiliate;
+
+        // A rejected applicant may re-apply; any other existing record goes to the dashboard.
+        if ($affiliate && $affiliate->status !== AffiliateStatus::Rejected) {
             return redirect()->route('account.affiliate.dashboard');
         }
 
@@ -45,8 +49,10 @@ class AffiliateController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
+        $existing = $user->affiliate;
 
-        if ($user->affiliate) {
+        // Only a rejected application may be resubmitted; anything else is already handled.
+        if ($existing && $existing->status !== AffiliateStatus::Rejected) {
             return redirect()->route('account.affiliate.dashboard');
         }
 
@@ -76,11 +82,23 @@ class AffiliateController extends Controller
         $data['selfie_photo_path'] = $request->file('selfie_photo')->store('affiliate-kyc', 'local');
         unset($data['ktp_photo'], $data['selfie_photo']);
 
-        $data['user_id'] = $user->id;
         $data['status'] = AffiliateStatus::Pending;
-        $data['code'] = $this->affiliates->generateCode();
 
-        Affiliate::create($data);
+        if ($existing) {
+            // Re-application after rejection: swap in the new KYC photos, reset to
+            // pending, and clear the previous rejection note.
+            foreach ([$existing->ktp_photo_path, $existing->selfie_photo_path] as $old) {
+                if ($old) {
+                    Storage::disk('local')->delete($old);
+                }
+            }
+            $data['note'] = null;
+            $existing->update($data);
+        } else {
+            $data['user_id'] = $user->id;
+            $data['code'] = $this->affiliates->generateCode();
+            Affiliate::create($data);
+        }
 
         $this->notifications->toUser(
             $user,

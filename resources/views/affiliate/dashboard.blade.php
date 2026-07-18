@@ -21,7 +21,11 @@
                 </div>
             @elseif ($affiliate->status->value === 'rejected')
                 <div class="card border-red-200 bg-red-50 p-5 text-sm text-red-700">
-                    Pendaftaran Anda ditolak. @if ($affiliate->note) Catatan: {{ $affiliate->note }} @endif Hubungi kami untuk info lebih lanjut.
+                    <p class="font-semibold">Pendaftaran Anda ditolak.</p>
+                    @if ($affiliate->note)
+                        <p class="mt-1">Alasan: {{ $affiliate->note }}</p>
+                    @endif
+                    <a href="{{ route('account.affiliate.register') }}" class="btn-primary mt-3 inline-flex">Perbaiki Data &amp; Daftar Ulang</a>
                 </div>
             @elseif ($affiliate->status->value === 'suspended')
                 <div class="card border-red-200 bg-red-50 p-5 text-sm text-red-700">

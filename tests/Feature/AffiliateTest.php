@@ -175,6 +175,70 @@ class AffiliateTest extends TestCase
         $this->assertSame(AffiliateStatus::Active, $affiliate->fresh()->status);
     }
 
+    public function test_admin_reject_requires_reason_and_notifies_applicant(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+        $this->seed(RoleSeeder::class);
+        $admin = User::factory()->create(['is_staff' => true, 'is_active' => true]);
+        $admin->roles()->attach(Role::where('slug', 'admin-keuangan')->first());
+
+        $affiliate = $this->activeAffiliate(['status' => AffiliateStatus::Pending, 'verified_at' => null]);
+
+        // Missing reason → validation error, status unchanged.
+        $this->actingAs($admin)
+            ->post(route('admin.affiliates.reject', $affiliate))
+            ->assertSessionHasErrors('note');
+        $this->assertSame(AffiliateStatus::Pending, $affiliate->fresh()->status);
+
+        // With reason → rejected, note stored, applicant notified.
+        $this->actingAs($admin)
+            ->post(route('admin.affiliates.reject', $affiliate), ['note' => 'Foto selfie tidak memegang KTP.'])
+            ->assertRedirect();
+
+        $fresh = $affiliate->fresh();
+        $this->assertSame(AffiliateStatus::Rejected, $fresh->status);
+        $this->assertSame('Foto selfie tidak memegang KTP.', $fresh->note);
+
+        \Illuminate\Support\Facades\Notification::assertSentTo(
+            $affiliate->user,
+            \App\Notifications\SystemNotification::class,
+            fn ($n) => str_contains($n->message, 'Foto selfie tidak memegang KTP.') && $n->email === true,
+        );
+    }
+
+    public function test_rejected_applicant_can_reapply(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('local');
+        $affiliate = $this->activeAffiliate([
+            'status' => AffiliateStatus::Rejected,
+            'note' => 'Data kurang lengkap',
+            'ktp_photo_path' => 'affiliate-kyc/old-ktp.jpg',
+            'selfie_photo_path' => 'affiliate-kyc/old-selfie.jpg',
+        ]);
+        \Illuminate\Support\Facades\Storage::disk('local')->put('affiliate-kyc/old-ktp.jpg', 'x');
+
+        $this->actingAs($affiliate->user)->post(route('account.affiliate.store'), [
+            'full_name' => 'Budi Afiliasi',
+            'id_number' => '3200000000000001',
+            'phone' => '08123456789',
+            'address' => 'Jl. Test No. 1',
+            'npwp' => '09.876.543.2-101.000',
+            'ktp_photo' => \Illuminate\Http\UploadedFile::fake()->image('ktp.jpg'),
+            'selfie_photo' => \Illuminate\Http\UploadedFile::fake()->image('selfie.jpg'),
+            'bank_name' => 'BCA',
+            'bank_account_number' => '9876543210',
+            'bank_account_holder' => 'Budi Afiliasi',
+            'agree' => '1',
+        ])->assertRedirect(route('account.affiliate.dashboard'));
+
+        $fresh = $affiliate->fresh();
+        // Same record reused, reset to pending, note cleared, old KTP file removed.
+        $this->assertSame(AffiliateStatus::Pending, $fresh->status);
+        $this->assertNull($fresh->note);
+        $this->assertEquals(1, Affiliate::where('user_id', $affiliate->user_id)->count());
+        \Illuminate\Support\Facades\Storage::disk('local')->assertMissing('affiliate-kyc/old-ktp.jpg');
+    }
+
     public function test_pages_render(): void
     {
         // Public landing

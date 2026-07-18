@@ -95,12 +95,28 @@ class AffiliateController extends Controller
 
     public function reject(Request $request, Affiliate $affiliate): RedirectResponse
     {
+        $data = $request->validate([
+            'note' => ['required', 'string', 'min:5', 'max:1000'],
+        ], [], ['note' => 'Alasan penolakan']);
+
         $affiliate->update([
             'status' => AffiliateStatus::Rejected,
-            'note' => $request->input('note', $affiliate->note),
+            'note' => $data['note'],
         ]);
 
-        return back()->with('success', 'Pendaftaran afiliator ditolak.');
+        // Notify the applicant (in-app + email) with the reason so they can fix
+        // the issue and re-apply.
+        $this->notifications->toUser(
+            $affiliate->user,
+            'Pendaftaran afiliasi belum disetujui',
+            "Mohon maaf, pendaftaran afiliasi Anda belum dapat kami setujui.\n\nAlasan: {$data['note']}\n\nSilakan perbaiki data yang dimaksud, lalu daftar kembali melalui halaman afiliasi.",
+            route('account.affiliate.dashboard'),
+            'warning',
+            true,
+            'Lihat Detail',
+        );
+
+        return back()->with('success', 'Pendaftaran ditolak. Alasan dikirim ke email & notifikasi pendaftar.');
     }
 
     public function suspend(Affiliate $affiliate): RedirectResponse
