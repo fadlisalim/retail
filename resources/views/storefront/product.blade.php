@@ -130,38 +130,53 @@
             </div>
 
             {{-- Bagikan / share link --}}
+            @php
+                $affiliate = auth()->user()?->affiliate;
+                $isActiveAffiliate = $affiliate && $affiliate->isActive();
+                $affiliateShareUrl = $isActiveAffiliate
+                    ? route('products.show', $product->slug).'?ref='.$affiliate->code
+                    : null;
+            @endphp
             <div class="mt-3 flex flex-wrap items-center gap-2"
                  x-data="{
-                    url: @js(route('products.show', $product->slug)),
-                    title: @js($product->name),
-                    copied: false,
-                    canShare: typeof navigator !== 'undefined' && !!navigator.share,
-                    waHref() { return 'https://wa.me/?text=' + encodeURIComponent(this.title + ' — ' + this.url); },
-                    async copy() {
-                        try { await navigator.clipboard.writeText(this.url); } catch (e) {}
-                        this.copied = true; setTimeout(() => this.copied = false, 2000);
-                    },
-                    async native() {
-                        try { await navigator.share({ title: this.title, text: this.title, url: this.url }); } catch (e) {}
+                    copied: '',
+                    async copy(text, tag) {
+                        try { await navigator.clipboard.writeText(text); } catch (e) {}
+                        this.copied = tag; setTimeout(() => { if (this.copied === tag) this.copied = ''; }, 2000);
                     },
                  }">
                 <span class="text-sm text-gray-500">Bagikan:</span>
-                <a :href="waHref()" target="_blank" rel="noopener" aria-label="Bagikan produk via WhatsApp"
-                   class="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700 transition hover:bg-green-100">
-                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24z"/></svg>
-                    WhatsApp
-                </a>
-                <button type="button" @click="copy()" aria-label="Salin link produk"
+                <button type="button" @click="copy(@js(route('products.show', $product->slug)), 'link')" aria-label="Salin link produk"
                         class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:border-brand-400 hover:text-brand-700">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/></svg>
-                    <span x-text="copied ? 'Tersalin!' : 'Salin Link'"></span>
+                    <span x-text="copied === 'link' ? 'Tersalin!' : 'Salin Link'"></span>
                 </button>
-                <button type="button" x-show="canShare" x-cloak @click="native()" aria-label="Bagikan ke aplikasi lain"
-                        class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:border-brand-400 hover:text-brand-700">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"/></svg>
-                    Lainnya
-                </button>
+                @if ($isActiveAffiliate)
+                    <button type="button" @click="copy(@js($affiliateShareUrl), 'aff')" aria-label="Salin link afiliator produk ini"
+                            class="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-sm font-semibold text-brand-700 transition hover:bg-brand-100">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z"/></svg>
+                        <span x-text="copied === 'aff' ? 'Tersalin!' : 'Salin Link Afiliator'"></span>
+                    </button>
+                @endif
             </div>
+
+            {{-- Persuasive affiliate invite (guest / not-yet an affiliate). --}}
+            @unless ($isActiveAffiliate)
+                @if ($affiliate)
+                    <a href="{{ route('account.affiliate.dashboard') }}" class="mt-2 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 hover:bg-amber-100">
+                        <svg class="h-4 w-4 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                        <span>Afiliasi kamu: <span class="font-semibold">{{ $affiliate->status->label() }}</span>. Setelah aktif, kamu bisa bagikan link afiliator produk ini &amp; dapat komisi.</span>
+                    </a>
+                @else
+                    <a href="{{ auth()->check() ? route('account.affiliate.register') : route('affiliate.landing') }}"
+                       class="group mt-2 flex items-center gap-2.5 rounded-lg border border-brand-200 bg-gradient-to-r from-brand-50 to-white px-3 py-2.5 text-xs text-brand-900 transition hover:border-brand-300 hover:from-brand-100">
+                        <span class="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-100 text-brand-600">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z"/></svg>
+                        </span>
+                        <span class="min-w-0"><span class="font-bold text-brand-700">Dapatkan komisi hingga 10%!</span> Bagikan produk ini sebagai Afiliator &amp; raih komisi tiap pembelian. <span class="font-semibold text-brand-700 underline group-hover:no-underline">Gabung gratis →</span></span>
+                    </a>
+                @endif
+            @endunless
 
             {{-- Price --}}
             <div class="mt-4 rounded-xl bg-gray-50 p-4">
