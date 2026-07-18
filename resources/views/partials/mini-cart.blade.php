@@ -37,23 +37,44 @@
             </template>
 
             <template x-for="(item, i) in $store.cart.items" :key="item.id">
-                <div class="flex items-center gap-3 rounded-lg p-2 hover:bg-gray-50">
-                    <a :href="item.url" class="flex min-w-0 flex-1 items-center gap-3">
-                        <img :src="item.image" alt="" class="h-14 w-14 shrink-0 rounded-lg object-cover">
-                        <div class="min-w-0 flex-1">
-                            <p class="line-clamp-2 text-sm font-medium text-gray-800" x-text="item.name"></p>
-                            <p class="text-xs text-gray-400"><span x-text="item.qty"></span> item<span x-show="item.variant" x-text="' • ' + item.variant"></span></p>
-                        </div>
+                <div class="flex items-start gap-3 rounded-lg p-2 hover:bg-gray-50">
+                    <a :href="item.url" class="shrink-0">
+                        <img :src="item.image" alt="" class="h-14 w-14 rounded-lg object-cover">
                     </a>
-                    <div class="flex shrink-0 flex-col items-end gap-1.5">
-                        <span class="text-sm font-semibold text-gray-800" x-text="item.line_formatted"></span>
-                        <button type="button" @click="$store.cart.remove(item.id)" :disabled="$store.cart.busy"
-                                :aria-label="'Hapus ' + item.name + ' dari keranjang'"
-                                class="inline-flex items-center gap-1 text-xs text-gray-400 transition hover:text-red-600 disabled:opacity-50">
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
-                            Hapus
-                        </button>
+                    <div class="min-w-0 flex-1">
+                        <a :href="item.url" class="block">
+                            <p class="line-clamp-2 text-sm font-medium text-gray-800" x-text="item.name"></p>
+                            <p class="text-xs text-gray-400" x-show="item.variant" x-text="item.variant"></p>
+                        </a>
+                        {{-- Editable quantity stepper --}}
+                        <div class="mt-1.5 flex items-center gap-2">
+                            <div class="inline-flex items-center rounded-lg border border-gray-200">
+                                <button type="button" @click="$store.cart.updateQty(item.id, item.qty - 1)"
+                                        :disabled="$store.cart.busy || item.qty <= 1"
+                                        aria-label="Kurangi jumlah"
+                                        class="grid h-7 w-7 place-items-center text-gray-500 transition hover:bg-gray-100 disabled:opacity-40">
+                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="currentColor"><path stroke-linecap="round" d="M5 12h14"/></svg>
+                                </button>
+                                <input type="number" min="1" inputmode="numeric" :value="item.qty"
+                                       @change="$store.cart.updateQty(item.id, $event.target.value)"
+                                       @keydown.enter.prevent="$store.cart.updateQty(item.id, $event.target.value)"
+                                       :disabled="$store.cart.busy" aria-label="Jumlah"
+                                       class="h-7 w-10 border-x border-gray-200 text-center text-sm [appearance:textfield] focus:outline-none focus:ring-1 focus:ring-brand-400 [&::-webkit-inner-spin-button]:appearance-none">
+                                <button type="button" @click="$store.cart.updateQty(item.id, item.qty + 1)"
+                                        :disabled="$store.cart.busy"
+                                        aria-label="Tambah jumlah"
+                                        class="grid h-7 w-7 place-items-center text-gray-500 transition hover:bg-gray-100 disabled:opacity-40">
+                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="currentColor"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>
+                                </button>
+                            </div>
+                            <button type="button" @click="$store.cart.remove(item.id)" :disabled="$store.cart.busy"
+                                    :aria-label="'Hapus ' + item.name + ' dari keranjang'"
+                                    class="text-gray-400 transition hover:text-red-600 disabled:opacity-50" title="Hapus">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
+                            </button>
+                        </div>
                     </div>
+                    <span class="shrink-0 pt-0.5 text-sm font-semibold text-gray-800" x-text="item.line_formatted"></span>
                 </div>
             </template>
         </div>

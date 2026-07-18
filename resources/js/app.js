@@ -142,6 +142,31 @@ Alpine.store('cart', {
         }
     },
 
+    /** Set a line's quantity (server enforces stock + min purchase), then refresh. */
+    async updateQty(id, qty) {
+        if (this.busy) return;
+        qty = Math.max(1, parseInt(qty, 10) || 1);
+        this.busy = true;
+        this.error = '';
+        try {
+            const res = await fetch(`/keranjang/${id}`, {
+                method: 'PATCH',
+                headers: { 'X-CSRF-TOKEN': this.csrf(), 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify({ quantity: qty }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                this.error = data.message || 'Gagal memperbarui jumlah.';
+            }
+        } catch (err) {
+            this.error = 'Terjadi kesalahan jaringan. Coba lagi.';
+        } finally {
+            // Always re-sync so the UI reflects the server's clamped value.
+            await this.refresh();
+            this.busy = false;
+        }
+    },
+
     /** Remove one line from the cart, then refresh the drawer. */
     async remove(id) {
         if (this.busy) return;
