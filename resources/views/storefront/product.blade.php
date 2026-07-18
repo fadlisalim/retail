@@ -116,9 +116,21 @@
             </div>
 
             @if ($product->brand)
-                <a href="{{ route('brands.show', $product->brand->slug) }}" class="text-sm font-medium text-brand-600 hover:underline">{{ $product->brand->name }}</a>
+                <a href="{{ route('brands.show', $product->brand->slug) }}"
+                   class="group inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white py-1 pl-1 pr-2.5 shadow-sm transition hover:border-brand-300 hover:shadow"
+                   aria-label="Lihat semua produk {{ $product->brand->name }}">
+                    <span class="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full bg-gray-50 ring-1 ring-gray-100">
+                        @if ($product->brand->logo_path)
+                            <img src="{{ asset('storage/'.$product->brand->logo_path) }}" alt="{{ $product->brand->name }}" class="h-full w-full object-contain p-0.5">
+                        @else
+                            <span class="text-xs font-bold text-brand-600">{{ mb_strtoupper(mb_substr($product->brand->name, 0, 1)) }}</span>
+                        @endif
+                    </span>
+                    <span class="text-sm font-semibold text-gray-700 group-hover:text-brand-700">{{ $product->brand->name }}</span>
+                    <svg class="h-3.5 w-3.5 text-gray-400 transition group-hover:translate-x-0.5 group-hover:text-brand-500" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+                </a>
             @endif
-            <h1 class="mt-1 text-2xl font-bold text-gray-900">{{ $product->name }}</h1>
+            <h1 class="mt-1.5 text-2xl font-bold text-gray-900">{{ $product->name }}</h1>
 
             <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-500">
                 <span>SKU: {{ $product->sku }}</span>
