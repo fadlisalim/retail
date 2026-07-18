@@ -28,11 +28,11 @@
                 ['admin.stock.index', 'Stok', 'inventory.manage'],
                 ['admin.warehouses.index', 'Gudang', 'inventory.manage'],
                 ['admin.coupons.index', 'Voucher', 'price.manage'],
-                ['admin.orders.index', 'Pesanan', 'order.view'],
-                ['admin.quotations.index', 'Quotation', 'quotation.manage'],
-                ['admin.reviews.index', 'Review', 'review.moderate'],
+                ['admin.orders.index', 'Pesanan', 'order.view', 'orders'],
+                ['admin.quotations.index', 'Quotation', 'quotation.manage', 'quotations'],
+                ['admin.reviews.index', 'Review', 'review.moderate', 'reviews'],
                 ['admin.customers.index', 'Customer', 'customer.manage'],
-                ['admin.affiliates.index', 'Afiliasi', 'affiliate.manage'],
+                ['admin.affiliates.index', 'Afiliasi', 'affiliate.manage', 'affiliates'],
                 ['admin.banners.index', 'Banner', 'content.manage'],
                 ['admin.pages.index', 'Halaman', 'content.manage'],
                 ['admin.articles.index', 'Artikel', 'content.manage'],
@@ -43,11 +43,20 @@
             ];
         @endphp
         <nav class="space-y-0.5 px-3 pb-10 text-sm">
-            @foreach ($menu as [$route, $label, $permission])
+            @foreach ($menu as $item)
+                @php
+                    [$route, $label, $permission] = $item;
+                    $badgeKey = $item[3] ?? null;
+                    $badgeCount = $badgeKey ? (int) ($menuBadges[$badgeKey] ?? 0) : 0;
+                @endphp
                 @if (! $permission || auth()->user()->can($permission))
                     <a href="{{ route($route) }}"
-                       class="block rounded-lg px-3 py-2 {{ request()->routeIs(str_replace('.index', '', $route).'*') || request()->routeIs($route) ? 'bg-brand-600 font-semibold text-white' : 'text-brand-100 hover:bg-brand-700' }}">
-                        {{ $label }}
+                       class="flex items-center justify-between gap-2 rounded-lg px-3 py-2 {{ request()->routeIs(str_replace('.index', '', $route).'*') || request()->routeIs($route) ? 'bg-brand-600 font-semibold text-white' : 'text-brand-100 hover:bg-brand-700' }}">
+                        <span>{{ $label }}</span>
+                        @if ($badgeCount > 0)
+                            <span class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-semibold leading-none text-white"
+                                  title="{{ $badgeCount }} perlu ditindak">{{ $badgeCount > 99 ? '99+' : $badgeCount }}</span>
+                        @endif
                     </a>
                 @endif
             @endforeach

@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\PaymentManager;
 use App\Services\SettingService;
 use App\Support\Rbac;
+use App\View\Composers\AdminMenuComposer;
 use App\View\Composers\StorefrontComposer;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
@@ -34,5 +35,8 @@ class AppServiceProvider extends ServiceProvider
         // views, because a child's @section body captures its own scope — not the
         // layout's — so views that reference these vars directly need them locally.
         View::composer(['layouts.storefront', 'storefront.*', 'account.*'], StorefrontComposer::class);
+
+        // "Needs attention" counts for the admin sidebar badges.
+        View::composer('layouts.admin', AdminMenuComposer::class);
     }
 }
