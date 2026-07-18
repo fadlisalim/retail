@@ -45,6 +45,20 @@ class EmailFlowTest extends TestCase
         $this->assertTrue(Hash::check('newpass123', $user->fresh()->password));
     }
 
+    public function test_invalid_reset_token_redirects_to_request_a_new_link(): void
+    {
+        $this->customer(['email' => 'reset3@test.id']);
+
+        $this->post(route('password.update'), [
+            'token' => 'totally-wrong-or-expired-token',
+            'email' => 'reset3@test.id',
+            'password' => 'newpass123',
+            'password_confirmation' => 'newpass123',
+        ])
+            ->assertRedirect(route('password.request'))
+            ->assertSessionHas('status');
+    }
+
     public function test_registration_sends_verification_email(): void
     {
         Notification::fake();

@@ -58,8 +58,19 @@ class PasswordResetController extends Controller
             }
         );
 
-        return $status === Password::PasswordReset
-            ? redirect()->route('login')->with('success', 'Kata sandi berhasil diubah. Silakan masuk.')
-            : back()->withErrors(['email' => __($status)]);
+        if ($status === Password::PasswordReset) {
+            return redirect()->route('login')->with('success', 'Kata sandi berhasil diubah. Silakan masuk.');
+        }
+
+        // Invalid/expired link (e.g. email arrived after expiry, or an older link
+        // was used) — send them back to request a fresh link with a clear message
+        // instead of a dead-end error on the reset form.
+        if (in_array($status, [Password::INVALID_TOKEN, Password::INVALID_USER], true)) {
+            return redirect()->route('password.request')
+                ->withInput($request->only('email'))
+                ->with('status', 'Tautan atur ulang kata sandi tidak valid atau sudah kedaluwarsa. Silakan minta tautan baru di bawah ini.');
+        }
+
+        return back()->withErrors(['email' => __($status)]);
     }
 }
