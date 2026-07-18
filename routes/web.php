@@ -45,6 +45,7 @@ Route::get('/api/pencarian/suggest', [SearchController::class, 'suggest'])
 
 Route::get('/kategori', [CatalogController::class, 'categories'])->name('categories.index');
 Route::get('/kategori/{category:slug}', [CatalogController::class, 'category'])->name('categories.show');
+Route::get('/brand', [CatalogController::class, 'brands'])->name('brands.index');
 Route::get('/brand/{brand:slug}', [CatalogController::class, 'brand'])->name('brands.show');
 
 // Product detail resolves slug manually (to support old-slug redirects).

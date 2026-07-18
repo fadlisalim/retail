@@ -14,6 +14,7 @@
                 <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-700">Belanja</h3>
                 <ul class="space-y-2 text-sm text-gray-500">
                     <li><a href="{{ route('products.index') }}" class="hover:text-brand-700">Semua Produk</a></li>
+                    <li><a href="{{ route('brands.index') }}" class="hover:text-brand-700">Brand</a></li>
                     <li><a href="{{ route('promo') }}" class="hover:text-brand-700">Promo</a></li>
                     <li><a href="{{ route('products.new') }}" class="hover:text-brand-700">Produk Baru</a></li>
                     <li><a href="{{ route('clearance') }}" class="hover:text-brand-700">Clearance</a></li>

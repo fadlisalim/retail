@@ -91,6 +91,10 @@
             @foreach($navCategories->take(8) as $cat)
                 <a href="{{ route('categories.show', $cat->slug) }}" class="font-medium text-gray-600 hover:text-brand-700">{{ $cat->name }}</a>
             @endforeach
+            <a href="{{ route('brands.index') }}" class="ml-auto inline-flex items-center gap-1 font-semibold text-brand-700 hover:text-brand-800">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z"/></svg>
+                Brand
+            </a>
         </div>
         <div x-show="mega" x-cloak x-transition @click.away="mega=false" class="absolute inset-x-0 top-full z-40 border-t border-gray-100 bg-white shadow-lg">
             <div class="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-6 py-6 md:grid-cols-4">

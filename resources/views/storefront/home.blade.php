@@ -305,7 +305,10 @@
     {{-- 9. Brand Terpopuler --}}
     @if ($brands->isNotEmpty())
         <section class="mt-10">
-            <h2 class="mb-3 text-lg font-bold text-gray-900 sm:text-xl">Brand Terpopuler</h2>
+            <div class="mb-3 flex items-center justify-between gap-3">
+                <h2 class="text-lg font-bold text-gray-900 sm:text-xl">Brand Terpopuler</h2>
+                <a href="{{ route('brands.index') }}" class="text-sm font-medium text-brand-600 hover:underline">Semua brand →</a>
+            </div>
             <div class="grid grid-cols-3 gap-3 sm:grid-cols-6">
                 @foreach ($brands as $brand)
                     <a href="{{ route('brands.show', $brand->slug) }}" class="card grid h-20 place-items-center p-4 text-center transition hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md">

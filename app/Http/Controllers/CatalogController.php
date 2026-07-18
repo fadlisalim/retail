@@ -52,6 +52,18 @@ class CatalogController extends Controller
         ]);
     }
 
+    /** Directory of all active brands (with published-product counts). */
+    public function brands(): View
+    {
+        $brands = Brand::active()
+            ->withCount(['products' => fn ($q) => $q->published()])
+            ->orderByDesc('is_featured')
+            ->orderBy('name')
+            ->get();
+
+        return view('storefront.brands', ['brands' => $brands]);
+    }
+
     public function brand(Request $request, Brand $brand): View
     {
         abort_unless($brand->is_active, 404);
