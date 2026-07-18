@@ -43,7 +43,9 @@
                                 <p class="mt-0.5 text-sm text-red-50">Rekomendasikan produk energi surya &amp; raih komisi. Gratis, tanpa modal.</p>
                             </div>
                         </div>
-                        <a href="{{ route('affiliate.landing') }}"
+                        {{-- Already inside the account area → skip the landing page,
+                             jump straight to the affiliate registration form. --}}
+                        <a href="{{ route('account.affiliate.register') }}"
                            class="inline-flex shrink-0 animate-pulse items-center justify-center gap-1.5 rounded-lg bg-white px-5 py-2.5 font-bold text-red-600 shadow transition hover:animate-none hover:bg-red-50">
                             Gabung Sekarang
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
