@@ -62,7 +62,13 @@ class SearchService
                 ? $f['category']
                 : Category::where('slug', $f['category'])->orWhere('id', $f['category'])->first();
             if ($category) {
-                $query->whereIn('category_id', $category->descendantIds());
+                $ids = $category->descendantIds();
+                // Match the primary category OR any additional (pivot) category,
+                // each scoped to include the whole subtree.
+                $query->where(function (Builder $q) use ($ids) {
+                    $q->whereIn('category_id', $ids)
+                        ->orWhereHas('categories', fn (Builder $c) => $c->whereIn('categories.id', $ids));
+                });
             }
         }
 

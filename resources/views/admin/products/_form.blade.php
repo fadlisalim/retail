@@ -27,10 +27,25 @@
         <x-form.input name="name" label="Nama Produk" :value="$product->name" required />
 
         <div class="grid gap-4 sm:grid-cols-2">
-            <x-form.select name="category_id" label="Kategori" :options="$categories" :selected="$product->category_id" placeholder="— Pilih kategori —" />
+            <x-form.select name="category_id" label="Kategori Utama" :options="$categories" :selected="$product->category_id" placeholder="— Pilih kategori —" />
             <div>
                 <x-form.select name="brand_id" label="Brand" :options="$brands" :selected="$product->brand_id" placeholder="— Pilih brand —" />
                 <x-form.input name="new_brand" label="atau Brand Baru" :value="old('new_brand')" placeholder="Ketik nama brand baru" class="mt-2" hint="Kalau brand belum ada, ketik di sini — otomatis dibuat." />
+            </div>
+        </div>
+
+        {{-- Multi-category: product also appears in these categories (and their parents). --}}
+        @php $selectedCats = collect(old('categories', $product->categories->pluck('id')->all()))->map(fn ($v) => (int) $v)->all(); @endphp
+        <div>
+            <label class="input-label">Kategori Tambahan <span class="font-normal text-gray-400">(opsional)</span></label>
+            <p class="mb-1.5 text-xs text-gray-400">Produk akan muncul juga di kategori-kategori ini (dan di kategori induknya). Kategori utama otomatis termasuk.</p>
+            <div class="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-gray-200 p-3">
+                @foreach ($categories as $cid => $clabel)
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" name="categories[]" value="{{ $cid }}" @checked(in_array((int) $cid, $selectedCats, true)) class="rounded border-gray-300 text-brand-600">
+                        <span>{{ $clabel }}</span>
+                    </label>
+                @endforeach
             </div>
         </div>
 

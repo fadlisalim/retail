@@ -61,6 +61,7 @@ class ProductController extends Controller
         $initialStock = (int) $request->integer('initial_stock');
 
         $product = Product::create($data);
+        $this->syncCategories($request, $product);
 
         if ($initialStock > 0) {
             app(StockService::class)->adjust(
@@ -86,9 +87,25 @@ class ProductController extends Controller
     public function update(Request $request, Product $produk): RedirectResponse
     {
         $produk->update($this->validated($request, $produk));
+        $this->syncCategories($request, $produk);
 
         // Stay on the product after saving.
         return back()->with('success', 'Produk berhasil diperbarui.');
+    }
+
+    /**
+     * Sync the product's category pivot: the primary category_id plus any extra
+     * categories chosen on the form (deduped). Keeps the pivot authoritative so
+     * the product shows in every assigned category (and their parents).
+     */
+    private function syncCategories(Request $request, Product $product): void
+    {
+        $extra = array_map('intval', (array) $request->input('categories', []));
+        $all = array_values(array_unique(array_filter(
+            array_merge([(int) $product->category_id], $extra),
+        )));
+
+        $product->categories()->sync($all);
     }
 
     public function destroy(Product $produk): RedirectResponse
@@ -199,6 +216,8 @@ class ProductController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', Rule::unique('products', 'slug')->ignore($product?->id)],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'categories' => ['nullable', 'array'],
+            'categories.*' => ['integer', 'exists:categories,id'],
             'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
             'new_brand' => ['nullable', 'string', 'max:255'],
             'spec_key' => ['nullable', 'array'],
@@ -240,6 +259,9 @@ class ProductController extends Controller
         foreach (['is_featured', 'is_new', 'is_promo', 'is_clearance'] as $flag) {
             $data[$flag] = $request->boolean($flag);
         }
+
+        // Extra categories are synced to the pivot separately (not a column).
+        unset($data['categories']);
 
         // The following toggles were removed from the form — apply fixed policy
         // (all products purchasable, no RFQ) and preserve other flags on edit.
