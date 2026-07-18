@@ -78,7 +78,7 @@
     }" class="grid gap-8 lg:grid-cols-2">
 
         {{-- Gallery --}}
-        <div>
+        <div class="min-w-0">
             {{-- Main image: object-contain (never cropped) over a blurred fill of itself. --}}
             <button type="button" @click="zoom = true" class="card group relative block w-full cursor-zoom-in overflow-hidden">
                 <div class="absolute inset-0 scale-110 bg-cover bg-center blur-2xl" :style="`background-image:url('${gallery}')`" aria-hidden="true"></div>
@@ -109,7 +109,7 @@
         </div>
 
         {{-- Purchase panel --}}
-        <div>
+        <div class="min-w-0">
             <div class="mb-2 flex flex-wrap gap-1">
                 {{-- Condition is shown as a labeled line below, not as a badge here. --}}
                 @foreach ($product->badges(includeCondition: false) as $badge)<x-badge :label="$badge" />@endforeach
