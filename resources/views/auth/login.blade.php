@@ -28,7 +28,7 @@
             <form action="{{ route('verification.send') }}" method="POST" class="space-y-2">
                 @csrf
                 <input type="email" name="email" value="{{ request('verify') }}" placeholder="Email" required class="form-input">
-                <input type="password" name="password" placeholder="Kata sandi" required class="form-input">
+                <x-form.input name="password" type="password" placeholder="Kata sandi" required />
                 <button type="submit" class="btn-outline w-full">Kirim Ulang Tautan Verifikasi</button>
             </form>
         </div>
