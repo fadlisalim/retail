@@ -35,6 +35,9 @@ class RegisterController extends Controller
             'email.unique' => 'Email ini sudah terdaftar. Silakan masuk atau reset kata sandi.',
         ]);
 
+        // Store WhatsApp in international format (08… → 62…) so Wablas can reach it.
+        $data['whatsapp'] = app(\App\Services\WhatsAppService::class)->normalize($data['whatsapp']) ?? $data['whatsapp'];
+
         $guestToken = $request->session()->get('guest_token');
 
         $user = DB::transaction(function () use ($data) {

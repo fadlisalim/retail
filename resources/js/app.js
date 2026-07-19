@@ -42,6 +42,37 @@ Alpine.data('search', () => ({
 }));
 
 /**
+ * International phone field: a country-code picker + local number, combined into
+ * a hidden input as digits-only international format (e.g. 628123…). A leading 0
+ * on the local part is dropped (Indonesian 08… → 62…). Wablas needs 62…, not 08….
+ */
+Alpine.data('phoneField', (value, dials) => ({
+    dial: '62',
+    local: '',
+    full: '',
+    init() {
+        const sorted = [...(dials || [])].sort((a, b) => b.length - a.length);
+        const v = String(value || '').replace(/[^\d]/g, '');
+        if (v && !v.startsWith('0')) {
+            const match = sorted.find((dc) => v.startsWith(dc));
+            if (match) {
+                this.dial = match;
+                this.local = v.slice(match.length);
+            } else {
+                this.local = v;
+            }
+        } else {
+            this.local = v; // leading 0 (or empty) → keep as local, dial stays 62
+        }
+        this.sync();
+    },
+    sync() {
+        const local = this.local.replace(/\D/g, '').replace(/^0+/, '');
+        this.full = local ? this.dial + local : '';
+    },
+}));
+
+/**
  * Image gallery with a selectable main image.
  */
 Alpine.data('gallery', (main) => ({

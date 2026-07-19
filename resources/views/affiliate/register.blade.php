@@ -24,7 +24,7 @@
                         <x-form.input name="id_number" label="NIK (KTP)" :value="old('id_number')" required />
                     </div>
                     <div class="grid gap-4 sm:grid-cols-2">
-                        <x-form.input name="phone" label="No. HP / WhatsApp" :value="old('phone', $user->phone ?? '')" required />
+                        <x-form.phone name="phone" label="No. HP / WhatsApp" :value="old('phone', $user->phone ?? '')" required />
                         <x-form.input name="npwp" label="NPWP" :value="old('npwp')" required hint="Wajib. Afiliator harus memiliki NPWP." />
                     </div>
                     <x-form.textarea name="address" label="Alamat" :value="old('address')" rows="2" required />

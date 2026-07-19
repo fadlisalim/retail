@@ -56,7 +56,12 @@ class WhatsAppService
         return false;
     }
 
-    /** Normalise a phone number to Indonesian international format (digits only, 62…). */
+    /**
+     * Normalise to international format (digits only, with country code). A leading
+     * 0 is treated as a legacy Indonesian local number (→ 62…); any other number is
+     * assumed to already carry its country code (from the phone picker) and is kept
+     * as-is, so non-Indonesian numbers are never corrupted.
+     */
     public function normalize(?string $raw): ?string
     {
         $digits = preg_replace('/\D+/', '', (string) $raw);
@@ -66,8 +71,6 @@ class WhatsAppService
 
         if (str_starts_with($digits, '0')) {
             $digits = '62'.ltrim(substr($digits, 1), '0');
-        } elseif (! str_starts_with($digits, '62')) {
-            $digits = '62'.$digits;
         }
 
         return $digits;

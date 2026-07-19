@@ -9,7 +9,7 @@
         @csrf
         <x-form.input name="name" label="Nama Lengkap" required autofocus />
         <x-form.input name="email" label="Email" type="email" required />
-        <x-form.input name="whatsapp" label="Nomor WhatsApp" required hint="Contoh: 08123456789" />
+        <x-form.phone name="whatsapp" label="Nomor WhatsApp" :value="old('whatsapp')" required />
         <x-form.input name="password" label="Kata Sandi" type="password" required hint="Minimal 8 karakter, mengandung huruf dan angka." />
         <x-form.input name="password_confirmation" label="Ulangi Kata Sandi" type="password" required />
 

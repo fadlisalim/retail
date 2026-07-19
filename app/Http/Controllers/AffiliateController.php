@@ -77,6 +77,9 @@ class AffiliateController extends Controller
 
         unset($data['agree']);
 
+        // Store contact number in international format (08… → 62…).
+        $data['phone'] = app(\App\Services\WhatsAppService::class)->normalize($data['phone']) ?? $data['phone'];
+
         // KYC photos go on the PRIVATE disk (sensitive PII) — served only to admins.
         $data['ktp_photo_path'] = $request->file('ktp_photo')->store('affiliate-kyc', 'local');
         $data['selfie_photo_path'] = $request->file('selfie_photo')->store('affiliate-kyc', 'local');

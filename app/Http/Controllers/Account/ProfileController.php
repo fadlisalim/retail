@@ -28,10 +28,14 @@ class ProfileController extends Controller
             'npwp' => ['nullable', 'string', 'max:30'],
         ]);
 
+        // Normalise to international format (08… → 62…) for WhatsApp delivery.
+        $wa = app(\App\Services\WhatsAppService::class);
+        $whatsapp = $wa->normalize($data['whatsapp']) ?? $data['whatsapp'];
+
         $user->update([
             'name' => $data['name'],
-            'whatsapp' => $data['whatsapp'],
-            'phone' => $data['phone'] ?? $data['whatsapp'],
+            'whatsapp' => $whatsapp,
+            'phone' => ($data['phone'] ?? null) ? ($wa->normalize($data['phone']) ?? $data['phone']) : $whatsapp,
         ]);
 
         $user->profile()->updateOrCreate([], [

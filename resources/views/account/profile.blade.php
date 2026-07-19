@@ -20,8 +20,8 @@
                     @method('PUT')
 
                     <x-form.input name="name" label="Nama Lengkap" :value="$user->name" required />
-                    <x-form.input name="whatsapp" label="Nomor WhatsApp" type="tel" :value="$user->whatsapp" required hint="Contoh: 08123456789" />
-                    <x-form.input name="phone" label="Telepon" type="tel" :value="$user->phone" />
+                    <x-form.phone name="whatsapp" label="Nomor WhatsApp" :value="$user->whatsapp" required />
+                    <x-form.phone name="phone" label="Telepon" :value="$user->phone" hint="Opsional" />
                     <div>
                         <label class="input-label" for="email_display">Email</label>
                         <input id="email_display" type="email" value="{{ $user->email }}" class="form-input bg-gray-50" disabled>

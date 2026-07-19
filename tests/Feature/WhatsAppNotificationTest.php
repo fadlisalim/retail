@@ -25,9 +25,10 @@ class WhatsAppNotificationTest extends TestCase
     public function test_phone_is_normalised_to_indonesian_format(): void
     {
         $wa = app(WhatsAppService::class);
-        $this->assertSame('628123456789', $wa->normalize('08123456789'));
-        $this->assertSame('628123456789', $wa->normalize('+62 812-3456-789'));
-        $this->assertSame('628123456789', $wa->normalize('8123456789'));
+        $this->assertSame('628123456789', $wa->normalize('08123456789'));       // legacy 0 → 62
+        $this->assertSame('628123456789', $wa->normalize('+62 812-3456-789'));  // strips +/spaces
+        $this->assertSame('628123456789', $wa->normalize('628123456789'));      // already intl
+        $this->assertSame('60123456789', $wa->normalize('60123456789'));        // Malaysia kept as-is
         $this->assertNull($wa->normalize(''));
         $this->assertNull($wa->normalize('123'));
     }
