@@ -31,13 +31,19 @@ class WhatsAppTest extends Command
 
         $ok = $wa->send($phone, "Tes notifikasi WhatsApp dari ".brand().". Integrasi Wablas berhasil ✅");
 
+        // Show the raw Wablas response so failures are diagnosable at a glance.
+        if ($wa->lastResult) {
+            $this->line('HTTP    : '.($wa->lastResult['status'] ?? '-'));
+            $this->line('Respons : '.$wa->lastResult['body']);
+        }
+
         if ($ok) {
             $this->info('Terkirim. Cek WhatsApp nomor tujuan.');
 
             return self::SUCCESS;
         }
 
-        $this->error('Gagal mengirim. Cek token, base_url (server device di dashboard Wablas), dan koneksi. Lihat storage/logs untuk detail.');
+        $this->error('Gagal mengirim. Baca "Respons" di atas: biasanya token/secret salah, device belum "connected" di dashboard Wablas, atau base_url beda server.');
 
         return self::FAILURE;
     }
