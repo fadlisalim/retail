@@ -47,6 +47,12 @@ class User extends Authenticatable implements MustVerifyEmail
         $this->notify(new \App\Notifications\ResetPasswordNotification($token));
     }
 
+    /** WhatsApp number for notifications (Wablas) — prefers the WA field, else phone. */
+    public function routeNotificationForWablas(): ?string
+    {
+        return $this->whatsapp ?: $this->phone;
+    }
+
     public function profile(): HasOne
     {
         return $this->hasOne(CustomerProfile::class);

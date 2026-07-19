@@ -41,4 +41,13 @@ return [
         'secret' => env('DEMO_GATEWAY_SECRET'),
     ],
 
+    // WhatsApp gateway (Wablas). Token/secret ONLY from .env — never hardcode.
+    // base_url is the server your Wablas device is on (see the Wablas dashboard),
+    // e.g. https://solo.wablas.com, https://tegal.wablas.com, https://console.wablas.com.
+    'wablas' => [
+        'enabled' => (bool) env('WABLAS_ENABLED', false),
+        'base_url' => env('WABLAS_BASE_URL', 'https://console.wablas.com'),
+        'token' => env('WABLAS_TOKEN'),
+    ],
+
 ];

@@ -2,6 +2,8 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Channels\WablasChannel;
+use App\Services\WhatsAppService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -29,11 +31,28 @@ class SystemNotification extends Notification
     public function via(object $notifiable): array
     {
         // Guests have no database row — email only.
-        if ($notifiable instanceof AnonymousNotifiable) {
-            return ['mail'];
+        $channels = $notifiable instanceof AnonymousNotifiable
+            ? ['mail']
+            : ($this->email ? ['database', 'mail'] : ['database']);
+
+        // Also send over WhatsApp when the gateway is on and we have a number.
+        if (app(WhatsAppService::class)->isEnabled() && $notifiable->routeNotificationFor('wablas', $this)) {
+            $channels[] = WablasChannel::class;
         }
 
-        return $this->email ? ['database', 'mail'] : ['database'];
+        return $channels;
+    }
+
+    /** WhatsApp body (Wablas). Plain text with light markdown emphasis. */
+    public function toWablas(object $notifiable): string
+    {
+        $text = '*'.$this->title.'*'."\n\n".$this->message;
+
+        if ($this->url) {
+            $text .= "\n\n".(str_starts_with($this->url, 'http') ? $this->url : url($this->url));
+        }
+
+        return $text."\n\n_".brand().'_';
     }
 
     public function toMail(object $notifiable): MailMessage
