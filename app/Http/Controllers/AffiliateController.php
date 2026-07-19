@@ -61,7 +61,7 @@ class AffiliateController extends Controller
             'id_number' => ['required', 'string', 'max:40'],
             'phone' => ['required', 'string', 'max:40'],
             'address' => ['required', 'string', 'max:1000'],
-            'npwp' => ['required', 'string', 'max:40'],
+            'npwp' => ['nullable', 'string', 'max:40'],
             'ktp_photo' => ['required', 'image', 'max:4096'],
             'selfie_photo' => ['required', 'image', 'max:4096'],
             'channel' => ['nullable', 'string', 'max:255'],
@@ -70,7 +70,6 @@ class AffiliateController extends Controller
             'bank_account_holder' => ['required', 'string', 'max:255'],
             'agree' => ['accepted'],
         ], [], [
-            'npwp' => 'NPWP',
             'ktp_photo' => 'Foto KTP',
             'selfie_photo' => 'Foto Selfie',
         ]);

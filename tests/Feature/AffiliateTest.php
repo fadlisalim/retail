@@ -308,7 +308,7 @@ class AffiliateTest extends TestCase
         \Illuminate\Support\Facades\Storage::disk('local')->assertExists($affiliate->ktp_photo_path);
     }
 
-    public function test_application_requires_npwp_and_photos(): void
+    public function test_application_requires_photos_but_not_npwp(): void
     {
         $user = $this->customer();
 
@@ -321,7 +321,9 @@ class AffiliateTest extends TestCase
             'bank_account_number' => '9876543210',
             'bank_account_holder' => 'Tanpa Dokumen',
             'agree' => '1',
-        ])->assertSessionHasErrors(['npwp', 'ktp_photo', 'selfie_photo']);
+        ])
+            ->assertSessionHasErrors(['ktp_photo', 'selfie_photo'])  // photos still required
+            ->assertSessionDoesntHaveErrors('npwp');                // NPWP no longer required
 
         $this->assertNull($user->fresh()->affiliate);
     }

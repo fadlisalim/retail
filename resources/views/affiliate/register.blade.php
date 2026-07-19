@@ -23,17 +23,21 @@
                         <x-form.input name="full_name" label="Nama Lengkap" :value="old('full_name', $user->name)" required />
                         <x-form.input name="id_number" label="NIK (KTP)" :value="old('id_number')" required />
                     </div>
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <x-form.phone name="phone" label="No. HP / WhatsApp" :value="old('phone', $user->phone ?? '')" required />
-                        <x-form.input name="npwp" label="NPWP" :value="old('npwp')" required hint="Wajib. Afiliator harus memiliki NPWP." />
-                    </div>
+                    <x-form.phone name="phone" label="No. HP / WhatsApp" :value="old('phone', $user->phone ?? '')" required />
                     <x-form.textarea name="address" label="Alamat" :value="old('address')" rows="2" required />
                     <x-form.input name="channel" label="Channel Promosi (opsional)" :value="old('channel')" placeholder="mis. Instagram @akun, komunitas, website" />
                 </div>
 
                 <div class="card space-y-4 p-5">
                     <h2 class="font-semibold text-gray-900">Verifikasi Identitas</h2>
-                    <p class="-mt-2 text-xs text-gray-500">Data ini rahasia, hanya dipakai admin untuk verifikasi. Tidak ditampilkan ke publik.</p>
+                    {{-- Reassurance: why we ask for KYC + privacy guarantee. --}}
+                    <div class="flex items-start gap-3 rounded-xl border border-brand-200 bg-brand-50 p-3">
+                        <svg class="mt-0.5 h-5 w-5 shrink-0 text-brand-600" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                        <p class="text-xs leading-relaxed text-brand-800">
+                            <span class="font-semibold">Semua data Anda aman &amp; tidak akan disebarluaskan ke pihak mana pun.</span>
+                            Data ini hanya dipakai admin untuk verifikasi — untuk memastikan setiap afiliator memang layak &amp; tepercaya, demi menjaga kualitas program afiliasi bersama.
+                        </p>
+                    </div>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
                             <label class="input-label" for="ktp_photo">Foto KTP <span class="text-red-500">*</span></label>
