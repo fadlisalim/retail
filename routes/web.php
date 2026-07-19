@@ -220,6 +220,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::post('produk/{produk}/dokumen', [Admin\ProductMediaController::class, 'storeDocument'])->name('products.document.store');
         Route::delete('produk-dokumen/{dokumen}', [Admin\ProductMediaController::class, 'destroyDocument'])->name('products.document.destroy');
         Route::post('produk/{produk}/video', [Admin\ProductMediaController::class, 'storeVideo'])->name('products.video.store');
+        Route::post('produk/{produk}/video-file', [Admin\ProductMediaController::class, 'storeVideoFile'])->name('products.videofile.store');
         Route::delete('produk-video/{video}', [Admin\ProductMediaController::class, 'destroyVideo'])->name('products.video.destroy');
 
         // Product variants (own price, stock, image)

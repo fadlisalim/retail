@@ -46,7 +46,23 @@
 
 @php
     $waMsg = 'Halo Rekasurya, saya ingin berkonsultasi mengenai produk: '.$product->name.'. Link: '.route('products.show', $product->slug);
-    $gallery = $product->images->pluck('path')->map(fn ($p) => asset('storage/'.$p))->prepend($product->primaryImageUrl())->unique()->values();
+
+    // Gallery media in sort order: photos + short videos. The FIRST item shows
+    // first on the detail page; a video row carries its poster in `path`.
+    $media = $product->images->sortBy('sort_order')->map(fn ($i) => [
+        'type' => $i->video_path ? 'video' : 'image',
+        'src' => $i->video_path ? asset('storage/'.$i->video_path) : asset('storage/'.$i->path),
+        'poster' => $i->path ? asset('storage/'.$i->path) : $product->primaryImageUrl(),
+    ])->values();
+    // Guarantee at least the main photo is present (products with no image rows).
+    $hasMainPhoto = $product->images->contains(fn ($i) => ! $i->video_path && $i->path === $product->main_image_path);
+    if (! $hasMainPhoto && $product->main_image_path) {
+        $media->prepend(['type' => 'image', 'src' => asset('storage/'.$product->main_image_path), 'poster' => asset('storage/'.$product->main_image_path)]);
+    }
+    if ($media->isEmpty()) {
+        $media->push(['type' => 'image', 'src' => $product->primaryImageUrl(), 'poster' => $product->primaryImageUrl()]);
+    }
+    $media = $media->values();
     $variantData = $product->variants->map(fn ($v) => [
         'id' => $v->id, 'name' => $v->name, 'price' => $v->effectivePrice(),
         'base' => $v->effectiveBasePrice(), 'stock' => $v->stock, 'options' => $v->option_values,
@@ -58,7 +74,9 @@
     <x-breadcrumbs :items="$breadcrumbs" />
 
     <div x-data="{
-        gallery: '{{ $gallery->first() }}',
+        media: {{ Illuminate\Support\Js::from($media) }},
+        active: 0,
+        variantImage: null,
         zoom: false,
         qty: {{ $product->min_purchase }},
         variantId: {{ $product->variants->count() === 1 ? $product->variants->first()->id : 'null' }},
@@ -68,43 +86,61 @@
         get price() { return this.current ? this.current.price : this.basePrice },
         get stock() { return this.current ? this.current.stock : {{ $product->stock }} },
         rupiah(n) { return 'Rp ' + Math.round(n).toLocaleString('id-ID') },
+        cur() {
+            if (this.variantImage) return { type: 'image', src: this.variantImage, poster: this.variantImage };
+            return this.media[this.active] || this.media[0] || { type: 'image', src: '', poster: '' };
+        },
+        pick(i) { this.active = i; this.variantImage = null; },
         init() {
-            // Swap the main gallery image when a variant with its own image is picked.
+            // Swap the main image when a variant with its own image is picked.
             this.$watch('variantId', (id) => {
                 const v = this.variants.find(x => x.id === id);
-                if (v && v.image) this.gallery = v.image;
+                this.variantImage = (v && v.image) ? v.image : null;
             });
         },
     }" class="grid gap-8 lg:grid-cols-2">
 
         {{-- Gallery --}}
         <div class="min-w-0">
-            {{-- Main image: object-contain (never cropped) over a blurred fill of itself. --}}
-            <button type="button" @click="zoom = true" class="card group relative block w-full cursor-zoom-in overflow-hidden">
-                <div class="absolute inset-0 scale-110 bg-cover bg-center blur-2xl" :style="`background-image:url('${gallery}')`" aria-hidden="true"></div>
-                <div class="absolute inset-0 bg-white/40" aria-hidden="true"></div>
-                <img :src="gallery" alt="{{ $product->name }}" class="relative aspect-square w-full object-contain">
-                <span class="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-[11px] text-white opacity-0 transition group-hover:opacity-100">
-                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.2-5.2m1.95-4.55a6.75 6.75 0 1 1-13.5 0 6.75 6.75 0 0 1 13.5 0ZM10.5 7.5v6m3-3h-6"/></svg>
-                    Klik untuk zoom
-                </span>
-            </button>
-            @if ($gallery->count() > 1)
-                <div class="mt-3 flex gap-2 overflow-x-auto">
-                    @foreach ($gallery as $img)
-                        <button @click="gallery = '{{ $img }}'" :class="gallery === '{{ $img }}' ? 'border-brand-500' : 'border-gray-200'" class="h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2">
-                            <img src="{{ $img }}" alt="{{ $product->name }} thumbnail" class="h-full w-full object-cover" loading="lazy">
-                        </button>
-                    @endforeach
-                </div>
-            @endif
+            <div class="card group relative block w-full overflow-hidden">
+                {{-- Photo: object-contain over a blurred fill of itself, click to zoom. --}}
+                <template x-if="cur().type === 'image'">
+                    <button type="button" @click="zoom = true" class="relative block w-full cursor-zoom-in">
+                        <div class="absolute inset-0 scale-110 bg-cover bg-center blur-2xl" :style="`background-image:url('${cur().src}')`" aria-hidden="true"></div>
+                        <div class="absolute inset-0 bg-white/40" aria-hidden="true"></div>
+                        <img :src="cur().src" alt="{{ $product->name }}" class="relative aspect-square w-full object-contain">
+                        <span class="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-[11px] text-white opacity-0 transition group-hover:opacity-100">
+                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.2-5.2m1.95-4.55a6.75 6.75 0 1 1-13.5 0 6.75 6.75 0 0 1 13.5 0ZM10.5 7.5v6m3-3h-6"/></svg>
+                            Klik untuk zoom
+                        </span>
+                    </button>
+                </template>
+                {{-- Short video: plays inline with native controls. --}}
+                <template x-if="cur().type === 'video'">
+                    <video :src="cur().src" :poster="cur().poster" controls playsinline preload="metadata"
+                           class="aspect-square w-full bg-black object-contain"></video>
+                </template>
+            </div>
+
+            <div class="mt-3 flex gap-2 overflow-x-auto" x-show="media.length > 1" x-cloak>
+                <template x-for="(m, i) in media" :key="i">
+                    <button type="button" @click="pick(i)"
+                            :class="(active === i && !variantImage) ? 'border-brand-500' : 'border-gray-200'"
+                            class="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2">
+                        <img :src="m.poster || m.src" alt="{{ $product->name }}" class="h-full w-full object-cover" loading="lazy">
+                        <span x-show="m.type === 'video'" class="absolute inset-0 grid place-items-center bg-black/25">
+                            <svg class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                        </span>
+                    </button>
+                </template>
+            </div>
         </div>
 
-        {{-- Zoom lightbox --}}
+        {{-- Zoom lightbox (photos only) --}}
         <div x-show="zoom" x-cloak x-transition.opacity
              @click="zoom = false" @keydown.escape.window="zoom = false"
              class="fixed inset-0 z-[80] flex items-center justify-center bg-black/85 p-4">
-            <img :src="gallery" alt="{{ $product->name }}" class="max-h-[90vh] max-w-full object-contain">
+            <img :src="cur().src" alt="{{ $product->name }}" class="max-h-[90vh] max-w-full object-contain">
             <button type="button" @click="zoom = false" class="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/15 text-2xl text-white hover:bg-white/25" aria-label="Tutup">&times;</button>
         </div>
 

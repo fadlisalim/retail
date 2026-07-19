@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductDocument;
 use App\Models\ProductImage;
 use App\Models\ProductVideo;
+use App\Services\VideoService;
 use App\Services\WatermarkService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -42,17 +43,69 @@ class ProductMediaController extends Controller
             ]);
         }
 
-        // First image uploaded becomes the main image if none is set yet.
+        // First (non-video) image uploaded becomes the main image if none is set.
         if (! $produk->main_image_path) {
-            $produk->update(['main_image_path' => $produk->images()->orderBy('sort_order')->value('path')]);
+            $produk->update(['main_image_path' => $produk->images()->whereNull('video_path')->orderBy('sort_order')->value('path')]);
         }
 
         return back()->with('success', 'Gambar berhasil diunggah.');
     }
 
+    /**
+     * Upload a short product video into the gallery. Compressed with ffmpeg when
+     * available (else stored as-is, ≤20 MB). The browser-captured first frame is
+     * used as the poster; the video takes its place in the sortable gallery order.
+     */
+    public function storeVideoFile(Request $request, Product $produk, VideoService $video, WatermarkService $watermark): RedirectResponse
+    {
+        $request->validate([
+            'video' => ['required', 'file', 'mimetypes:video/mp4,video/webm,video/quicktime', 'max:'.(int) config('rekasurya.media.max_video_kb', 20480)],
+            'poster' => ['nullable', 'image', 'max:5120'],
+        ]);
+
+        $disk = Storage::disk('public');
+        $stored = $request->file('video')->store('products/videos', 'public');
+
+        // Compress with ffmpeg when available.
+        if ($video->isFfmpegAvailable()) {
+            $outRel = 'products/videos/'.pathinfo($stored, PATHINFO_FILENAME).'-opt.mp4';
+            if ($video->compress($disk->path($stored), $disk->path($outRel))) {
+                $disk->delete($stored);
+                $stored = $outRel;
+            }
+        }
+
+        // Poster: browser-captured frame first, else an ffmpeg frame, else main image.
+        $posterPath = null;
+        if ($request->hasFile('poster')) {
+            $p = $request->file('poster')->store('products', 'public');
+            $posterPath = $watermark->apply($p) ?? $p;
+        } elseif ($video->isFfmpegAvailable()) {
+            $posterRel = 'products/'.pathinfo($stored, PATHINFO_FILENAME).'-poster.jpg';
+            if ($video->extractPoster($disk->path($stored), $disk->path($posterRel))) {
+                $posterPath = $watermark->apply($posterRel) ?? $posterRel;
+            }
+        }
+        $posterPath = $posterPath ?: $produk->main_image_path;
+
+        $next = (int) ($produk->images()->max('sort_order') ?? 0);
+        $produk->images()->create([
+            'path' => $posterPath ?: '',
+            'video_path' => $stored,
+            'alt' => $produk->name,
+            'sort_order' => ++$next,
+        ]);
+
+        return back()->with('success', 'Video pendek berhasil diunggah.');
+    }
+
     public function setPrimaryImage(Product $produk, ProductImage $image): RedirectResponse
     {
         abort_unless($image->product_id === $produk->id, 404);
+        // The catalogue thumbnail must be a photo, never a video.
+        if ($image->isVideo()) {
+            return back()->with('error', 'Video tidak bisa dijadikan gambar utama.');
+        }
         $produk->update(['main_image_path' => $image->path]);
 
         return back()->with('success', 'Gambar utama diperbarui.');
@@ -82,14 +135,17 @@ class ProductMediaController extends Controller
     {
         $product = $image->product;
         Storage::disk('public')->delete($image->path);
-        $wasPrimary = $product && $product->main_image_path === $image->path;
+        if ($image->video_path) {
+            Storage::disk('public')->delete($image->video_path);
+        }
+        $wasPrimary = ! $image->isVideo() && $product && $product->main_image_path === $image->path;
         $image->delete();
 
         if ($wasPrimary) {
-            $product->update(['main_image_path' => $product->images()->orderBy('sort_order')->value('path')]);
+            $product->update(['main_image_path' => $product->images()->whereNull('video_path')->orderBy('sort_order')->value('path')]);
         }
 
-        return back()->with('success', 'Gambar dihapus.');
+        return back()->with('success', ($image->isVideo() ? 'Video' : 'Gambar').' dihapus.');
     }
 
     public function storeDocument(Request $request, Product $produk): RedirectResponse

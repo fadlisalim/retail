@@ -75,7 +75,7 @@ class ProductMediaTest extends TestCase
         ])->assertRedirect();
 
         // Edit page renders the gallery manager with the reorder hint.
-        $this->get(route('admin.products.edit', $product))->assertOk()->assertSee('Seret gambar');
+        $this->get(route('admin.products.edit', $product))->assertOk()->assertSee('Seret untuk mengubah urutan');
 
         $ids = $product->fresh()->images->pluck('id')->all();
         // Reverse the order.

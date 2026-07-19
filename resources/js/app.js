@@ -73,6 +73,65 @@ Alpine.data('phoneField', (value, dials) => ({
 }));
 
 /**
+ * Short-video uploader for the admin media panel. Captures the first frame in
+ * the browser (canvas) as a poster so a thumbnail exists even without ffmpeg,
+ * then posts the video + poster. The server compresses when ffmpeg is present.
+ */
+Alpine.data('videoUpload', (action, token) => ({
+    busy: false,
+    err: '',
+    file: null,
+    pick(e) {
+        this.file = e.target.files[0] || null;
+        this.err = '';
+    },
+    async submit() {
+        if (!this.file) { this.err = 'Pilih file video dulu.'; return; }
+        if (this.file.size > 20 * 1024 * 1024) { this.err = 'Ukuran video maksimal 20MB.'; return; }
+        this.busy = true;
+        this.err = '';
+        try {
+            const poster = await this.capturePoster(this.file).catch(() => null);
+            const fd = new FormData();
+            fd.append('_token', token);
+            fd.append('video', this.file);
+            if (poster) fd.append('poster', poster, 'poster.jpg');
+            const res = await fetch(action, { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (res.ok || res.redirected) {
+                window.location.reload();
+                return;
+            }
+            this.err = res.status === 422 ? 'Format/ukuran video tidak didukung (MP4/WebM/MOV, maks 20MB).' : 'Gagal mengunggah video.';
+        } catch (err) {
+            this.err = 'Terjadi kesalahan jaringan. Coba lagi.';
+        } finally {
+            this.busy = false;
+        }
+    },
+    /** Draw the first frame of the video to a JPEG blob for the poster. */
+    capturePoster(file) {
+        return new Promise((resolve, reject) => {
+            const url = URL.createObjectURL(file);
+            const v = document.createElement('video');
+            v.preload = 'metadata';
+            v.muted = true;
+            v.src = url;
+            v.onloadeddata = () => { try { v.currentTime = Math.min(0.5, (v.duration || 1) / 2); } catch (e) { reject(e); } };
+            v.onseeked = () => {
+                try {
+                    const c = document.createElement('canvas');
+                    c.width = v.videoWidth || 720;
+                    c.height = v.videoHeight || 720;
+                    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+                    c.toBlob((b) => { URL.revokeObjectURL(url); b ? resolve(b) : reject(new Error('no blob')); }, 'image/jpeg', 0.85);
+                } catch (e) { URL.revokeObjectURL(url); reject(e); }
+            };
+            v.onerror = () => { URL.revokeObjectURL(url); reject(new Error('video decode error')); };
+        });
+    },
+}));
+
+/**
  * Image gallery with a selectable main image.
  */
 Alpine.data('gallery', (main) => ({

@@ -72,6 +72,8 @@ return [
         // this only needs to clear the biggest source file. NOTE: the server's PHP
         // upload_max_filesize / post_max_size must be >= this too.
         'max_upload_kb' => (int) env('MEDIA_MAX_UPLOAD_KB', 15360),
+        // Max accepted short-product-video size (KB). Default 20 MB.
+        'max_video_kb' => (int) env('MEDIA_MAX_VIDEO_KB', 20480),
     ],
 
     'orders' => [

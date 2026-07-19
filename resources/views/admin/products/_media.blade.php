@@ -10,8 +10,9 @@
             @php
                 $imagesData = $product->images->map(fn ($i) => [
                     'id' => $i->id,
-                    'url' => asset('storage/'.$i->path),
-                    'isMain' => $product->main_image_path === $i->path,
+                    'url' => $i->path ? asset('storage/'.$i->path) : '',
+                    'isMain' => ! $i->video_path && $product->main_image_path === $i->path,
+                    'isVideo' => (bool) $i->video_path,
                 ])->values();
             @endphp
             <div x-data="{
@@ -41,17 +42,24 @@
                     window.location.reload();
                 },
             }">
-                <p class="mb-2 text-xs text-gray-400">Seret gambar untuk mengubah urutan. Gambar paling depan tampil pertama di katalog.</p>
+                <p class="mb-2 text-xs text-gray-400">Seret untuk mengubah urutan. Item paling depan tampil <strong>pertama</strong> saat pelanggan membuka detail produk (bisa foto atau video). Gambar <strong>Utama</strong> adalah thumbnail di daftar produk.</p>
                 <div class="grid grid-cols-3 gap-3 sm:grid-cols-5">
                     <template x-for="(img, i) in items" :key="img.id">
                         <div draggable="true"
                              @dragstart="dragIndex = i" @dragover.prevent @drop.prevent="onDrop(i)"
                              class="relative cursor-move overflow-hidden rounded-lg border border-gray-200"
                              :class="img.isMain && 'ring-2 ring-brand-500'">
-                            <img :src="img.url" class="aspect-square w-full object-cover" draggable="false">
+                            <img :src="img.url" class="aspect-square w-full bg-gray-100 object-cover" draggable="false">
                             <span x-show="img.isMain" class="absolute left-1 top-1 rounded bg-brand-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">Utama</span>
+                            {{-- Video badge (play icon) --}}
+                            <span x-show="img.isVideo" x-cloak class="pointer-events-none absolute inset-0 grid place-items-center">
+                                <span class="grid h-8 w-8 place-items-center rounded-full bg-black/55 text-white">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                                </span>
+                            </span>
+                            <span x-show="img.isVideo" x-cloak class="absolute left-1 top-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white">Video</span>
                             <div class="absolute inset-x-0 bottom-0 flex divide-x divide-white/20 bg-black/60 text-[11px] text-white">
-                                <button type="button" x-show="!img.isMain" @click="setMain(img.id)" class="flex-1 py-1.5 hover:bg-white/15">Jadikan Utama</button>
+                                <button type="button" x-show="!img.isMain && !img.isVideo" @click="setMain(img.id)" class="flex-1 py-1.5 hover:bg-white/15">Jadikan Utama</button>
                                 <button type="button" @click="remove(img.id)" class="flex-1 py-1.5 text-red-200 hover:bg-white/15">Hapus</button>
                             </div>
                         </div>
@@ -75,6 +83,20 @@
             </div>
             <button class="btn-primary">Unggah Gambar</button>
         </form>
+
+        {{-- Short video upload (poster captured in the browser; compressed on the
+             server when ffmpeg is available). Added into the gallery order above. --}}
+        <div class="border-t border-gray-100 pt-4"
+             x-data="videoUpload('{{ route('admin.products.videofile.store', $product) }}', '{{ csrf_token() }}')">
+            <label class="input-label" for="product_video">Tambah video pendek</label>
+            <div class="flex flex-wrap items-center gap-3">
+                <input id="product_video" type="file" accept="video/mp4,video/webm,video/quicktime" @change="pick($event)" class="text-sm">
+                <button type="button" class="btn-primary" :disabled="busy || !file" @click="submit()"
+                        x-text="busy ? 'Mengunggah…' : 'Unggah Video'"></button>
+            </div>
+            <p class="mt-1 text-xs text-gray-400">MP4/WebM/MOV, maks {{ round(config('rekasurya.media.max_video_kb', 20480) / 1024) }} MB. Otomatis dikompres agar ringan (bila server mendukung). Video muncul di galeri sesuai urutan.</p>
+            <p x-show="err" x-cloak class="mt-1 text-xs text-red-600" x-text="err"></p>
+        </div>
     </div>
 
     {{-- ---------- Dokumen / Datasheet ---------- --}}
