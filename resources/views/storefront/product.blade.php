@@ -115,9 +115,12 @@
                         </span>
                     </button>
                 </template>
-                {{-- Short video: plays inline with native controls. --}}
+                {{-- Short video: autoplays muted + loops (browsers only allow autoplay
+                     when muted). x-init forces the muted property + kicks off play so
+                     it starts reliably; users can unmute/pause via the controls. --}}
                 <template x-if="cur().type === 'video'">
-                    <video :src="cur().src" :poster="cur().poster" controls playsinline preload="metadata"
+                    <video :src="cur().src" :poster="cur().poster" controls playsinline autoplay muted loop preload="auto"
+                           x-init="$el.muted = true; $nextTick(() => $el.play().catch(() => {}))"
                            class="aspect-square w-full bg-black object-contain"></video>
                 </template>
             </div>
