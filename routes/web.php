@@ -47,6 +47,8 @@ Route::get('/api/pencarian/suggest', [SearchController::class, 'suggest'])
 // under /api/* so validation errors render as JSON (see bootstrap/app.php).
 Route::post('/api/asisten/tanya', [\App\Http\Controllers\AssistantController::class, 'chat'])
     ->middleware('throttle:15,1')->name('assistant.chat');
+Route::get('/api/asisten/riwayat', [\App\Http\Controllers\AssistantController::class, 'history'])
+    ->middleware('throttle:30,1')->name('assistant.history');
 
 Route::get('/kategori', [CatalogController::class, 'categories'])->name('categories.index');
 Route::get('/kategori/{category:slug}', [CatalogController::class, 'category'])->name('categories.show');

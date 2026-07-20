@@ -9,7 +9,7 @@
         'Halo Kak 👋 Aku Reika. Mau hemat tagihan PLN, siap-siap saat mati lampu, atau cari power station buat outdoor? Aku bantu pilihkan ya 😊',
         'Hai Kak, aku Reika dari '.brand().' ⚡ Butuh panel surya, inverter, atau baterai? Kalau produk yang dicari belum ada di katalog, tim kami juga bisa bantu carikan lho. Cerita dulu yuk 😊',
     ])
-    x-data="csChat({ endpoint: '{{ route('assistant.chat') }}', welcomes: @js($csWelcomes) })"
+    x-data="csChat({ endpoint: '{{ route('assistant.chat') }}', history: '{{ route('assistant.history') }}', welcomes: @js($csWelcomes) })"
     @open-cs-chat.window="open = true; scrollSoon()"
     x-cloak
     class="print:hidden"

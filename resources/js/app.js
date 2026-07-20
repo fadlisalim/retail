@@ -292,12 +292,42 @@ Alpine.data('csChat', (config = {}) => ({
     input: '',
     messages: [],
     endpoint: config.endpoint || '/api/asisten/tanya',
+    historyEndpoint: config.history || '/api/asisten/riwayat',
     welcomes: config.welcomes || [config.welcome || 'Halo Kak! 👋 Ada yang bisa aku bantu seputar produk kami?'],
     sessionId: '',
 
     init() {
         this.sessionId = this.resolveSession();
-        // Random greeting so the widget feels alive on every visit.
+        this.restore();
+    },
+
+    /**
+     * Reload this browser's previous conversation from the server (keyed by the
+     * persistent session id) so a refresh doesn't wipe the chat. Falls back to
+     * a random greeting when there's no history.
+     */
+    async restore() {
+        if (this.sessionId) {
+            try {
+                const res = await fetch(`${this.historyEndpoint}?session_id=${encodeURIComponent(this.sessionId)}`, {
+                    headers: { Accept: 'application/json' },
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && Array.isArray(data.messages) && data.messages.length) {
+                    this.messages = data.messages.map((m) => ({
+                        role: m.role,
+                        content: m.content,
+                        products: m.products || [],
+                        whatsapp: '',
+                    }));
+                    this.scrollSoon();
+                    return;
+                }
+            } catch (err) {
+                /* fall through to the greeting */
+            }
+        }
+        // Random greeting so the widget feels alive on every first visit.
         const welcome = this.welcomes[Math.floor(Math.random() * this.welcomes.length)];
         this.messages.push({ role: 'assistant', content: welcome, products: [] });
     },
