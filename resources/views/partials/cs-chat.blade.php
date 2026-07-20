@@ -3,11 +3,11 @@
      the AI key isn't configured), so it's safe to ship before ANTHROPIC_ENABLED. --}}
 <div
     @php($csWelcomes = [
-        'Halo Kak, aku Reika dari '.brand().' ⚡ Lagi cari panel surya, inverter, atau baterai? Ceritakan saja kebutuhan Kakak, nanti aku bantu carikan yang paling pas 😊',
-        'Hai Kak, Reika di sini 🙌 Mau beli panel surya satuan, upgrade inverter, atau tambah baterai? Tanya-tanya dulu boleh banget, gratis kok 😊',
-        'Selamat datang di '.brand().', Kak! Aku Reika ☀️ Dari panel surya, inverter, baterai satuan sampai paket PLTS lengkap — semua bisa aku bantu. Kakak lagi butuh apa nih?',
-        'Halo Kak 👋 Aku Reika. Mau hemat tagihan PLN, siap-siap saat mati lampu, atau cari power station buat outdoor? Aku bantu pilihkan ya 😊',
-        'Hai Kak, aku Reika dari '.brand().' ⚡ Butuh panel surya, inverter, atau baterai? Kalau produk yang dicari belum ada di katalog, tim kami juga bisa bantu carikan lho. Cerita dulu yuk 😊',
+        'Halo Kak, aku Kirana dari '.brand().' ⚡ Lagi cari panel surya, inverter, atau baterai? Ceritakan saja kebutuhan Kakak, nanti aku bantu carikan yang paling pas 😊',
+        'Hai Kak, Kirana di sini 🙌 Mau beli panel surya satuan, upgrade inverter, atau tambah baterai? Tanya-tanya dulu boleh banget, gratis kok 😊',
+        'Selamat datang di '.brand().', Kak! Aku Kirana ☀️ Dari panel surya, inverter, baterai satuan sampai paket PLTS lengkap — semua bisa aku bantu. Kakak lagi butuh apa nih?',
+        'Halo Kak 👋 Aku Kirana. Mau hemat tagihan PLN, siap-siap saat mati lampu, atau cari power station buat outdoor? Aku bantu pilihkan ya 😊',
+        'Hai Kak, aku Kirana dari '.brand().' ⚡ Butuh panel surya, inverter, atau baterai? Kalau produk yang dicari belum ada di katalog, tim kami juga bisa bantu carikan lho. Cerita dulu yuk 😊',
     ])
     x-data="csChat({ endpoint: '{{ route('assistant.chat') }}', history: '{{ route('assistant.history') }}', welcomes: @js($csWelcomes) })"
     @open-cs-chat.window="open = true; scrollSoon()"
@@ -41,9 +41,9 @@
         {{-- Header --}}
         <div class="flex items-center justify-between bg-brand-600 px-4 py-3 text-white">
             <div class="flex items-center gap-2">
-                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm font-bold">R</span>
+                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm font-bold">K</span>
                 <div class="leading-tight">
-                    <p class="text-sm font-semibold">Reika · Asisten {{ brand() }}</p>
+                    <p class="text-sm font-semibold">Kirana · Asisten {{ brand() }}</p>
                     <p class="text-[11px] text-white/80">Biasanya balas cepat</p>
                 </div>
             </div>

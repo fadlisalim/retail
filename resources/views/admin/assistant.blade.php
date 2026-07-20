@@ -97,7 +97,7 @@
                 @endif
             </div>
         @empty
-            <p class="py-4 text-center text-sm text-gray-400">Belum ada lead. Reika akan menanyakan nama & nomor HP pelanggan secara sopan di percakapan.</p>
+            <p class="py-4 text-center text-sm text-gray-400">Belum ada lead. Kirana akan menanyakan nama & nomor HP pelanggan secara sopan di percakapan.</p>
         @endforelse
     </div>
 

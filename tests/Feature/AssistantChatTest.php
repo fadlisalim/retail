@@ -39,9 +39,9 @@ class AssistantChatTest extends TestCase
             ->assertJsonPath('reply', 'Panel Surya 550Wp harganya Rp 1.000.000.')
             ->assertJsonPath('products.0.name', 'Panel Surya 550Wp Mono');
 
-        // The catalogue context (real product) + Reika persona are in the system prompt.
+        // The catalogue context (real product) + Kirana persona are in the system prompt.
         Http::assertSent(fn ($request) => str_contains($request['system'], 'Panel Surya 550Wp Mono')
-            && str_contains($request['system'], 'Reika')
+            && str_contains($request['system'], 'Kirana')
             && $request['model'] === 'claude-sonnet-5'
             && $request['messages'][0]['content'] === 'Ada panel surya 550Wp?');
     }
