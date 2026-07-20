@@ -34,7 +34,7 @@ class BluettiApex300Seeder extends Seeder
 <li>⚡ <strong>Output 3840W</strong> (lonjakan 7680W) — sanggup menyalakan AC, pompa air, mesin cuci, hingga peralatan daya tinggi secara bersamaan.</li>
 <li>🌊 <strong>Pure Sine Wave 230V / 50Hz</strong> — arus bersih &amp; stabil seperti listrik PLN, aman untuk elektronik sensitif.</li>
 <li>🔗 <strong>Sangat ekspandabel</strong> — hingga ±19,3 kWh per unit (maks 6 baterai ekspansi B300K), dan hingga <strong>58 kWh / 11,52kW</strong> dengan 3 unit paralel (Hub A1).</li>
-<li>☀️ <strong>Pengisian surya besar</strong> — hingga 2400W solar langsung, dan hingga 19,2kW dengan SolarX 4K.</li>
+<li>☀️ <strong>Pengisian surya</strong> — hingga 1200W solar langsung (12–150V), dan hingga 4000W dengan SolarX 4K.</li>
 <li>🔌 <strong>6 stopkontak AC</strong> pada unit; port DC/USB (2× USB-C 100W, 2× USB-A, 2× port mobil 12V) tersedia via aksesori opsional Power Hub D1.</li>
 <li>🚀 <strong>Pengisian AC TurboBoost</strong> — hingga 3840W, 0–100% dalam ±65 menit.</li>
 <li>🛡️ Teknologi LiFePO4 lebih aman, tahan panas &amp; stabil untuk pemakaian harian jangka panjang.</li>
@@ -60,7 +60,7 @@ HTML;
 <tr><th>Stopkontak AC</th><td>6 stopkontak AC</td></tr>
 <tr><th>Output DC / USB</th><td>Via aksesori opsional Power Hub D1: 2× USB-C 100W, 2× USB-A, 2× port mobil 12V, 12V/50A Anderson</td></tr>
 <tr><th>Input AC (Pengisian)</th><td>TurboBoost hingga 3840W — 0–100% ±65 menit</td></tr>
-<tr><th>Input Surya (PV)</th><td>Hingga 2400W (OCV 12–60V, MC4); hingga 19,2kW dengan SolarX 4K</td></tr>
+<tr><th>Input Surya (PV)</th><td>Hingga 1200W (12–150V, MC4); hingga 4000W dengan SolarX 4K</td></tr>
 <tr><th>Ekspansi</th><td>Hingga ±19,3 kWh per unit (maks 6 baterai ekspansi B300K, masing-masing 2.764,8Wh); hingga 58 kWh &amp; 11,52kW dengan 3 unit paralel (Hub A1)</td></tr>
 <tr><th>Siklus Hidup</th><td>6.000+ siklus (ke 80%)</td></tr>
 <tr><th>Berat</th><td>±38,6 kg (85 lbs)</td></tr>
