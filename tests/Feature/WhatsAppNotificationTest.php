@@ -42,10 +42,10 @@ class WhatsAppNotificationTest extends TestCase
 
         $this->assertTrue($ok);
         Http::assertSent(function ($request) {
-            return $request->url() === 'https://solo.wablas.com/api/send-message'
+            return $request->url() === 'https://solo.wablas.com/api/v2/send-message'
                 && $request->hasHeader('Authorization', 'test-token.secret')
-                && $request['phone'] === '628123456789'
-                && $request['message'] === 'Halo';
+                && $request['data'][0]['phone'] === '628123456789'
+                && $request['data'][0]['message'] === 'Halo';
         });
     }
 

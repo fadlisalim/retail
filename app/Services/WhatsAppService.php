@@ -21,9 +21,8 @@ class WhatsAppService
     }
 
     /**
-     * Send a message to a single number. Returns true on a successful send.
-     * The token may be "token" (v1) or "token.secret" (v2); Wablas accepts the
-     * combined value on /api/send-message, sent as the Authorization header.
+     * Send a message to a single number via Wablas API v2. Returns true on a
+     * successful send. Authorization header carries the token (or token.secret).
      */
     public function send(?string $phone, string $message): bool
     {
@@ -43,21 +42,24 @@ class WhatsAppService
         }
 
         try {
+            // Wablas API v2: JSON body with a `data` array (matches the proven
+            // working config). isGroup "false" for a personal number.
             $response = Http::withHeaders([
                 'Authorization' => (string) config('services.wablas.token'),
             ])
-                ->asForm()
+                ->asJson()
                 ->timeout(15)
-                ->post($this->endpoint('/api/send-message'), [
-                    'phone' => $phone,
-                    'message' => $message,
+                ->post($this->endpoint('/api/v2/send-message'), [
+                    'data' => [
+                        ['phone' => $phone, 'isGroup' => 'false', 'message' => $message],
+                    ],
                 ]);
 
             $this->lastResult = ['ok' => false, 'status' => $response->status(), 'body' => $response->body()];
 
-            // Wablas returns { "status": true|false, ... }. Treat an explicit
-            // false as failure; otherwise a 2xx is success.
-            if ($response->successful() && $response->json('status') !== false) {
+            // Wablas returns { "status": true|false, ... }. Success = 2xx + status true.
+            $status = $response->json('status');
+            if ($response->successful() && ($status === true || $status === 'true')) {
                 $this->lastResult['ok'] = true;
 
                 return true;
