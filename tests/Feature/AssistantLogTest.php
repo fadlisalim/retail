@@ -85,11 +85,18 @@ class AssistantLogTest extends TestCase
         $this->seed(RoleSeeder::class);
         $admin = User::factory()->create(['is_staff' => true, 'is_active' => true]);
         $admin->roles()->attach(Role::where('slug', 'super-admin')->first());
-        AssistantConversation::create(['message' => 'apakah bluetti ada?', 'reply' => 'Ada beberapa model BLUETTI.', 'answered' => true, 'created_at' => now()]);
+        AssistantConversation::create(['session_id' => 'sess-xyz', 'message' => 'apakah bluetti ada?', 'reply' => 'Ada beberapa model BLUETTI.', 'answered' => true, 'created_at' => now()]);
 
+        // Grouped-by-session view (default) shows the session and its thread.
         $this->actingAs($admin)->get('/admin/cs-assistant')
             ->assertOk()
             ->assertSee('CS Assistant')
+            ->assertSee('Per Sesi')
+            ->assertSee('apakah bluetti ada?');
+
+        // Flat view also renders.
+        $this->actingAs($admin)->get('/admin/cs-assistant?view=flat')
+            ->assertOk()
             ->assertSee('apakah bluetti ada?');
     }
 

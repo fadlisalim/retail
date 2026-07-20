@@ -49,19 +49,41 @@ class AssistantLogController extends Controller
             ->selectRaw('term, MAX(label) as label, SUM(count) as total')
             ->groupBy('term')->orderByDesc('total')->limit(15)->get();
 
-        // Recent transcripts (short retention). Optional filter: only fallbacks.
-        $query = AssistantConversation::latest();
-        if ($request->input('filter') === 'fallback') {
-            $query->where('answered', false);
+        // Transcript log — grouped per session (default) or a flat message list.
+        $mode = $request->input('view') === 'flat' ? 'flat' : 'sessions';
+        $sessions = null;
+        $threads = collect();
+        $conversations = null;
+
+        if ($mode === 'sessions') {
+            // One paginated row per session, newest activity first.
+            $sessions = AssistantConversation::query()
+                ->whereNotNull('session_id')
+                ->selectRaw('session_id, COUNT(*) as turns, MIN(created_at) as started_at, MAX(created_at) as last_at, SUM(CASE WHEN answered = 0 THEN 1 ELSE 0 END) as fallbacks')
+                ->groupBy('session_id')
+                ->orderByRaw('MAX(created_at) DESC')
+                ->paginate(15)
+                ->withQueryString();
+
+            // Full ordered thread for each session on this page.
+            $threads = AssistantConversation::whereIn('session_id', collect($sessions->items())->pluck('session_id'))
+                ->orderBy('created_at')
+                ->get()
+                ->groupBy('session_id');
+        } else {
+            $query = AssistantConversation::latest();
+            if ($request->input('filter') === 'fallback') {
+                $query->where('answered', false);
+            }
+            $conversations = $query->paginate(25)->withQueryString();
         }
-        $conversations = $query->paginate(25)->withQueryString();
 
         $logRetention = (int) config('services.anthropic.log_retention_days', 30);
         $statsRetention = (int) config('services.anthropic.stats_retention_days', 180);
 
         return view('admin.assistant', compact(
             'summary', 'trend', 'trendMax', 'topKeywords', 'topProducts',
-            'conversations', 'logRetention', 'statsRetention',
+            'mode', 'sessions', 'threads', 'conversations', 'logRetention', 'statsRetention',
         ));
     }
 }
