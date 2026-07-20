@@ -280,4 +280,77 @@ Alpine.store('cart', {
     },
 });
 
+/**
+ * CS chat assistant — floating widget. Sends the message + prior turns to the
+ * Claude-backed endpoint, which grounds answers in the product catalogue and can
+ * return related product cards. Config (endpoint, brand, welcome) is passed in
+ * from the blade partial.
+ */
+Alpine.data('csChat', (config = {}) => ({
+    open: false,
+    loading: false,
+    input: '',
+    messages: [],
+    endpoint: config.endpoint || '/asisten/tanya',
+    welcome: config.welcome || 'Halo! 👋 Ada yang bisa saya bantu seputar produk kami?',
+
+    init() {
+        this.messages.push({ role: 'assistant', content: this.welcome, products: [] });
+    },
+
+    csrf() {
+        return document.querySelector('meta[name=csrf-token]')?.content || '';
+    },
+
+    toggle() {
+        this.open = !this.open;
+        if (this.open) this.scrollSoon();
+    },
+
+    scrollSoon() {
+        this.$nextTick(() => {
+            const box = this.$refs.log;
+            if (box) box.scrollTop = box.scrollHeight;
+        });
+    },
+
+    /** Prior turns as [{role, content}] — skip the generic welcome line. */
+    history() {
+        return this.messages
+            .slice(1)
+            .filter((m) => m.content)
+            .map((m) => ({ role: m.role, content: m.content }));
+    },
+
+    async send() {
+        const text = this.input.trim();
+        if (!text || this.loading) return;
+
+        const history = this.history();
+        this.messages.push({ role: 'user', content: text, products: [] });
+        this.input = '';
+        this.loading = true;
+        this.scrollSoon();
+
+        try {
+            const res = await fetch(this.endpoint, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': this.csrf(), 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify({ message: text, history }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.reply) {
+                this.messages.push({ role: 'assistant', content: data.reply, products: (data.products || []).slice(0, 3) });
+            } else {
+                this.messages.push({ role: 'assistant', content: 'Maaf, terjadi kendala. Coba lagi sebentar ya.', products: [] });
+            }
+        } catch (err) {
+            this.messages.push({ role: 'assistant', content: 'Koneksi bermasalah. Coba lagi ya.', products: [] });
+        } finally {
+            this.loading = false;
+            this.scrollSoon();
+        }
+    },
+}));
+
 Alpine.start();

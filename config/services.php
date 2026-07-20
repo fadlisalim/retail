@@ -50,4 +50,14 @@ return [
         'token' => env('WABLAS_TOKEN'),
     ],
 
+    // CS Assistant (Claude / Anthropic). API key ONLY from .env — never hardcode.
+    // Powers the storefront chat assistant; answers are grounded in our own
+    // product catalogue. Disabled by default so the site runs without a key.
+    'anthropic' => [
+        'enabled' => (bool) env('ANTHROPIC_ENABLED', false),
+        'api_key' => env('ANTHROPIC_API_KEY'),
+        'base_url' => env('ANTHROPIC_BASE_URL', 'https://api.anthropic.com'),
+        'model' => env('ANTHROPIC_MODEL', 'claude-sonnet-5'),
+    ],
+
 ];

@@ -43,6 +43,11 @@ Route::get('/pencarian', [SearchController::class, 'index'])->name('search');
 Route::get('/api/pencarian/suggest', [SearchController::class, 'suggest'])
     ->middleware('throttle:60,1')->name('search.suggest');
 
+// CS chat assistant (Claude-powered, grounded in the catalogue). JSON endpoint
+// under /api/* so validation errors render as JSON (see bootstrap/app.php).
+Route::post('/api/asisten/tanya', [\App\Http\Controllers\AssistantController::class, 'chat'])
+    ->middleware('throttle:15,1')->name('assistant.chat');
+
 Route::get('/kategori', [CatalogController::class, 'categories'])->name('categories.index');
 Route::get('/kategori/{category:slug}', [CatalogController::class, 'category'])->name('categories.show');
 Route::get('/brand', [CatalogController::class, 'brands'])->name('brands.index');

@@ -1,0 +1,113 @@
+@php($assistantEnabled = (bool) config('services.anthropic.enabled'))
+{{-- CS chat assistant. Always rendered (works as a WhatsApp hand-off even when
+     the AI key isn't configured), so it's safe to ship before ANTHROPIC_ENABLED. --}}
+<div
+    x-data="csChat({ endpoint: '{{ route('assistant.chat') }}', welcome: @js('Halo! 👋 Saya asisten '.brand().'. Ada yang bisa saya bantu seputar panel surya, inverter, baterai, atau paket PLTS?') })"
+    x-cloak
+    class="print:hidden"
+>
+    {{-- Launcher --}}
+    <button
+        type="button"
+        x-show="!open"
+        @click="toggle()"
+        class="fixed right-4 bottom-20 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2 lg:bottom-24"
+        aria-label="Tanya CS"
+    >
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5m-9 6 3.5-2.1A9 9 0 1 1 21 12a9 9 0 0 1-13 8.1L4 20Z" />
+        </svg>
+        <span class="absolute -right-0.5 -top-0.5 flex h-3 w-3">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-400 opacity-75"></span>
+            <span class="relative inline-flex h-3 w-3 rounded-full bg-accent-500"></span>
+        </span>
+    </button>
+
+    {{-- Panel --}}
+    <div
+        x-show="open"
+        x-transition.origin-bottom.right
+        class="fixed right-4 bottom-20 z-50 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl lg:bottom-24"
+        style="height: min(70vh, 32rem)"
+    >
+        {{-- Header --}}
+        <div class="flex items-center justify-between bg-brand-600 px-4 py-3 text-white">
+            <div class="flex items-center gap-2">
+                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm font-bold">CS</span>
+                <div class="leading-tight">
+                    <p class="text-sm font-semibold">Asisten {{ brand() }}</p>
+                    <p class="text-[11px] text-white/80">Biasanya balas cepat</p>
+                </div>
+            </div>
+            <button type="button" @click="open = false" class="rounded p-1 hover:bg-white/20" aria-label="Tutup">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m6 6 12 12M18 6 6 18" /></svg>
+            </button>
+        </div>
+
+        {{-- Messages --}}
+        <div x-ref="log" class="flex-1 space-y-3 overflow-y-auto bg-gray-50 px-3 py-3">
+            <template x-for="(m, i) in messages" :key="i">
+                <div :class="m.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+                    <div class="max-w-[85%] space-y-2">
+                        <div
+                            class="whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm"
+                            :class="m.role === 'user' ? 'rounded-br-sm bg-brand-600 text-white' : 'rounded-bl-sm bg-white text-gray-800 shadow-sm'"
+                            x-text="m.content"
+                        ></div>
+
+                        {{-- Related product cards --}}
+                        <template x-if="m.products && m.products.length">
+                            <div class="space-y-2">
+                                <template x-for="p in m.products" :key="p.url">
+                                    <a :href="p.url" class="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-2 shadow-sm transition hover:border-brand-300">
+                                        <img :src="p.image" :alt="p.name" class="h-12 w-12 flex-none rounded-lg object-cover" loading="lazy" />
+                                        <div class="min-w-0">
+                                            <p class="truncate text-xs font-semibold text-gray-800" x-text="p.name"></p>
+                                            <p class="text-xs font-bold text-brand-700">
+                                                <span x-text="p.price"></span>
+                                                <span x-show="!p.in_stock" class="ml-1 font-normal text-red-500">(stok habis)</span>
+                                            </p>
+                                        </div>
+                                    </a>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            {{-- Typing indicator --}}
+            <div x-show="loading" class="flex justify-start">
+                <div class="rounded-2xl rounded-bl-sm bg-white px-3 py-2 shadow-sm">
+                    <span class="flex gap-1">
+                        <span class="h-2 w-2 animate-bounce rounded-full bg-gray-400" style="animation-delay: 0ms"></span>
+                        <span class="h-2 w-2 animate-bounce rounded-full bg-gray-400" style="animation-delay: 150ms"></span>
+                        <span class="h-2 w-2 animate-bounce rounded-full bg-gray-400" style="animation-delay: 300ms"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        {{-- Input --}}
+        <form @submit.prevent="send()" class="flex items-end gap-2 border-t border-gray-200 bg-white p-2">
+            <textarea
+                x-model="input"
+                @keydown.enter.prevent="send()"
+                rows="1"
+                placeholder="Tulis pertanyaan…"
+                class="max-h-24 min-h-[2.5rem] flex-1 resize-none rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            ></textarea>
+            <button
+                type="submit"
+                :disabled="loading || !input.trim()"
+                class="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-brand-600 text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Kirim"
+            >
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.5 4.5a.5.5 0 0 1 .68-.62l16 7.66a.5.5 0 0 1 0 .9l-16 7.66a.5.5 0 0 1-.68-.62L6 12Zm0 0h6" /></svg>
+            </button>
+        </form>
+        @unless($assistantEnabled)
+            <p class="bg-amber-50 px-3 py-1.5 text-center text-[11px] text-amber-700">Mode dasar aktif · aktifkan AI di pengaturan server</p>
+        @endunless
+    </div>
+</div>
