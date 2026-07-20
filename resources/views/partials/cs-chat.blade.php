@@ -3,6 +3,7 @@
      the AI key isn't configured), so it's safe to ship before ANTHROPIC_ENABLED. --}}
 <div
     x-data="csChat({ endpoint: '{{ route('assistant.chat') }}', welcome: @js('Halo! 👋 Saya asisten '.brand().'. Ada yang bisa saya bantu seputar panel surya, inverter, baterai, atau paket PLTS?') })"
+    @open-cs-chat.window="open = true; scrollSoon()"
     x-cloak
     class="print:hidden"
 >
@@ -11,7 +12,7 @@
         type="button"
         x-show="!open"
         @click="toggle()"
-        class="fixed right-4 bottom-20 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2 lg:bottom-6"
+        class="fixed right-4 bottom-6 z-40 hidden h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2 lg:flex"
         aria-label="Tanya CS"
     >
         <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
