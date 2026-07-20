@@ -60,6 +60,7 @@
                     <th class="px-4 py-3 text-right">Harga</th>
                     <th class="px-4 py-3 text-center">Stok</th>
                     <th class="px-4 py-3 text-center">Komisi</th>
+                    <th class="px-4 py-3 text-center">Dilihat</th>
                     <th class="px-4 py-3 text-center">Status</th>
                 </tr>
             </thead>
@@ -126,13 +127,17 @@
                             @endif
                         </td>
                         <td class="px-4 py-3 text-center">
+                            <span class="font-semibold text-gray-800" title="Pengunjung unik">{{ number_format((int) $product->unique_views, 0, ',', '.') }}</span>
+                            <div class="text-[11px] text-gray-400" title="Total kunjungan (termasuk berulang)">{{ number_format((int) $product->view_count, 0, ',', '.') }} total</div>
+                        </td>
+                        <td class="px-4 py-3 text-center">
                             <span class="badge {{ $statusBadge }}">{{ $statusLabel }}</span>
                         </td>
                     </tr>
 
                     {{-- Fast-edit row --}}
                     <tr x-show="open" x-cloak class="bg-amber-50/40">
-                        <td colspan="7" class="px-4 py-4">
+                        <td colspan="8" class="px-4 py-4">
                             <form action="{{ route('admin.products.quick', $product) }}" method="POST"
                                   class="flex flex-wrap items-end gap-3">
                                 @csrf
@@ -176,7 +181,7 @@
                 </tbody>
             @empty
                 <tbody>
-                    <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">Belum ada produk.</td></tr>
+                    <tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">Belum ada produk.</td></tr>
                 </tbody>
             @endforelse
         </table>

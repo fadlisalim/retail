@@ -78,11 +78,30 @@ class ProductController extends Controller
     private function recordView(Request $request, Product $product): void
     {
         $token = session('guest_token');
+        $userId = auth()->id();
+
+        // First time this visitor sees the product? Key by user_id → session
+        // token → IP (checked BEFORE inserting the new row). If so, it's a unique
+        // view. `view_count` still counts every visit.
+        $isNewUnique = ! ProductView::query()
+            ->where('product_id', $product->id)
+            ->when($userId,
+                fn ($q) => $q->where('user_id', $userId),
+                fn ($q) => $q->whereNull('user_id')->when($token,
+                    fn ($q2) => $q2->where('session_token', $token),
+                    fn ($q2) => $q2->whereNull('session_token')->where('ip_address', $request->ip()),
+                ),
+            )
+            ->exists();
+
         $product->increment('view_count');
+        if ($isNewUnique) {
+            $product->increment('unique_views');
+        }
 
         ProductView::create([
             'product_id' => $product->id,
-            'user_id' => auth()->id(),
+            'user_id' => $userId,
             'session_token' => $token,
             'ip_address' => $request->ip(),
             'created_at' => now(),
