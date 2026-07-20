@@ -50,9 +50,9 @@
                 <div :class="m.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
                     <div class="max-w-[85%] space-y-2">
                         <div
-                            class="whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm"
+                            class="rounded-2xl px-3 py-2 text-sm leading-relaxed [&_strong]:font-semibold"
                             :class="m.role === 'user' ? 'rounded-br-sm bg-brand-600 text-white' : 'rounded-bl-sm bg-white text-gray-800 shadow-sm'"
-                            x-text="m.content"
+                            x-html="render(m.content)"
                         ></div>
 
                         {{-- Related product cards --}}

@@ -330,6 +330,36 @@ Alpine.data('csChat', (config = {}) => ({
         });
     },
 
+    /**
+     * Render a reply's light Markdown safely: escape HTML first, then convert a
+     * small whitelist (**bold**, `- ` bullets, `---` divider, line breaks). AI
+     * output isn't trusted HTML, so everything is escaped before formatting.
+     */
+    render(text) {
+        const esc = String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>');
+
+        let html = '';
+        let inList = false;
+        for (const raw of esc.split('\n')) {
+            const line = raw.trimEnd();
+            const bullet = line.match(/^\s*[-*]\s+(.*)$/);
+            if (bullet) {
+                if (!inList) { html += '<ul class="my-1 list-disc space-y-0.5 pl-4">'; inList = true; }
+                html += '<li>' + bullet[1] + '</li>';
+                continue;
+            }
+            if (inList) { html += '</ul>'; inList = false; }
+            if (/^\s*-{3,}\s*$/.test(line)) { html += '<hr class="my-2 border-gray-200">'; continue; }
+            html += line === '' ? '<br>' : line + '<br>';
+        }
+        if (inList) html += '</ul>';
+        return html;
+    },
+
     /** Prior turns as [{role, content}] — skip the generic welcome line. */
     history() {
         return this.messages
