@@ -185,9 +185,11 @@
                 $affiliate = auth()->user()?->affiliate;
                 $isActiveAffiliate = $affiliate && $affiliate->isActive();
                 // Short share links (energi.click/s/xxxx). Idempotent per URL.
-                $shareUrl = \App\Models\ShortLink::for(route('products.show', $product->slug))->shortUrl();
+                $productShort = \App\Models\ShortLink::for(route('products.show', $product->slug));
+                $shareUrl = $productShort->shortUrl();
+                // Referral link keeps the affiliate code visible: /s/{kode}-{KODE-AFILIATOR}
                 $affiliateShareUrl = $isActiveAffiliate
-                    ? \App\Models\ShortLink::for(route('products.show', $product->slug).'?ref='.$affiliate->code)->shortUrl()
+                    ? \App\Models\ShortLink::referral(route('products.show', $product->slug), $productShort->code, $affiliate->code)->shortUrl()
                     : null;
                 // Per-product commission (rate override, else default) + its rupiah value.
                 $affiliateRate = app(\App\Services\AffiliateService::class)->rateForProduct($product);

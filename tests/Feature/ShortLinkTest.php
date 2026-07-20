@@ -22,6 +22,19 @@ class ShortLinkTest extends TestCase
         $this->assertSame(2, ShortLink::count());
     }
 
+    public function test_referral_link_keeps_affiliate_code_visible(): void
+    {
+        $product = ShortLink::for('https://energi.click/produk/foo');
+        $ref = ShortLink::referral('https://energi.click/produk/foo', $product->code, 'K4m2Qp');
+
+        // Code = {productCode}-{affiliateCode}, resolves to the ?ref= URL.
+        $this->assertSame($product->code.'-K4m2Qp', $ref->code);
+        $this->assertStringEndsWith('-K4m2Qp', $ref->code);
+
+        $this->get('/s/'.$ref->code)
+            ->assertRedirect('https://energi.click/produk/foo?ref=K4m2Qp');
+    }
+
     public function test_resolve_redirects_and_counts_click(): void
     {
         $link = ShortLink::for('https://energi.click/produk/foo?ref=ABC');

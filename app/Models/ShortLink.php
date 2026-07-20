@@ -21,6 +21,21 @@ class ShortLink extends Model
         );
     }
 
+    /**
+     * Get (or create) a referral short link whose code keeps the affiliate code
+     * visible: {productCode}-{affiliateCode} → e.g. /s/Ab3xYz-K4m2Qp. Resolves to
+     * the product URL with ?ref=CODE so attribution still fires.
+     */
+    public static function referral(string $productUrl, string $productCode, string $affiliateCode): self
+    {
+        $url = $productUrl.(str_contains($productUrl, '?') ? '&' : '?').'ref='.$affiliateCode;
+
+        return static::firstOrCreate(
+            ['url_hash' => sha1($url)],
+            ['url' => $url, 'code' => $productCode.'-'.$affiliateCode],
+        );
+    }
+
     /** The short, shareable URL, e.g. https://energi.click/s/Ab3xYz. */
     public function shortUrl(): string
     {
