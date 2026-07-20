@@ -117,6 +117,10 @@
                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.5 4.5a.5.5 0 0 1 .68-.62l16 7.66a.5.5 0 0 1 0 .9l-16 7.66a.5.5 0 0 1-.68-.62L6 12Zm0 0h6" /></svg>
             </button>
         </form>
+        {{-- Privacy note — we may store name/phone the customer shares (leads). --}}
+        <p class="border-t border-gray-100 bg-white px-3 pb-2 pt-1 text-center text-[10px] leading-snug text-gray-400">
+            🔒 Percakapan tersimpan untuk peningkatan layanan. Nama/No. HP yang Kakak bagikan hanya dipakai tim {{ brand() }} untuk follow-up — tidak disebarluaskan.
+        </p>
         @unless($assistantEnabled)
             <p class="bg-amber-50 px-3 py-1.5 text-center text-[11px] text-amber-700">Mode dasar aktif · aktifkan AI di pengaturan server</p>
         @endunless
