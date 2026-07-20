@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AssistantConversation;
 use App\Models\AssistantDailyStat;
 use App\Models\AssistantDailyTerm;
+use App\Models\AssistantLead;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -78,12 +79,21 @@ class AssistantLogController extends Controller
             $conversations = $query->paginate(25)->withQueryString();
         }
 
+        // Leads the assistant captured (name/phone shared in chat), newest first.
+        $leads = AssistantLead::latest('updated_at')->limit(30)->get();
+        $leadsTotal = AssistantLead::count();
+        // For labelling the session rows on this page with the customer's name.
+        $leadsBySession = $sessions
+            ? AssistantLead::whereIn('session_id', collect($sessions->items())->pluck('session_id'))->get()->keyBy('session_id')
+            : collect();
+
         $logRetention = (int) config('services.anthropic.log_retention_days', 30);
         $statsRetention = (int) config('services.anthropic.stats_retention_days', 180);
 
         return view('admin.assistant', compact(
             'summary', 'trend', 'trendMax', 'topKeywords', 'topProducts',
-            'mode', 'sessions', 'threads', 'conversations', 'logRetention', 'statsRetention',
+            'mode', 'sessions', 'threads', 'conversations', 'leads', 'leadsTotal',
+            'leadsBySession', 'logRetention', 'statsRetention',
         ));
     }
 }

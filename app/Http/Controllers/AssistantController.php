@@ -26,6 +26,7 @@ class AssistantController extends Controller
 
         $result = $assistant->ask($data['message'], $data['history'] ?? []);
 
+        $analytics->captureLead($result['lead'] ?? null, $data['session_id'] ?? null);
         $analytics->record($data['message'], $result, $data['session_id'] ?? null, $request->ip());
 
         return response()->json([

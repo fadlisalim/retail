@@ -73,6 +73,34 @@
         </div>
     </div>
 
+    {{-- Leads (nama & HP yang dibagikan pelanggan di chat) --}}
+    <div class="card mb-6 p-4">
+        <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-gray-700">Leads dari Chat</h3>
+            <span class="badge bg-brand-50 text-brand-700">{{ number_format($leadsTotal, 0, ',', '.') }} total</span>
+        </div>
+        @forelse ($leads as $lead)
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-50 py-2 text-sm last:border-0">
+                <div class="min-w-0">
+                    <span class="font-medium text-gray-800">{{ $lead->name ?? 'Tanpa nama' }}</span>
+                    <span class="ml-2 font-mono text-[10px] text-gray-300">{{ \Illuminate\Support\Str::limit($lead->session_id, 8, '') }}</span>
+                    <span class="ml-2 text-xs text-gray-400">{{ $lead->updated_at?->format('d/m H:i') }}</span>
+                </div>
+                @if ($lead->phone)
+                    <a href="https://wa.me/{{ $lead->phone }}" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-100">
+                        <svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.978-1.207z"/></svg>
+                        {{ $lead->phone }}
+                    </a>
+                @else
+                    <span class="text-xs text-gray-400">HP belum ada</span>
+                @endif
+            </div>
+        @empty
+            <p class="py-4 text-center text-sm text-gray-400">Belum ada lead. Reika akan menanyakan nama & nomor HP pelanggan secara sopan di percakapan.</p>
+        @endforelse
+    </div>
+
     {{-- Log transkrip --}}
     <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 class="text-sm font-semibold text-gray-700">Percakapan</h3>
@@ -91,9 +119,15 @@
                 <div class="card overflow-hidden" x-data="{ open: false }">
                     <button type="button" @click="open = !open" class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-gray-50">
                         <div class="min-w-0">
+                            @php($lead = $leadsBySession[$s->session_id] ?? null)
                             <p class="flex items-center gap-2 text-sm font-medium text-gray-800">
                                 <svg class="h-4 w-4 flex-none text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5m-9 6 3.5-2.1A9 9 0 1 1 21 12a9 9 0 0 1-13 8.1L4 20Z"/></svg>
-                                <span class="font-mono text-xs text-gray-500">{{ \Illuminate\Support\Str::limit($s->session_id, 12, '') }}</span>
+                                @if ($lead?->name || $lead?->phone)
+                                    <span class="truncate">{{ $lead->name ?? 'Tanpa nama' }}</span>
+                                    @if ($lead->phone)<span class="text-xs font-normal text-green-600">{{ $lead->phone }}</span>@endif
+                                @else
+                                    <span class="font-mono text-xs text-gray-500">{{ \Illuminate\Support\Str::limit($s->session_id, 12, '') }}</span>
+                                @endif
                                 <span class="badge bg-gray-100 text-gray-600">{{ $s->turns }} pesan</span>
                                 @if ($s->fallbacks > 0)
                                     <span class="badge bg-amber-100 text-amber-700">{{ $s->fallbacks }} fallback</span>

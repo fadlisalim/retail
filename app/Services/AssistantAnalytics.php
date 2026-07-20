@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AssistantConversation;
 use App\Models\AssistantDailyStat;
 use App\Models\AssistantDailyTerm;
+use App\Models\AssistantLead;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -77,6 +78,36 @@ class AssistantAnalytics
             }
         } catch (\Throwable $e) {
             Log::warning('Assistant analytics failed: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Upsert a lead (name/phone the customer shared in chat) for a session.
+     * Independent of the logging flag — capturing contacts is the point.
+     * Only fills/overwrites fields that actually arrived.
+     */
+    public function captureLead(?array $lead, ?string $sessionId): void
+    {
+        if (! $lead || ! $sessionId) {
+            return;
+        }
+
+        try {
+            $sessionId = Str::limit(preg_replace('/[^A-Za-z0-9_-]/', '', $sessionId), 64, '');
+            if ($sessionId === '') {
+                return;
+            }
+
+            $row = AssistantLead::firstOrNew(['session_id' => $sessionId]);
+            if (! empty($lead['name'])) {
+                $row->name = $lead['name'];
+            }
+            if (! empty($lead['phone'])) {
+                $row->phone = $lead['phone'];
+            }
+            $row->save();
+        } catch (\Throwable $e) {
+            Log::warning('Assistant lead capture failed: '.$e->getMessage());
         }
     }
 

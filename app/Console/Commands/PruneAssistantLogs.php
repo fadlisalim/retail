@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\AssistantConversation;
 use App\Models\AssistantDailyStat;
 use App\Models\AssistantDailyTerm;
+use App\Models\AssistantLead;
 use Illuminate\Console\Command;
 
 /**
@@ -31,18 +32,23 @@ class PruneAssistantLogs extends Command
         $conversations = AssistantConversation::where('created_at', '<', $logCutoff);
         $stats = AssistantDailyStat::whereDate('day', '<', $statsCutoff);
         $terms = AssistantDailyTerm::whereDate('day', '<', $statsCutoff);
+        // Leads are personal data too — kept as long as the stats window, based
+        // on when the lead was last updated (a returning lead stays fresh).
+        $leads = AssistantLead::where('updated_at', '<', now()->subDays($statsDays));
 
         if ($dry) {
             $this->info("Transkrip > {$logDays} hari: ".$conversations->count());
             $this->info("Statistik harian > {$statsDays} hari: ".($stats->count() + $terms->count()));
+            $this->info("Leads > {$statsDays} hari: ".$leads->count());
 
             return self::SUCCESS;
         }
 
         $deletedLogs = $conversations->delete();
         $deletedStats = $stats->delete() + $terms->delete();
+        $deletedLeads = $leads->delete();
 
-        $this->info("Hapus {$deletedLogs} transkrip (> {$logDays} hari) & {$deletedStats} baris statistik (> {$statsDays} hari).");
+        $this->info("Hapus {$deletedLogs} transkrip (> {$logDays} hari), {$deletedStats} baris statistik & {$deletedLeads} leads (> {$statsDays} hari).");
 
         return self::SUCCESS;
     }

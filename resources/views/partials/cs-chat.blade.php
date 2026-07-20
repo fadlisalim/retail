@@ -2,7 +2,7 @@
 {{-- CS chat assistant. Always rendered (works as a WhatsApp hand-off even when
      the AI key isn't configured), so it's safe to ship before ANTHROPIC_ENABLED. --}}
 <div
-    x-data="csChat({ endpoint: '{{ route('assistant.chat') }}', welcome: @js('Halo, aku Reika dari '.brand().' ⚡ Mau hemat tagihan PLN, siap-siap saat mati lampu, atau cari power station buat outdoor? Ceritain kebutuhanmu, nanti aku bantu carikan yang paling pas 😊') })"
+    x-data="csChat({ endpoint: '{{ route('assistant.chat') }}', welcome: @js('Halo Kak, aku Reika dari '.brand().' ⚡ Mau hemat tagihan PLN, siap-siap saat mati lampu, atau cari power station buat outdoor? Ceritakan saja kebutuhan Kakak, nanti aku bantu carikan yang paling pas 😊') })"
     @open-cs-chat.window="open = true; scrollSoon()"
     x-cloak
     class="print:hidden"

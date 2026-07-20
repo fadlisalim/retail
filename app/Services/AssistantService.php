@@ -107,7 +107,11 @@ class AssistantService
                     $escalate = str_contains($reply, '[[WA]]');
                     $reply = trim(preg_replace('/\s*\[\[WA\]\]\s*/', '', $reply));
 
-                    return $this->result(true, $reply, $products, $escalate);
+                    // Hidden lead token [[DATA nama="..." hp="..."]] — emitted when
+                    // the customer shares their name/phone. Stripped before display.
+                    [$reply, $lead] = $this->extractLead($reply);
+
+                    return $this->result(true, $reply, $products, $escalate, $lead);
                 }
             }
 
@@ -248,9 +252,15 @@ class AssistantService
 Kamu adalah "Reika", asisten penjualan sekaligus konsultan energi surya di {$brand} (by {$company['legal_name']}). Kamu ramah, antusias, berpengetahuan, dan jago membantu pelanggan menemukan produk yang PAS — panel surya, inverter, baterai, paket PLTS, dan power station portable. Tujuanmu: bantu pelanggan yakin & mengambil langkah berikutnya (checkout atau konsultasi), tanpa memaksa dan tanpa berbohong.
 
 GAYA BICARA:
-- Bahasa Indonesia yang hangat, akrab, dan meyakinkan. Ringkas tapi berenergi. Emoji secukupnya.
+- Bahasa Indonesia yang hangat, formal tapi santai. Panggil pelanggan "Kakak" / "Kak" — JANGAN pernah pakai "kamu", "Anda", atau "bro". Sebut dirimu "aku" atau "Reika". Ringkas tapi berenergi. Emoji secukupnya.
+- Kalau sudah tahu nama pelanggan, panggil dengan "Kak [Nama]" — terasa lebih akrab.
 - Sebut harga dalam Rupiah (mis. "Rp 6.700.000").
 - Jual MANFAAT, bukan sekadar angka. Terjemahkan spesifikasi jadi keuntungan nyata (mis. "2000Wh — cukup nyalakan kulkas + lampu + charge HP semalaman saat mati lampu").
+
+DATA PELANGGAN (nama & nomor HP):
+- Di awal percakapan (setelah menjawab pertanyaan pertama), tanyakan dengan sopan nama pelanggan: "Ngomong-ngomong, boleh tahu nama Kakak? Biar enak ngobrolnya 😊".
+- Di momen yang pas (misalnya saat pelanggan tertarik suatu produk atau butuh penawaran/perhitungan), tawarkan sekali: minta nomor HP/WhatsApp supaya tim {$brand} bisa bantu follow-up, kirim penawaran, atau info promo. Jangan memaksa — kalau pelanggan tidak mau, hormati dan JANGAN tanya lagi.
+- SETIAP KALI pelanggan menyebutkan nama dan/atau nomor HP-nya (kapan pun), akhiri pesanmu dengan token pada baris terpisah berformat persis: [[DATA nama="..." hp="..."]] — isi hanya field yang kamu tahu (boleh salah satu saja). Token ini TIDAK terlihat oleh pelanggan (otomatis dihapus), jadi jangan menyebut-nyebutnya. Jangan pernah memasukkan data yang tidak disebut pelanggan sendiri.
 
 ALUR MEMBANTU (persuasif):
 1. Pahami kebutuhan dulu. Kalau permintaan masih umum, tanya SATU hal paling penting (budget, dipakai untuk apa, atau perkiraan kebutuhan daya) — jangan bertubi-tubi.
@@ -310,7 +320,7 @@ PROMPT;
     }
 
     /** Build the standard result payload. Fallback/escalation carries a WA link. */
-    private function result(bool $ok, string $reply, array $products, bool $escalate): array
+    private function result(bool $ok, string $reply, array $products, bool $escalate, ?array $lead = null): array
     {
         return [
             'ok' => $ok,
@@ -318,8 +328,53 @@ PROMPT;
             'products' => $products,
             'escalate' => $escalate,
             'whatsapp' => $escalate ? $this->whatsappUrl() : null,
+            'lead' => $lead,
             'error' => $ok ? null : ($this->lastResult['body'] ?? null),
         ];
+    }
+
+    /**
+     * Strip the hidden [[DATA nama="..." hp="..."]] token from a reply and
+     * return [cleanReply, lead|null]. The phone is normalised to international
+     * digits (08… → 62…) and dropped when implausible.
+     */
+    private function extractLead(string $reply): array
+    {
+        $lead = null;
+
+        $clean = preg_replace_callback('/\s*\[\[DATA([^\]]*)\]\]\s*/i', function ($m) use (&$lead) {
+            preg_match('/nama\s*=\s*"([^"]*)"/iu', $m[1], $name);
+            preg_match('/hp\s*=\s*"([^"]*)"/iu', $m[1], $phone);
+
+            $name = trim($name[1] ?? '');
+            $phone = $this->normalizePhone($phone[1] ?? '');
+
+            if ($name !== '' || $phone !== null) {
+                $lead = array_merge($lead ?? [], array_filter([
+                    'name' => $name !== '' ? Str::limit($name, 120, '') : null,
+                    'phone' => $phone,
+                ]));
+            }
+
+            return "\n";
+        }, $reply);
+
+        return [trim($clean), $lead];
+    }
+
+    /** Digits-only international phone (leading 0 → 62), or null if implausible. */
+    private function normalizePhone(string $raw): ?string
+    {
+        $digits = preg_replace('/\D+/', '', $raw);
+        if (strlen($digits) < 8 || strlen($digits) > 20) {
+            return null;
+        }
+
+        if (str_starts_with($digits, '0')) {
+            $digits = '62'.ltrim(substr($digits, 1), '0');
+        }
+
+        return $digits;
     }
 
     /** A fallback reply always offers the WhatsApp hand-off button. */
