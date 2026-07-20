@@ -2,7 +2,7 @@
 {{-- CS chat assistant. Always rendered (works as a WhatsApp hand-off even when
      the AI key isn't configured), so it's safe to ship before ANTHROPIC_ENABLED. --}}
 <div
-    x-data="csChat({ endpoint: '{{ route('assistant.chat') }}', welcome: @js('Halo! 👋 Saya asisten '.brand().'. Ada yang bisa saya bantu seputar panel surya, inverter, baterai, atau paket PLTS?') })"
+    x-data="csChat({ endpoint: '{{ route('assistant.chat') }}', welcome: @js('Halo, aku Reika dari '.brand().' ⚡ Mau hemat tagihan PLN, siap-siap saat mati lampu, atau cari power station buat outdoor? Ceritain kebutuhanmu, nanti aku bantu carikan yang paling pas 😊') })"
     @open-cs-chat.window="open = true; scrollSoon()"
     x-cloak
     class="print:hidden"
@@ -34,9 +34,9 @@
         {{-- Header --}}
         <div class="flex items-center justify-between bg-brand-600 px-4 py-3 text-white">
             <div class="flex items-center gap-2">
-                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm font-bold">CS</span>
+                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm font-bold">R</span>
                 <div class="leading-tight">
-                    <p class="text-sm font-semibold">Asisten {{ brand() }}</p>
+                    <p class="text-sm font-semibold">Reika · Asisten {{ brand() }}</p>
                     <p class="text-[11px] text-white/80">Biasanya balas cepat</p>
                 </div>
             </div>
