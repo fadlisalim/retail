@@ -2,7 +2,14 @@
 {{-- CS chat assistant. Always rendered (works as a WhatsApp hand-off even when
      the AI key isn't configured), so it's safe to ship before ANTHROPIC_ENABLED. --}}
 <div
-    x-data="csChat({ endpoint: '{{ route('assistant.chat') }}', welcome: @js('Halo Kak, aku Reika dari '.brand().' ⚡ Mau hemat tagihan PLN, siap-siap saat mati lampu, atau cari power station buat outdoor? Ceritakan saja kebutuhan Kakak, nanti aku bantu carikan yang paling pas 😊') })"
+    @php($csWelcomes = [
+        'Halo Kak, aku Reika dari '.brand().' ⚡ Lagi cari panel surya, inverter, atau baterai? Ceritakan saja kebutuhan Kakak, nanti aku bantu carikan yang paling pas 😊',
+        'Hai Kak, Reika di sini 🙌 Mau beli panel surya satuan, upgrade inverter, atau tambah baterai? Tanya-tanya dulu boleh banget, gratis kok 😊',
+        'Selamat datang di '.brand().', Kak! Aku Reika ☀️ Dari panel surya, inverter, baterai satuan sampai paket PLTS lengkap — semua bisa aku bantu. Kakak lagi butuh apa nih?',
+        'Halo Kak 👋 Aku Reika. Mau hemat tagihan PLN, siap-siap saat mati lampu, atau cari power station buat outdoor? Aku bantu pilihkan ya 😊',
+        'Hai Kak, aku Reika dari '.brand().' ⚡ Butuh panel surya, inverter, atau baterai? Kalau produk yang dicari belum ada di katalog, tim kami juga bisa bantu carikan lho. Cerita dulu yuk 😊',
+    ])
+    x-data="csChat({ endpoint: '{{ route('assistant.chat') }}', welcomes: @js($csWelcomes) })"
     @open-cs-chat.window="open = true; scrollSoon()"
     x-cloak
     class="print:hidden"

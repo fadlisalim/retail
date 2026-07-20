@@ -292,12 +292,14 @@ Alpine.data('csChat', (config = {}) => ({
     input: '',
     messages: [],
     endpoint: config.endpoint || '/api/asisten/tanya',
-    welcome: config.welcome || 'Halo! 👋 Ada yang bisa saya bantu seputar produk kami?',
+    welcomes: config.welcomes || [config.welcome || 'Halo Kak! 👋 Ada yang bisa aku bantu seputar produk kami?'],
     sessionId: '',
 
     init() {
         this.sessionId = this.resolveSession();
-        this.messages.push({ role: 'assistant', content: this.welcome, products: [] });
+        // Random greeting so the widget feels alive on every visit.
+        const welcome = this.welcomes[Math.floor(Math.random() * this.welcomes.length)];
+        this.messages.push({ role: 'assistant', content: welcome, products: [] });
     },
 
     /** Stable per-browser id so the admin can group a conversation's turns. */
