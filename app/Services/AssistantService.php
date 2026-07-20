@@ -21,13 +21,24 @@ class AssistantService
     /** Diagnostics from the last ask(): ['ok'=>bool,'status'=>?int,'body'=>string]. */
     public ?array $lastResult = null;
 
-    /** Words that carry no product-retrieval signal (kept short & pragmatic). */
+    /**
+     * Words that carry no product-retrieval signal — dropped before matching so
+     * retrieval focuses on real product/brand terms (e.g. "bluetti", "panel
+     * surya", "inverter") instead of generic words like "garansi"/"lama" that
+     * appear in many product descriptions and pollute the results.
+     */
     private const STOPWORDS = [
-        'ada', 'apa', 'apakah', 'yang', 'untuk', 'dengan', 'dan', 'atau', 'ini', 'itu',
-        'saya', 'kamu', 'mau', 'ingin', 'bisa', 'gimana', 'bagaimana', 'berapa', 'harga',
-        'produk', 'barang', 'tolong', 'mohon', 'min', 'kak', 'bro', 'gan', 'nya', 'aja',
-        'dong', 'ya', 'kah', 'the', 'and', 'for', 'with', 'what', 'how', 'much', 'punya',
-        'cari', 'jual', 'beli', 'stok', 'ready', 'tersedia', 'butuh', 'perlu', 'rekomendasi',
+        // question / filler / pronouns
+        'ada', 'apa', 'apakah', 'yang', 'yg', 'untuk', 'dengan', 'dan', 'atau', 'ini', 'itu',
+        'saya', 'kamu', 'mau', 'ingin', 'bisa', 'gimana', 'bagaimana', 'berapa', 'mana', 'kenapa',
+        'tolong', 'mohon', 'min', 'kak', 'bro', 'gan', 'nya', 'aja', 'dong', 'deh', 'sih', 'kok',
+        'ya', 'kah', 'punya', 'the', 'and', 'for', 'with', 'what', 'how', 'much', 'lebih', 'paling',
+        // generic commerce / spec words (match too many products via description)
+        'produk', 'barang', 'harga', 'cari', 'jual', 'beli', 'stok', 'ready', 'tersedia', 'butuh',
+        'perlu', 'rekomendasi', 'garansi', 'lama', 'tahun', 'thn', 'merk', 'merek', 'tipe', 'model',
+        'warna', 'ukuran', 'berat', 'spesifikasi', 'spek', 'fitur', 'kelebihan', 'kualitas', 'promo',
+        'diskon', 'murah', 'mahal', 'bagus', 'cocok', 'kirim', 'ongkir', 'bayar', 'info', 'detail',
+        'tanya', 'sekitar', 'kira', 'kisaran', 'daya', 'watt',
     ];
 
     public function __construct(
@@ -153,19 +164,41 @@ class AssistantService
         }
 
         try {
+            // Qualifier: a token must hit a STRONG field (name/keywords/sku/model/
+            // brand). Description is deliberately EXCLUDED here — otherwise a
+            // battery/inverter whose description merely mentions "panel surya"
+            // would surface for a "panel surya" question. Relevance is then scored
+            // so name matches rank above keyword matches, and the top 6 are the
+            // genuinely on-topic products.
+            $scoreParts = [];
+            $scoreBindings = [];
+            foreach ($tokens as $token) {
+                $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $token).'%';
+                $scoreParts[] = '(CASE WHEN name LIKE ? THEN 3 ELSE 0 END)'
+                    .' + (CASE WHEN keywords LIKE ? THEN 2 ELSE 0 END)'
+                    .' + (CASE WHEN COALESCE(short_description, description, \'\') LIKE ? THEN 1 ELSE 0 END)';
+                array_push($scoreBindings, $like, $like, $like);
+            }
+
             $results = Product::published()
                 ->with(['brand', 'category'])
+                ->select('products.*')
+                ->selectRaw('('.implode(' + ', $scoreParts).') as relevance', $scoreBindings)
                 ->where(function ($q) use ($tokens) {
                     foreach ($tokens as $token) {
                         $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $token).'%';
+                        // Qualify on the product NAME, SKU/model, or brand only.
+                        // `keywords` is a broad SEO blob (every product carries
+                        // generic terms like "panel surya", "energi surya"), so
+                        // matching it here would surface unrelated products — it's
+                        // used for scoring instead, never as a qualifier.
                         $q->orWhere('name', 'like', $like)
                             ->orWhere('sku', 'like', $like)
                             ->orWhere('model', 'like', $like)
-                            ->orWhere('short_description', 'like', $like)
-                            ->orWhere('keywords', 'like', $like)
                             ->orWhereHas('brand', fn ($b) => $b->where('name', 'like', $like));
                     }
                 })
+                ->orderByDesc('relevance')
                 ->orderByDesc('is_featured')
                 ->orderByDesc('sold_count')
                 ->limit(6)
@@ -177,6 +210,7 @@ class AssistantService
         return $results
             ->map(fn (Product $p) => [
                 'name' => $p->name,
+                'slug' => $p->slug,
                 'url' => route('products.show', $p->slug),
                 'price' => rupiah($p->effectivePrice()),
                 'original_price' => $p->isOnSale() ? rupiah((float) $p->price) : null,
@@ -256,7 +290,7 @@ PROMPT;
     }
 
     /** Significant search tokens from a free-text question (max 6, deduped). */
-    private function keywords(string $question): array
+    public function keywords(string $question): array
     {
         $words = preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower($question), -1, PREG_SPLIT_NO_EMPTY) ?: [];
         $tokens = [];

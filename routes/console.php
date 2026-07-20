@@ -20,3 +20,6 @@ Schedule::command('stock:release-expired')->everyFiveMinutes();
 
 // Auto-cancel unpaid orders past the payment window (default 24h).
 Schedule::command('orders:expire-unpaid')->hourly();
+
+// Retention: prune old CS-assistant transcripts (30d) & stats rollups (180d).
+Schedule::command('assistant:prune')->daily();

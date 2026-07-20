@@ -39,6 +39,7 @@
                 ['admin.faqs.index', 'FAQ', 'content.manage'],
                 ['admin.settings.edit', 'Pengaturan', 'setting.manage'],
                 ['admin.users.index', 'User Admin', 'user.manage'],
+                ['admin.assistant.index', 'CS Assistant', 'assistant.view'],
                 ['admin.audit.index', 'Audit Log', 'audit.view'],
             ];
         @endphp

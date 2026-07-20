@@ -58,6 +58,12 @@ return [
         'api_key' => env('ANTHROPIC_API_KEY'),
         'base_url' => env('ANTHROPIC_BASE_URL', 'https://api.anthropic.com'),
         'model' => env('ANTHROPIC_MODEL', 'claude-sonnet-5'),
+        // Chat logging & retention. Raw transcripts are kept for a short window
+        // (may contain names/phones a customer typed); aggregated daily stats are
+        // non-personal and kept longer. Pruned daily by `assistant:prune`.
+        'logging' => (bool) env('ANTHROPIC_LOG', true),
+        'log_retention_days' => (int) env('ANTHROPIC_LOG_DAYS', 30),
+        'stats_retention_days' => (int) env('ANTHROPIC_STATS_DAYS', 180),
     ],
 
 ];

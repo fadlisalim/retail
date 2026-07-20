@@ -313,4 +313,8 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::middleware('permission:audit.view')->group(function () {
         Route::get('/audit-log', [Admin\AuditController::class, 'index'])->name('audit.index');
     });
+
+    Route::middleware('permission:assistant.view')->group(function () {
+        Route::get('/cs-assistant', [Admin\AssistantLogController::class, 'index'])->name('assistant.index');
+    });
 });

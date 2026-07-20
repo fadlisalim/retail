@@ -291,11 +291,27 @@ Alpine.data('csChat', (config = {}) => ({
     loading: false,
     input: '',
     messages: [],
-    endpoint: config.endpoint || '/asisten/tanya',
+    endpoint: config.endpoint || '/api/asisten/tanya',
     welcome: config.welcome || 'Halo! 👋 Ada yang bisa saya bantu seputar produk kami?',
+    sessionId: '',
 
     init() {
+        this.sessionId = this.resolveSession();
         this.messages.push({ role: 'assistant', content: this.welcome, products: [] });
+    },
+
+    /** Stable per-browser id so the admin can group a conversation's turns. */
+    resolveSession() {
+        try {
+            let id = localStorage.getItem('cs_sid');
+            if (!id) {
+                id = (crypto.randomUUID?.() || String(Date.now()) + Math.random().toString(36).slice(2)).replace(/[^A-Za-z0-9_-]/g, '');
+                localStorage.setItem('cs_sid', id);
+            }
+            return id.slice(0, 64);
+        } catch (e) {
+            return '';
+        }
     },
 
     csrf() {
@@ -336,7 +352,7 @@ Alpine.data('csChat', (config = {}) => ({
             const res = await fetch(this.endpoint, {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': this.csrf(), 'Content-Type': 'application/json', Accept: 'application/json' },
-                body: JSON.stringify({ message: text, history }),
+                body: JSON.stringify({ message: text, history, session_id: this.sessionId }),
             });
             const data = await res.json().catch(() => ({}));
             if (res.ok && data.reply) {
