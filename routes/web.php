@@ -48,6 +48,9 @@ Route::get('/kategori/{category:slug}', [CatalogController::class, 'category'])-
 Route::get('/brand', [CatalogController::class, 'brands'])->name('brands.index');
 Route::get('/brand/{brand:slug}', [CatalogController::class, 'brand'])->name('brands.show');
 
+// Short-link resolver — e.g. /s/Ab3xYz → redirect to the real (possibly ?ref=) URL.
+Route::get('/s/{code}', [\App\Http\Controllers\ShortLinkController::class, 'resolve'])->name('short.resolve');
+
 // Product detail resolves slug manually (to support old-slug redirects).
 Route::get('/produk/{slug}', [ProductController::class, 'show'])->name('products.show');
 // 1200x630 social-share (og:image) card for a product — landscape so WhatsApp
