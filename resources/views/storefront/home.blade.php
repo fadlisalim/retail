@@ -271,9 +271,6 @@
             <p class="mt-2 text-sm text-gray-300">Tim Rekasurya siap membantu konsultasi kebutuhan, survei lokasi, hingga instalasi. Dapatkan penawaran khusus untuk pengadaan skala proyek.</p>
             <div class="mt-4 flex flex-wrap gap-3">
                 <a href="{{ route('quotations.create') }}" class="btn-accent">Minta Penawaran</a>
-                @if ($whatsappEnabled)
-                    <a href="{{ whatsapp_link('Halo Rekasurya, saya ingin konsultasi kebutuhan PLTS.') }}" target="_blank" rel="noopener" class="btn-outline bg-white/10 text-white hover:bg-white/20">Konsultasi WhatsApp</a>
-                @endif
             </div>
         </div>
         @if ($quotationBanner)

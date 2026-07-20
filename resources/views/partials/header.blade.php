@@ -1,4 +1,3 @@
-@php($waConsult = whatsapp_link($siteSettings->get('whatsapp.greeting', 'Halo Rekasurya, saya ingin berkonsultasi.')))
 <header class="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur" x-data="{ mega: false }">
     {{-- Top utility strip (desktop) --}}
     <div class="hidden border-b border-gray-100 bg-brand-700 text-white lg:block">
@@ -76,12 +75,6 @@
             <a href="{{ auth()->check() ? route('account.dashboard') : route('login') }}" class="rounded-lg p-2 text-gray-600 hover:bg-gray-100" aria-label="Akun">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>
             </a>
-            @if($whatsappEnabled)
-            <a href="{{ $waConsult }}" target="_blank" rel="noopener" class="btn-accent hidden xl:inline-flex">
-                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24z"/></svg>
-                Konsultasi
-            </a>
-            @endif
         </div>
     </div>
 

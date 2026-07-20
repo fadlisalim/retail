@@ -31,6 +31,8 @@ class AssistantController extends Controller
         return response()->json([
             'reply' => $result['reply'],
             'products' => $result['products'],
+            'escalate' => $result['escalate'] ?? false,
+            'whatsapp' => $result['whatsapp'] ?? null,
         ]);
     }
 }

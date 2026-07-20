@@ -53,7 +53,8 @@ class AssistantService
     /**
      * Answer a customer question. $history is prior turns as
      * [['role'=>'user'|'assistant','content'=>string], ...]. Returns
-     * ['ok'=>bool,'reply'=>string,'products'=>array,'error'=>?string].
+     * ['ok'=>bool,'reply'=>string,'products'=>array,'escalate'=>bool,
+     *  'whatsapp'=>?string,'error'=>?string].
      */
     public function ask(string $question, array $history = []): array
     {
@@ -93,14 +94,20 @@ class AssistantService
             if ($response->successful()) {
                 $stop = $response->json('stop_reason');
                 if ($stop === 'refusal') {
-                    return $this->fallback('Maaf, pertanyaan itu di luar yang bisa aku bantu. '.$this->contactLine(), $products);
+                    return $this->fallback('Maaf, pertanyaan itu di luar yang bisa aku bantu. Untuk hal ini, silakan hubungi CS kami lewat tombol WhatsApp di bawah ya 🙏', $products);
                 }
 
                 $reply = $this->extractText($response->json('content', []));
                 if ($reply !== '') {
                     $this->lastResult['ok'] = true;
 
-                    return ['ok' => true, 'reply' => $reply, 'products' => $products, 'error' => null];
+                    // The model appends the token [[WA]] when it can't answer from
+                    // the catalogue or the customer needs a human — we strip it and
+                    // surface a WhatsApp button instead of a raw number.
+                    $escalate = str_contains($reply, '[[WA]]');
+                    $reply = trim(preg_replace('/\s*\[\[WA\]\]\s*/', '', $reply));
+
+                    return $this->result(true, $reply, $products, $escalate);
                 }
             }
 
@@ -110,7 +117,7 @@ class AssistantService
             Log::warning('Anthropic chat error: '.$e->getMessage());
         }
 
-        return $this->fallback('Maaf, asisten lagi sibuk. Coba lagi sebentar ya, atau '.lcfirst($this->contactLine()), $products);
+        return $this->fallback('Maaf, asisten lagi sibuk. Coba lagi sebentar ya, atau hubungi CS kami lewat tombol WhatsApp di bawah 🙏', $products);
     }
 
     /** Pull the plain text out of Claude's content-block array. */
@@ -229,7 +236,6 @@ class AssistantService
     {
         $company = $this->settings->company();
         $brand = $company['brand_name'] ?? brand();
-        $wa = $this->settings->whatsappNumber();
 
         $catalog = $this->catalogBlock($products);
 
@@ -242,8 +248,10 @@ GAYA:
 
 ATURAN PENTING:
 - Untuk info produk (harga, stok, spesifikasi, ketersediaan), HANYA gunakan data dari "KATALOG TERKAIT" di bawah. Jika produk yang ditanya tidak ada di katalog, katakan kamu belum menemukannya dan sarankan cari di halaman katalog atau tanyakan lebih spesifik — jangan menebak.
+- JANGAN menempelkan URL atau link produk di dalam teks jawaban. Kartu produk yang bisa diklik OTOMATIS muncul di bawah jawabanmu untuk setiap produk yang relevan. Cukup sebut nama produknya (persis seperti di KATALOG TERKAIT) beserta harga/alasan singkat; biarkan kartu yang menampilkan link.
 - Untuk pertanyaan umum seputar solar/PLTS/energi (cara kerja, tips memilih, estimasi kebutuhan daya), kamu boleh menjawab dengan pengetahuan umum, tapi tetap netral dan jujur bila tidak yakin.
-- Jika pelanggan mau memesan, komplain, minta penawaran khusus/instalasi, atau butuh bantuan manusia, arahkan dengan sopan ke WhatsApp {$wa}. Untuk pembelian langsung, arahkan menambahkan produk ke keranjang di situs.
+- Jika kamu TIDAK bisa menjawab dari katalog, ATAU pelanggan butuh konsultasi lebih detail, penawaran khusus/instalasi, komplain, atau bantuan manusia: jawab sewajarnya, lalu akhiri pesan dengan token `[[WA]]` pada baris terpisah. Token itu otomatis diubah menjadi tombol WhatsApp — JANGAN menulis nomor WhatsApp manual. Untuk pertanyaan biasa yang sudah bisa kamu jawab, JANGAN tambahkan token itu.
+- Untuk pembelian langsung, arahkan pelanggan menambahkan produk ke keranjang di situs.
 - Jangan pernah meminta atau memproses data sensitif (password, nomor kartu, OTP).
 - Kamu tidak punya akses internet; jangan mengklaim mencari di web.
 
@@ -274,19 +282,36 @@ PROMPT;
 
     private function offlineReply(): string
     {
-        return 'Halo! 👋 Asisten otomatis lagi belum aktif. Untuk info produk & pemesanan, silakan '.lcfirst($this->contactLine());
+        return 'Halo! 👋 Asisten otomatis lagi belum aktif. Untuk info produk & pemesanan, silakan hubungi CS kami lewat tombol WhatsApp di bawah ya.';
     }
 
-    private function contactLine(): string
+    /** Build the standard result payload. Fallback/escalation carries a WA link. */
+    private function result(bool $ok, string $reply, array $products, bool $escalate): array
     {
-        $wa = $this->settings->whatsappNumber();
-
-        return $wa ? "hubungi CS kami di WhatsApp {$wa} ya." : 'hubungi CS kami ya.';
+        return [
+            'ok' => $ok,
+            'reply' => $reply,
+            'products' => $products,
+            'escalate' => $escalate,
+            'whatsapp' => $escalate ? $this->whatsappUrl() : null,
+            'error' => $ok ? null : ($this->lastResult['body'] ?? null),
+        ];
     }
 
+    /** A fallback reply always offers the WhatsApp hand-off button. */
     private function fallback(string $reply, array $products = []): array
     {
-        return ['ok' => false, 'reply' => $reply, 'products' => $products, 'error' => $this->lastResult['body'] ?? null];
+        return $this->result(false, $reply, $products, true);
+    }
+
+    /** click-to-chat WhatsApp URL for CS, or null if no number is configured. */
+    private function whatsappUrl(): ?string
+    {
+        if (! $this->settings->whatsappNumber()) {
+            return null;
+        }
+
+        return whatsapp_link('Halo CS '.brand().', saya butuh bantuan lebih lanjut 🙏');
     }
 
     /** Significant search tokens from a free-text question (max 6, deduped). */

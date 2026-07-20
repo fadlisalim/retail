@@ -77,7 +77,37 @@ class AssistantChatTest extends TestCase
 
         $res->assertOk();
         $this->assertNotEmpty($res->json('reply'));
+        $res->assertJsonPath('escalate', true); // fallback offers the WA hand-off
         Http::assertNothingSent();
+    }
+
+    public function test_wa_marker_triggers_escalation_and_is_stripped(): void
+    {
+        $this->enable();
+        Http::fake(['api.anthropic.com/*' => Http::response([
+            'stop_reason' => 'end_turn',
+            'content' => [['type' => 'text', 'text' => "Butuh konsultasi lebih detail ya.\n[[WA]]"]],
+        ], 200)]);
+
+        $res = $this->postJson('/api/asisten/tanya', ['message' => 'minta penawaran instalasi'])->assertOk();
+
+        $res->assertJsonPath('escalate', true);
+        $this->assertStringNotContainsString('[[WA]]', $res->json('reply'));
+        $this->assertNotNull($res->json('whatsapp'));
+    }
+
+    public function test_normal_answer_does_not_escalate(): void
+    {
+        $this->enable();
+        Http::fake(['api.anthropic.com/*' => Http::response([
+            'stop_reason' => 'end_turn',
+            'content' => [['type' => 'text', 'text' => 'Harganya Rp 1.000.000.']],
+        ], 200)]);
+
+        $this->postJson('/api/asisten/tanya', ['message' => 'harga berapa'])
+            ->assertOk()
+            ->assertJsonPath('escalate', false)
+            ->assertJsonPath('whatsapp', null);
     }
 
     public function test_message_is_required(): void

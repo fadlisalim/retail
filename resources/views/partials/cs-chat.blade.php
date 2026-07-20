@@ -11,7 +11,7 @@
         type="button"
         x-show="!open"
         @click="toggle()"
-        class="fixed right-4 bottom-20 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2 lg:bottom-24"
+        class="fixed right-4 bottom-20 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2 lg:bottom-6"
         aria-label="Tanya CS"
     >
         <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
@@ -27,7 +27,7 @@
     <div
         x-show="open"
         x-transition.origin-bottom.right
-        class="fixed right-4 bottom-20 z-50 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl lg:bottom-24"
+        class="fixed right-4 bottom-20 z-50 flex w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl lg:bottom-6"
         style="height: min(70vh, 32rem)"
     >
         {{-- Header --}}
@@ -55,8 +55,8 @@
                             x-html="render(m.content)"
                         ></div>
 
-                        {{-- Related product cards --}}
-                        <template x-if="m.products && m.products.length">
+                        {{-- Related product cards (clickable) --}}
+                        <template x-if="m.role === 'assistant' && m.products && m.products.length">
                             <div class="space-y-2">
                                 <template x-for="p in m.products" :key="p.url">
                                     <a :href="p.url" class="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-2 shadow-sm transition hover:border-brand-300">
@@ -71,6 +71,16 @@
                                     </a>
                                 </template>
                             </div>
+                        </template>
+
+                        {{-- WhatsApp hand-off button — shown when the AI can't fully
+                             help or the customer needs a human (escalate). --}}
+                        <template x-if="m.whatsapp">
+                            <a :href="m.whatsapp" target="_blank" rel="noopener"
+                               class="inline-flex items-center gap-2 rounded-full bg-green-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-green-600">
+                                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.978-1.207z"/></svg>
+                                Konsultasi via WhatsApp
+                            </a>
                         </template>
                     </div>
                 </div>

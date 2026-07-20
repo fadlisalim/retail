@@ -336,15 +336,27 @@ Alpine.data('csChat', (config = {}) => ({
      * output isn't trusted HTML, so everything is escaped before formatting.
      */
     render(text) {
-        const esc = String(text)
+        let s = String(text)
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>');
+            .replace(/>/g, '&gt;');
+
+        // Links → clickable, via placeholders so later passes don't touch them.
+        // Only http(s) URLs are linkified (never javascript:), and the anchor
+        // HTML we inject is ours, so this stays XSS-safe after the escape above.
+        const links = [];
+        const stash = (url, label) => {
+            links.push('<a href="' + url + '" target="_blank" rel="noopener" class="font-medium text-brand-600 underline">' + label + '</a>');
+            return 'L' + (links.length - 1) + '';
+        };
+        s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, label, url) => stash(url, label));
+        s = s.replace(/(https?:\/\/[^\s<]+)/g, (m, url) => stash(url, url));
+
+        s = s.replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>');
 
         let html = '';
         let inList = false;
-        for (const raw of esc.split('\n')) {
+        for (const raw of s.split('\n')) {
             const line = raw.trimEnd();
             const bullet = line.match(/^\s*[-*]\s+(.*)$/);
             if (bullet) {
@@ -357,7 +369,8 @@ Alpine.data('csChat', (config = {}) => ({
             html += line === '' ? '<br>' : line + '<br>';
         }
         if (inList) html += '</ul>';
-        return html;
+
+        return html.replace(/L(\d+)/g, (m, i) => links[+i]);
     },
 
     /** Prior turns as [{role, content}] — skip the generic welcome line. */
@@ -386,12 +399,12 @@ Alpine.data('csChat', (config = {}) => ({
             });
             const data = await res.json().catch(() => ({}));
             if (res.ok && data.reply) {
-                this.messages.push({ role: 'assistant', content: data.reply, products: (data.products || []).slice(0, 3) });
+                this.messages.push({ role: 'assistant', content: data.reply, products: (data.products || []).slice(0, 6), whatsapp: data.escalate ? (data.whatsapp || '') : '' });
             } else {
-                this.messages.push({ role: 'assistant', content: 'Maaf, terjadi kendala. Coba lagi sebentar ya.', products: [] });
+                this.messages.push({ role: 'assistant', content: 'Maaf, terjadi kendala. Coba lagi sebentar ya.', products: [], whatsapp: '' });
             }
         } catch (err) {
-            this.messages.push({ role: 'assistant', content: 'Koneksi bermasalah. Coba lagi ya.', products: [] });
+            this.messages.push({ role: 'assistant', content: 'Koneksi bermasalah. Coba lagi ya.', products: [], whatsapp: '' });
         } finally {
             this.loading = false;
             this.scrollSoon();
