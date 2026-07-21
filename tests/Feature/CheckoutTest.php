@@ -75,6 +75,20 @@ class CheckoutTest extends TestCase
         $this->assertDatabaseCount('orders', 1);
     }
 
+    public function test_checkout_page_shows_pickup_address_and_maps_link(): void
+    {
+        $customer = $this->customer();
+        $this->actingAs($customer);
+        $product = $this->stockedProduct(10, ['price' => 1000000]);
+        app(CartService::class)->addItem($product, null, 1);
+
+        $this->get('/checkout')
+            ->assertOk()
+            ->assertSee('Rekasurya Eco Building', false)
+            ->assertSee('Lihat di Google Maps')
+            ->assertSee('google.com/maps', false);
+    }
+
     public function test_guest_cannot_access_checkout(): void
     {
         $this->get(route('checkout.index'))->assertRedirect(route('login'));

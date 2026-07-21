@@ -85,6 +85,19 @@
                                             <span x-show="opt.confirmed && opt.billable_weight_grams > 0" x-text="' • Berat ' + (opt.billable_weight_grams / 1000) + ' kg'"></span>
                                             <span x-show="opt.confirmed && opt.packing_fee > 0" x-text="' • Packing ' + rupiah(opt.packing_fee)"></span>
                                         </span>
+                                        @if ($siteSettings->get('pickup.address'))
+                                            {{-- Warehouse address + map for the pickup option --}}
+                                            <span x-show="opt.type === 'pickup'" class="mt-1.5 block text-xs leading-snug text-gray-600">
+                                                📍 {{ $siteSettings->get('pickup.address') }}
+                                                @if ($siteSettings->get('pickup.maps_url'))
+                                                    <a href="{{ $siteSettings->get('pickup.maps_url') }}" target="_blank" rel="noopener" @click.stop
+                                                       class="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 font-semibold text-brand-700 hover:bg-brand-100">
+                                                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>
+                                                        Lihat di Google Maps
+                                                    </a>
+                                                @endif
+                                            </span>
+                                        @endif
                                     </span>
                                 </span>
                                 <span class="font-semibold" x-text="opt.confirmed ? opt.rupiah : 'Dikonfirmasi'"></span>

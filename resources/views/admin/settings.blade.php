@@ -109,6 +109,24 @@
             </div>
         </div>
 
+        {{-- Ambil di Gudang (pickup) --}}
+        <div class="card p-5">
+            <h2 class="mb-4 font-semibold text-gray-900">Ambil di Gudang</h2>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="sm:col-span-2">
+                    <label for="pickup_address" class="input-label">Alamat Gudang</label>
+                    <textarea name="pickup_address" id="pickup_address" rows="2" class="form-textarea">{{ old('pickup_address', $settings['pickup.address']) }}</textarea>
+                    <p class="mt-1 text-xs text-gray-400">Ditampilkan di checkout pada opsi "Ambil di Gudang Rekasurya".</p>
+                    @error('pickup_address')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div class="sm:col-span-2">
+                    <label for="pickup_maps_url" class="input-label">Link Google Maps</label>
+                    <input type="url" name="pickup_maps_url" id="pickup_maps_url" value="{{ old('pickup_maps_url', $settings['pickup.maps_url']) }}" placeholder="https://www.google.com/maps/..." class="form-input">
+                    @error('pickup_maps_url')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
+            </div>
+        </div>
+
         <div class="flex justify-end">
             <button type="submit" class="btn-primary">Simpan Pengaturan</button>
         </div>

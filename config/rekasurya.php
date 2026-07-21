@@ -21,6 +21,13 @@ return [
         'phone' => env('COMPANY_PHONE', '021-0000-0000'),
     ],
 
+    // Ambil-di-gudang (pickup) info shown at checkout. Overridable via the
+    // admin settings page (keys pickup.address / pickup.maps_url).
+    'pickup' => [
+        'address' => env('PICKUP_ADDRESS', 'Rekasurya Eco Building — Komp Ruko, Jl. Terusan Jakarta / Jl. Puri Dago Raya No. 342 Kav 31, Sukamiskin, Kec. Arcamanik, Kota Bandung, Jawa Barat 40293'),
+        'maps_url' => env('PICKUP_MAPS_URL', 'https://www.google.com/maps/place/PT.+Rekasurya+Prima+Daya+(Rekasurya+Eco+Building)/data=!4m2!3m1!1s0x0:0xe0acea1e94ea46ef'),
+    ],
+
     'whatsapp' => [
         'enabled' => env('WHATSAPP_ENABLED', true),
         // Store in international format without "+" or spaces, e.g. 628123456789.

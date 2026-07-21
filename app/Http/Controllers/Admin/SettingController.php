@@ -29,6 +29,8 @@ class SettingController extends Controller
             'whatsapp.greeting' => $this->settings->get('whatsapp.greeting'),
             'payment.bank_account' => $this->settings->get('payment.bank_account'),
             'payment.qris_image' => $this->settings->get('payment.qris_image'),
+            'pickup.address' => $this->settings->get('pickup.address'),
+            'pickup.maps_url' => $this->settings->get('pickup.maps_url'),
         ];
 
         return view('admin.settings', compact('settings'));
@@ -49,6 +51,8 @@ class SettingController extends Controller
             'whatsapp_greeting' => ['nullable', 'string', 'max:500'],
             'payment_bank_account' => ['nullable', 'string', 'max:500'],
             'payment_qris_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:4096'],
+            'pickup_address' => ['nullable', 'string', 'max:1000'],
+            'pickup_maps_url' => ['nullable', 'url', 'max:500'],
         ]);
 
         $this->settings->set('company.legal_name', $data['company_legal_name'] ?? '', 'string', 'company');
@@ -65,6 +69,9 @@ class SettingController extends Controller
         $this->settings->set('whatsapp.greeting', $data['whatsapp_greeting'] ?? '', 'string', 'whatsapp');
 
         $this->settings->set('payment.bank_account', $data['payment_bank_account'] ?? '', 'string', 'payment');
+
+        $this->settings->set('pickup.address', $data['pickup_address'] ?? '', 'string', 'pickup');
+        $this->settings->set('pickup.maps_url', $data['pickup_maps_url'] ?? '', 'string', 'pickup');
 
         // QRIS image upload (randomised filename on the public disk). Existing image
         // is kept if no new file is uploaded.
