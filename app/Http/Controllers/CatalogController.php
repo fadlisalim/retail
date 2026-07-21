@@ -52,7 +52,8 @@ class CatalogController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        return $this->render($request->merge(['category' => $category->slug]), [
+        // Default sort on category pages: cheapest first (explicit ?sort= wins).
+        return $this->render($request->merge(['category' => $category->slug, 'sort' => $request->input('sort') ?: 'price_asc']), [
             'title' => $category->meta_title ?: $category->name,
             'metaDescription' => $category->meta_description,
             'category' => $category,
@@ -87,7 +88,8 @@ class CatalogController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        return $this->render($request->merge(['brand' => $brand->slug]), [
+        // Default sort on brand pages: cheapest first (explicit ?sort= wins).
+        return $this->render($request->merge(['brand' => $brand->slug, 'sort' => $request->input('sort') ?: 'price_asc']), [
             'title' => $brand->meta_title ?: 'Produk '.$brand->name,
             'metaDescription' => $brand->meta_description,
             'heading' => 'Brand: '.$brand->name,
@@ -144,7 +146,8 @@ class CatalogController extends Controller
             'heading' => $view['title'] ?? 'Produk',
             'metaDescription' => null,
             'breadcrumbs' => [],
-            'brandBanners' => collect(),
+            'pageBanners' => collect(),
+            'pageIntro' => null,
         ], $view));
     }
 

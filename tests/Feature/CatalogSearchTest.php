@@ -34,6 +34,21 @@ class CatalogSearchTest extends TestCase
         $this->get('/pencarian?q=Panel')->assertOk()->assertSee('Panel Surya 550Wp Mono');
     }
 
+    public function test_category_and_brand_pages_default_to_cheapest_first(): void
+    {
+        $cat = Category::factory()->create(['slug' => 'panel-sort']);
+        $brand = \App\Models\Brand::factory()->create(['slug' => 'brand-sort', 'is_active' => true]);
+        Product::factory()->create(['name' => 'Mahal', 'price' => 5000000, 'category_id' => $cat->id, 'brand_id' => $brand->id, 'status' => 'published']);
+        Product::factory()->create(['name' => 'Murah', 'price' => 100000, 'category_id' => $cat->id, 'brand_id' => $brand->id, 'status' => 'published']);
+
+        // Cheapest listed before the expensive one on both pages.
+        $this->get('/kategori/panel-sort')->assertOk()->assertSeeInOrder(['Murah', 'Mahal']);
+        $this->get('/brand/brand-sort')->assertOk()->assertSeeInOrder(['Murah', 'Mahal']);
+
+        // An explicit sort still wins.
+        $this->get('/kategori/panel-sort?sort=price_desc')->assertOk()->assertSeeInOrder(['Mahal', 'Murah']);
+    }
+
     public function test_category_page_shows_banner_and_description_as_landing(): void
     {
         $cat = Category::factory()->create(['slug' => 'panel-surya-x', 'description' => 'Penjelasan kategori panel surya untuk landing.']);
