@@ -51,6 +51,8 @@ Route::get('/api/asisten/riwayat', [\App\Http\Controllers\AssistantController::c
     ->middleware('throttle:30,1')->name('assistant.history');
 
 Route::get('/kategori', [CatalogController::class, 'categories'])->name('categories.index');
+// 1200x630 social-share (og:image) card for a category page (see products.og).
+Route::get('/kategori/{category:slug}/og.png', \App\Http\Controllers\CategoryOgImageController::class)->name('categories.og');
 Route::get('/kategori/{category:slug}', [CatalogController::class, 'category'])->name('categories.show');
 Route::get('/brand', [CatalogController::class, 'brands'])->name('brands.index');
 Route::get('/brand/{brand:slug}', [CatalogController::class, 'brand'])->name('brands.show');

@@ -2,6 +2,14 @@
 @section('title', $title ?? ($heading ?? 'Produk'))
 @if(!empty($metaDescription))@section('meta_description', $metaDescription)@endif
 @if(!empty($noindex))@section('noindex', 'noindex')@endif
+@if(!empty($category))
+    {{-- Generated 1200x630 share card so WhatsApp/FB show a large landscape preview. --}}
+    @section('og_image', route('categories.og', $category))
+    @section('og_image_type', 'image/png')
+    @section('og_image_width', '1200')
+    @section('og_image_height', '630')
+    @section('og_image_alt', $category->name)
+@endif
 
 @section('content')
     @if (($pageBanners ?? collect())->isNotEmpty())

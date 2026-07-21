@@ -34,6 +34,22 @@ class CatalogSearchTest extends TestCase
         $this->get('/pencarian?q=Panel')->assertOk()->assertSee('Panel Surya 550Wp Mono');
     }
 
+    public function test_category_page_has_generated_og_share_card(): void
+    {
+        $cat = Category::factory()->create(['slug' => 'panel-og']);
+        Product::factory()->create(['category_id' => $cat->id, 'status' => 'published', 'price' => 250000]);
+
+        // Page points og:image at the generated card…
+        $this->get('/kategori/panel-og')
+            ->assertOk()
+            ->assertSee('kategori/panel-og/og.png', false);
+
+        // …and the card endpoint serves a real 1200x630 PNG.
+        $res = $this->get('/kategori/panel-og/og.png')->assertOk()->assertHeader('Content-Type', 'image/png');
+        $info = getimagesize($res->getFile()->getPathname());
+        $this->assertSame([1200, 630], [$info[0], $info[1]]);
+    }
+
     public function test_category_and_brand_pages_default_to_cheapest_first(): void
     {
         $cat = Category::factory()->create(['slug' => 'panel-sort']);
