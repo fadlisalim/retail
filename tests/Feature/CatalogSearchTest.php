@@ -34,6 +34,28 @@ class CatalogSearchTest extends TestCase
         $this->get('/pencarian?q=Panel')->assertOk()->assertSee('Panel Surya 550Wp Mono');
     }
 
+    public function test_category_page_shows_banner_and_description_as_landing(): void
+    {
+        $cat = Category::factory()->create(['slug' => 'panel-surya-x', 'description' => 'Penjelasan kategori panel surya untuk landing.']);
+        $other = Category::factory()->create(['slug' => 'inverter-x']);
+        \App\Models\Banner::create([
+            'title' => 'Banner Kategori Panel', 'position' => 'category', 'category_id' => $cat->id,
+            'image_desktop_path' => 'banners/cat-demo.webp', 'is_active' => true, 'sort_order' => 0,
+        ]);
+
+        // Target category: banner slider + intro shown.
+        $this->get('/kategori/panel-surya-x')
+            ->assertOk()
+            ->assertSee('banners/cat-demo.webp')
+            ->assertSee('Penjelasan kategori panel surya untuk landing.');
+
+        // Other category: neither leaks.
+        $this->get('/kategori/inverter-x')
+            ->assertOk()
+            ->assertDontSee('banners/cat-demo.webp')
+            ->assertDontSee('Penjelasan kategori panel surya untuk landing.');
+    }
+
     public function test_category_filter_scopes_results(): void
     {
         $panels = Category::factory()->create(['slug' => 'panel-surya']);

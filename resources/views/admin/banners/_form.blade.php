@@ -6,6 +6,7 @@
         'promo' => 'Promo',
         'quotation' => 'Quotation',
         'brand' => 'Brand (slider di halaman brand)',
+        'category' => 'Kategori (slider di halaman kategori)',
     ];
     $spans = ['full' => 'Penuh (1 per baris)', 'half' => 'Setengah (2 per baris)', 'third' => 'Sepertiga (3 per baris)'];
 @endphp
@@ -56,6 +57,12 @@
                     <x-form.select name="brand_id" label="Brand" :options="$brands" :selected="$banner->brand_id"
                                    placeholder="— Semua halaman brand —" />
                     <p class="mt-1 text-xs text-gray-400">Pilih brand agar slider hanya muncul di halaman brand itu. Kosongkan = tampil di semua halaman brand.</p>
+                </div>
+                {{-- Category target: only shown/relevant for the "category" position. --}}
+                <div x-show="pos === 'category'" x-cloak>
+                    <x-form.select name="category_id" label="Kategori" :options="$categories" :selected="$banner->category_id"
+                                   placeholder="— Semua halaman kategori —" />
+                    <p class="mt-1 text-xs text-gray-400">Pilih kategori agar slider hanya muncul di halaman kategori itu. Kosongkan = tampil di semua halaman kategori.</p>
                 </div>
             </div>
             <x-form.select name="span" label="Lebar (untuk Grid/Video)" :options="$spans" :selected="$banner->span ?? 'third'" required />

@@ -44,12 +44,22 @@ class CatalogController extends Controller
             $category->ancestors(),
         );
 
+        // Landing-page banners for this category: category-specific first, then
+        // any global category banner (category_id null). Slider above the grid.
+        $categoryBanners = Banner::active()
+            ->where('position', 'category')
+            ->where(fn ($q) => $q->where('category_id', $category->id)->orWhereNull('category_id'))
+            ->orderBy('sort_order')
+            ->get();
+
         return $this->render($request->merge(['category' => $category->slug]), [
             'title' => $category->meta_title ?: $category->name,
             'metaDescription' => $category->meta_description,
             'category' => $category,
             'heading' => $category->name,
             'breadcrumbs' => $breadcrumbs,
+            'pageBanners' => $categoryBanners,
+            'pageIntro' => $category->description,
         ]);
     }
 
@@ -82,7 +92,7 @@ class CatalogController extends Controller
             'metaDescription' => $brand->meta_description,
             'heading' => 'Brand: '.$brand->name,
             'breadcrumbs' => [['label' => 'Brand'], ['label' => $brand->name]],
-            'brandBanners' => $brandBanners,
+            'pageBanners' => $brandBanners,
         ]);
     }
 

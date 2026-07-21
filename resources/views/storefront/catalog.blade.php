@@ -4,9 +4,9 @@
 @if(!empty($noindex))@section('noindex', 'noindex')@endif
 
 @section('content')
-    @if (($brandBanners ?? collect())->isNotEmpty())
+    @if (($pageBanners ?? collect())->isNotEmpty())
         <div class="mb-4">
-            <x-banner-slider :banners="$brandBanners" />
+            <x-banner-slider :banners="$pageBanners" />
         </div>
     @endif
 
@@ -33,6 +33,17 @@
             </select>
         </form>
     </div>
+
+    {{-- Category landing intro (admin-managed description; supports HTML) --}}
+    @if (!empty($pageIntro))
+        <div class="prose prose-sm mb-5 max-w-none rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white p-4 text-gray-700 sm:p-5 [&_a]:text-brand-700">
+            @if (str_contains($pageIntro, '<'))
+                {!! $pageIntro !!}
+            @else
+                {!! nl2br(e($pageIntro)) !!}
+            @endif
+        </div>
+    @endif
 
     {{-- Active filter chips --}}
     @php

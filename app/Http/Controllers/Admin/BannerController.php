@@ -26,7 +26,7 @@ class BannerController extends Controller
     {
         $banner = new Banner(['position' => 'hero', 'span' => 'third', 'is_active' => true, 'sort_order' => 0]);
 
-        return view('admin.banners.create', ['banner' => $banner, 'brands' => $this->brandOptions()]);
+        return view('admin.banners.create', ['banner' => $banner, 'brands' => $this->brandOptions(), 'categories' => $this->categoryOptions()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -39,12 +39,19 @@ class BannerController extends Controller
 
     public function edit(Banner $banner): View
     {
-        return view('admin.banners.edit', ['banner' => $banner, 'brands' => $this->brandOptions()]);
+        return view('admin.banners.edit', ['banner' => $banner, 'brands' => $this->brandOptions(), 'categories' => $this->categoryOptions()]);
     }
 
     private function brandOptions(): \Illuminate\Support\Collection
     {
         return \App\Models\Brand::orderBy('name')->pluck('name', 'id');
+    }
+
+    /** Category options indented by depth (tree order) for the banner target select. */
+    private function categoryOptions(): \Illuminate\Support\Collection
+    {
+        return \App\Models\Category::orderBy('path')->get()
+            ->mapWithKeys(fn ($c) => [$c->id => str_repeat('— ', (int) $c->depth).$c->name]);
     }
 
     public function update(Request $request, Banner $banner): RedirectResponse
@@ -71,8 +78,9 @@ class BannerController extends Controller
             'description' => ['nullable', 'string'],
             'button_text' => ['nullable', 'string', 'max:255'],
             'button_url' => ['nullable', 'string', 'max:255'],
-            'position' => ['required', Rule::in(['hero', 'grid', 'video', 'promo', 'quotation', 'brand'])],
+            'position' => ['required', Rule::in(['hero', 'grid', 'video', 'promo', 'quotation', 'brand', 'category'])],
             'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
+            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'span' => ['required', Rule::in(['full', 'half', 'third'])],
             'is_portrait' => ['boolean'],
             'is_active' => ['boolean'],
@@ -86,8 +94,9 @@ class BannerController extends Controller
         $data['is_active'] = $request->boolean('is_active');
         $data['is_portrait'] = $request->boolean('is_portrait');
         $data['sort_order'] = (int) ($data['sort_order'] ?? 0);
-        // brand_id only applies to the brand-page slider; clear it otherwise.
+        // brand_id / category_id only apply to their page sliders; clear otherwise.
         $data['brand_id'] = $data['position'] === 'brand' ? ($data['brand_id'] ?? null) : null;
+        $data['category_id'] = $data['position'] === 'category' ? ($data['category_id'] ?? null) : null;
 
         // Banners run by whole days: a start date is active from 00:00, an end date
         // through 23:59 — so a banner set to start "today" shows immediately.
