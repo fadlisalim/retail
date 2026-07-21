@@ -329,7 +329,7 @@ Alpine.data('csChat', (config = {}) => ({
         }
         // Random greeting so the widget feels alive on every first visit.
         const welcome = this.welcomes[Math.floor(Math.random() * this.welcomes.length)];
-        this.messages.push({ role: 'assistant', content: welcome, products: [] });
+        this.messages.push({ role: 'assistant', content: welcome, products: [], welcome: true });
     },
 
     /** Stable per-browser id so the admin can group a conversation's turns. */
@@ -405,12 +405,16 @@ Alpine.data('csChat', (config = {}) => ({
         return html.replace(/L(\d+)/g, (m, i) => links[+i]);
     },
 
-    /** Prior turns as [{role, content}] — skip the generic welcome line. */
+    /**
+     * Prior turns as [{role, content}]. Skip greeting bubbles and cap at the
+     * last 10 — the server only feeds the model the recent turns anyway, and
+     * sending a long restored history would trip the request validation.
+     */
     history() {
         return this.messages
-            .slice(1)
-            .filter((m) => m.content)
-            .map((m) => ({ role: m.role, content: m.content }));
+            .filter((m) => m.content && !m.welcome)
+            .map((m) => ({ role: m.role, content: m.content }))
+            .slice(-10);
     },
 
     async send() {

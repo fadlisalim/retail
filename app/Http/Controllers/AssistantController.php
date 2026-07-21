@@ -21,7 +21,7 @@ class AssistantController extends Controller
         $data = $request->validate([
             'message' => ['required', 'string', 'max:1000'],
             'session_id' => ['sometimes', 'nullable', 'string', 'max:64'],
-            'history' => ['sometimes', 'array', 'max:20'],
+            'history' => ['sometimes', 'array', 'max:30'],
             'history.*.role' => ['required_with:history', 'string', 'in:user,assistant'],
             'history.*.content' => ['required_with:history', 'string', 'max:4000'],
         ]);

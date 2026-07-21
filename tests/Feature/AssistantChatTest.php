@@ -111,6 +111,28 @@ class AssistantChatTest extends TestCase
             ->assertJsonPath('whatsapp', null);
     }
 
+    public function test_long_restored_history_is_accepted(): void
+    {
+        // Regression: after history-restore, the widget could hold 30 bubbles;
+        // sending them all used to fail validation (max:20) and every message
+        // after that errored. Now the client caps at 10 and the server takes 30.
+        $this->enable();
+        Http::fake(['api.anthropic.com/*' => Http::response([
+            'stop_reason' => 'end_turn',
+            'content' => [['type' => 'text', 'text' => 'Siap Kak! 😊']],
+        ], 200)]);
+
+        $history = [];
+        for ($i = 0; $i < 12; $i++) {
+            $history[] = ['role' => 'user', 'content' => "pertanyaan {$i}"];
+            $history[] = ['role' => 'assistant', 'content' => "jawaban {$i}"];
+        }
+
+        $this->postJson('/api/asisten/tanya', ['message' => 'lanjut ya', 'history' => $history])
+            ->assertOk()
+            ->assertJsonPath('reply', 'Siap Kak! 😊');
+    }
+
     public function test_message_is_required(): void
     {
         $this->postJson('/api/asisten/tanya', ['message' => ''])->assertStatus(422);
