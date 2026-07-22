@@ -149,6 +149,9 @@ Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 */
 Route::post('/webhook/pembayaran/{provider}', PaymentWebhookController::class)->name('webhook.payment');
 
+// Wablas incoming-message webhook (CSRF-exempt; shared-token check inside).
+Route::post('/webhook/wablas', \App\Http\Controllers\WablasWebhookController::class)->name('webhook.wablas');
+
 /*
 |--------------------------------------------------------------------------
 | Authentication
@@ -320,5 +323,10 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
 
     Route::middleware('permission:assistant.view')->group(function () {
         Route::get('/cs-assistant', [Admin\AssistantLogController::class, 'index'])->name('assistant.index');
+
+        // WhatsApp inbox (two-way chat via Wablas webhook + send API).
+        Route::get('/wa-chat', [Admin\WaChatController::class, 'index'])->name('wachat.index');
+        Route::get('/wa-chat/pesan', [Admin\WaChatController::class, 'messages'])->name('wachat.messages');
+        Route::post('/wa-chat/kirim', [Admin\WaChatController::class, 'send'])->middleware('throttle:30,1')->name('wachat.send');
     });
 });

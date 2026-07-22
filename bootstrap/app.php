@@ -31,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // signature verification inside PaymentManager instead.
         $middleware->validateCsrfTokens(except: [
             'webhook/pembayaran/*',
+            'webhook/wablas',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

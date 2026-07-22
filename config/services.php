@@ -48,6 +48,9 @@ return [
         'enabled' => (bool) env('WABLAS_ENABLED', false),
         'base_url' => env('WABLAS_BASE_URL', 'https://console.wablas.com'),
         'token' => env('WABLAS_TOKEN'),
+        // Shared secret for the incoming-message webhook (?token=... on the URL
+        // configured in the Wablas console). Empty = no token check.
+        'webhook_token' => env('WABLAS_WEBHOOK_TOKEN'),
     ],
 
     // CS Assistant (Claude / Anthropic). API key ONLY from .env — never hardcode.

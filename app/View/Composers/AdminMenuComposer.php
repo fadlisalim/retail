@@ -33,6 +33,8 @@ class AdminMenuComposer
             'reviews' => Review::whereHas('reports', fn ($q) => $q->where('resolved', false))->count(),
             // Affiliate applications awaiting verification.
             'affiliates' => Affiliate::where('status', AffiliateStatus::Pending->value)->count(),
+            // Unread incoming WhatsApp messages in the inbox.
+            'wachat' => \App\Models\WaMessage::where('direction', 'in')->where('is_read', false)->count(),
         ]);
     }
 }
