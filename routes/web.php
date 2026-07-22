@@ -151,6 +151,8 @@ Route::post('/webhook/pembayaran/{provider}', PaymentWebhookController::class)->
 
 // Wablas incoming-message webhook (CSRF-exempt; shared-token check inside).
 Route::post('/webhook/wablas', \App\Http\Controllers\WablasWebhookController::class)->name('webhook.wablas');
+// Friendly status page when the webhook URL is opened in a browser (Wablas POSTs).
+Route::get('/webhook/wablas', fn () => response('Webhook Wablas aktif ✅ — endpoint ini menerima POST dari server Wablas, bukan akses browser.', 200)->header('Content-Type', 'text/plain; charset=utf-8'));
 
 /*
 |--------------------------------------------------------------------------
