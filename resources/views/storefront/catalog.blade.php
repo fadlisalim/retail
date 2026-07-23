@@ -105,7 +105,10 @@
         {{-- Filter sidebar / drawer --}}
         <aside class="fixed inset-0 z-50 lg:static lg:z-auto lg:block" :class="drawer ? 'block' : 'hidden lg:block'">
             <div class="absolute inset-0 bg-black/40 lg:hidden" @click="drawer = false"></div>
+            {{-- Checkbox/radio auto-apply the filter on change; price inputs still
+                 use the button (submitting mid-typing would be jarring). --}}
             <form method="GET" action="{{ url()->current() }}"
+                  @change="if (['checkbox', 'radio'].includes($event.target.type)) $el.submit()"
                   class="absolute left-0 top-0 h-full w-80 max-w-[85%] overflow-y-auto bg-white p-4 lg:static lg:h-auto lg:w-full lg:max-w-none lg:rounded-xl lg:border lg:border-gray-200">
                 <div class="mb-3 flex items-center justify-between lg:hidden">
                     <span class="font-bold">Filter</span>
