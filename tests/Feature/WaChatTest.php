@@ -49,6 +49,18 @@ class WaChatTest extends TestCase
         $this->assertSame(1, WaMessage::count());
     }
 
+    public function test_webhook_records_from_me_messages_as_outgoing(): void
+    {
+        // Replies typed on the device phone arrive with fromMe=true — they must
+        // render on the right (outgoing), not as a customer bubble.
+        $this->postJson('/webhook/wablas', ['id' => 'WB-9', 'phone' => '08170188989', 'message' => 'Siap pak, saya cek dulu', 'fromMe' => true])->assertOk();
+
+        $m = WaMessage::first();
+        $this->assertSame('out', $m->direction);
+        $this->assertTrue($m->is_read);   // no unread badge for our own replies
+        $this->assertTrue($m->sent_ok);
+    }
+
     public function test_webhook_ignores_group_messages(): void
     {
         $this->postJson('/webhook/wablas', ['phone' => '081234567890', 'message' => 'hi', 'isGroup' => true])->assertOk();

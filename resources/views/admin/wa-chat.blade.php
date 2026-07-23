@@ -12,52 +12,91 @@
         </div>
     @endunless
 
-    <div class="grid gap-4 lg:grid-cols-3" style="min-height: 32rem">
-        {{-- Conversation list --}}
-        <div class="card overflow-y-auto p-2" style="max-height: 40rem">
-            @forelse ($conversations as $c)
-                @php($label = $names[$c->phone] ?? $leadNames[$c->phone] ?? null)
-                <a href="{{ route('admin.wachat.index', ['phone' => $c->phone]) }}"
-                   class="flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm {{ $phone === $c->phone ? 'bg-brand-600 text-white' : 'hover:bg-gray-50' }}">
-                    <span class="min-w-0">
-                        <span class="block truncate font-medium {{ $phone === $c->phone ? 'text-white' : 'text-gray-800' }}">{{ $label ?? $c->phone }}</span>
-                        <span class="block text-xs {{ $phone === $c->phone ? 'text-white/70' : 'text-gray-400' }}">{{ $label ? $c->phone.' · ' : '' }}{{ \Illuminate\Support\Carbon::parse($c->last_at)->format('d/m H:i') }}</span>
-                    </span>
-                    @if ((int) $c->unread > 0)
-                        <span class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-semibold leading-none text-white">{{ $c->unread }}</span>
-                    @endif
-                </a>
-            @empty
-                <p class="px-3 py-8 text-center text-sm text-gray-400">Belum ada percakapan. Pesan WA masuk akan muncul di sini setelah webhook Wablas disetel.</p>
-            @endforelse
+    @php
+        $displayName = fn ($p) => $names[$p] ?? $leadNames[$p] ?? null;
+        $initial = function ($p) use ($displayName) {
+            $n = $displayName($p);
+            return $n ? mb_strtoupper(mb_substr(trim($n), 0, 1)) : '#';
+        };
+    @endphp
+
+    <div class="grid gap-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm lg:grid-cols-3" style="height: 42rem">
+        {{-- ===== Conversation list (WA style) ===== --}}
+        <div class="flex min-h-0 flex-col border-r border-gray-200">
+            <div class="border-b border-gray-100 bg-gray-50 px-4 py-3">
+                <p class="font-semibold text-gray-800">Percakapan</p>
+            </div>
+            <div class="min-h-0 flex-1 overflow-y-auto">
+                @forelse ($conversations as $c)
+                    @php($label = $displayName($c->phone))
+                    @php($preview = $previews[$c->phone] ?? null)
+                    <a href="{{ route('admin.wachat.index', ['phone' => $c->phone]) }}"
+                       class="flex items-center gap-3 border-b border-gray-50 px-3 py-2.5 {{ $phone === $c->phone ? 'bg-gray-100' : 'hover:bg-gray-50' }}">
+                        <span class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-brand-100 text-base font-bold text-brand-700">{{ $initial($c->phone) }}</span>
+                        <span class="min-w-0 flex-1">
+                            <span class="flex items-baseline justify-between gap-2">
+                                <span class="truncate text-sm font-semibold text-gray-900">{{ $label ?? $c->phone }}</span>
+                                <span class="flex-none text-[11px] {{ (int) $c->unread > 0 ? 'font-semibold text-green-600' : 'text-gray-400' }}">{{ \Illuminate\Support\Carbon::parse($c->last_at)->isToday() ? \Illuminate\Support\Carbon::parse($c->last_at)->format('H:i') : \Illuminate\Support\Carbon::parse($c->last_at)->format('d/m/y') }}</span>
+                            </span>
+                            <span class="flex items-center justify-between gap-2">
+                                <span class="truncate text-xs text-gray-500">
+                                    @if ($preview?->direction === 'out')<span class="text-gray-400">Anda: </span>@endif{{ \Illuminate\Support\Str::limit($preview?->message ?? '', 46) }}
+                                </span>
+                                @if ((int) $c->unread > 0)
+                                    <span class="inline-flex h-5 min-w-[1.25rem] flex-none items-center justify-center rounded-full bg-green-500 px-1.5 text-[11px] font-bold leading-none text-white">{{ $c->unread }}</span>
+                                @endif
+                            </span>
+                        </span>
+                    </a>
+                @empty
+                    <p class="px-4 py-10 text-center text-sm text-gray-400">Belum ada percakapan. Pesan WA masuk akan muncul di sini setelah webhook Wablas disetel.</p>
+                @endforelse
+            </div>
         </div>
 
-        {{-- Thread --}}
-        <div class="card flex flex-col lg:col-span-2" style="max-height: 40rem">
+        {{-- ===== Thread (WA style) ===== --}}
+        <div class="flex min-h-0 flex-col lg:col-span-2">
             @if ($phone)
-                <div class="border-b border-gray-100 px-4 py-3">
-                    <p class="font-semibold text-gray-800">{{ $names[$phone] ?? $leadNames[$phone] ?? $phone }}</p>
-                    <p class="text-xs text-gray-400">{{ $phone }} · <a class="text-brand-600 underline" target="_blank" rel="noopener" href="https://wa.me/{{ $phone }}">buka di WhatsApp</a></p>
+                {{-- Header --}}
+                <div class="flex items-center gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5">
+                    <span class="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-brand-100 text-base font-bold text-brand-700">{{ $initial($phone) }}</span>
+                    <div class="min-w-0">
+                        <p class="truncate text-sm font-semibold text-gray-900">{{ $displayName($phone) ?? $phone }}</p>
+                        <p class="text-xs text-gray-500">{{ $phone }} · <a class="text-brand-600 hover:underline" target="_blank" rel="noopener" href="https://wa.me/{{ $phone }}">buka di WhatsApp</a></p>
+                    </div>
                 </div>
 
                 <div x-data="{
                         phone: @js($phone),
                         lastId: {{ (int) ($thread->last()?->id ?? 0) }},
+                        lastDate: @js($thread->last()?->created_at?->format('d/m/Y') ?? ''),
                         sending: false,
                         text: '',
                         error: '',
                         csrf() { return document.querySelector('meta[name=csrf-token]')?.content || ''; },
                         scroll() { this.$nextTick(() => { const b = this.$refs.box; if (b) b.scrollTop = b.scrollHeight; }); },
+                        daySep(label) {
+                            const w = document.createElement('div');
+                            w.className = 'flex justify-center';
+                            const p = document.createElement('span');
+                            p.className = 'rounded-lg bg-white/90 px-3 py-1 text-[11px] font-medium text-gray-500 shadow-sm';
+                            p.textContent = label;
+                            w.appendChild(p);
+                            this.$refs.box.appendChild(w);
+                        },
                         append(m) {
+                            if (m.date && m.date !== this.lastDate) { this.daySep(m.date); this.lastDate = m.date; }
+                            const out = m.direction === 'out';
                             const wrap = document.createElement('div');
-                            wrap.className = m.direction === 'out' ? 'flex justify-end' : 'flex justify-start';
+                            wrap.className = out ? 'flex justify-end' : 'flex justify-start';
                             const bubble = document.createElement('div');
-                            bubble.className = (m.direction === 'out' ? 'bg-brand-600 text-white rounded-br-sm' : 'bg-white text-gray-800 shadow-sm rounded-bl-sm') + ' max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm';
+                            bubble.className = 'relative max-w-[75%] whitespace-pre-wrap rounded-lg px-2.5 py-1.5 text-[13.5px] leading-snug shadow-sm ' + (out ? 'bg-[#d9fdd3] text-[#111b21] rounded-tr-none' : 'bg-white text-[#111b21] rounded-tl-none');
                             bubble.textContent = m.message;
-                            const t = document.createElement('div');
-                            t.className = m.direction === 'out' ? 'mt-0.5 text-[10px] text-white/70' : 'mt-0.5 text-[10px] text-gray-400';
-                            t.textContent = (m.time || '') + (m.direction === 'out' && m.sent_ok === false ? ' · gagal terkirim' : '');
-                            bubble.appendChild(t);
+                            const meta = document.createElement('span');
+                            meta.className = 'ml-2 inline-flex translate-y-[3px] items-center gap-0.5 whitespace-nowrap text-[10px] text-gray-500/80';
+                            meta.textContent = (m.time || '') + (out ? (m.sent_ok === false ? ' ✗' : ' ✓') : '');
+                            if (out && m.sent_ok === false) meta.classList.add('text-red-500');
+                            bubble.appendChild(meta);
                             wrap.appendChild(bubble);
                             this.$refs.box.appendChild(wrap);
                         },
@@ -87,6 +126,7 @@
                                     await this.poll();
                                 } else {
                                     this.error = data.error || 'Gagal mengirim pesan.';
+                                    await this.poll();
                                 }
                             } catch (e) { this.error = 'Koneksi bermasalah.'; }
                             this.sending = false;
@@ -94,33 +134,44 @@
                         init() { this.scroll(); setInterval(() => this.poll(), 6000); },
                     }"
                     class="flex min-h-0 flex-1 flex-col">
-                    <div x-ref="box" class="flex-1 space-y-2 overflow-y-auto bg-gray-50 px-4 py-4">
+
+                    {{-- Messages: WA chat canvas --}}
+                    <div x-ref="box" class="flex-1 space-y-1.5 overflow-y-auto px-6 py-4"
+                         style="background-color: #efeae2; background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.035) 1px, transparent 0); background-size: 22px 22px;">
+                        @php($prevDate = null)
                         @foreach ($thread as $m)
-                            <div class="flex {{ $m->direction === 'out' ? 'justify-end' : 'justify-start' }}">
-                                <div class="max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm {{ $m->direction === 'out' ? 'rounded-br-sm bg-brand-600 text-white' : 'rounded-bl-sm bg-white text-gray-800 shadow-sm' }}">
-                                    {{ $m->message }}
-                                    <div class="mt-0.5 text-[10px] {{ $m->direction === 'out' ? 'text-white/70' : 'text-gray-400' }}">
-                                        {{ $m->created_at?->format('d/m H:i') }}{{ $m->direction === 'out' && $m->sent_ok === false ? ' · gagal terkirim' : '' }}
-                                    </div>
+                            @php($d = $m->created_at?->format('d/m/Y'))
+                            @if ($d !== $prevDate)
+                                <div class="flex justify-center py-1">
+                                    <span class="rounded-lg bg-white/90 px-3 py-1 text-[11px] font-medium text-gray-500 shadow-sm">{{ $d }}</span>
                                 </div>
+                                @php($prevDate = $d)
+                            @endif
+                            @php($out = $m->direction === 'out')
+                            <div class="flex {{ $out ? 'justify-end' : 'justify-start' }}">
+                                <div class="relative max-w-[75%] whitespace-pre-wrap rounded-lg px-2.5 py-1.5 text-[13.5px] leading-snug shadow-sm {{ $out ? 'rounded-tr-none bg-[#d9fdd3] text-[#111b21]' : 'rounded-tl-none bg-white text-[#111b21]' }}">{{ $m->message }}<span class="ml-2 inline-flex translate-y-[3px] items-center gap-0.5 whitespace-nowrap text-[10px] {{ $out && $m->sent_ok === false ? 'text-red-500' : 'text-gray-500/80' }}">{{ $m->created_at?->format('H:i') }}{{ $out ? ($m->sent_ok === false ? ' ✗' : ' ✓') : '' }}</span></div>
                             </div>
                         @endforeach
                     </div>
 
-                    <form @submit.prevent="send()" class="border-t border-gray-100 p-3">
-                        <p x-show="error" x-cloak class="mb-2 text-xs text-red-600" x-text="error"></p>
-                        <div class="flex items-end gap-2">
-                            <textarea x-model="text" @keydown.enter.prevent="send()" rows="2" placeholder="Tulis balasan…"
-                                      class="form-textarea flex-1 text-sm"></textarea>
-                            <button type="submit" :disabled="sending || !text.trim()" class="btn-primary disabled:cursor-not-allowed disabled:opacity-50">
-                                <span x-show="!sending">Kirim</span><span x-show="sending" x-cloak>Mengirim…</span>
+                    {{-- Composer (WA style) --}}
+                    <div class="border-t border-gray-200 bg-gray-50 p-2.5">
+                        <p x-show="error" x-cloak class="mb-1.5 px-1 text-xs text-red-600" x-text="error"></p>
+                        <form @submit.prevent="send()" class="flex items-end gap-2">
+                            <textarea x-model="text" @keydown.enter.prevent="send()" rows="1" placeholder="Ketik pesan"
+                                      class="max-h-28 min-h-[2.75rem] flex-1 resize-none rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400"></textarea>
+                            <button type="submit" :disabled="sending || !text.trim()"
+                                    class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-green-500 text-white shadow transition hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                    aria-label="Kirim">
+                                <svg class="h-5 w-5 translate-x-[1px]" fill="currentColor" viewBox="0 0 24 24"><path d="M3.4 20.4 20.85 12.9c.8-.35.8-1.45 0-1.8L3.4 3.6c-.66-.29-1.39.2-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.88c-.5.07-.87.5-.87 1l.01 4.61c0 .71.73 1.2 1.39.91Z"/></svg>
                             </button>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             @else
-                <div class="flex flex-1 items-center justify-center p-10 text-center text-sm text-gray-400">
-                    Pilih percakapan di kiri untuk mulai membalas.
+                <div class="flex flex-1 flex-col items-center justify-center gap-2 p-10 text-center" style="background-color: #f0f2f5">
+                    <svg class="h-16 w-16 text-gray-300" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.978-1.207z"/></svg>
+                    <p class="text-sm text-gray-500">Pilih percakapan di kiri untuk mulai membalas.</p>
                 </div>
             @endif
         </div>

@@ -53,14 +53,20 @@ class WablasWebhookController extends Controller
             return response('', 200);
         }
 
+        // Messages sent from the device phone itself (admin replying on the HP)
+        // are webhooked by some Wablas setups with a fromMe flag — record those
+        // as outgoing so the thread mirrors WhatsApp correctly.
+        $fromMe = filter_var($payload['fromMe'] ?? $payload['from_me'] ?? $payload['isFromMe'] ?? false, FILTER_VALIDATE_BOOL);
+
         try {
             WaMessage::create([
                 'phone' => $phone,
-                'name' => isset($payload['pushName']) ? Str::limit((string) $payload['pushName'], 255, '') : null,
-                'direction' => 'in',
+                'name' => $fromMe ? null : (isset($payload['pushName']) ? Str::limit((string) $payload['pushName'], 255, '') : null),
+                'direction' => $fromMe ? 'out' : 'in',
+                'is_read' => $fromMe,
+                'sent_ok' => $fromMe ? true : null,
                 'message' => Str::limit($message, 4000),
                 'wablas_id' => $wablasId,
-                'is_read' => false,
                 'created_at' => now(),
             ]);
         } catch (\Throwable $e) {

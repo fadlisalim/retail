@@ -37,6 +37,11 @@ class WaChatController extends Controller
         $leadNames = AssistantLead::whereIn('phone', $conversations->pluck('phone'))
             ->whereNotNull('name')->pluck('name', 'phone');
 
+        // Last-message preview per conversation (WA-style list).
+        $previews = WaMessage::whereIn('phone', $conversations->pluck('phone'))
+            ->orderByDesc('id')->get(['phone', 'message', 'direction'])
+            ->unique('phone');
+
         $thread = collect();
         if ($phone) {
             WaMessage::where('phone', $phone)->where('direction', 'in')->where('is_read', false)->update(['is_read' => true]);
@@ -47,6 +52,7 @@ class WaChatController extends Controller
             'conversations' => $conversations,
             'names' => $names,
             'leadNames' => $leadNames,
+            'previews' => $previews->keyBy('phone'),
             'phone' => $phone,
             'thread' => $thread,
             'waEnabled' => $wa->isEnabled(),
@@ -78,6 +84,7 @@ class WaChatController extends Controller
                 'message' => $m->message,
                 'sent_ok' => $m->sent_ok,
                 'time' => $m->created_at?->format('H:i'),
+                'date' => $m->created_at?->format('d/m/Y'),
             ]),
         ]);
     }
