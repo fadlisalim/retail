@@ -235,8 +235,11 @@ class AssistantService
                 'low_stock' => $p->inStock() && $p->isLowStock(),
                 'warranty' => $p->warranty,
                 'rating' => (int) $p->rating_count > 0 ? ['avg' => round((float) $p->rating_avg, 1), 'count' => (int) $p->rating_count] : null,
-                'summary' => $this->plain($p->short_description ?: $p->description, 220),
-                'specs' => $this->plain($p->specifications, 320),
+                // Full description (short + long combined) so the model can
+                // answer from the same copy customers read on the product page —
+                // isi paket, ilustrasi beban, garansi per komponen, dsb.
+                'summary' => $this->plain(trim(($p->short_description ?? '').' '.($p->description ?? '')), 900),
+                'specs' => $this->plain($p->specifications, 900),
             ])
             ->all();
     }
@@ -470,7 +473,8 @@ PROMPT;
     /** Strip HTML/whitespace and truncate for compact prompt/card use. */
     private function plain(?string $html, int $limit): string
     {
-        $text = trim(preg_replace('/\s+/', ' ', strip_tags((string) $html)));
+        $text = html_entity_decode(strip_tags((string) $html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = trim(preg_replace('/\s+/', ' ', $text));
 
         return $text === '' ? '' : Str::limit($text, $limit);
     }
