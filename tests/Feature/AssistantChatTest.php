@@ -116,6 +116,45 @@ class AssistantChatTest extends TestCase
         $this->assertNotNull($res->json('whatsapp'));
     }
 
+    public function test_produk_token_picks_the_cards_and_is_stripped(): void
+    {
+        $this->enable();
+        Http::fake(['api.anthropic.com/*' => Http::response([
+            'stop_reason' => 'end_turn',
+            'content' => [['type' => 'text', 'text' => "Buat camping, BLUETTI EB3A paling pas Kak 😊\n[[PRODUK BLUETTI EB3A Portable Power Station]]"]],
+        ], 200)]);
+
+        Product::factory()->create(['name' => 'BLUETTI EB3A Portable Power Station (268Wh / 600W)', 'status' => 'published', 'price' => 3699000, 'stock' => 5]);
+        // A paket that would otherwise ride along as a retrieval candidate.
+        Product::factory()->create(['name' => 'Paket PLTS Rumah Hemat', 'slug' => 'paket-plts-rumah-hemat', 'status' => 'published', 'price' => 25000000, 'stock' => 2]);
+
+        $res = $this->postJson('/api/asisten/tanya', ['message' => 'paket buat rumah atau power station buat camping ya enaknya'])->assertOk();
+
+        $this->assertStringNotContainsString('[[PRODUK', $res->json('reply'));
+        $this->assertCount(1, $res->json('products'));
+        $res->assertJsonPath('products.0.name', 'BLUETTI EB3A Portable Power Station (268Wh / 600W)');
+    }
+
+    public function test_portable_question_does_not_summon_paket_cards(): void
+    {
+        $this->enable();
+        Http::fake(['api.anthropic.com/*' => Http::response([
+            'stop_reason' => 'end_turn',
+            'content' => [['type' => 'text', 'text' => 'Ada beberapa pilihan power station Kak 😊']],
+        ], 200)]);
+
+        Product::factory()->create(['name' => 'BLUETTI AC70P Portable Power Station', 'status' => 'published', 'price' => 8299000, 'stock' => 3]);
+        Product::factory()->create(['name' => 'Paket PLTS Rumah Hemat', 'slug' => 'paket-plts-rumah-hemat-2', 'status' => 'published', 'price' => 25000000, 'stock' => 2]);
+
+        // No [[PRODUK]] token in the reply → fallback to retrieval candidates,
+        // which must NOT be padded with pakets for a camping question.
+        $res = $this->postJson('/api/asisten/tanya', ['message' => 'power station buat camping yang bagus apa?'])->assertOk();
+
+        $names = collect($res->json('products'))->pluck('name');
+        $this->assertTrue($names->contains('BLUETTI AC70P Portable Power Station'));
+        $this->assertFalse($names->contains('Paket PLTS Rumah Hemat'));
+    }
+
     public function test_normal_answer_does_not_escalate(): void
     {
         $this->enable();

@@ -117,7 +117,12 @@ class AssistantService
                     // the customer shares their name/phone. Stripped before display.
                     [$reply, $lead] = $this->extractLead($reply);
 
-                    return $this->result(true, $reply, $products, $escalate, $lead);
+                    // Hidden card token [[PRODUK nama 1 | nama 2]] — the model
+                    // names the products it actually recommends, so the cards
+                    // match the answer (retrieval candidates are only context).
+                    [$reply, $cards] = $this->extractRecommendations($reply, $products);
+
+                    return $this->result(true, $reply, $cards, $escalate, $lead);
                 }
             }
 
@@ -249,29 +254,78 @@ class AssistantService
             }
         }
 
-        return $results
-            ->map(fn (Product $p) => [
-                'name' => $p->name,
-                'slug' => $p->slug,
-                'url' => route('products.show', $p->slug),
-                'price' => rupiah($p->effectivePrice()),
-                'original_price' => $p->isOnSale() ? rupiah((float) $p->price) : null,
-                'brand' => $p->brand?->name,
-                'category' => $p->category?->name,
-                'image' => $p->primaryImageUrl(),
-                'in_stock' => $p->inStock(),
-                // Honest persuasion hooks (only real data — the model must not invent these).
-                'discount' => $p->isOnSale() ? $p->discountPercent() : null,
-                'low_stock' => $p->inStock() && $p->isLowStock(),
-                'warranty' => $p->warranty,
-                'rating' => (int) $p->rating_count > 0 ? ['avg' => round((float) $p->rating_avg, 1), 'count' => (int) $p->rating_count] : null,
-                // Full description (short + long combined) so the model can
-                // answer from the same copy customers read on the product page —
-                // isi paket, ilustrasi beban, garansi per komponen, dsb.
-                'summary' => $this->plain(trim(($p->short_description ?? '').' '.($p->description ?? '')), 900),
-                'specs' => $this->plain($p->specifications, 900),
-            ])
-            ->all();
+        return $results->map(fn (Product $p) => $this->productCard($p))->all();
+    }
+
+    /** Compact card/context payload for one product. */
+    private function productCard(Product $p): array
+    {
+        return [
+            'name' => $p->name,
+            'slug' => $p->slug,
+            'url' => route('products.show', $p->slug),
+            'price' => rupiah($p->effectivePrice()),
+            'original_price' => $p->isOnSale() ? rupiah((float) $p->price) : null,
+            'brand' => $p->brand?->name,
+            'category' => $p->category?->name,
+            'image' => $p->primaryImageUrl(),
+            'in_stock' => $p->inStock(),
+            // Honest persuasion hooks (only real data — the model must not invent these).
+            'discount' => $p->isOnSale() ? $p->discountPercent() : null,
+            'low_stock' => $p->inStock() && $p->isLowStock(),
+            'warranty' => $p->warranty,
+            'rating' => (int) $p->rating_count > 0 ? ['avg' => round((float) $p->rating_avg, 1), 'count' => (int) $p->rating_count] : null,
+            // Full description (short + long combined) so the model can
+            // answer from the same copy customers read on the product page —
+            // isi paket, ilustrasi beban, garansi per komponen, dsb.
+            'summary' => $this->plain(trim(($p->short_description ?? '').' '.($p->description ?? '')), 900),
+            'specs' => $this->plain($p->specifications, 900),
+        ];
+    }
+
+    /**
+     * Strip the hidden [[PRODUK nama 1 | nama 2]] token and resolve the named
+     * products into cards. The model picks which products it actually
+     * recommended (it sees the full catalogue index), so the cards match the
+     * answer — retrieval candidates are only fallback when the token is absent
+     * or nothing resolves.
+     *
+     * @return array{0: string, 1: array}
+     */
+    private function extractRecommendations(string $reply, array $candidates): array
+    {
+        $names = [];
+        $clean = preg_replace_callback('/\s*\[\[PRODUK([^\]]*)\]\]\s*/iu', function ($m) use (&$names) {
+            foreach (explode('|', $m[1]) as $name) {
+                $name = trim($name, " \t\n\r:·-");
+                if ($name !== '') {
+                    $names[] = $name;
+                }
+            }
+
+            return "\n";
+        }, $reply);
+
+        if (empty($names)) {
+            return [$reply, $candidates];
+        }
+
+        $cards = [];
+        try {
+            foreach (array_slice($names, 0, 6) as $name) {
+                $product = Product::published()->with(['brand', 'category'])
+                    ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])->first()
+                    ?? Product::published()->with(['brand', 'category'])
+                        ->where('name', 'like', '%'.str_replace(['%', '_'], ['\%', '\_'], $name).'%')->first();
+                if ($product && ! isset($cards[$product->slug])) {
+                    $cards[$product->slug] = $this->productCard($product);
+                }
+            }
+        } catch (\Throwable $e) {
+            return [trim($clean), $candidates];
+        }
+
+        return [trim($clean), $cards === [] ? $candidates : array_values($cards)];
     }
 
     /**
@@ -283,10 +337,18 @@ class AssistantService
     {
         $q = mb_strtolower($question);
 
+        // Portable/outdoor context wants power stations, not home-PLTS pakets —
+        // padding those questions with pakets puts misleading cards in the chat.
+        if (preg_match('/\b(portable|power\s*station|camping|kemah|berkemah|outdoor|gunung|mendaki|travel|piknik|mobil|campervan)\b/u', $q)) {
+            return false;
+        }
+
+        // Only genuinely home-system signals — generic words like "rekomendasi"
+        // or a wattage figure alone must NOT summon the paket line-up.
         return (bool) preg_match(
-            '/\b(paket|plts|rumah\w*|rekomendasi\w*|referensi\w*|tagihan|hemat|kwh|kwp|hybrid|off[\s-]?grid|on[\s-]?grid|mati\s*lampu|backup|instalasi|atap|surya)\b/u',
+            '/\b(paket|plts|rumah\w*|tagihan|kwh|kwp|off[\s-]?grid|on[\s-]?grid|mati\s*lampu|instalasi|atap|pln|hemat\s+listrik)\b/u',
             $q,
-        ) || preg_match('/\d\s*(va|w|watt|kw|kva)\b/u', $q);
+        );
     }
 
     /** The system prompt: persona, guardrails, store info and product context. */
@@ -333,7 +395,8 @@ ALUR MEMBANTU (persuasif):
 ATURAN PENTING (jangan dilanggar):
 - Info produk (harga, stok, spesifikasi, diskon, ketersediaan) HANYA dari "KATALOG TERKAIT" di bawah. Jika produk yang ditanya tidak ada di katalog: katakan jujur belum ketemu, tawarkan alternatif yang ADA di katalog, DAN sampaikan bahwa tim {$brand} bisa bantu CARIKAN produk yang Kakak butuhkan (request produk) — lalu akhiri dengan token `[[WA]]` supaya pelanggan bisa langsung request via WhatsApp. JANGAN menebak/mengarang produk.
 - Pertanyaan umum solar/PLTS/energi (cara kerja, tips, estimasi daya) boleh dijawab dengan pengetahuan umum, tetap jujur bila tak yakin.
-- JANGAN menempelkan URL/link di teks jawaban. Kartu produk yang bisa diklik OTOMATIS muncul di bawah jawabanmu. Cukup sebut nama produknya persis seperti di katalog.
+- JANGAN menempelkan URL/link di teks jawaban. Kartu produk yang bisa diklik otomatis muncul di bawah jawabanmu berdasarkan token [[PRODUK ...]] (lihat aturan berikut). Cukup sebut nama produknya di teks secara natural.
+- KARTU PRODUK: setiap kali kamu merekomendasikan/membahas produk tertentu, akhiri pesanmu dengan token tersembunyi pada baris terpisah berformat: [[PRODUK Nama Produk Persis 1 | Nama Produk Persis 2]] — nama harus PERSIS seperti di KATALOG TERKAIT / INDEKS KATALOG, maksimal 4 produk, urutkan dari yang paling kamu rekomendasikan. Token ini yang menentukan kartu produk yang tampil (tidak terlihat pelanggan, jangan disebut-sebut). Kalau jawabanmu tidak membahas produk spesifik, JANGAN tulis token ini.
 - Jika kamu TIDAK bisa menjawab dari katalog, ATAU pelanggan butuh konsultasi lebih detail/penawaran khusus/instalasi/komplain/bantuan manusia: jawab sewajarnya lalu akhiri pesan dengan token `[[WA]]` pada baris terpisah — JANGAN tulis nomor WA manual. Sistem otomatis menampilkan jalur lanjut ke WhatsApp di bawah pesanmu (kalau data pelanggan belum lengkap, yang muncul form singkat nama + nomor WA + kebutuhan dulu) — jadi cukup ajak pelanggan "lanjut lewat form/tombol di bawah ya". Untuk pertanyaan biasa yang sudah bisa kamu jawab, JANGAN tambahkan token itu.
 - Jangan pernah meminta/memproses data sensitif (password, nomor kartu, OTP). Kamu tidak punya akses internet.
 
