@@ -39,6 +39,11 @@ class AssistantService
         'warna', 'ukuran', 'berat', 'spesifikasi', 'spek', 'fitur', 'kelebihan', 'kualitas', 'promo',
         'diskon', 'murah', 'mahal', 'bagus', 'cocok', 'kirim', 'ongkir', 'bayar', 'info', 'detail',
         'tanya', 'sekitar', 'kira', 'kisaran', 'daya', 'watt',
+        // marketing words that appear inside product NAMES and would otherwise
+        // qualify a single product for generic questions ("tagihan 2jt" must
+        // not retrieve only "…Pangkas Tagihan PLN")
+        'tagihan', 'hemat', 'pangkas', 'pln', 'listrik', 'bulan', 'juta',
+        'referensi', 'referensikan', 'rekomendasiin', 'rekomendasikan',
     ];
 
     public function __construct(
@@ -171,52 +176,77 @@ class AssistantService
     private function relevantProducts(string $question): array
     {
         $tokens = $this->keywords($question);
-        if (empty($tokens)) {
-            return [];
+        $results = collect();
+
+        if (! empty($tokens)) {
+            try {
+                // Qualifier: a token must hit a STRONG field (name/keywords/sku/model/
+                // brand). Description is deliberately EXCLUDED here — otherwise a
+                // battery/inverter whose description merely mentions "panel surya"
+                // would surface for a "panel surya" question. Relevance is then scored
+                // so name matches rank above keyword matches, and the top 6 are the
+                // genuinely on-topic products.
+                $scoreParts = [];
+                $scoreBindings = [];
+                foreach ($tokens as $token) {
+                    $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $token).'%';
+                    $scoreParts[] = '(CASE WHEN name LIKE ? THEN 3 ELSE 0 END)'
+                        .' + (CASE WHEN keywords LIKE ? THEN 2 ELSE 0 END)'
+                        .' + (CASE WHEN COALESCE(short_description, description, \'\') LIKE ? THEN 1 ELSE 0 END)';
+                    array_push($scoreBindings, $like, $like, $like);
+                }
+
+                $results = Product::published()
+                    ->with(['brand', 'category'])
+                    ->select('products.*')
+                    ->selectRaw('('.implode(' + ', $scoreParts).') as relevance', $scoreBindings)
+                    ->where(function ($q) use ($tokens) {
+                        foreach ($tokens as $token) {
+                            $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $token).'%';
+                            // Qualify on the product NAME, SKU/model, or brand only.
+                            // `keywords` is a broad SEO blob (every product carries
+                            // generic terms like "panel surya", "energi surya"), so
+                            // matching it here would surface unrelated products — it's
+                            // used for scoring instead, never as a qualifier.
+                            $q->orWhere('name', 'like', $like)
+                                ->orWhere('sku', 'like', $like)
+                                ->orWhere('model', 'like', $like)
+                                ->orWhereHas('brand', fn ($b) => $b->where('name', 'like', $like));
+                        }
+                    })
+                    ->orderByDesc('relevance')
+                    ->orderByDesc('is_featured')
+                    ->orderByDesc('sold_count')
+                    ->limit(6)
+                    ->get();
+            } catch (\Throwable $e) {
+                $results = collect();
+            }
         }
 
-        try {
-            // Qualifier: a token must hit a STRONG field (name/keywords/sku/model/
-            // brand). Description is deliberately EXCLUDED here — otherwise a
-            // battery/inverter whose description merely mentions "panel surya"
-            // would surface for a "panel surya" question. Relevance is then scored
-            // so name matches rank above keyword matches, and the top 6 are the
-            // genuinely on-topic products.
-            $scoreParts = [];
-            $scoreBindings = [];
-            foreach ($tokens as $token) {
-                $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $token).'%';
-                $scoreParts[] = '(CASE WHEN name LIKE ? THEN 3 ELSE 0 END)'
-                    .' + (CASE WHEN keywords LIKE ? THEN 2 ELSE 0 END)'
-                    .' + (CASE WHEN COALESCE(short_description, description, \'\') LIKE ? THEN 1 ELSE 0 END)';
-                array_push($scoreBindings, $like, $like, $like);
+        // Sizing/recommendation questions ("paket buat rumah 4400W tagihan
+        // 2jt?") carry no product-name token, so keyword retrieval finds little
+        // or nothing (or one accidental hit on marketing copy). Top the results
+        // up with the PAKET line-up (cheapest first) so the model can compare
+        // real options instead of claiming the catalogue is empty.
+        if ($results->count() < 6 && $this->asksForSystemPackage($question)) {
+            try {
+                $pakets = Product::published()
+                    ->with(['brand', 'category'])
+                    ->whereNotIn('id', $results->pluck('id'))
+                    ->where(function ($q) {
+                        $q->where('slug', 'like', 'paket%')
+                            ->orWhere('name', 'like', '%paket%')
+                            ->orWhere('name', 'like', '%plts%')
+                            ->orWhereHas('categories', fn ($c) => $c->where('slug', 'like', 'paket%'));
+                    })
+                    ->orderBy('price')
+                    ->limit(6 - $results->count())
+                    ->get();
+                $results = $results->concat($pakets);
+            } catch (\Throwable $e) {
+                // keep whatever we already have
             }
-
-            $results = Product::published()
-                ->with(['brand', 'category'])
-                ->select('products.*')
-                ->selectRaw('('.implode(' + ', $scoreParts).') as relevance', $scoreBindings)
-                ->where(function ($q) use ($tokens) {
-                    foreach ($tokens as $token) {
-                        $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $token).'%';
-                        // Qualify on the product NAME, SKU/model, or brand only.
-                        // `keywords` is a broad SEO blob (every product carries
-                        // generic terms like "panel surya", "energi surya"), so
-                        // matching it here would surface unrelated products — it's
-                        // used for scoring instead, never as a qualifier.
-                        $q->orWhere('name', 'like', $like)
-                            ->orWhere('sku', 'like', $like)
-                            ->orWhere('model', 'like', $like)
-                            ->orWhereHas('brand', fn ($b) => $b->where('name', 'like', $like));
-                    }
-                })
-                ->orderByDesc('relevance')
-                ->orderByDesc('is_featured')
-                ->orderByDesc('sold_count')
-                ->limit(6)
-                ->get();
-        } catch (\Throwable $e) {
-            return [];
         }
 
         return $results
@@ -242,6 +272,21 @@ class AssistantService
                 'specs' => $this->plain($p->specifications, 900),
             ])
             ->all();
+    }
+
+    /**
+     * Does the question sound like "recommend me a (home) solar system"?
+     * Sizing terms, package words, or a power/energy figure (4400W, 2 kWp,
+     * 10 kWh) all count — these questions deserve the paket line-up as context.
+     */
+    private function asksForSystemPackage(string $question): bool
+    {
+        $q = mb_strtolower($question);
+
+        return (bool) preg_match(
+            '/\b(paket|plts|rumah\w*|rekomendasi\w*|referensi\w*|tagihan|hemat|kwh|kwp|hybrid|off[\s-]?grid|on[\s-]?grid|mati\s*lampu|backup|instalasi|atap|surya)\b/u',
+            $q,
+        ) || preg_match('/\d\s*(va|w|watt|kw|kva)\b/u', $q);
     }
 
     /** The system prompt: persona, guardrails, store info and product context. */
@@ -277,6 +322,7 @@ DATA PELANGGAN (nama & nomor HP):
 ALUR MEMBANTU (persuasif):
 1. Pahami kebutuhan dulu. Kalau permintaan masih umum, tanya SATU hal paling penting (budget, dipakai untuk apa, atau perkiraan kebutuhan daya) — jangan bertubi-tubi.
 2. Rekomendasikan 1–3 produk paling cocok dari KATALOG TERKAIT dan jelaskan SINGKAT kenapa cocok buat dia.
+   Khusus permintaan sistem PLTS rumah (pelanggan sebut daya PLN, tagihan, atau kWh): JANGAN langsung menyerah ke konsultasi — pilihkan paket yang paling mendekati dari KATALOG TERKAIT (perhatikan varian kombinasi panel+baterai di deskripsinya), bandingkan singkat 2–3 opsi bila perlu, baru tawarkan konsultasi untuk finalisasi.
 3. Pakai "Nilai jual" produk secara JUJUR untuk meyakinkan (diskon, harga promo, stok terbatas, garansi, rating/ulasan). HANYA sebut yang benar-benar ada di data — dilarang mengarang diskon atau urgensi palsu.
 4. SELALU tutup dengan ajakan langkah berikutnya (CTA) yang jelas & spesifik, contoh:
    - "Klik kartu produk di bawah untuk lihat detail & langsung checkout ya 👇"
