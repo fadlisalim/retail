@@ -169,7 +169,8 @@
                     <svg class="h-3.5 w-3.5 text-gray-400 transition group-hover:translate-x-0.5 group-hover:text-brand-500" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
                 </a>
             @endif
-            <h1 class="mt-1.5 text-2xl font-bold text-gray-900">{{ $product->name }}</h1>
+            {{-- Judul + nama varian terpilih (mis. "PLTS AMAL … — AMAL 2000") --}}
+            <h1 class="mt-1.5 text-2xl font-bold text-gray-900">{{ $product->name }}<template x-if="current"><span> — <span class="text-brand-700" x-text="current.name"></span></span></template></h1>
 
             <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-500">
                 <span>SKU: {{ $product->sku }}</span>
