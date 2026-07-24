@@ -248,6 +248,7 @@ class AssistantService
         $brand = $company['brand_name'] ?? brand();
 
         $catalog = $this->catalogBlock($products);
+        $index = $this->catalogIndexBlock();
 
         return <<<PROMPT
 Kamu adalah "Kirana", asisten penjualan sekaligus konsultan energi surya di {$brand} (by {$company['legal_name']}). Kamu ramah, antusias, berpengetahuan, dan jago membantu pelanggan menemukan produk yang PAS. FOKUS UTAMA toko: penjualan RETAIL/SATUAN — panel surya, inverter, dan baterai per unit — di samping paket PLTS dan power station portable. Jadi jangan buru-buru mengarahkan ke paket; kalau pelanggan tanya produk satuan, layani sebagai pembelian satuan. Tujuanmu: bantu pelanggan yakin & mengambil langkah berikutnya (checkout atau konsultasi), tanpa memaksa dan tanpa berbohong.
@@ -287,15 +288,20 @@ ATURAN PENTING (jangan dilanggar):
 - Jika kamu TIDAK bisa menjawab dari katalog, ATAU pelanggan butuh konsultasi lebih detail/penawaran khusus/instalasi/komplain/bantuan manusia: jawab sewajarnya lalu akhiri pesan dengan token `[[WA]]` pada baris terpisah (otomatis jadi tombol WhatsApp — JANGAN tulis nomor manual). Untuk pertanyaan biasa yang sudah bisa kamu jawab, JANGAN tambahkan token itu.
 - Jangan pernah meminta/memproses data sensitif (password, nomor kartu, OTP). Kamu tidak punya akses internet.
 
-KATALOG TERKAIT (produk dari database toko, paling relevan dengan pertanyaan):
+KATALOG TERKAIT (produk dari database toko, paling relevan dengan pertanyaan — lengkap dengan ringkasan & spesifikasi):
 {$catalog}
+
+INDEKS KATALOG LENGKAP (SEMUA produk yang dijual — nama, harga, garansi, stok; TANPA spesifikasi detail):
+- Pakai indeks ini untuk pertanyaan komparatif/agregat: garansi paling lama, produk termurah/termahal, merek apa saja yang ada, produk kategori tertentu, jumlah produk, dsb.
+- Detail spesifikasi hanya ada di KATALOG TERKAIT. Kalau pelanggan minta detail produk yang cuma ada di indeks, jawab seadanya dari indeks lalu minta pelanggan menyebutkan nama produk itu supaya kamu bisa tampilkan detail & kartu produknya.
+{$index}
 PROMPT;
     }
 
     private function catalogBlock(array $products): string
     {
         if (empty($products)) {
-            return '(Tidak ada produk yang cocok dengan kata kunci ini. Bantu pelanggan dengan pengetahuan umum atau minta kata kunci yang lebih spesifik.)';
+            return '(Tidak ada produk spesifik yang cocok dengan kata kunci ini. Jawab dari INDEKS KATALOG LENGKAP di bawah atau pengetahuan umum; kalau perlu, minta kata kunci yang lebih spesifik.)';
         }
 
         $lines = [];
@@ -317,6 +323,52 @@ PROMPT;
                 .($hooks ? "\n  Nilai jual (jujur, boleh dipakai meyakinkan): ".implode(', ', $hooks) : '')
                 .($p['summary'] ? "\n  Ringkasan: {$p['summary']}" : '')
                 .($p['specs'] ? "\n  Spesifikasi: {$p['specs']}" : '');
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * Compact one-line-per-product index of the ENTIRE published catalogue
+     * (name, brand/category, price, warranty, stock). This lets the model answer
+     * comparative/aggregate questions ("garansi paling lama produk mana?",
+     * "yang termurah apa?") that keyword retrieval can't serve — those questions
+     * contain no product-specific term, so relevantProducts() finds nothing.
+     * ~33 products ≈ under 1k token; grouped by category for readability.
+     */
+    private function catalogIndexBlock(): string
+    {
+        try {
+            $products = Product::published()
+                ->with(['brand:id,name', 'category:id,name'])
+                ->orderBy('category_id')
+                ->orderBy('name')
+                ->get(['id', 'name', 'brand_id', 'category_id', 'price', 'sale_price', 'stock', 'min_stock', 'warranty']);
+        } catch (\Throwable $e) {
+            return '(Indeks katalog tidak tersedia saat ini.)';
+        }
+
+        if ($products->isEmpty()) {
+            return '(Katalog kosong.)';
+        }
+
+        $lines = [];
+        $lastCategory = false;
+        foreach ($products as $p) {
+            $category = $p->category?->name ?? 'Lainnya';
+            if ($category !== $lastCategory) {
+                $lines[] = "[{$category}]";
+                $lastCategory = $category;
+            }
+
+            $stock = ! $p->inStock() ? 'STOK HABIS' : ($p->isLowStock() ? 'stok menipis' : 'tersedia');
+            $parts = array_filter([
+                $p->brand?->name,
+                rupiah($p->effectivePrice()).($p->isOnSale() ? ' (diskon '.$p->discountPercent().'%)' : ''),
+                $p->warranty ? 'garansi: '.$p->warranty : null,
+                $stock,
+            ]);
+            $lines[] = '- '.$p->name.' — '.implode(' · ', $parts);
         }
 
         return implode("\n", $lines);
