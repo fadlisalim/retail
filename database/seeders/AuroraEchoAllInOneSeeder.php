@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Enums\StockMovementType;
-use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\WarehouseStock;
@@ -84,10 +83,8 @@ HTML;
             'meta_description' => 'Jual Aurora ECHO Series all-in-one solar generator: ECHO-1 500W/1kWh Rp 6.960.000, ECHO-2 1kW/2kWh Rp 10.440.000, ECHO-8 4kVA/8kWh Rp 31.890.000. LiFePO4 ≥8.000 siklus, garansi 2 tahun.',
         ])->save();
 
-        // Also surface under Paket PLTS → Off-Grid (it's an off-grid-ready system).
-        $extra = Category::where('slug', 'paket-plts-off-grid')->first();
-        $ids = collect([$product->category_id, $extra?->id])->filter()->unique()->all();
-        $product->categories()->syncWithoutDetaching($ids);
+        // Regular product (not a "paket"): keep it in its primary category only.
+        $product->categories()->sync(array_filter([$product->category_id]));
 
         $variants = [
             ['sku' => 'AURORA-ECHO-1', 'name' => 'ECHO-1 · 500W / 1 kWh', 'price' => 6960000, 'weight' => 14000],
