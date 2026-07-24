@@ -49,6 +49,8 @@ Route::post('/api/asisten/tanya', [\App\Http\Controllers\AssistantController::cl
     ->middleware('throttle:15,1')->name('assistant.chat');
 Route::get('/api/asisten/riwayat', [\App\Http\Controllers\AssistantController::class, 'history'])
     ->middleware('throttle:30,1')->name('assistant.history');
+Route::post('/api/asisten/kontak', [\App\Http\Controllers\AssistantController::class, 'contact'])
+    ->middleware('throttle:10,1')->name('assistant.contact');
 
 Route::get('/kategori', [CatalogController::class, 'categories'])->name('categories.index');
 // 1200x630 social-share (og:image) card for a category page (see products.og).

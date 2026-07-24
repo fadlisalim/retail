@@ -91,6 +91,35 @@ class AssistantLeadTest extends TestCase
         $this->assertNull($lead->phone);
     }
 
+    public function test_contact_form_saves_lead_and_returns_whatsapp_link(): void
+    {
+        $res = $this->postJson('/api/asisten/kontak', [
+            'session_id' => 'sess-form-1',
+            'name' => 'Rina',
+            'phone' => '0813-1111-2222',
+            'need' => 'Paket PLTS untuk rumah 2200 VA',
+        ])->assertOk()->assertJsonPath('ok', true);
+
+        $lead = AssistantLead::where('session_id', 'sess-form-1')->first();
+        $this->assertSame('Rina', $lead->name);
+        $this->assertSame('6281311112222', $lead->phone);
+        $this->assertSame('Paket PLTS untuk rumah 2200 VA', $lead->need);
+        // Pre-filled CS message carries the name + need.
+        $this->assertStringContainsString('Rina', urldecode((string) $res->json('whatsapp')));
+    }
+
+    public function test_contact_form_requires_all_fields_and_a_valid_phone(): void
+    {
+        $this->postJson('/api/asisten/kontak', ['session_id' => 'sess-form-2', 'name' => 'X', 'phone' => '08131112222'])
+            ->assertStatus(422); // need missing
+
+        $this->postJson('/api/asisten/kontak', [
+            'session_id' => 'sess-form-2', 'name' => 'X', 'phone' => '123', 'need' => 'tanya stok',
+        ])->assertStatus(422); // implausible phone
+
+        $this->assertSame(0, AssistantLead::count());
+    }
+
     public function test_prompt_uses_kakak_persona_and_asks_for_contact(): void
     {
         $this->enable();

@@ -105,6 +105,9 @@ class AssistantAnalytics
             if (! empty($lead['phone'])) {
                 $row->phone = $lead['phone'];
             }
+            if (! empty($lead['need'])) {
+                $row->need = Str::limit($lead['need'], 500, '');
+            }
             $row->save();
         } catch (\Throwable $e) {
             Log::warning('Assistant lead capture failed: '.$e->getMessage());

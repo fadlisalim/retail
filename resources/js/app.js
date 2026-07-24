@@ -293,8 +293,16 @@ Alpine.data('csChat', (config = {}) => ({
     messages: [],
     endpoint: config.endpoint || '/api/asisten/tanya',
     historyEndpoint: config.history || '/api/asisten/riwayat',
+    contactEndpoint: config.contact || '/api/asisten/kontak',
     welcomes: config.welcomes || [config.welcome || 'Halo Kak! 👋 Ada yang bisa aku bantu seputar produk kami?'],
     sessionId: '',
+    // Pre-WhatsApp contact form state (name + WA number + need are required
+    // before the CS number is revealed).
+    leadName: '',
+    leadPhone: '',
+    leadNeed: '',
+    leadSending: false,
+    leadError: '',
 
     init() {
         this.sessionId = this.resolveSession();
@@ -435,7 +443,15 @@ Alpine.data('csChat', (config = {}) => ({
             });
             const data = await res.json().catch(() => ({}));
             if (res.ok && data.reply) {
-                this.messages.push({ role: 'assistant', content: data.reply, products: (data.products || []).slice(0, 6), whatsapp: data.escalate ? (data.whatsapp || '') : '' });
+                // Only the newest bubble should carry the contact form.
+                if (data.lead_form) this.messages.forEach((m) => { m.leadForm = false; });
+                this.messages.push({
+                    role: 'assistant',
+                    content: data.reply,
+                    products: (data.products || []).slice(0, 6),
+                    whatsapp: data.escalate ? (data.whatsapp || '') : '',
+                    leadForm: !!data.lead_form,
+                });
             } else {
                 this.messages.push({ role: 'assistant', content: 'Maaf, terjadi kendala. Coba lagi sebentar ya.', products: [], whatsapp: '' });
             }
@@ -443,6 +459,52 @@ Alpine.data('csChat', (config = {}) => ({
             this.messages.push({ role: 'assistant', content: 'Koneksi bermasalah. Coba lagi ya.', products: [], whatsapp: '' });
         } finally {
             this.loading = false;
+            this.scrollSoon();
+        }
+    },
+
+    /**
+     * Submit the pre-WhatsApp contact form (name + WA number + need). On
+     * success the form collapses and the WhatsApp button appears with a
+     * pre-filled message. The lead lands in Admin → CS Assistant → Leads.
+     */
+    async submitLead(m) {
+        if (this.leadSending) return;
+        this.leadError = '';
+        if (!this.leadName.trim() || !this.leadPhone.trim() || !this.leadNeed.trim()) {
+            this.leadError = 'Semua kolom wajib diisi ya Kak 🙏';
+            return;
+        }
+        this.leadSending = true;
+        try {
+            const res = await fetch(this.contactEndpoint, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': this.csrf(), 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify({
+                    session_id: this.sessionId,
+                    name: this.leadName.trim(),
+                    phone: this.leadPhone.trim(),
+                    need: this.leadNeed.trim(),
+                }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                m.leadForm = false;
+                // welcome:true keeps this system-side bubble out of the AI history.
+                this.messages.push({
+                    role: 'assistant',
+                    content: 'Siap, makasih Kak ' + this.leadName.trim() + ' 🙏 Data sudah kami terima.' + (data.whatsapp ? ' Silakan lanjut chat CS kami lewat tombol WhatsApp di bawah ya 👇' : ' Tim kami akan segera menghubungi Kakak via WhatsApp ya 😊'),
+                    products: [],
+                    whatsapp: data.whatsapp || '',
+                    welcome: true,
+                });
+            } else {
+                this.leadError = data.error || (data.errors ? Object.values(data.errors).flat()[0] : '') || 'Gagal menyimpan. Coba lagi ya.';
+            }
+        } catch (err) {
+            this.leadError = 'Koneksi bermasalah. Coba lagi ya.';
+        } finally {
+            this.leadSending = false;
             this.scrollSoon();
         }
     },

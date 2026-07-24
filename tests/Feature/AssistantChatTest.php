@@ -82,7 +82,7 @@ class AssistantChatTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_wa_marker_triggers_escalation_and_is_stripped(): void
+    public function test_wa_marker_escalates_but_gates_the_number_behind_the_contact_form(): void
     {
         $this->enable();
         Http::fake(['api.anthropic.com/*' => Http::response([
@@ -90,10 +90,29 @@ class AssistantChatTest extends TestCase
             'content' => [['type' => 'text', 'text' => "Butuh konsultasi lebih detail ya.\n[[WA]]"]],
         ], 200)]);
 
-        $res = $this->postJson('/api/asisten/tanya', ['message' => 'minta penawaran instalasi'])->assertOk();
+        // No lead on file for this session → the widget must show the contact
+        // form instead of the WhatsApp link (number is not revealed yet).
+        $res = $this->postJson('/api/asisten/tanya', ['message' => 'minta penawaran instalasi', 'session_id' => 'sess-gate-1'])->assertOk();
 
-        $res->assertJsonPath('escalate', true);
+        $res->assertJsonPath('escalate', true)
+            ->assertJsonPath('whatsapp', null)
+            ->assertJsonPath('lead_form', true);
         $this->assertStringNotContainsString('[[WA]]', $res->json('reply'));
+    }
+
+    public function test_wa_link_is_released_once_the_session_lead_is_complete(): void
+    {
+        $this->enable();
+        Http::fake(['api.anthropic.com/*' => Http::response([
+            'stop_reason' => 'end_turn',
+            'content' => [['type' => 'text', 'text' => "Silakan lanjut ke CS ya.\n[[WA]]"]],
+        ], 200)]);
+
+        \App\Models\AssistantLead::create(['session_id' => 'sess-gate-2', 'name' => 'Budi', 'phone' => '628123456789']);
+
+        $res = $this->postJson('/api/asisten/tanya', ['message' => 'mau konsultasi', 'session_id' => 'sess-gate-2'])->assertOk();
+
+        $res->assertJsonPath('escalate', true)->assertJsonPath('lead_form', false);
         $this->assertNotNull($res->json('whatsapp'));
     }
 

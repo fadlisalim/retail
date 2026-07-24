@@ -85,6 +85,9 @@
                     <span class="font-medium text-gray-800">{{ $lead->name ?? 'Tanpa nama' }}</span>
                     <span class="ml-2 font-mono text-[10px] text-gray-300">{{ \Illuminate\Support\Str::limit($lead->session_id, 8, '') }}</span>
                     <span class="ml-2 text-xs text-gray-400">{{ $lead->updated_at?->format('d/m H:i') }}</span>
+                    @if ($lead->need)
+                        <p class="mt-0.5 max-w-md truncate text-xs text-gray-500" title="{{ $lead->need }}">📝 {{ $lead->need }}</p>
+                    @endif
                 </div>
                 @if ($lead->phone)
                     <a href="{{ route('admin.wachat.index', ['phone' => $lead->phone]) }}"
