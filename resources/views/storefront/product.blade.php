@@ -44,6 +44,18 @@
 </script>
 @endpush
 
+@push('head')
+    <script>
+        window.fbq && fbq('track', 'ViewContent', {
+            content_type: 'product',
+            content_ids: [@js($product->sku)],
+            content_name: @js($product->name),
+            value: {{ (float) $product->effectivePrice() }},
+            currency: 'IDR',
+        });
+    </script>
+@endpush
+
 @php
     // Gallery media in sort order: photos + short videos. The FIRST item shows
     // first on the detail page; a video row carries its poster in `path`.

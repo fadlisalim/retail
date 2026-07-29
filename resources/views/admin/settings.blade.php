@@ -90,6 +90,17 @@
             </div>
         </div>
 
+        {{-- Marketing / Ads --}}
+        <div class="card p-5">
+            <h2 class="mb-4 font-semibold text-gray-900">Marketing / Iklan</h2>
+            <div>
+                <label for="marketing_meta_pixel_id" class="input-label">Meta Pixel ID</label>
+                <input type="text" name="marketing_meta_pixel_id" id="marketing_meta_pixel_id" value="{{ old('marketing_meta_pixel_id', $settings['marketing.meta_pixel_id']) }}" placeholder="1234567890123456" class="form-input" inputmode="numeric">
+                <p class="mt-1 text-xs text-gray-500">Angka Pixel ID dari Meta Events Manager (Business Suite → Events Manager → Data Sources). Kalau diisi, website otomatis mengirim event PageView, ViewContent, AddToCart, Lead &amp; Purchase untuk optimasi iklan Meta/Facebook. Kosongkan untuk mematikan.</p>
+                @error('marketing_meta_pixel_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+            </div>
+        </div>
+
         {{-- Payment --}}
         <div class="card p-5">
             <h2 class="mb-4 font-semibold text-gray-900">Pembayaran</h2>

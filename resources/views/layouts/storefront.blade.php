@@ -28,6 +28,7 @@
     @hasSection('og_image_alt')<meta property="og:image:alt" content="@yield('og_image_alt')">@endif
     <meta name="twitter:card" content="summary_large_image">
 
+    @include('partials.meta-pixel')
     @stack('head')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>

@@ -199,6 +199,7 @@ Alpine.store('cart', {
             const data = await res.json().catch(() => ({}));
             if (res.ok) {
                 this.apply(data);
+                if (window.fbq) fbq('track', 'AddToCart');
             } else {
                 this.error = data.message || 'Gagal menambahkan produk ke keranjang.';
             }
@@ -524,6 +525,7 @@ Alpine.data('csChat', (config = {}) => ({
             const data = await res.json().catch(() => ({}));
             if (res.ok && data.ok) {
                 m.leadForm = false;
+                if (window.fbq) fbq('track', 'Lead'); // Meta ads conversion: contact captured
                 // welcome:true keeps this system-side bubble out of the AI history.
                 this.messages.push({
                     role: 'assistant',
@@ -649,6 +651,7 @@ Alpine.data('siteChat', (config = {}) => ({
             return;
         }
         this.sending = true;
+        const firstContact = this.needContact; // Lead fires once, on contact capture
         try {
             const res = await fetch(this.sendEndpoint, {
                 method: 'POST',
@@ -663,6 +666,7 @@ Alpine.data('siteChat', (config = {}) => ({
             });
             const data = await res.json().catch(() => ({}));
             if (res.ok && data.ok) {
+                if (firstContact && window.fbq) fbq('track', 'Lead');
                 const now = new Date();
                 this.messages.push({
                     id: data.id,

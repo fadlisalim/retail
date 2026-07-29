@@ -2,6 +2,22 @@
 @section('title', 'Lacak Pesanan '.$order->order_number)
 @section('noindex', 'noindex')
 
+{{-- Meta Pixel Purchase — only on the redirect right after checkout (the
+     success flash), not on later tracking visits (would double-count). --}}
+@if (session('success') && str_contains((string) session('success'), 'berhasil dibuat'))
+    @push('head')
+        <script>
+            window.fbq && fbq('track', 'Purchase', {
+                value: {{ (float) $order->grand_total }},
+                currency: 'IDR',
+                content_type: 'product',
+                content_ids: @js($order->items->pluck('sku')->filter()->values()),
+                num_items: {{ (int) $order->items->sum('quantity') }},
+            });
+        </script>
+    @endpush
+@endif
+
 @section('content')
     <x-breadcrumbs :items="[['label' => 'Lacak Pesanan']]" />
 

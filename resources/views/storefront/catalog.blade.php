@@ -11,7 +11,33 @@
     @section('og_image_alt', $category->name)
 @endif
 
+@if(!empty($category))
+    @push('head')
+        <script>
+            window.fbq && fbq('track', 'ViewContent', {
+                content_type: 'product_group',
+                content_category: @js($category->name),
+                content_name: @js($heading ?? $category->name),
+            });
+        </script>
+    @endpush
+@endif
+
 @section('content')
+    @php
+        // "Slim landing" mode for ad traffic: a category page with only a
+        // handful of products and no active filters hides the filter/sort
+        // chrome — the tools add friction without adding value there.
+        // NOTE: the controller injects category/sort into the request on
+        // category pages, so those keys never count as "user filtered".
+        $activeQuery = collect(request()->query())
+            ->except(['page', 'category', 'sort'])
+            ->filter(fn ($v) => $v !== null && $v !== '' && $v !== [])
+            ->isNotEmpty();
+        $slimLanding = ! empty($category) && ! $activeQuery && $products->total() <= 6;
+        $consultClick = "window.fbq&&fbq('track','Contact');window.dispatchEvent(new CustomEvent('open-cs-chat'))";
+    @endphp
+
     @if (($pageBanners ?? collect())->isNotEmpty())
         <div class="mb-4">
             <x-banner-slider :banners="$pageBanners" />
@@ -26,7 +52,13 @@
             <p class="text-sm text-gray-500">{{ $products->total() }} produk ditemukan</p>
         </div>
 
+        @if (!empty($category))
+            {{-- Primary conversion for ad traffic: free consultation via chat. --}}
+            <button type="button" onclick="{{ $consultClick }}" class="btn-primary hidden lg:inline-flex">💬 Konsultasi Gratis</button>
+        @endif
+
         {{-- Sort --}}
+        @if (!$slimLanding)
         <form method="GET" class="flex items-center gap-2" id="sortForm">
             @foreach ($filters as $k => $v)
                 @if ($k !== 'sort' && !is_array($v) && $v !== null && $v !== '')
@@ -40,7 +72,23 @@
                 @endforeach
             </select>
         </form>
+        @endif
     </div>
+
+    {{-- Trust bar — ad visitors don't know the store yet; answer "toko beneran ga?" up front. --}}
+    @if (!empty($category))
+        <div class="mb-4 flex gap-2 overflow-x-auto pb-1 text-xs [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            @foreach ([
+                '🛡️ Garansi Resmi s/d 10 Tahun',
+                '🏭 Gudang & Tim Instalasi Bandung',
+                '🔋 Baterai LiFePO4 Grade A',
+                '📋 Survei Sebelum Pasang',
+                '🔒 Pembayaran Aman',
+            ] as $trust)
+                <span class="inline-flex flex-none items-center gap-1.5 rounded-full border border-brand-100 bg-brand-50/70 px-3 py-1.5 font-medium text-brand-800">{{ $trust }}</span>
+            @endforeach
+        </div>
+    @endif
 
     {{-- Category landing intro (admin-managed description; supports HTML) --}}
     @if (!empty($pageIntro))
@@ -95,15 +143,15 @@
         </div>
     @endif
 
-    <div class="lg:grid lg:grid-cols-[260px_1fr] lg:gap-6" x-data="{ drawer: false }">
+    <div class="{{ $slimLanding ? '' : 'lg:grid lg:grid-cols-[260px_1fr] lg:gap-6' }}" x-data="{ drawer: false }">
         {{-- Mobile filter button --}}
-        <button @click="drawer = true" class="btn-outline mb-4 w-full lg:hidden">
+        <button @click="drawer = true" class="btn-outline mb-4 w-full lg:hidden {{ $slimLanding ? '!hidden' : '' }}">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z"/></svg>
             Filter
         </button>
 
         {{-- Filter sidebar / drawer --}}
-        <aside class="fixed inset-0 z-50 lg:static lg:z-auto lg:block" :class="drawer ? 'block' : 'hidden lg:block'">
+        <aside class="fixed inset-0 z-50 lg:static lg:z-auto {{ $slimLanding ? '!hidden' : 'lg:block' }}" :class="drawer ? 'block' : 'hidden lg:block'">
             <div class="absolute inset-0 bg-black/40 lg:hidden" @click="drawer = false"></div>
             {{-- Checkbox/radio auto-apply the filter on change; price inputs still
                  use the button (submitting mid-typing would be jarring). --}}
@@ -214,4 +262,13 @@
             @endif
         </div>
     </div>
+
+    {{-- Sticky consultation CTA (mobile, category landing pages): ad traffic
+         wants to ask before buying — chat = the page's main conversion. --}}
+    @if (!empty($category))
+        <div class="fixed inset-x-0 bottom-14 z-30 border-t border-gray-200 bg-white/95 px-4 py-2 backdrop-blur lg:hidden">
+            <button type="button" onclick="{{ $consultClick }}" class="btn-primary w-full">💬 Konsultasi Gratis — Hitung Kebutuhan Rumahmu</button>
+        </div>
+        <div class="h-16 lg:hidden"></div>
+    @endif
 @endsection

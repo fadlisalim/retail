@@ -28,6 +28,7 @@ class SettingController extends Controller
             'whatsapp.number' => $this->settings->get('whatsapp.number'),
             'whatsapp.greeting' => $this->settings->get('whatsapp.greeting'),
             'whatsapp.admin_notify' => $this->settings->get('whatsapp.admin_notify'),
+            'marketing.meta_pixel_id' => $this->settings->get('marketing.meta_pixel_id'),
             'payment.bank_account' => $this->settings->get('payment.bank_account'),
             'payment.qris_image' => $this->settings->get('payment.qris_image'),
             'pickup.address' => $this->settings->get('pickup.address'),
@@ -51,6 +52,7 @@ class SettingController extends Controller
             'whatsapp_number' => ['nullable', 'string', 'max:30'],
             'whatsapp_greeting' => ['nullable', 'string', 'max:500'],
             'whatsapp_admin_notify' => ['nullable', 'string', 'max:30'],
+            'marketing_meta_pixel_id' => ['nullable', 'string', 'max:32', 'regex:/^\d*$/'],
             'payment_bank_account' => ['nullable', 'string', 'max:500'],
             'payment_qris_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:4096'],
             'pickup_address' => ['nullable', 'string', 'max:1000'],
@@ -70,6 +72,7 @@ class SettingController extends Controller
         $this->settings->set('whatsapp.number', $data['whatsapp_number'] ?? '', 'string', 'whatsapp');
         $this->settings->set('whatsapp.greeting', $data['whatsapp_greeting'] ?? '', 'string', 'whatsapp');
         $this->settings->set('whatsapp.admin_notify', $data['whatsapp_admin_notify'] ?? '', 'string', 'whatsapp');
+        $this->settings->set('marketing.meta_pixel_id', $data['marketing_meta_pixel_id'] ?? '', 'string', 'marketing');
 
         $this->settings->set('payment.bank_account', $data['payment_bank_account'] ?? '', 'string', 'payment');
 
