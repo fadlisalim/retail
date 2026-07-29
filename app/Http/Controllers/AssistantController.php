@@ -25,12 +25,18 @@ class AssistantController extends Controller
         $data = $request->validate([
             'message' => ['required', 'string', 'max:1000'],
             'session_id' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'product_slug' => ['sometimes', 'nullable', 'string', 'max:255'],
             'history' => ['sometimes', 'array', 'max:30'],
             'history.*.role' => ['required_with:history', 'string', 'in:user,assistant'],
             'history.*.content' => ['required_with:history', 'string', 'max:4000'],
         ]);
 
-        $result = $assistant->ask($data['message'], $data['history'] ?? []);
+        // "Tanya Produk Ini": pin the product page the chat was opened from.
+        $focus = ! empty($data['product_slug'])
+            ? Product::published()->with(['brand', 'category'])->where('slug', $data['product_slug'])->first()
+            : null;
+
+        $result = $assistant->ask($data['message'], $data['history'] ?? [], $focus);
 
         $analytics->captureLead($result['lead'] ?? null, $data['session_id'] ?? null);
         $analytics->record($data['message'], $result, $data['session_id'] ?? null, $request->ip());

@@ -45,8 +45,6 @@
 @endpush
 
 @php
-    $waMsg = 'Halo Rekasurya, saya ingin berkonsultasi mengenai produk: '.$product->name.'. Link: '.route('products.show', $product->slug);
-
     // Gallery media in sort order: photos + short videos. The FIRST item shows
     // first on the detail page; a video row carries its poster in `path`.
     $media = $product->images->sortBy('sort_order')->map(fn ($i) => [
@@ -331,9 +329,20 @@
                         <button type="submit" class="btn-primary w-full" :disabled="stock <= 0">Tambah ke Keranjang</button>
                     </form>
                 @endif
-                @if ($whatsappEnabled)
-                    <a href="{{ whatsapp_link($waMsg) }}" target="_blank" rel="noopener" class="btn-outline flex-1 text-green-700">Konsultasi via WhatsApp</a>
-                @endif
+                @php
+                    $chatProduct = [
+                        'slug' => $product->slug,
+                        'name' => $product->name,
+                        'url' => route('products.show', $product->slug),
+                        'price' => rupiah($product->effectivePrice()),
+                        'image' => $product->primaryImageUrl(),
+                        'in_stock' => $product->inStock(),
+                    ];
+                @endphp
+                {{-- Tokopedia-style product chat: opens the CS widget with this
+                     product pinned as a card + quick-question chips. --}}
+                <button type="button" @click="$dispatch('open-cs-chat', { product: @js($chatProduct) })"
+                        class="btn-outline flex-1 text-brand-700">💬 Tanya Produk Ini</button>
             </div>
             <div class="mt-2 flex gap-2 text-sm text-gray-500">
                 <form action="{{ route('wishlist.toggle', $product->slug) }}" method="POST">@csrf<button class="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-gray-50" aria-label="Simpan ke wishlist" title="Simpan ke wishlist"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/></svg>Wishlist</button></form>

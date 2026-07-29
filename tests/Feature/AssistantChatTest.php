@@ -155,6 +155,25 @@ class AssistantChatTest extends TestCase
         $this->assertFalse($names->contains('Paket PLTS Rumah Hemat'));
     }
 
+    public function test_product_slug_pins_the_product_into_context(): void
+    {
+        $this->enable();
+        Http::fake(['api.anthropic.com/*' => Http::response([
+            'stop_reason' => 'end_turn',
+            'content' => [['type' => 'text', 'text' => 'Ready Kak, stoknya masih ada 😊']],
+        ], 200)]);
+
+        $p = Product::factory()->create(['name' => 'Inverter Hybrid XYZ 5000W', 'slug' => 'inverter-hybrid-xyz-5000w', 'status' => 'published', 'price' => 15000000, 'stock' => 3]);
+
+        // "barang ini ready?" carries no product keyword at all — the slug from
+        // the product page must keep the answer grounded on that product.
+        $res = $this->postJson('/api/asisten/tanya', ['message' => 'barang ini ready?', 'product_slug' => $p->slug])->assertOk();
+
+        $res->assertJsonPath('products.0.name', 'Inverter Hybrid XYZ 5000W');
+        Http::assertSent(fn ($request) => str_contains($request['system'], 'KONTEKS HALAMAN')
+            && str_contains($request['system'], 'Inverter Hybrid XYZ 5000W'));
+    }
+
     public function test_normal_answer_does_not_escalate(): void
     {
         $this->enable();

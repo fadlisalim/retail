@@ -57,11 +57,13 @@ class AssistantService
 
     /**
      * Answer a customer question. $history is prior turns as
-     * [['role'=>'user'|'assistant','content'=>string], ...]. Returns
-     * ['ok'=>bool,'reply'=>string,'products'=>array,'escalate'=>bool,
+     * [['role'=>'user'|'assistant','content'=>string], ...]. $focus is the
+     * product page the customer opened the chat from ("Tanya Produk Ini") —
+     * it is pinned into the context so "produk ini" questions stay grounded.
+     * Returns ['ok'=>bool,'reply'=>string,'products'=>array,'escalate'=>bool,
      *  'whatsapp'=>?string,'error'=>?string].
      */
-    public function ask(string $question, array $history = []): array
+    public function ask(string $question, array $history = [], ?Product $focus = null): array
     {
         $this->lastResult = null;
         $question = trim($question);
@@ -72,6 +74,14 @@ class AssistantService
 
         // Retrieve catalogue context up front (deterministic, from our DB).
         $products = $this->relevantProducts($question);
+        if ($focus) {
+            $products = collect([$this->productCard($focus)])
+                ->concat($products)
+                ->unique('slug')
+                ->take(6)
+                ->values()
+                ->all();
+        }
 
         if (! $this->isEnabled()) {
             $this->lastResult = ['ok' => false, 'status' => null, 'body' => 'Anthropic belum aktif (env).'];
@@ -91,7 +101,7 @@ class AssistantService
                     'max_tokens' => 700, // short, WhatsApp-style replies
 
                     'thinking' => ['type' => 'disabled'], // snappy, low-cost CS replies
-                    'system' => $this->systemPrompt($products),
+                    'system' => $this->systemPrompt($products, $focus?->name),
                     'messages' => $this->buildMessages($question, $history),
                 ]);
 
@@ -352,12 +362,15 @@ class AssistantService
     }
 
     /** The system prompt: persona, guardrails, store info and product context. */
-    private function systemPrompt(array $products): string
+    private function systemPrompt(array $products, ?string $focusName = null): string
     {
         $company = $this->settings->company();
         $brand = $company['brand_name'] ?? brand();
 
         $catalog = $this->catalogBlock($products);
+        if ($focusName) {
+            $catalog = "(KONTEKS HALAMAN: pelanggan membuka chat dari halaman produk \"{$focusName}\" — kalau dia bilang \"produk ini\", maksudnya produk tersebut. Prioritaskan produk itu.)\n".$catalog;
+        }
         $index = $this->catalogIndexBlock();
 
         return <<<PROMPT

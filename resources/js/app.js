@@ -303,6 +303,9 @@ Alpine.data('csChat', (config = {}) => ({
     leadNeed: '',
     leadSending: false,
     leadError: '',
+    // "Tanya Produk Ini" attachment: the product page the chat was opened from.
+    attached: null,
+    quickChips: [],
 
     init() {
         this.sessionId = this.resolveSession();
@@ -361,6 +364,36 @@ Alpine.data('csChat', (config = {}) => ({
     toggle() {
         this.open = !this.open;
         if (this.open) this.scrollSoon();
+    },
+
+    /**
+     * Open the chat, optionally with a product attached (Tokopedia-style
+     * "Tanya Produk Ini" from a product page): the product card is pinned
+     * into the thread, quick-question chips appear, and every following
+     * message carries the slug so the AI stays grounded on that product.
+     */
+    openWith(detail) {
+        this.open = true;
+        const p = detail && detail.product;
+        if (p && p.slug && this.attached?.slug !== p.slug) {
+            this.attached = p;
+            this.quickChips = ['Barang ini ready stok?', 'Garansinya bagaimana?', 'Harga ini nett atau bisa nego?'];
+            // welcome:true keeps this system-side bubble out of the AI history.
+            this.messages.push({
+                role: 'assistant',
+                content: 'Ini produknya ya Kak 👇 Silakan tanya apa saja soal produk ini 😊',
+                products: [p],
+                whatsapp: '',
+                welcome: true,
+            });
+        }
+        this.scrollSoon();
+    },
+
+    /** Quick-question chip: fill the composer and send right away. */
+    sendChip(text) {
+        this.input = text;
+        this.send();
     },
 
     scrollSoon() {
@@ -433,13 +466,14 @@ Alpine.data('csChat', (config = {}) => ({
         this.messages.push({ role: 'user', content: text, products: [] });
         this.input = '';
         this.loading = true;
+        this.quickChips = []; // chips are a first-question helper only
         this.scrollSoon();
 
         try {
             const res = await fetch(this.endpoint, {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': this.csrf(), 'Content-Type': 'application/json', Accept: 'application/json' },
-                body: JSON.stringify({ message: text, history, session_id: this.sessionId }),
+                body: JSON.stringify({ message: text, history, session_id: this.sessionId, product_slug: this.attached?.slug || null }),
             });
             const data = await res.json().catch(() => ({}));
             if (res.ok && data.reply) {

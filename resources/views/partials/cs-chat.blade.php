@@ -10,7 +10,7 @@
         'Hai Kak, aku Kirana dari '.brand().' ⚡ Butuh panel surya, inverter, atau baterai? Kalau produk yang dicari belum ada di katalog, tim kami juga bisa bantu carikan lho. Cerita dulu yuk 😊',
     ])
     x-data="csChat({ endpoint: '{{ route('assistant.chat') }}', history: '{{ route('assistant.history') }}', contact: '{{ route('assistant.contact') }}', welcomes: @js($csWelcomes) })"
-    @open-cs-chat.window="open = true; scrollSoon()"
+    @open-cs-chat.window="openWith($event.detail)"
     x-cloak
     class="print:hidden"
 >
@@ -124,6 +124,15 @@
                     </span>
                 </div>
             </div>
+        </div>
+
+        {{-- Quick-question chips (Tokopedia-style, shown after "Tanya Produk Ini") --}}
+        <div x-show="quickChips.length" x-cloak class="flex gap-1.5 overflow-x-auto border-t border-gray-100 bg-white px-2 pt-2">
+            <template x-for="chip in quickChips" :key="chip">
+                <button type="button" @click="sendChip(chip)"
+                        class="flex-none rounded-full border border-brand-300 px-3 py-1.5 text-xs font-medium text-brand-700 transition hover:bg-brand-50"
+                        x-text="chip"></button>
+            </template>
         </div>
 
         {{-- Input --}}
