@@ -57,6 +57,8 @@ Route::post('/api/chat-toko/kirim', [\App\Http\Controllers\SiteChatController::c
     ->middleware('throttle:20,1')->name('sitechat.send');
 Route::get('/api/chat-toko/pesan', [\App\Http\Controllers\SiteChatController::class, 'messages'])
     ->middleware('throttle:60,1')->name('sitechat.messages');
+Route::get('/api/chat-toko/notif', [\App\Http\Controllers\SiteChatController::class, 'unread'])
+    ->middleware('throttle:60,1')->name('sitechat.unread');
 
 Route::get('/kategori', [CatalogController::class, 'categories'])->name('categories.index');
 // 1200x630 social-share (og:image) card for a category page (see products.og).

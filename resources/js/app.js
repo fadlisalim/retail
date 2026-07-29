@@ -690,4 +690,35 @@ Alpine.data('siteChat', (config = {}) => ({
     },
 }));
 
+/**
+ * Header chat-notification bell (Tokopedia-style): shows the number of unread
+ * admin replies in Chat Toko; clicking opens the chat widget. Polls lightly.
+ */
+Alpine.data('siteChatBell', (url) => ({
+    unread: 0,
+
+    init() {
+        this.refresh();
+        setInterval(() => this.refresh(), 30000);
+    },
+
+    sid() {
+        try {
+            return (localStorage.getItem('cs_sid') || '').slice(0, 64);
+        } catch (e) {
+            return '';
+        }
+    },
+
+    async refresh() {
+        const sid = this.sid();
+        if (!sid) return;
+        try {
+            const res = await fetch(`${url}?session_id=${encodeURIComponent(sid)}`, { headers: { Accept: 'application/json' } });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && typeof data.unread === 'number') this.unread = data.unread;
+        } catch (e) { /* retry next tick */ }
+    },
+}));
+
 Alpine.start();

@@ -54,6 +54,14 @@
 
         {{-- Mobile quick links (same row, beside search) --}}
         <nav class="flex shrink-0 items-center gap-2.5 text-xs lg:hidden" aria-label="Pintasan">
+            {{-- Chat Toko notification (mobile) --}}
+            <button type="button" x-data="siteChatBell('{{ route('sitechat.unread') }}')"
+                    @click="$dispatch('open-site-chat'); unread = 0"
+                    @open-site-chat.window="unread = 0"
+                    class="relative p-1 text-gray-600" aria-label="Chat dengan admin">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5m-9 6 3.5-2.1A9 9 0 1 1 21 12a9 9 0 0 1-13 8.1L4 20Z"/></svg>
+                <span x-cloak x-show="unread > 0" x-text="unread > 9 ? '9+' : unread" class="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white"></span>
+            </button>
             <a href="{{ route('products.index') }}" class="font-medium text-gray-600 hover:text-brand-700">Produk</a>
             <a href="{{ route('affiliate.landing') }}" class="font-semibold text-accent-600 hover:text-accent-500">Afiliator</a>
         </nav>
@@ -64,6 +72,14 @@
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5 7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"/></svg>
                 @if($compareCount)<span class="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-accent-500 px-1 text-[10px] font-bold text-white">{{ $compareCount }}</span>@endif
             </a>
+            {{-- Chat Toko notification (Tokopedia-style): unread admin replies --}}
+            <button type="button" x-data="siteChatBell('{{ route('sitechat.unread') }}')"
+                    @click="$dispatch('open-site-chat'); unread = 0"
+                    @open-site-chat.window="unread = 0"
+                    class="relative rounded-lg p-2 text-gray-600 hover:bg-gray-100" aria-label="Chat dengan admin">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5m-9 6 3.5-2.1A9 9 0 1 1 21 12a9 9 0 0 1-13 8.1L4 20Z"/></svg>
+                <span x-cloak x-show="unread > 0" x-text="unread > 9 ? '9+' : unread" class="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white"></span>
+            </button>
             <a href="{{ route('wishlist.index') }}" class="relative rounded-lg p-2 text-gray-600 hover:bg-gray-100" aria-label="Wishlist">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/></svg>
                 @if($wishlistCount)<span class="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-accent-500 px-1 text-[10px] font-bold text-white">{{ $wishlistCount }}</span>@endif

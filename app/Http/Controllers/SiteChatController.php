@@ -95,6 +95,22 @@ class SiteChatController extends Controller
         return response()->json(['ok' => true, 'id' => $row->id]);
     }
 
+    /**
+     * Lightweight unread counter for the header bell (Tokopedia-style chat
+     * notification): admin replies not yet delivered to this browser session.
+     * Read-only — the badge clears when the widget actually loads them.
+     */
+    public function unread(Request $request): JsonResponse
+    {
+        $data = $request->validate(['session_id' => ['required', 'string', 'max:64']]);
+        $sessionId = $this->cleanSession($data['session_id']);
+
+        $unread = $sessionId === '' ? 0 : SiteChatMessage::where('session_id', $sessionId)
+            ->where('direction', 'out')->where('is_read', false)->count();
+
+        return response()->json(['unread' => $unread]);
+    }
+
     /** Guests need a lead (name + phone) on file before the chat opens. */
     private function needsContact(Request $request, string $sessionId): bool
     {

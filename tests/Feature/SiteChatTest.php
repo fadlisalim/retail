@@ -105,6 +105,22 @@ class SiteChatTest extends TestCase
         $this->assertSame($admin->id, $reply->admin_id);
     }
 
+    public function test_unread_bell_counts_only_undelivered_admin_replies(): void
+    {
+        SiteChatMessage::create(['session_id' => 'sess-shop-6', 'direction' => 'out', 'message' => 'Halo Kak', 'created_at' => now()]);
+        SiteChatMessage::create(['session_id' => 'sess-shop-6', 'direction' => 'out', 'message' => 'Stok ready ya', 'created_at' => now()]);
+        SiteChatMessage::create(['session_id' => 'sess-shop-6', 'direction' => 'in', 'message' => 'Oke', 'created_at' => now()]); // own msg — not counted
+        SiteChatMessage::create(['session_id' => 'sess-other', 'direction' => 'out', 'message' => 'Lain sesi', 'created_at' => now()]);
+
+        $this->getJson('/api/chat-toko/notif?session_id=sess-shop-6')
+            ->assertOk()->assertJsonPath('unread', 2);
+
+        // Loading the conversation (widget open) delivers them → badge drops to 0.
+        $this->getJson('/api/chat-toko/pesan?session_id=sess-shop-6&after_id=0')->assertOk();
+        $this->getJson('/api/chat-toko/notif?session_id=sess-shop-6')
+            ->assertOk()->assertJsonPath('unread', 0);
+    }
+
     public function test_admin_inbox_requires_permission(): void
     {
         $this->seed(RoleSeeder::class);
