@@ -339,9 +339,9 @@
                         'in_stock' => $product->inStock(),
                     ];
                 @endphp
-                {{-- Tokopedia-style product chat: opens the CS widget with this
-                     product pinned as a card + quick-question chips. --}}
-                <button type="button" @click="$dispatch('open-cs-chat', { product: @js($chatProduct) })"
+                {{-- Tokopedia-style product chat with a HUMAN admin: opens the
+                     Chat Toko widget with this product attached. --}}
+                <button type="button" @click="$dispatch('open-site-chat', { product: @js($chatProduct) })"
                         class="btn-outline flex-1 text-brand-700">💬 Tanya Produk Ini</button>
             </div>
             <div class="mt-2 flex gap-2 text-sm text-gray-500">

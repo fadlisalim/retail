@@ -544,4 +544,150 @@ Alpine.data('csChat', (config = {}) => ({
     },
 }));
 
+/**
+ * "Chat Toko": Tokopedia-style chat with a HUMAN admin (not the AI). Messages
+ * go to the site inbox (Admin → Chat Toko); replies come back via polling.
+ * Shares the cs_sid browser session id with the CS assistant so a guest's
+ * name/phone (lead) identifies them across both.
+ */
+Alpine.data('siteChat', (config = {}) => ({
+    open: false,
+    sending: false,
+    input: '',
+    messages: [],
+    lastId: 0,
+    attached: null,
+    needContact: false,
+    name: '',
+    phone: '',
+    error: '',
+    sessionId: '',
+    timer: null,
+    loaded: false,
+    sendEndpoint: config.send || '/api/chat-toko/kirim',
+    pollEndpoint: config.poll || '/api/chat-toko/pesan',
+    isAuth: !!config.auth,
+
+    init() {
+        this.sessionId = this.resolveSession();
+    },
+
+    resolveSession() {
+        try {
+            let id = localStorage.getItem('cs_sid');
+            if (!id) {
+                id = (crypto.randomUUID?.() || String(Date.now()) + Math.random().toString(36).slice(2)).replace(/[^A-Za-z0-9_-]/g, '');
+                localStorage.setItem('cs_sid', id);
+            }
+            return id.slice(0, 64);
+        } catch (e) {
+            return '';
+        }
+    },
+
+    csrf() {
+        return document.querySelector('meta[name=csrf-token]')?.content || '';
+    },
+
+    openWith(detail) {
+        this.open = true;
+        const p = detail && detail.product;
+        if (p && p.slug) this.attached = p;
+        if (!this.loaded) this.restore();
+        if (!this.timer) this.timer = setInterval(() => { if (this.open) this.poll(); }, 5000);
+        this.scrollSoon();
+    },
+
+    close() {
+        this.open = false;
+    },
+
+    scrollSoon() {
+        this.$nextTick(() => {
+            const box = this.$refs.log;
+            if (box) box.scrollTop = box.scrollHeight;
+        });
+    },
+
+    /** First open: load the whole conversation + contact requirement. */
+    async restore() {
+        this.loaded = true;
+        try {
+            const res = await fetch(`${this.pollEndpoint}?session_id=${encodeURIComponent(this.sessionId)}&after_id=0`, { headers: { Accept: 'application/json' } });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && Array.isArray(data.messages)) {
+                this.messages = data.messages;
+                this.lastId = data.messages.reduce((mx, m) => Math.max(mx, m.id || 0), 0);
+                this.needContact = !this.isAuth && !!data.need_contact;
+                this.scrollSoon();
+            }
+        } catch (e) { /* next poll retries */ }
+    },
+
+    async poll() {
+        try {
+            const res = await fetch(`${this.pollEndpoint}?session_id=${encodeURIComponent(this.sessionId)}&after_id=${this.lastId}`, { headers: { Accept: 'application/json' } });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && Array.isArray(data.messages) && data.messages.length) {
+                data.messages.forEach((m) => {
+                    if ((m.id || 0) > this.lastId) {
+                        this.messages.push(m);
+                        this.lastId = Math.max(this.lastId, m.id || 0);
+                    }
+                });
+                this.scrollSoon();
+            }
+        } catch (e) { /* retry next tick */ }
+    },
+
+    async send() {
+        const text = this.input.trim();
+        if (!text || this.sending) return;
+        this.error = '';
+        if (this.needContact && (!this.name.trim() || !this.phone.trim())) {
+            this.error = 'Isi nama & nomor WhatsApp dulu ya Kak 🙏';
+            return;
+        }
+        this.sending = true;
+        try {
+            const res = await fetch(this.sendEndpoint, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': this.csrf(), 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify({
+                    session_id: this.sessionId,
+                    message: text,
+                    product_slug: this.attached?.slug || null,
+                    name: this.needContact ? this.name.trim() : null,
+                    phone: this.needContact ? this.phone.trim() : null,
+                }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                const now = new Date();
+                this.messages.push({
+                    id: data.id,
+                    direction: 'in',
+                    message: text,
+                    time: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'),
+                    product: this.attached ? { name: this.attached.name, url: this.attached.url, price: this.attached.price, image: this.attached.image } : null,
+                });
+                this.lastId = Math.max(this.lastId, data.id || 0);
+                this.input = '';
+                this.attached = null;
+                this.needContact = false;
+                this.scrollSoon();
+            } else if (data.need_contact) {
+                this.needContact = true;
+                this.error = data.error || 'Isi nama & nomor WhatsApp dulu ya Kak 🙏';
+            } else {
+                this.error = data.error || (data.errors ? Object.values(data.errors).flat()[0] : '') || 'Gagal mengirim. Coba lagi ya.';
+            }
+        } catch (e) {
+            this.error = 'Koneksi bermasalah. Coba lagi ya.';
+        } finally {
+            this.sending = false;
+        }
+    },
+}));
+
 Alpine.start();

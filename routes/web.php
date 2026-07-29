@@ -52,6 +52,12 @@ Route::get('/api/asisten/riwayat', [\App\Http\Controllers\AssistantController::c
 Route::post('/api/asisten/kontak', [\App\Http\Controllers\AssistantController::class, 'contact'])
     ->middleware('throttle:10,1')->name('assistant.contact');
 
+// Chat Toko (customer ↔ admin, Tokopedia-style; NOT the AI assistant).
+Route::post('/api/chat-toko/kirim', [\App\Http\Controllers\SiteChatController::class, 'send'])
+    ->middleware('throttle:20,1')->name('sitechat.send');
+Route::get('/api/chat-toko/pesan', [\App\Http\Controllers\SiteChatController::class, 'messages'])
+    ->middleware('throttle:60,1')->name('sitechat.messages');
+
 Route::get('/kategori', [CatalogController::class, 'categories'])->name('categories.index');
 // 1200x630 social-share (og:image) card for a category page (see products.og).
 Route::get('/kategori/{category:slug}/og.png', \App\Http\Controllers\CategoryOgImageController::class)->name('categories.og');
@@ -332,5 +338,8 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/wa-chat', [Admin\WaChatController::class, 'index'])->name('wachat.index');
         Route::get('/wa-chat/pesan', [Admin\WaChatController::class, 'messages'])->name('wachat.messages');
         Route::post('/wa-chat/kirim', [Admin\WaChatController::class, 'send'])->middleware('throttle:30,1')->name('wachat.send');
+        Route::get('/chat-toko', [Admin\SiteChatController::class, 'index'])->name('sitechat.index');
+        Route::get('/chat-toko/pesan', [Admin\SiteChatController::class, 'messages'])->name('sitechat.messages');
+        Route::post('/chat-toko/kirim', [Admin\SiteChatController::class, 'send'])->middleware('throttle:30,1')->name('sitechat.send');
     });
 });

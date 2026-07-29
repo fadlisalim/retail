@@ -1,0 +1,115 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\AssistantLead;
+use App\Models\Product;
+use App\Models\SiteChatMessage;
+use App\Models\User;
+use Database\Seeders\RoleSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+/** On-site "Chat Toko": customer ↔ admin chat (not the AI assistant). */
+class SiteChatTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_guest_must_leave_name_and_phone_before_chatting(): void
+    {
+        $res = $this->postJson('/api/chat-toko/kirim', [
+            'session_id' => 'sess-shop-1',
+            'message' => 'Barang ini ready?',
+        ]);
+
+        $res->assertStatus(422)->assertJsonPath('need_contact', true);
+        $this->assertSame(0, SiteChatMessage::count());
+    }
+
+    public function test_guest_first_message_with_contact_creates_lead_and_message(): void
+    {
+        $p = Product::factory()->create(['name' => 'Panel Surya Uji 550Wp', 'status' => 'published', 'price' => 2000000, 'stock' => 4]);
+
+        $res = $this->postJson('/api/chat-toko/kirim', [
+            'session_id' => 'sess-shop-2',
+            'message' => 'Barang ini ready kak?',
+            'product_slug' => $p->slug,
+            'name' => 'Budi',
+            'phone' => '081234567890',
+        ])->assertOk()->assertJsonPath('ok', true);
+
+        $msg = SiteChatMessage::first();
+        $this->assertSame('in', $msg->direction);
+        $this->assertSame($p->slug, $msg->product_slug);
+
+        $lead = AssistantLead::where('session_id', 'sess-shop-2')->first();
+        $this->assertSame('Budi', $lead->name);
+        $this->assertSame('6281234567890', $lead->phone);
+
+        // Follow-up messages need no contact data anymore.
+        $this->postJson('/api/chat-toko/kirim', ['session_id' => 'sess-shop-2', 'message' => 'Halo?'])
+            ->assertOk()->assertJsonPath('ok', true);
+    }
+
+    public function test_logged_in_customer_chats_without_contact_form(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->postJson('/api/chat-toko/kirim', [
+            'session_id' => 'sess-shop-3',
+            'message' => 'Halo admin',
+        ])->assertOk();
+
+        $this->assertSame($user->id, SiteChatMessage::first()->user_id);
+    }
+
+    public function test_customer_poll_returns_admin_reply_with_product_card(): void
+    {
+        $p = Product::factory()->create(['name' => 'Inverter Uji 3000W', 'status' => 'published', 'price' => 5000000, 'stock' => 2]);
+        AssistantLead::create(['session_id' => 'sess-shop-4', 'name' => 'Sari', 'phone' => '628111']);
+
+        SiteChatMessage::create(['session_id' => 'sess-shop-4', 'direction' => 'in', 'message' => 'Ready?', 'product_slug' => $p->slug, 'created_at' => now()]);
+        SiteChatMessage::create(['session_id' => 'sess-shop-4', 'direction' => 'out', 'message' => 'Ready Kak, silakan diorder 😊', 'created_at' => now()]);
+
+        $res = $this->getJson('/api/chat-toko/pesan?session_id=sess-shop-4&after_id=0')->assertOk();
+
+        $this->assertCount(2, $res->json('messages'));
+        $res->assertJsonPath('messages.0.product.name', 'Inverter Uji 3000W')
+            ->assertJsonPath('messages.1.direction', 'out')
+            ->assertJsonPath('need_contact', false);
+
+        // Delivered admin replies are marked read for the badge/bookkeeping.
+        $this->assertTrue(SiteChatMessage::where('direction', 'out')->first()->is_read);
+    }
+
+    public function test_admin_inbox_lists_reply_and_marks_read(): void
+    {
+        $this->seed(RoleSeeder::class);
+        $admin = User::factory()->create(['is_staff' => true, 'is_active' => true]);
+        $admin->roles()->attach(\App\Models\Role::where('slug', 'super-admin')->first());
+
+        AssistantLead::create(['session_id' => 'sess-shop-5', 'name' => 'Dodi', 'phone' => '628222']);
+        SiteChatMessage::create(['session_id' => 'sess-shop-5', 'direction' => 'in', 'message' => 'Bisa nego?', 'created_at' => now()]);
+
+        // Inbox page shows the conversation (guest name via lead).
+        $this->actingAs($admin)->get('/admin/chat-toko')->assertOk()->assertSee('Dodi');
+
+        // Open the thread → incoming marked read.
+        $this->actingAs($admin)->get('/admin/chat-toko?sesi=sess-shop-5')->assertOk()->assertSee('Bisa nego?');
+        $this->assertTrue(SiteChatMessage::first()->is_read);
+
+        // Reply lands as 'out' with the admin id, customer will poll it.
+        $this->actingAs($admin)->postJson('/admin/chat-toko/kirim', ['sesi' => 'sess-shop-5', 'message' => 'Harga sudah nett Kak 🙏'])
+            ->assertOk()->assertJsonPath('ok', true);
+        $reply = SiteChatMessage::where('direction', 'out')->first();
+        $this->assertSame($admin->id, $reply->admin_id);
+    }
+
+    public function test_admin_inbox_requires_permission(): void
+    {
+        $this->seed(RoleSeeder::class);
+        $user = User::factory()->create(); // no role
+
+        $this->actingAs($user)->get('/admin/chat-toko')->assertForbidden();
+    }
+}

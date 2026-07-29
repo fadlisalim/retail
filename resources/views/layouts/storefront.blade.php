@@ -45,6 +45,7 @@
     @include('partials.mobile-nav')
     @include('partials.mini-cart')
     @include('partials.cs-chat')
+    @include('partials.site-chat')
 
     @stack('scripts')
 </body>

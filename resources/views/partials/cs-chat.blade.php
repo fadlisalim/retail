@@ -11,6 +11,7 @@
     ])
     x-data="csChat({ endpoint: '{{ route('assistant.chat') }}', history: '{{ route('assistant.history') }}', contact: '{{ route('assistant.contact') }}', welcomes: @js($csWelcomes) })"
     @open-cs-chat.window="openWith($event.detail)"
+    @open-site-chat.window="open = false"
     x-cloak
     class="print:hidden"
 >

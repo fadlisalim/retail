@@ -35,6 +35,8 @@ class AdminMenuComposer
             'affiliates' => Affiliate::where('status', AffiliateStatus::Pending->value)->count(),
             // Unread incoming WhatsApp messages in the inbox.
             'wachat' => \App\Models\WaMessage::where('direction', 'in')->where('is_read', false)->count(),
+            // Unread on-site Chat Toko messages from customers.
+            'sitechat' => \App\Models\SiteChatMessage::where('direction', 'in')->where('is_read', false)->count(),
         ]);
     }
 }
