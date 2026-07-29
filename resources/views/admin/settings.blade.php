@@ -81,6 +81,12 @@
                     <textarea name="whatsapp_greeting" id="whatsapp_greeting" rows="2" class="form-textarea">{{ old('whatsapp_greeting', $settings['whatsapp.greeting']) }}</textarea>
                     @error('whatsapp_greeting')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                 </div>
+                <div class="sm:col-span-2">
+                    <label for="whatsapp_admin_notify" class="input-label">Nomor WA Notifikasi Admin (Chat Toko)</label>
+                    <input type="text" name="whatsapp_admin_notify" id="whatsapp_admin_notify" value="{{ old('whatsapp_admin_notify', $settings['whatsapp.admin_notify']) }}" placeholder="6281xxxxxxxx" class="form-input">
+                    <p class="mt-1 text-xs text-gray-500">Chat Toko baru dari website dikirim sebagai notifikasi WA ke nomor ini (via Wablas). Kosongkan untuk mematikan. Jangan isi dengan nomor device Wablas itu sendiri — pesan ke nomor sendiri tidak terkirim.</p>
+                    @error('whatsapp_admin_notify')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
             </div>
         </div>
 

@@ -6,9 +6,11 @@ use App\Models\AssistantLead;
 use App\Models\Product;
 use App\Models\SiteChatMessage;
 use App\Services\AssistantAnalytics;
+use App\Services\SettingService;
 use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 /**
@@ -78,9 +80,17 @@ class SiteChatController extends Controller
         }
 
         $productSlug = null;
+        $productName = null;
         if (! empty($data['product_slug'])) {
-            $productSlug = Product::published()->where('slug', $data['product_slug'])->value('slug');
+            $focus = Product::published()->where('slug', $data['product_slug'])->first(['slug', 'name']);
+            $productSlug = $focus?->slug;
+            $productName = $focus?->name;
         }
+
+        // Notify the admin's WA only when this message STARTS a new unread
+        // burst — while earlier messages sit unread, more pings help nobody.
+        $adminCaughtUp = ! SiteChatMessage::where('session_id', $sessionId)
+            ->where('direction', 'in')->where('is_read', false)->exists();
 
         $row = SiteChatMessage::create([
             'session_id' => $sessionId,
@@ -92,7 +102,54 @@ class SiteChatController extends Controller
             'created_at' => now(),
         ]);
 
+        if ($adminCaughtUp) {
+            $this->notifyAdmin($request, $sessionId, $row, $productName);
+        }
+
         return response()->json(['ok' => true, 'id' => $row->id]);
+    }
+
+    /**
+     * Internal WA ping (via Wablas) to the store's admin number when a new
+     * web chat comes in, so nobody has to keep the admin page open. Guarded:
+     * only for messages that start a new unread burst, plus a 10-minute
+     * per-session cooldown. Sent after the response so the customer never
+     * waits on the gateway; failures are logged inside WhatsAppService.
+     */
+    private function notifyAdmin(Request $request, string $sessionId, SiteChatMessage $row, ?string $productName): void
+    {
+        $settings = app(SettingService::class);
+        $wa = app(WhatsAppService::class);
+
+        $adminNumber = trim((string) $settings->get('whatsapp.admin_notify'));
+        if ($adminNumber === '' || ! $wa->isEnabled()) {
+            return;
+        }
+
+        // Cooldown: at most one ping per session per 10 minutes.
+        if (! Cache::add('sitechat_notif_'.$sessionId, 1, 600)) {
+            return;
+        }
+
+        $lead = AssistantLead::where('session_id', $sessionId)->first();
+        $who = $request->user()?->name ?: ($lead?->name ?: 'Pengunjung');
+        $phone = $lead?->phone ? ' ('.$lead->phone.')' : '';
+
+        $text = '💬 Chat Toko baru dari '.$who.$phone
+            .($productName ? "\nProduk: ".$productName : '')
+            ."\nPesan: \"".Str::limit($row->message, 120)."\""
+            ."\nBalas: ".route('admin.sitechat.index', ['sesi' => $sessionId]);
+
+        // Idempotency key: terminating callbacks are never pruned by the
+        // framework, so in long-lived processes (tests, Octane) this closure
+        // can be re-invoked on LATER requests' terminate — the key makes any
+        // replay a no-op instead of a duplicate WA ping.
+        $sentKey = 'sitechat_notif_sent_'.$row->id;
+        dispatch(function () use ($wa, $adminNumber, $text, $sentKey) {
+            if (Cache::add($sentKey, 1, 3600)) {
+                $wa->send($adminNumber, $text);
+            }
+        })->afterResponse();
     }
 
     /**

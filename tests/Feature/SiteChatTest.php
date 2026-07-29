@@ -121,6 +121,41 @@ class SiteChatTest extends TestCase
             ->assertOk()->assertJsonPath('unread', 0);
     }
 
+    public function test_new_web_chat_pings_the_admin_wa_once_per_burst(): void
+    {
+        config(['services.wablas.enabled' => true, 'services.wablas.token' => 'tok', 'services.wablas.base_url' => 'https://pati.wablas.com']);
+        app(\App\Services\SettingService::class)->set('whatsapp.admin_notify', '628999888777', 'string', 'whatsapp');
+        \Illuminate\Support\Facades\Http::fake(['pati.wablas.com/*' => \Illuminate\Support\Facades\Http::response(['status' => true], 200)]);
+
+        AssistantLead::create(['session_id' => 'sess-shop-7', 'name' => 'Rina', 'phone' => '628333']);
+
+        $this->postJson('/api/chat-toko/kirim', ['session_id' => 'sess-shop-7', 'message' => 'Ready kak?'])->assertOk();
+
+        \Illuminate\Support\Facades\Http::assertSent(function ($req) {
+            $data = $req['data'][0] ?? [];
+
+            return str_contains((string) $req->url(), 'send-message')
+                && $data['phone'] === '628999888777'
+                && str_contains($data['message'], 'Rina')
+                && str_contains($data['message'], 'Ready kak?');
+        });
+
+        // Second message while the first is still unread → no extra ping.
+        $this->postJson('/api/chat-toko/kirim', ['session_id' => 'sess-shop-7', 'message' => 'Halo?'])->assertOk();
+        \Illuminate\Support\Facades\Http::assertSentCount(1);
+    }
+
+    public function test_no_admin_ping_when_number_not_configured(): void
+    {
+        config(['services.wablas.enabled' => true, 'services.wablas.token' => 'tok', 'services.wablas.base_url' => 'https://pati.wablas.com']);
+        \Illuminate\Support\Facades\Http::fake();
+
+        AssistantLead::create(['session_id' => 'sess-shop-8', 'name' => 'Dodi', 'phone' => '628444']);
+        $this->postJson('/api/chat-toko/kirim', ['session_id' => 'sess-shop-8', 'message' => 'Tes'])->assertOk();
+
+        \Illuminate\Support\Facades\Http::assertNothingSent();
+    }
+
     public function test_admin_inbox_requires_permission(): void
     {
         $this->seed(RoleSeeder::class);
