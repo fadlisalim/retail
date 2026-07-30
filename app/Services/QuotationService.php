@@ -39,11 +39,21 @@ class QuotationService
                 'contact_phone' => $data['contact_phone'] ?? null,
                 'company_name' => $data['company_name'] ?? null,
                 'npwp' => $data['npwp'] ?? null,
+                'requester_role' => $data['requester_role'] ?? null,
+                'decision_role' => $data['decision_role'] ?? null,
                 'project_name' => $data['project_name'] ?? null,
+                'project_type' => $data['project_type'] ?? null,
+                'project_status' => $data['project_status'] ?? null,
+                'funding_source' => $data['funding_source'] ?? null,
+                'budget_range' => $data['budget_range'] ?? null,
                 'project_location' => $data['project_location'] ?? null,
+                'unit_scale' => $data['unit_scale'] ?? null,
                 'procurement_target' => $data['procurement_target'] ?? null,
                 'needs_installation' => (bool) ($data['needs_installation'] ?? false),
+                'needs_survey' => (bool) ($data['needs_survey'] ?? false),
+                'needs_tender_docs' => (bool) ($data['needs_tender_docs'] ?? false),
                 'technical_notes' => $data['technical_notes'] ?? null,
+                'requirements' => ! empty($data['requirements']) ? $data['requirements'] : null,
             ]);
 
             foreach ($items as $item) {

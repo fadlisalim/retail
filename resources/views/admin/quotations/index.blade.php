@@ -61,6 +61,18 @@
                         <td class="px-4 py-3">
                             <div class="text-gray-800">{{ $quotation->contact_name }}</div>
                             <div class="text-xs text-gray-400">{{ $quotation->company_name ?? $quotation->contact_email }}</div>
+                            {{-- Triage at a glance: stage, budget band and priority. --}}
+                            @php($priority = \App\Support\QuotationForm::priority($quotation))
+                            <div class="mt-1 flex flex-wrap items-center gap-1">
+                                @if ($priority)<span class="badge {{ $priority['class'] }}">{{ $priority['label'] }}</span>@endif
+                                @if ($label = \App\Support\QuotationForm::label('project_type', $quotation->project_type))
+                                    <span class="text-[11px] text-gray-500">{{ $label }}</span>
+                                @endif
+                                @if ($label = \App\Support\QuotationForm::label('budget_range', $quotation->budget_range))
+                                    <span class="text-[11px] text-gray-400">· {{ $label }}</span>
+                                @endif
+                                @if ($quotation->needs_tender_docs)<span class="badge bg-amber-100 text-amber-700">Dok. tender</span>@endif
+                            </div>
                         </td>
                         <td class="px-4 py-3">
                             <span class="badge {{ $badgeClasses[$quotation->status->color()] ?? $badgeClasses['gray'] }}">{{ $quotation->status->label() }}</span>

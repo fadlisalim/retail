@@ -25,7 +25,9 @@
             <p class="mt-1 text-sm text-gray-500">Lengkapi formulir di bawah ini. Anda dapat melampirkan BOQ atau daftar kebutuhan proyek.</p>
         </header>
 
-        <form action="{{ route('quotations.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+        {{-- projectType drives which technical block is shown/submitted. --}}
+        <form action="{{ route('quotations.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6"
+              x-data="{ projectType: @js(old('project_type', '')) }">
             @csrf
 
             {{-- Contact --}}
@@ -37,22 +39,77 @@
                     <x-form.input name="contact_phone" label="Telepon / WhatsApp" type="tel" :value="$u?->whatsapp ?? $u?->phone" />
                     <x-form.input name="company_name" label="Nama Perusahaan" :value="$u?->profile?->company_name" />
                     <x-form.input name="npwp" label="NPWP" :value="$u?->profile?->npwp" />
+                    <x-form.select name="requester_role" label="Posisi Anda di proyek ini"
+                                   :options="\App\Support\QuotationForm::REQUESTER_ROLES" placeholder="— Pilih —" />
+                    <x-form.select name="decision_role" label="Peran dalam pengambilan keputusan"
+                                   :options="\App\Support\QuotationForm::DECISION_ROLES" placeholder="— Pilih —" />
                 </div>
             </section>
 
-            {{-- Project --}}
+            {{-- Project context: stage/funding/budget decide how sales prioritises. --}}
             <section class="card p-6">
-                <h2 class="mb-4 text-base font-semibold text-gray-800">Detail Proyek</h2>
+                <h2 class="mb-1 text-base font-semibold text-gray-800">Detail Proyek</h2>
+                <p class="mb-4 text-sm text-gray-500">Makin lengkap datanya, makin cepat &amp; akurat penawaran yang kami kirim.</p>
                 <div class="grid gap-4 sm:grid-cols-2">
+                    <x-form.select name="project_type" label="Jenis Proyek" required
+                                   :options="\App\Support\QuotationForm::PROJECT_TYPES" placeholder="— Pilih jenis proyek —"
+                                   x-model="projectType" />
+                    <x-form.select name="project_status" label="Status Proyek" required
+                                   :options="\App\Support\QuotationForm::PROJECT_STATUSES" placeholder="— Pilih status —" />
                     <x-form.input name="project_name" label="Nama Proyek" />
-                    <x-form.input name="project_location" label="Lokasi Proyek" />
+                    <x-form.input name="project_location" label="Lokasi Proyek" required hint="Kabupaten/kota &amp; provinsi" />
+                    <x-form.select name="funding_source" label="Sumber Dana"
+                                   :options="\App\Support\QuotationForm::FUNDING_SOURCES" placeholder="— Pilih —" />
+                    <x-form.select name="budget_range" label="Perkiraan Anggaran" required
+                                   :options="\App\Support\QuotationForm::BUDGET_RANGES" placeholder="— Pilih rentang —" />
+                    <x-form.input name="unit_scale" label="Jumlah Titik / Unit / Penerima" hint="Contoh: 20 titik PJU, 1 rumah, ±150 KK" />
                     <x-form.input name="procurement_target" label="Target Pengadaan" type="date" />
-                    <div class="flex items-end pb-2">
-                        <x-form.checkbox name="needs_installation" label="Membutuhkan jasa instalasi" />
+                </div>
+
+                <div class="mt-4 space-y-2 border-t border-gray-100 pt-4">
+                    <p class="text-sm font-medium text-gray-700">Kebutuhan tambahan</p>
+                    <x-form.checkbox name="needs_installation" label="Membutuhkan jasa instalasi" />
+                    <x-form.checkbox name="needs_survey" label="Membutuhkan survei lokasi" />
+                    <x-form.checkbox name="needs_tender_docs" label="Membutuhkan dokumen pendukung tender (proposal teknis, RAB, spesifikasi, surat dukungan)" />
+                </div>
+            </section>
+
+            {{-- Technical block: only the questions relevant to the chosen type. --}}
+            <section class="card p-6" x-show="projectType" x-cloak>
+                <h2 class="mb-1 text-base font-semibold text-gray-800">Data Teknis</h2>
+                <p class="mb-4 text-sm text-gray-500">Isi yang Anda ketahui saja — sisanya bisa kami hitung/konfirmasi nanti.</p>
+
+                @foreach ($technicalFields as $type => $fields)
+                    <div x-show="projectType === '{{ $type }}'" x-cloak class="grid gap-4 sm:grid-cols-2">
+                        @foreach ($fields as $field)
+                            @php($inputName = 'requirements['.$field['key'].']')
+                            @php($old = old('requirements.'.$field['key']))
+                            <div @class(['sm:col-span-2' => ($field['type'] ?? 'text') === 'text' && str_contains($field['key'], 'summary')])>
+                                <label for="req_{{ $type }}_{{ $field['key'] }}" class="input-label">{{ $field['label'] }}</label>
+                                @if (($field['type'] ?? 'text') === 'select')
+                                    <select name="{{ $inputName }}" id="req_{{ $type }}_{{ $field['key'] }}" class="form-select"
+                                            :disabled="projectType !== '{{ $type }}'">
+                                        <option value="">— Pilih —</option>
+                                        @foreach ($field['options'] as $option)
+                                            <option value="{{ $option }}" @selected($old === $option)>{{ $option }}</option>
+                                        @endforeach
+                                    </select>
+                                @else
+                                    <input type="text" name="{{ $inputName }}" id="req_{{ $type }}_{{ $field['key'] }}"
+                                           value="{{ $old }}" class="form-input" maxlength="500"
+                                           :disabled="projectType !== '{{ $type }}'">
+                                @endif
+                                @if (! empty($field['hint']))
+                                    <p class="mt-1 text-xs text-gray-400">{{ $field['hint'] }}</p>
+                                @endif
+                            </div>
+                        @endforeach
                     </div>
-                    <div class="sm:col-span-2">
-                        <x-form.textarea name="technical_notes" label="Catatan Teknis" rows="3" hint="Spesifikasi khusus, kapasitas, tegangan, dsb." />
-                    </div>
+                @endforeach
+
+                <div class="mt-4 border-t border-gray-100 pt-4">
+                    <x-form.textarea name="technical_notes" label="Catatan Teknis Lainnya" rows="3"
+                                     hint="Spesifikasi khusus, merek yang diminta, kondisi lokasi, kendala akses, dsb." />
                 </div>
             </section>
 
@@ -99,7 +156,7 @@
             {{-- Attachment --}}
             <section class="card p-6">
                 <h2 class="mb-4 text-base font-semibold text-gray-800">Lampiran (opsional)</h2>
-                <label for="attachment" class="input-label">Unggah BOQ / dokumen</label>
+                <label for="attachment" class="input-label">Unggah BOQ / RAB / KAK-TOR / gambar layout / foto lokasi</label>
                 <input type="file" name="attachment" id="attachment"
                        accept=".pdf,.xls,.xlsx,.doc,.docx,.jpg,.png"
                        class="block w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100">

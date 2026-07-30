@@ -15,13 +15,19 @@ class Quotation extends Model
     protected $fillable = [
         'rfq_number', 'quotation_number', 'public_token', 'user_id', 'status',
         'contact_name', 'contact_email', 'contact_phone', 'company_name', 'npwp',
-        'project_name', 'project_location', 'procurement_target', 'needs_installation', 'technical_notes',
+        'requester_role', 'decision_role',
+        'project_name', 'project_type', 'project_status', 'funding_source', 'budget_range',
+        'project_location', 'unit_scale', 'procurement_target',
+        'needs_installation', 'needs_survey', 'needs_tender_docs', 'technical_notes', 'requirements',
         'items_subtotal', 'discount', 'shipping_cost', 'tax_amount', 'grand_total',
         'payment_terms', 'valid_until', 'admin_note', 'converted_order_id', 'handled_by',
     ];
 
     protected $casts = [
         'needs_installation' => 'boolean',
+        'needs_survey' => 'boolean',
+        'needs_tender_docs' => 'boolean',
+        'requirements' => 'array',
         'procurement_target' => 'date',
         'valid_until' => 'date',
         'items_subtotal' => 'decimal:2',
