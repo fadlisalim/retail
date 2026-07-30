@@ -10,7 +10,6 @@
 @push('head')
     @php
         $ld = [
-            '@context' => 'https://schema.org',
             '@type' => 'Article',
             'headline' => $article->title,
             'description' => $article->excerpt ?: \Illuminate\Support\Str::limit(strip_tags($article->content), 155),
@@ -22,7 +21,7 @@
             'mainEntityOfPage' => url()->current(),
         ];
     @endphp
-    <script type="application/ld+json">{!! json_encode(array_filter($ld), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    <script type="application/ld+json">{!! schema_ld($ld) !!}</script>
 @endpush
 
 @section('content')

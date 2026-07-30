@@ -3,13 +3,12 @@
 
 @push('head')
 <script type="application/ld+json">
-{!! json_encode([
-    '@context' => 'https://schema.org',
+{!! schema_ld([
     '@type' => 'Organization',
     'name' => config('rekasurya.company.legal_name'),
     'url' => url('/'),
     'description' => config('rekasurya.company.tagline'),
-], JSON_UNESCAPED_SLASHES) !!}
+]) !!}
 </script>
 @endpush
 

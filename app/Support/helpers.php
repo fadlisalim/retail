@@ -35,6 +35,24 @@ if (! function_exists('brand')) {
     }
 }
 
+if (! function_exists('schema_ld')) {
+    /**
+     * Encode a schema.org JSON-LD payload for a <script type="application/ld+json"> block.
+     *
+     * The "@context" key is added HERE, never written in a Blade file: Blade
+     * compiles directives before echoes, and Laravel ships a @context
+     * directive — so a literal '@context' inside a view gets compiled away and
+     * leaks raw PHP into the JSON-LD instead of rendering the key.
+     */
+    function schema_ld(array $data): string
+    {
+        return (string) json_encode(
+            ['@context' => 'https://schema.org'] + array_filter($data, fn ($v) => $v !== null && $v !== []),
+            JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+        );
+    }
+}
+
 if (! function_exists('whatsapp_link')) {
     /**
      * Build a wa.me deep link with a prefilled message.

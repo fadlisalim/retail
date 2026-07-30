@@ -13,7 +13,7 @@
     }
 @endphp
 <script type="application/ld+json">
-{!! json_encode(['@context' => 'https://schema.org', '@type' => 'BreadcrumbList', 'itemListElement' => $crumbList], JSON_UNESCAPED_SLASHES) !!}
+{!! schema_ld(['@type' => 'BreadcrumbList', 'itemListElement' => $crumbList]) !!}
 </script>
 <nav aria-label="Breadcrumb" class="mb-4 text-sm">
     <ol class="flex flex-wrap items-center gap-1 text-gray-500">

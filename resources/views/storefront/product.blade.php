@@ -21,8 +21,7 @@
 
 @push('head')
 <script type="application/ld+json">
-{!! json_encode(array_filter([
-    '@context' => 'https://schema.org',
+{!! schema_ld([
     '@type' => 'Product',
     'name' => $product->name,
     'sku' => $product->sku,
@@ -40,7 +39,7 @@
         'ratingValue' => $product->rating_avg,
         'reviewCount' => $product->rating_count,
     ] : null,
-]), JSON_UNESCAPED_SLASHES) !!}
+]) !!}
 </script>
 @endpush
 

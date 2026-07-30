@@ -17,7 +17,7 @@
         }
     @endphp
     @if (! empty($faqEntities))
-        <script type="application/ld+json">{!! json_encode(['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => $faqEntities], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+        <script type="application/ld+json">{!! schema_ld(['@type' => 'FAQPage', 'mainEntity' => $faqEntities]) !!}</script>
     @endif
 @endpush
 
