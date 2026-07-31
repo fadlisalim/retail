@@ -93,4 +93,8 @@ return [
         // When true, seeded demo credentials are shown on the login screen.
         'expose_credentials' => env('DEMO_EXPOSE_CREDENTIALS', true),
     ],
+
+    // How long the traffic-source log (site_visits) is kept, in days.
+    // Pruned nightly by `visits:prune`.
+    'traffic_retention_days' => (int) env('TRAFFIC_RETENTION_DAYS', 90),
 ];

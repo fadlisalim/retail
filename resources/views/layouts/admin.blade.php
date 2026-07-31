@@ -39,6 +39,7 @@
                 ['admin.faqs.index', 'FAQ', 'content.manage'],
                 ['admin.settings.edit', 'Pengaturan', 'setting.manage'],
                 ['admin.users.index', 'User Admin', 'user.manage'],
+                ['admin.traffic.index', 'Statistik Trafik', 'traffic.view'],
                 ['admin.assistant.index', 'CS Assistant', 'assistant.view'],
                 ['admin.wachat.index', 'WA Chat', 'assistant.view', 'wachat'],
                 ['admin.sitechat.index', 'Chat Toko', 'assistant.view', 'sitechat'],

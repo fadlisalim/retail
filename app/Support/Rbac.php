@@ -40,13 +40,14 @@ final class Rbac
         'audit.view' => 'Lihat Audit Log',
         'affiliate.manage' => 'Kelola Afiliasi & Komisi',
         'assistant.view' => 'Lihat Log & Statistik CS Assistant',
+        'traffic.view' => 'Lihat Statistik Trafik & Sumber Pengunjung',
     ];
 
     /** Which permissions each role receives by default. */
     public const ROLE_PERMISSIONS = [
         'super-admin' => ['*'], // all permissions
         'admin-katalog' => ['dashboard.view', 'catalog.manage', 'price.manage', 'review.moderate'],
-        'admin-sales' => ['dashboard.view', 'order.view', 'order.manage', 'quotation.manage', 'customer.manage', 'assistant.view'],
+        'admin-sales' => ['dashboard.view', 'order.view', 'order.manage', 'quotation.manage', 'customer.manage', 'assistant.view', 'traffic.view'],
         'admin-gudang' => ['dashboard.view', 'inventory.manage', 'order.view', 'shipping.manage'],
         'admin-keuangan' => ['dashboard.view', 'order.view', 'payment.manage', 'affiliate.manage'],
         'customer-service' => ['dashboard.view', 'order.view', 'review.moderate', 'customer.manage', 'return.manage', 'assistant.view'],

@@ -23,3 +23,6 @@ Schedule::command('orders:expire-unpaid')->hourly();
 
 // Retention: prune old CS-assistant transcripts (30d) & stats rollups (180d).
 Schedule::command('assistant:prune')->daily();
+
+// Retention: prune the traffic-source log (default 90 days / ~3 months).
+Schedule::command('visits:prune')->daily();
