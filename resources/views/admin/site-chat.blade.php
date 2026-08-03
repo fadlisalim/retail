@@ -110,7 +110,7 @@
                             bubble.appendChild(document.createTextNode(m.message));
                             const meta = document.createElement('span');
                             meta.className = 'ml-2 inline-flex translate-y-[3px] items-center gap-0.5 whitespace-nowrap text-[10px] text-gray-500/80';
-                            meta.textContent = m.time || '';
+                            meta.textContent = (m.time || '') + (m.notified ? ' · notif WA ✓' : '');
                             bubble.appendChild(meta);
                             wrap.appendChild(bubble);
                             this.$refs.box.appendChild(wrap);
@@ -163,7 +163,7 @@
                             @php($out = $m->direction === 'out')
                             @php($tp = $m->product_slug ? ($threadProducts[$m->product_slug] ?? null) : null)
                             <div class="flex {{ $out ? 'justify-end' : 'justify-start' }}">
-                                <div class="relative max-w-[75%] whitespace-pre-wrap rounded-lg px-2.5 py-1.5 text-[13.5px] leading-snug shadow-sm {{ $out ? 'rounded-tr-none bg-[#d9fdd3] text-[#111b21]' : 'rounded-tl-none bg-white text-[#111b21]' }}">@if ($tp)<a href="{{ route('products.show', $tp->slug) }}" target="_blank" class="mb-1.5 flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 p-1.5"><img src="{{ $tp->primaryImageUrl() }}" class="h-10 w-10 rounded object-cover" alt="" /><span><span class="block text-xs font-semibold">{{ $tp->name }}</span><span class="block text-xs font-bold text-brand-700">{{ rupiah($tp->effectivePrice()) }}</span></span></a>@endif{{ $m->message }}<span class="ml-2 inline-flex translate-y-[3px] items-center gap-0.5 whitespace-nowrap text-[10px] text-gray-500/80">{{ $m->created_at?->format('H:i') }}</span></div>
+                                <div class="relative max-w-[75%] whitespace-pre-wrap rounded-lg px-2.5 py-1.5 text-[13.5px] leading-snug shadow-sm {{ $out ? 'rounded-tr-none bg-[#d9fdd3] text-[#111b21]' : 'rounded-tl-none bg-white text-[#111b21]' }}">@if ($tp)<a href="{{ route('products.show', $tp->slug) }}" target="_blank" class="mb-1.5 flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 p-1.5"><img src="{{ $tp->primaryImageUrl() }}" class="h-10 w-10 rounded object-cover" alt="" /><span><span class="block text-xs font-semibold">{{ $tp->name }}</span><span class="block text-xs font-bold text-brand-700">{{ rupiah($tp->effectivePrice()) }}</span></span></a>@endif{{ $m->message }}<span class="ml-2 inline-flex translate-y-[3px] items-center gap-0.5 whitespace-nowrap text-[10px] text-gray-500/80">{{ $m->created_at?->format('H:i') }}@if ($m->notified_at) · notif WA ✓@endif</span></div>
                             </div>
                         @endforeach
                     </div>

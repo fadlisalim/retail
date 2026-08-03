@@ -15,12 +15,16 @@ class SiteChatMessage extends Model
 
     protected $fillable = [
         'session_id', 'user_id', 'admin_id', 'direction', 'message',
-        'product_slug', 'is_read', 'created_at',
+        'product_slug', 'is_read', 'notified_at', 'created_at',
     ];
 
     protected function casts(): array
     {
-        return ['is_read' => 'boolean', 'created_at' => 'datetime'];
+        return [
+            'is_read' => 'boolean',
+            'created_at' => 'datetime',
+            'notified_at' => 'datetime',
+        ];
     }
 
     public function user(): BelongsTo

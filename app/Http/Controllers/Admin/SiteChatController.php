@@ -7,8 +7,10 @@ use App\Models\AssistantLead;
 use App\Models\Product;
 use App\Models\SiteChatMessage;
 use App\Models\User;
+use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -98,6 +100,7 @@ class SiteChatController extends Controller
                     'message' => $m->message,
                     'time' => $m->created_at?->format('H:i'),
                     'date' => $m->created_at?->format('d/m/Y'),
+                    'notified' => (bool) $m->notified_at,
                     'product' => $p ? [
                         'name' => $p->name,
                         'url' => route('products.show', $p->slug),
@@ -128,7 +131,89 @@ class SiteChatController extends Controller
             'created_at' => now(),
         ]);
 
-        return response()->json(['ok' => true, 'id' => $row->id]);
+        // True = a WhatsApp ping was queued for this reply (the actual send
+        // happens after the response, so notified_at is set a moment later).
+        $notified = $this->notifyCustomer($row);
+
+        return response()->json(['ok' => true, 'id' => $row->id, 'notified' => $notified]);
+    }
+
+    /**
+     * Ping the customer on WhatsApp that the admin replied — at most ONCE per
+     * calendar day per conversation, however many replies are sent. The daily
+     * mark lives in the database (notified_at) so it survives cache clears;
+     * a short cache lock only guards against two rapid replies racing.
+     * The message is a nudge back to the website, not a copy of the thread,
+     * so the conversation stays in one place.
+     *
+     * @return bool whether a notification was queued for this reply
+     */
+    private function notifyCustomer(SiteChatMessage $row): bool
+    {
+        $wa = app(WhatsAppService::class);
+        if (! $wa->isEnabled()) {
+            return false;
+        }
+
+        // Already notified today for this conversation?
+        $alreadyToday = SiteChatMessage::where('session_id', $row->session_id)
+            ->whereNotNull('notified_at')
+            ->whereDate('notified_at', now()->toDateString())
+            ->exists();
+        if ($alreadyToday) {
+            return false;
+        }
+
+        [$phone, $name] = $this->customerContact($row->session_id);
+        if (! $phone) {
+            return false;
+        }
+
+        // Race guard until midnight (cheap; DB check above is the durable one).
+        if (! Cache::add('sitechat_cust_notif_'.$row->session_id.'_'.now()->toDateString(), 1, now()->endOfDay())) {
+            return false;
+        }
+
+        $text = 'Halo'.($name ? ' Kak '.$name : ' Kak').' 👋'."\n"
+            .'Admin '.brand().' sudah membalas chat Kakak di website.'."\n\n"
+            .'Balasan: "'.Str::limit($row->message, 160).'"'."\n\n"
+            .'Buka '.rtrim((string) config('app.url'), '/').' lalu klik ikon chat untuk melanjutkan percakapan ya 😊';
+
+        $rowId = $row->id;
+        dispatch(function () use ($wa, $phone, $text, $rowId) {
+            // Terminating callbacks are never pruned by the framework, so this
+            // closure can be replayed on a LATER request in long-lived
+            // processes (tests, Octane). Re-reading the row makes a replay a
+            // no-op instead of a duplicate WhatsApp message.
+            $fresh = SiteChatMessage::find($rowId);
+            if (! $fresh || $fresh->notified_at) {
+                return;
+            }
+
+            if ($wa->send($phone, $text)) {
+                // Mark only on success, so a failed gateway retries on the
+                // next reply instead of silently skipping the day.
+                $fresh->forceFill(['notified_at' => now()])->save();
+            }
+        })->afterResponse();
+
+        return true;
+    }
+
+    /** Customer's WhatsApp number + name: account first, else chat lead. */
+    private function customerContact(string $sessionId): array
+    {
+        $userId = SiteChatMessage::where('session_id', $sessionId)->whereNotNull('user_id')->value('user_id');
+        if ($userId && ($user = User::find($userId))) {
+            $phone = app(WhatsAppService::class)->normalize($user->whatsapp ?? $user->phone);
+            if ($phone) {
+                return [$phone, $user->name];
+            }
+        }
+
+        $lead = AssistantLead::where('session_id', $sessionId)->first();
+
+        return [$lead?->phone ? app(WhatsAppService::class)->normalize($lead->phone) : null, $lead?->name];
     }
 
     /** Fallback label for guests without a name. */

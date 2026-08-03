@@ -156,6 +156,76 @@ class SiteChatTest extends TestCase
         \Illuminate\Support\Facades\Http::assertNothingSent();
     }
 
+    /** Admin replies → the customer is pinged on WA once per calendar day. */
+    public function test_admin_reply_notifies_customer_once_per_day(): void
+    {
+        config(['services.wablas.enabled' => true, 'services.wablas.token' => 'tok', 'services.wablas.base_url' => 'https://pati.wablas.com']);
+        \Illuminate\Support\Facades\Http::fake(['pati.wablas.com/*' => \Illuminate\Support\Facades\Http::response(['status' => true], 200)]);
+
+        $this->seed(RoleSeeder::class);
+        $admin = User::factory()->create(['is_staff' => true, 'is_active' => true]);
+        $admin->roles()->attach(\App\Models\Role::where('slug', 'super-admin')->first());
+
+        AssistantLead::create(['session_id' => 'sess-notif-1', 'name' => 'Ussy', 'phone' => '6283173342644']);
+        SiteChatMessage::create(['session_id' => 'sess-notif-1', 'direction' => 'in', 'message' => 'Genset gitu ini th?', 'created_at' => now()]);
+
+        // First reply of the day → one WhatsApp notification.
+        $this->actingAs($admin)->postJson('/admin/chat-toko/kirim', ['sesi' => 'sess-notif-1', 'message' => 'iya kak fungsinya seperti genset.'])
+            ->assertOk()->assertJsonPath('notified', true);
+
+        \Illuminate\Support\Facades\Http::assertSent(function ($req) {
+            $payload = $req['data'][0] ?? [];
+
+            return $payload['phone'] === '6283173342644'
+                && str_contains($payload['message'], 'Ussy')
+                && str_contains($payload['message'], 'seperti genset');
+        });
+
+        // More replies the same day → no further notifications.
+        $this->actingAs($admin)->postJson('/admin/chat-toko/kirim', ['sesi' => 'sess-notif-1', 'message' => 'ada pertanyaan lain kak?'])
+            ->assertOk()->assertJsonPath('notified', false);
+        $this->actingAs($admin)->postJson('/admin/chat-toko/kirim', ['sesi' => 'sess-notif-1', 'message' => 'stok ready ya'])->assertOk();
+
+        \Illuminate\Support\Facades\Http::assertSentCount(1);
+        $this->assertSame(1, SiteChatMessage::whereNotNull('notified_at')->count());
+    }
+
+    public function test_customer_is_notified_again_the_next_day(): void
+    {
+        config(['services.wablas.enabled' => true, 'services.wablas.token' => 'tok', 'services.wablas.base_url' => 'https://pati.wablas.com']);
+        \Illuminate\Support\Facades\Http::fake(['pati.wablas.com/*' => \Illuminate\Support\Facades\Http::response(['status' => true], 200)]);
+
+        $this->seed(RoleSeeder::class);
+        $admin = User::factory()->create(['is_staff' => true, 'is_active' => true]);
+        $admin->roles()->attach(\App\Models\Role::where('slug', 'super-admin')->first());
+
+        AssistantLead::create(['session_id' => 'sess-notif-2', 'name' => 'Ussy', 'phone' => '6283173342644']);
+        // Yesterday's reply already carried a notification.
+        SiteChatMessage::create([
+            'session_id' => 'sess-notif-2', 'direction' => 'out', 'message' => 'balasan kemarin',
+            'notified_at' => now()->subDay(), 'created_at' => now()->subDay(),
+        ]);
+
+        $this->actingAs($admin)->postJson('/admin/chat-toko/kirim', ['sesi' => 'sess-notif-2', 'message' => 'balasan hari ini'])
+            ->assertOk()->assertJsonPath('notified', true);
+
+        \Illuminate\Support\Facades\Http::assertSentCount(1);
+    }
+
+    public function test_no_customer_notification_without_a_phone_on_file(): void
+    {
+        config(['services.wablas.enabled' => true, 'services.wablas.token' => 'tok', 'services.wablas.base_url' => 'https://pati.wablas.com']);
+        \Illuminate\Support\Facades\Http::fake();
+
+        $this->seed(RoleSeeder::class);
+        $admin = User::factory()->create(['is_staff' => true, 'is_active' => true]);
+        $admin->roles()->attach(\App\Models\Role::where('slug', 'super-admin')->first());
+
+        $this->actingAs($admin)->postJson('/admin/chat-toko/kirim', ['sesi' => 'sess-notif-3', 'message' => 'halo'])->assertOk();
+
+        \Illuminate\Support\Facades\Http::assertNothingSent();
+    }
+
     public function test_admin_inbox_requires_permission(): void
     {
         $this->seed(RoleSeeder::class);
