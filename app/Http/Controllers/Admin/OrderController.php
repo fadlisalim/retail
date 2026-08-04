@@ -45,7 +45,8 @@ class OrderController extends Controller
             'items.*.variant_id' => ['nullable', 'exists:product_variants,id'],
             'items.*.name' => ['nullable', 'string', 'max:191'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            // Blank = use the catalogue price (sale price when on promo).
+            'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'discount' => ['nullable', 'numeric', 'min:0'],
             'shipping_cost' => ['nullable', 'numeric', 'min:0'],
             'tax_amount' => ['nullable', 'numeric', 'min:0'],
@@ -58,10 +59,14 @@ class OrderController extends Controller
             'send_thanks' => ['nullable', 'boolean'],
         ]);
 
-        // A line needs either a catalogue product or a free-text name.
         foreach ($data['items'] as $i => $item) {
+            // A line needs either a catalogue product or a free-text name.
             if (empty($item['product_id']) && trim((string) ($item['name'] ?? '')) === '') {
                 return back()->withInput()->withErrors(["items.{$i}.name" => 'Pilih produk atau isi nama item.']);
+            }
+            // A free-text line has no catalogue price to fall back on.
+            if (empty($item['product_id']) && ($item['unit_price'] ?? '') === '') {
+                return back()->withInput()->withErrors(["items.{$i}.unit_price" => 'Harga wajib diisi untuk item di luar katalog.']);
             }
         }
 

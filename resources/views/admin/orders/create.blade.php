@@ -31,11 +31,18 @@
               markPaid: {{ old('mark_paid') ? 'true' : 'false' }},
               add() { this.items.push({ product_id: '', name: '', quantity: 1, unit_price: '' }); },
               remove(i) { if (this.items.length > 1) this.items.splice(i, 1); },
-              pick(i) {
+              pick(i) { if (this.items[i].product_id) this.items[i].name = ''; },
+              /** Catalogue price of the picked product, or 0 for a free-text line. */
+              catalogPrice(i) {
                   const p = this.products.find((x) => String(x.id) === String(this.items[i].product_id));
-                  if (p) { this.items[i].unit_price = p.price; this.items[i].name = ''; }
+                  return p ? p.price : 0;
               },
-              lineTotal(i) { return (Number(this.items[i].unit_price) || 0) * (Number(this.items[i].quantity) || 0); },
+              /** Harga kosong = ikut harga katalog (server memakai aturan yang sama). */
+              effectivePrice(i) {
+                  const typed = this.items[i].unit_price;
+                  return (typed === '' || typed === null) ? this.catalogPrice(i) : (Number(typed) || 0);
+              },
+              lineTotal(i) { return this.effectivePrice(i) * (Number(this.items[i].quantity) || 0); },
               get subtotal() { return this.items.reduce((s, _, i) => s + this.lineTotal(i), 0); },
               get grand() { return Math.max(0, this.subtotal - (Number(this.discount) || 0) + (Number(this.shipping) || 0) + (Number(this.tax) || 0)); },
               rupiah(n) { return 'Rp ' + Math.round(n || 0).toLocaleString('id-ID'); },
@@ -91,7 +98,12 @@
                             </div>
                             <div>
                                 <label class="input-label">Harga Satuan</label>
-                                <input type="number" min="0" step="1" class="form-input" :name="'items[' + index + '][unit_price]'" x-model.number="item.unit_price">
+                                <input type="number" min="0" step="1" class="form-input"
+                                       :name="'items[' + index + '][unit_price]'" x-model="item.unit_price"
+                                       :placeholder="item.product_id ? rupiah(catalogPrice(index)) : 'Wajib diisi'">
+                                <p class="mt-1 text-[11px] text-gray-400" x-show="item.product_id" x-cloak>
+                                    Kosongkan = pakai harga katalog
+                                </p>
                             </div>
                             <div>
                                 <label class="input-label">Subtotal</label>

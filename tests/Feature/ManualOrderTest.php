@@ -137,6 +137,37 @@ class ManualOrderTest extends TestCase
             ->assertSee('Satu juta lima ratus ribu rupiah');
     }
 
+    public function test_blank_price_falls_back_to_the_catalogue_price(): void
+    {
+        $admin = $this->admin();
+        // On promo: the sale price is what a customer would actually pay.
+        $product = $this->stockedProduct(5, ['price' => 2000000, 'sale_price' => 1750000]);
+
+        $this->actingAs($admin)->post('/admin/pesanan-manual', [
+            'channel' => 'tokopedia', 'customer_name' => 'Rina', 'customer_phone' => '08222333444',
+            'items' => [
+                ['product_id' => $product->id, 'quantity' => 2, 'unit_price' => ''],       // ikut katalog
+                ['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 1500000],  // harga khusus
+            ],
+        ])->assertRedirect();
+
+        $items = Order::first()->items()->orderBy('id')->get();
+        $this->assertEquals(1750000, (float) $items[0]->unit_price);
+        $this->assertEquals(3500000, (float) $items[0]->line_total);
+        $this->assertEquals(1500000, (float) $items[1]->unit_price);
+        $this->assertEquals(5000000, (float) Order::first()->items_subtotal);
+    }
+
+    public function test_free_text_item_still_requires_a_price(): void
+    {
+        $this->actingAs($this->admin())->post('/admin/pesanan-manual', [
+            'channel' => 'offline', 'customer_name' => 'Dodi', 'customer_phone' => '08111222333',
+            'items' => [['name' => 'Jasa survei lokasi', 'quantity' => 1, 'unit_price' => '']],
+        ])->assertSessionHasErrors('items.0.unit_price');
+
+        $this->assertSame(0, Order::count());
+    }
+
     public function test_existing_customer_is_reused_by_phone_number(): void
     {
         $admin = $this->admin();
