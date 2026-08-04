@@ -12,7 +12,7 @@ class OrderController extends Controller
 {
     public function track(Order $order): View
     {
-        $order->load(['items', 'shippingAddress', 'statusHistories.changedBy', 'payments', 'invoice', 'shipments']);
+        $order->load(['items', 'shippingAddress', 'statusHistories.changedBy', 'payments', 'invoice', 'shipments', 'documentations']);
 
         return view('storefront.order-track', ['order' => $order]);
     }

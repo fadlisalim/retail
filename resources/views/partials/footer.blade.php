@@ -25,6 +25,7 @@
                 <ul class="space-y-2 text-sm text-gray-500">
                     <li><a href="{{ route('quotations.create') }}" class="hover:text-brand-700">Permintaan Penawaran</a></li>
                     <li><a href="{{ route('affiliate.landing') }}" class="hover:text-brand-700">Program Afiliasi</a></li>
+                    <li><a href="{{ route('documentation') }}" class="hover:text-brand-700">Dokumentasi Pengerjaan</a></li>
                     <li><a href="{{ route('articles.index') }}" class="hover:text-brand-700">Panduan Energi Surya</a></li>
                     <li><a href="{{ route('faq') }}" class="hover:text-brand-700">FAQ</a></li>
                     @foreach(['tentang-kami' => 'Tentang Rekasurya', 'kebijakan-pengiriman' => 'Kebijakan Pengiriman', 'kebijakan-retur' => 'Kebijakan Retur'] as $slug => $label)

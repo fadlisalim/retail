@@ -38,6 +38,43 @@
             </div>
 
             {{-- Timeline --}}
+            {{-- Documentation photos: the customer sees their own goods being
+                 prepared, tested and shipped. Tap to enlarge (works on mobile). --}}
+            @if ($order->documentations->isNotEmpty())
+                <div class="card p-4" x-data="{ zoom: null }">
+                    <h2 class="mb-1 font-semibold text-gray-800">Dokumentasi Pesanan</h2>
+                    <p class="mb-3 text-sm text-gray-500">Foto asli proses penyiapan sampai pengiriman pesanan Anda.</p>
+
+                    @php($byStage = $order->documentations->groupBy('stage'))
+                    @foreach (\App\Models\OrderDocumentation::STAGES as $key => $label)
+                        @continue (! isset($byStage[$key]))
+                        <div class="mb-4">
+                            <p class="mb-2 text-sm font-semibold text-gray-700">
+                                {{ \App\Models\OrderDocumentation::STAGE_ICONS[$key] }} {{ $label }}
+                                <span class="ml-1 text-xs font-normal text-gray-400">{{ $byStage[$key]->first()->created_at->translatedFormat('d M Y') }}</span>
+                            </p>
+                            <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                @foreach ($byStage[$key] as $doc)
+                                    <figure>
+                                        <button type="button" @click="zoom = @js($doc->url())" class="block w-full overflow-hidden rounded-lg border border-gray-200">
+                                            <img src="{{ $doc->url() }}" alt="{{ $doc->caption ?? $label }}" class="h-32 w-full object-cover transition hover:scale-105" loading="lazy">
+                                        </button>
+                                        @if ($doc->caption)<figcaption class="mt-1 text-xs text-gray-500">{{ $doc->caption }}</figcaption>@endif
+                                    </figure>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+
+                    {{-- Lightbox --}}
+                    <div x-show="zoom" x-cloak @click="zoom = null" @keydown.escape.window="zoom = null"
+                         class="fixed inset-0 z-[80] flex items-center justify-center bg-black/85 p-4">
+                        <img :src="zoom" alt="" class="max-h-[90vh] max-w-full object-contain">
+                        <button type="button" class="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/15 text-2xl text-white" aria-label="Tutup">&times;</button>
+                    </div>
+                </div>
+            @endif
+
             <div class="card p-4">
                 <h2 class="mb-3 font-semibold text-gray-800">Riwayat Status</h2>
                 <ol class="relative border-l border-gray-200">

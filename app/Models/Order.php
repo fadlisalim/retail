@@ -118,6 +118,12 @@ class Order extends Model
         return $this->hasOne(Invoice::class);
     }
 
+    /** Photo documentation of how this order was prepared, tested and shipped. */
+    public function documentations(): HasMany
+    {
+        return $this->hasMany(OrderDocumentation::class)->orderBy('sort_order')->orderBy('id');
+    }
+
     public function reservations(): HasMany
     {
         return $this->hasMany(StockReservation::class);

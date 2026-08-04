@@ -261,6 +261,66 @@
                 @endunless
             @endcan
 
+            {{-- Photo documentation: proof of preparation/testing/shipping --}}
+            <div class="card p-5">
+                <h2 class="mb-1 font-semibold text-gray-900">Foto Dokumentasi</h2>
+                <p class="mb-4 text-sm text-gray-500">Terlihat oleh pelanggan di halaman lacak pesanan. Centang "galeri publik" untuk ikut tampil di halaman Dokumentasi website.</p>
+
+                <form method="POST" action="{{ route('admin.orders.docs.store', $order) }}" enctype="multipart/form-data" class="mb-5 grid gap-3 rounded-lg border border-gray-200 p-3 sm:grid-cols-2">
+                    @csrf
+                    <x-form.select name="stage" label="Tahap" required :options="\App\Models\OrderDocumentation::STAGES" />
+                    <x-form.input name="caption" label="Keterangan (opsional)" placeholder="mis. Testing inverter sebelum kirim" />
+                    <div class="sm:col-span-2">
+                        <label for="photos" class="input-label">Foto (bisa banyak sekaligus)</label>
+                        <input id="photos" type="file" name="photos[]" multiple accept="image/*"
+                               class="block w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100" required>
+                        @error('photos.*')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="flex items-center justify-between gap-3 sm:col-span-2">
+                        <x-form.checkbox name="is_public" label="Tampilkan juga di galeri publik (tanpa nama pelanggan)" :checked="true" />
+                        <button type="submit" class="btn-primary">Unggah</button>
+                    </div>
+                </form>
+
+                {{-- Block form on purpose: an inline @php(...) here would be
+                     paired by Blade with the @endphp of the timeline below,
+                     swallowing this whole section. --}}
+                @php
+                    $docsByStage = $order->documentations->groupBy('stage');
+                @endphp
+                @foreach (\App\Models\OrderDocumentation::STAGES as $key => $label)
+                    @continue (! isset($docsByStage[$key]))
+                    <p class="mb-2 mt-3 text-sm font-semibold text-gray-700">{{ \App\Models\OrderDocumentation::STAGE_ICONS[$key] }} {{ $label }}</p>
+                    <div class="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        @foreach ($docsByStage[$key] as $doc)
+                            <figure class="overflow-hidden rounded-lg border border-gray-200">
+                                <a href="{{ $doc->url() }}" target="_blank" rel="noopener">
+                                    <img src="{{ $doc->url() }}" alt="{{ $doc->caption ?? $label }}" class="h-28 w-full object-cover" loading="lazy">
+                                </a>
+                                <figcaption class="space-y-1 p-1.5">
+                                    @if ($doc->caption)<p class="truncate text-[11px] text-gray-600">{{ $doc->caption }}</p>@endif
+                                    <div class="flex items-center justify-between gap-1">
+                                        <form method="POST" action="{{ route('admin.orders.docs.public', [$order, $doc]) }}">
+                                            @csrf
+                                            <button type="submit" class="text-[11px] font-medium {{ $doc->is_public ? 'text-green-600' : 'text-gray-400' }}">
+                                                {{ $doc->is_public ? '● publik' : '○ privat' }}
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ route('admin.orders.docs.destroy', [$order, $doc]) }}" onsubmit="return confirm('Hapus foto ini?')">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="text-[11px] text-red-500 hover:underline">hapus</button>
+                                        </form>
+                                    </div>
+                                </figcaption>
+                            </figure>
+                        @endforeach
+                    </div>
+                @endforeach
+                @if ($order->documentations->isEmpty())
+                    <p class="py-3 text-center text-sm text-gray-400">Belum ada foto dokumentasi untuk pesanan ini.</p>
+                @endif
+            </div>
+
             {{-- Timeline --}}
             <div class="card p-5">
                 <h2 class="mb-3 font-semibold text-gray-900">Riwayat Status</h2>

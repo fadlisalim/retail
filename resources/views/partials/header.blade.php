@@ -9,6 +9,7 @@
                 <a href="{{ route('clearance') }}" class="hover:text-accent-400">Clearance</a>
                 <a href="{{ route('affiliate.landing') }}" class="font-semibold text-accent-300 hover:text-accent-400">Afiliator</a>
                 <a href="{{ route('quotations.create') }}" class="hover:text-accent-400">Permintaan Penawaran</a>
+                <a href="{{ route('documentation') }}" class="hover:text-accent-400">Dokumentasi</a>
                 <a href="{{ route('faq') }}" class="hover:text-accent-400">Bantuan</a>
             </nav>
         </div>

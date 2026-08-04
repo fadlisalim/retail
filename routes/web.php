@@ -60,6 +60,9 @@ Route::get('/api/chat-toko/pesan', [\App\Http\Controllers\SiteChatController::cl
 Route::get('/api/chat-toko/notif', [\App\Http\Controllers\SiteChatController::class, 'unread'])
     ->middleware('throttle:60,1')->name('sitechat.unread');
 
+// Public documentation gallery — real photos of orders being prepared & shipped.
+Route::get('/dokumentasi', [\App\Http\Controllers\DocumentationController::class, 'index'])->name('documentation');
+
 Route::get('/kategori', [CatalogController::class, 'categories'])->name('categories.index');
 // 1200x630 social-share (og:image) card for a category page (see products.og).
 Route::get('/kategori/{category:slug}/og.png', \App\Http\Controllers\CategoryOgImageController::class)->name('categories.og');
@@ -272,6 +275,13 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/pesanan-manual', [Admin\OrderController::class, 'create'])->middleware('permission:order.manage')->name('orders.create');
         Route::post('/pesanan-manual', [Admin\OrderController::class, 'store'])->middleware('permission:order.manage')->name('orders.store');
         Route::get('/pesanan/{order}/kuitansi', [Admin\OrderController::class, 'receipt'])->name('orders.receipt');
+        // Per-order photo documentation (penyiapan, testing, pengiriman…).
+        Route::post('/pesanan/{order}/dokumentasi', [Admin\OrderDocumentationController::class, 'store'])
+            ->middleware('permission:order.manage')->name('orders.docs.store');
+        Route::post('/pesanan/{order}/dokumentasi/{documentation}/publik', [Admin\OrderDocumentationController::class, 'togglePublic'])
+            ->middleware('permission:order.manage')->name('orders.docs.public');
+        Route::delete('/pesanan/{order}/dokumentasi/{documentation}', [Admin\OrderDocumentationController::class, 'destroy'])
+            ->middleware('permission:order.manage')->name('orders.docs.destroy');
         Route::post('/pesanan/{order}/terima-kasih', [Admin\OrderController::class, 'thanks'])->middleware('permission:order.manage')->name('orders.thanks');
         Route::get('/pesanan/{order}', [Admin\OrderController::class, 'show'])->name('orders.show');
     });
