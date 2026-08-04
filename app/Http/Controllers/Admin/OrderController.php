@@ -57,6 +57,7 @@ class OrderController extends Controller
             'mark_paid' => ['nullable', 'boolean'],
             'paid_at' => ['nullable', 'date'],
             'send_thanks' => ['nullable', 'boolean'],
+            'skip_stock' => ['nullable', 'boolean'],
         ]);
 
         foreach ($data['items'] as $i => $item) {
@@ -70,7 +71,15 @@ class OrderController extends Controller
             }
         }
 
-        $order = $this->manualOrders->create($data, $data['items'], $request->user());
+        try {
+            $order = $this->manualOrders->create($data, $data['items'], $request->user());
+        } catch (\RuntimeException $e) {
+            // Almost always "stok tidak mencukupi": the sale is real, so guide
+            // the admin instead of failing with a server error.
+            return back()->withInput()->withErrors([
+                'items' => $e->getMessage().' Perbaiki jumlah/stok, atau centang "Jangan potong stok" bila barang tidak dikelola stoknya di sini.',
+            ]);
+        }
 
         $message = 'Pesanan '.$order->order_number.' tercatat.';
         if ($order->payment_status === PaymentStatus::Paid && $request->boolean('send_thanks')) {

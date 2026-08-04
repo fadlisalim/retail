@@ -115,6 +115,11 @@
                 </template>
                 <button type="button" @click="add()" class="btn-outline text-sm">+ Tambah Item</button>
             </div>
+
+            <div class="mt-4 border-t border-gray-100 pt-3">
+                <x-form.checkbox name="skip_stock" label="Jangan potong stok (barang sudah keluar / stok dikelola terpisah)" />
+                <p class="mt-1 pl-6 text-xs text-gray-400">Centang bila stok di sistem ini tidak mencukupi atau memang tidak dipakai untuk kanal tersebut.</p>
+            </div>
         </div>
 
         {{-- Totals --}}

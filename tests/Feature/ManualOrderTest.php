@@ -168,6 +168,35 @@ class ManualOrderTest extends TestCase
         $this->assertSame(0, Order::count());
     }
 
+    public function test_insufficient_stock_shows_a_clear_error_instead_of_a_server_error(): void
+    {
+        $product = $this->stockedProduct(1, ['price' => 1000000]);
+
+        $this->actingAs($this->admin())->post('/admin/pesanan-manual', [
+            'channel' => 'tokopedia', 'customer_name' => 'Tono', 'customer_phone' => '08123123123',
+            'items' => [['product_id' => $product->id, 'quantity' => 5, 'unit_price' => 1000000]],
+        ])->assertSessionHasErrors('items');
+
+        $this->assertSame(0, Order::count());
+        $this->assertSame(1, $product->fresh()->stock); // stok tidak berubah
+    }
+
+    public function test_stock_can_be_skipped_for_goods_tracked_elsewhere(): void
+    {
+        $product = $this->stockedProduct(1, ['price' => 1000000]);
+
+        $this->actingAs($this->admin())->post('/admin/pesanan-manual', [
+            'channel' => 'tokopedia', 'customer_name' => 'Tono', 'customer_phone' => '08123123123',
+            'items' => [['product_id' => $product->id, 'quantity' => 5, 'unit_price' => 1000000]],
+            'skip_stock' => 1, 'mark_paid' => 1,
+        ])->assertRedirect();
+
+        $order = Order::first();
+        $this->assertEquals(5000000, (float) $order->grand_total);
+        $this->assertSame(PaymentStatus::Paid, $order->payment_status);
+        $this->assertSame(1, $product->fresh()->stock); // stok sengaja tidak disentuh
+    }
+
     public function test_existing_customer_is_reused_by_phone_number(): void
     {
         $admin = $this->admin();

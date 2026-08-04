@@ -97,7 +97,12 @@ class ManualOrderService
             ]);
 
             // Hold the stock straight away; markPaid() converts it to a sale.
-            $this->stock->reserveForOrder($order, 60 * 24 * 7);
+            // A marketplace sale can involve goods this system doesn't track
+            // (stock kept elsewhere, or the unit already left the shelf), so
+            // the admin can record it without touching stock.
+            if (empty($data['skip_stock'])) {
+                $this->stock->reserveForOrder($order, 60 * 24 * 7);
+            }
 
             $this->invoices->createForOrder($order->refresh());
 
