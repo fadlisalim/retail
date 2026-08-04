@@ -17,8 +17,13 @@
             'id' => $p->id,
             'label' => $p->name.' — '.$p->sku,
             'price' => (float) ($p->sale_price ?: $p->price),
+            'variants' => $p->variants->map(fn ($v) => [
+                'id' => $v->id,
+                'label' => $v->name.' ('.$v->sku.') · stok '.(int) $v->stock,
+                'price' => (float) ($v->sale_price ?: $v->price ?: ($p->sale_price ?: $p->price)),
+            ])->values(),
         ])->values();
-        $oldItems = old('items', [['product_id' => '', 'name' => '', 'quantity' => 1, 'unit_price' => '']]);
+        $oldItems = old('items', [['product_id' => '', 'variant_id' => '', 'name' => '', 'quantity' => 1, 'unit_price' => '']]);
     @endphp
 
     <form method="POST" action="{{ route('admin.orders.store') }}" class="space-y-5"
@@ -29,13 +34,20 @@
               shipping: {{ (float) old('shipping_cost', 0) }},
               tax: {{ (float) old('tax_amount', 0) }},
               markPaid: {{ old('mark_paid') ? 'true' : 'false' }},
-              add() { this.items.push({ product_id: '', name: '', quantity: 1, unit_price: '' }); },
+              add() { this.items.push({ product_id: '', variant_id: '', name: '', quantity: 1, unit_price: '' }); },
               remove(i) { if (this.items.length > 1) this.items.splice(i, 1); },
-              pick(i) { if (this.items[i].product_id) this.items[i].name = ''; },
-              /** Catalogue price of the picked product, or 0 for a free-text line. */
+              pick(i) { if (this.items[i].product_id) { this.items[i].name = ''; } this.items[i].variant_id = ''; },
+              /** Active variants of the picked product (empty for simple products). */
+              variantsOf(i) {
+                  const p = this.products.find((x) => String(x.id) === String(this.items[i].product_id));
+                  return p ? p.variants : [];
+              },
+              /** Catalogue price: variant price when a variant is chosen. */
               catalogPrice(i) {
                   const p = this.products.find((x) => String(x.id) === String(this.items[i].product_id));
-                  return p ? p.price : 0;
+                  if (!p) return 0;
+                  const v = p.variants.find((x) => String(x.id) === String(this.items[i].variant_id));
+                  return v ? v.price : p.price;
               },
               /** Harga kosong = ikut harga katalog (server memakai aturan yang sama). */
               effectivePrice(i) {
@@ -91,6 +103,18 @@
                                 </select>
                                 <input type="text" class="form-input mt-2" placeholder="Nama item manual"
                                        :name="'items[' + index + '][name]'" x-model="item.name" x-show="!item.product_id" x-cloak>
+
+                                {{-- Variable products keep stock & price per variant. --}}
+                                <template x-if="variantsOf(index).length">
+                                    <div class="mt-2">
+                                        <select class="form-select" :name="'items[' + index + '][variant_id]'" x-model="item.variant_id" required>
+                                            <option value="">— Pilih varian —</option>
+                                            <template x-for="v in variantsOf(index)" :key="v.id">
+                                                <option :value="v.id" x-text="v.label"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </template>
                             </div>
                             <div>
                                 <label class="input-label">Qty</label>

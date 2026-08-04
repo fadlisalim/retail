@@ -26,7 +26,12 @@ class OrderController extends Controller
     public function create(): View
     {
         return view('admin.orders.create', [
-            'products' => Product::query()->orderBy('name')->get(['id', 'name', 'sku', 'price', 'sale_price']),
+            // Variants come along: a variable product's stock and price live on
+            // the variant, so the admin must pick which one was sold.
+            'products' => Product::query()
+                ->with(['variants' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')->orderBy('id')])
+                ->orderBy('name')
+                ->get(['id', 'name', 'sku', 'price', 'sale_price', 'product_type']),
             'channels' => Order::CHANNELS,
         ]);
     }
@@ -64,6 +69,18 @@ class OrderController extends Controller
             // A line needs either a catalogue product or a free-text name.
             if (empty($item['product_id']) && trim((string) ($item['name'] ?? '')) === '') {
                 return back()->withInput()->withErrors(["items.{$i}.name" => 'Pilih produk atau isi nama item.']);
+            }
+            // A variable product's stock/price sit on the variant, so one must
+            // be chosen — and it has to belong to the selected product.
+            if (! empty($item['product_id'])) {
+                $variants = \App\Models\ProductVariant::where('product_id', $item['product_id'])->where('is_active', true);
+                if (empty($item['variant_id'])) {
+                    if ($variants->exists()) {
+                        return back()->withInput()->withErrors(["items.{$i}.variant_id" => 'Produk ini punya varian — pilih variannya.']);
+                    }
+                } elseif (! $variants->whereKey($item['variant_id'])->exists()) {
+                    return back()->withInput()->withErrors(["items.{$i}.variant_id" => 'Varian tidak cocok dengan produk yang dipilih.']);
+                }
             }
             // A free-text line has no catalogue price to fall back on.
             if (empty($item['product_id']) && ($item['unit_price'] ?? '') === '') {

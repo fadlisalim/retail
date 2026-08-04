@@ -197,6 +197,76 @@ class ManualOrderTest extends TestCase
         $this->assertSame(1, $product->fresh()->stock); // stok sengaja tidak disentuh
     }
 
+    /**
+     * A variable product keeps its stock on the variant rows, so the line must
+     * name the variant — otherwise the product-level row (usually empty) is
+     * checked and a real sale is rejected as "stok tidak mencukupi".
+     */
+    public function test_variable_product_sells_from_the_chosen_variant(): void
+    {
+        $admin = $this->admin();
+        $product = $this->stockedProduct(0, ['name' => 'Panel Bekas Sisa Proyek', 'product_type' => 'variable', 'price' => 300000]);
+        $variant = \App\Models\ProductVariant::create([
+            'product_id' => $product->id, 'sku' => 'PANEL-BEKAS-100', 'name' => '100 Wp',
+            'price' => 340000, 'is_active' => true,
+        ]);
+        app(\App\Services\StockService::class)->adjust(
+            $product, $variant, 20, \App\Enums\StockMovementType::Purchase, note: 'stok awal varian',
+        );
+
+        // Without a variant the form must refuse, not blow up.
+        $this->actingAs($admin)->post('/admin/pesanan-manual', [
+            'channel' => 'tokopedia', 'customer_name' => 'Miftah', 'customer_phone' => '08170001111',
+            'items' => [['product_id' => $product->id, 'quantity' => 2, 'unit_price' => '']],
+        ])->assertSessionHasErrors('items.0.variant_id');
+        $this->assertSame(0, Order::count());
+
+        // With the variant chosen the sale goes through and that variant's stock drops.
+        $this->actingAs($admin)->post('/admin/pesanan-manual', [
+            'channel' => 'tokopedia', 'customer_name' => 'Miftah', 'customer_phone' => '08170001111',
+            'items' => [['product_id' => $product->id, 'variant_id' => $variant->id, 'quantity' => 2, 'unit_price' => '']],
+            'mark_paid' => 1,
+        ])->assertRedirect();
+
+        $item = Order::first()->items()->first();
+        $this->assertSame($variant->id, $item->product_variant_id);
+        $this->assertSame('PANEL-BEKAS-100', $item->sku);
+        $this->assertEquals(340000, (float) $item->unit_price); // harga varian
+        $this->assertSame(18, $variant->fresh()->stock);
+    }
+
+    public function test_variant_must_belong_to_the_selected_product(): void
+    {
+        $admin = $this->admin();
+        $productA = $this->stockedProduct(5, ['price' => 100000]);
+        $productB = $this->stockedProduct(5, ['price' => 100000]);
+        $foreign = \App\Models\ProductVariant::create([
+            'product_id' => $productB->id, 'sku' => 'LAIN-1', 'name' => 'Varian Lain', 'price' => 1, 'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)->post('/admin/pesanan-manual', [
+            'channel' => 'offline', 'customer_name' => 'X', 'customer_phone' => '08123000111',
+            'items' => [['product_id' => $productA->id, 'variant_id' => $foreign->id, 'quantity' => 1, 'unit_price' => 100000]],
+        ])->assertSessionHasErrors('items.0.variant_id');
+
+        $this->assertSame(0, Order::count());
+    }
+
+    public function test_admin_can_set_stock_per_variant(): void
+    {
+        $admin = $this->admin();
+        $product = $this->stockedProduct(0, ['product_type' => 'variable', 'price' => 100000]);
+        $variant = \App\Models\ProductVariant::create([
+            'product_id' => $product->id, 'sku' => 'VAR-1', 'name' => '50 Wp', 'price' => 100000, 'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)->post(route('admin.stock.adjust', $product), [
+            'variant_id' => $variant->id, 'mode' => 'set', 'amount' => 20, 'type' => 'adjustment',
+        ])->assertRedirect();
+
+        $this->assertSame(20, $variant->fresh()->stock);
+    }
+
     public function test_existing_customer_is_reused_by_phone_number(): void
     {
         $admin = $this->admin();

@@ -55,6 +55,15 @@
                             <form action="{{ route('admin.stock.adjust', $product) }}" method="POST"
                                   class="flex flex-wrap items-center gap-2">
                                 @csrf
+                                @if ($product->variants->isNotEmpty())
+                                    {{-- Stock of a variable product lives on its variants. --}}
+                                    <select name="variant_id" class="form-select w-44" aria-label="Varian" required>
+                                        <option value="">— Pilih varian —</option>
+                                        @foreach ($product->variants as $variant)
+                                            <option value="{{ $variant->id }}">{{ $variant->name }} (stok {{ (int) $variant->stock }})</option>
+                                        @endforeach
+                                    </select>
+                                @endif
                                 <select name="mode" class="form-select w-32" aria-label="Aksi">
                                     <option value="add">Tambah (+)</option>
                                     <option value="subtract">Kurangi (−)</option>
