@@ -16,7 +16,13 @@
         $activeStatus = request('status');
     @endphp
 
-    <x-admin.page-header title="Pesanan" subtitle="Kelola dan pantau seluruh pesanan" />
+    <x-admin.page-header title="Pesanan" subtitle="Kelola dan pantau seluruh pesanan">
+        <x-slot:actions>
+            @can('order.manage')
+                <a href="{{ route('admin.orders.create') }}" class="btn-primary">+ Input Pesanan Manual</a>
+            @endcan
+        </x-slot:actions>
+    </x-admin.page-header>
 
     {{-- Status tabs --}}
     <div class="mb-4 flex flex-wrap gap-2 text-sm">

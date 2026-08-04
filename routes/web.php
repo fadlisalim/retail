@@ -268,6 +268,11 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
 
     Route::middleware('permission:order.view')->group(function () {
         Route::get('/pesanan', [Admin\OrderController::class, 'index'])->name('orders.index');
+        // Manual/marketplace sale entry (Tokopedia, WhatsApp, showroom).
+        Route::get('/pesanan-manual', [Admin\OrderController::class, 'create'])->middleware('permission:order.manage')->name('orders.create');
+        Route::post('/pesanan-manual', [Admin\OrderController::class, 'store'])->middleware('permission:order.manage')->name('orders.store');
+        Route::get('/pesanan/{order}/kuitansi', [Admin\OrderController::class, 'receipt'])->name('orders.receipt');
+        Route::post('/pesanan/{order}/terima-kasih', [Admin\OrderController::class, 'thanks'])->middleware('permission:order.manage')->name('orders.thanks');
         Route::get('/pesanan/{order}', [Admin\OrderController::class, 'show'])->name('orders.show');
     });
     Route::middleware('permission:order.manage')->group(function () {

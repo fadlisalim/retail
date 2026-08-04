@@ -1,0 +1,170 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\PaymentStatus;
+use App\Models\Order;
+use App\Models\Role;
+use App\Models\User;
+use App\Support\Terbilang;
+use Database\Seeders\RoleSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
+use Tests\TestCase;
+
+/** Recording marketplace/offline sales from the admin panel. */
+class ManualOrderTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private function admin(): User
+    {
+        $this->seed(RoleSeeder::class);
+        $admin = User::factory()->create(['is_staff' => true, 'is_active' => true]);
+        $admin->roles()->attach(Role::where('slug', 'super-admin')->first());
+
+        return $admin;
+    }
+
+    private function enableWablas(): void
+    {
+        config(['services.wablas.enabled' => true, 'services.wablas.token' => 'tok', 'services.wablas.base_url' => 'https://pati.wablas.com']);
+        Http::fake(['pati.wablas.com/*' => Http::response(['status' => true], 200)]);
+    }
+
+    public function test_admin_records_a_paid_tokopedia_sale_and_thanks_the_customer(): void
+    {
+        $this->enableWablas();
+        $product = $this->stockedProduct(10, ['price' => 3329100]);
+
+        $this->actingAs($this->admin())->post('/admin/pesanan-manual', [
+            'channel' => 'tokopedia',
+            'external_reference' => 'INV/20260801/MPL/123456',
+            'customer_name' => 'Ussy Andira',
+            'customer_phone' => '083173342644',
+            'create_customer' => 1,
+            'items' => [['product_id' => $product->id, 'quantity' => 2, 'unit_price' => 3329100]],
+            'shipping_cost' => 50000,
+            'discount' => 100000,
+            'payment_method' => 'Tokopedia (BCA VA)',
+            'mark_paid' => 1,
+            'paid_at' => now()->toDateString(),
+            'send_thanks' => 1,
+        ])->assertRedirect();
+
+        $order = Order::first();
+        $this->assertSame('tokopedia', $order->channel);
+        $this->assertSame('INV/20260801/MPL/123456', $order->external_reference);
+        $this->assertSame(PaymentStatus::Paid, $order->payment_status);
+        // 2 × 3.329.100 − 100.000 + 50.000
+        $this->assertEquals(6608200, (float) $order->grand_total);
+        $this->assertNotNull($order->invoice, 'Invoice harus terbit otomatis.');
+
+        // Customer account created from just name + WhatsApp.
+        $customer = User::where('is_staff', false)->where('whatsapp', '6283173342644')->first();
+        $this->assertNotNull($customer);
+        $this->assertSame('Ussy Andira', $customer->name);
+        $this->assertSame($customer->id, $order->user_id);
+
+        // Sold stock left the shelf.
+        $this->assertSame(8, $product->fresh()->stock);
+
+        // Thank-you WhatsApp went out once and is marked on the order.
+        Http::assertSent(fn ($req) => ($req['data'][0]['phone'] ?? null) === '6283173342644'
+            && str_contains($req['data'][0]['message'], 'Terima kasih')
+            && str_contains($req['data'][0]['message'], $order->order_number));
+        $this->assertNotNull($order->fresh()->thanks_sent_at);
+    }
+
+    public function test_thank_you_is_never_sent_twice(): void
+    {
+        $this->enableWablas();
+        $admin = $this->admin();
+        $product = $this->stockedProduct(5, ['price' => 1000000]);
+
+        $this->actingAs($admin)->post('/admin/pesanan-manual', [
+            'channel' => 'whatsapp', 'customer_name' => 'Budi', 'customer_phone' => '08123456789',
+            'items' => [['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 1000000]],
+            'mark_paid' => 1, 'send_thanks' => 1,
+        ])->assertRedirect();
+
+        $order = Order::first();
+        Http::assertSentCount(1);
+
+        // Pressing the button again changes nothing.
+        $this->actingAs($admin)->post('/admin/pesanan/'.$order->public_token.'/terima-kasih')->assertRedirect();
+        Http::assertSentCount(1);
+    }
+
+    public function test_unpaid_manual_order_has_no_receipt_and_no_whatsapp(): void
+    {
+        $this->enableWablas();
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->post('/admin/pesanan-manual', [
+            'channel' => 'offline', 'customer_name' => 'Dodi', 'customer_phone' => '08111222333',
+            'items' => [['name' => 'Jasa instalasi PLTS 3 kWp', 'quantity' => 1, 'unit_price' => 4500000]],
+        ])->assertRedirect();
+
+        $order = Order::first();
+        $this->assertSame(PaymentStatus::Unpaid, $order->payment_status);
+        $this->assertEquals(4500000, (float) $order->grand_total);
+        $this->assertSame('MANUAL', $order->items->first()->sku); // free-text line
+        Http::assertNothingSent();
+
+        // Receipt only exists once the money is in.
+        $this->actingAs($admin)->get('/admin/pesanan/'.$order->public_token.'/kuitansi')->assertNotFound();
+    }
+
+    public function test_receipt_shows_amount_in_words_for_a_paid_order(): void
+    {
+        $admin = $this->admin();
+        $product = $this->stockedProduct(3, ['price' => 1500000]);
+
+        $this->actingAs($admin)->post('/admin/pesanan-manual', [
+            'channel' => 'tokopedia', 'customer_name' => 'Sari', 'customer_phone' => '08999888777',
+            'items' => [['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 1500000]],
+            'mark_paid' => 1, 'payment_method' => 'Transfer BNI',
+        ])->assertRedirect();
+
+        $order = Order::first();
+
+        $this->actingAs($admin)->get('/admin/pesanan/'.$order->public_token.'/kuitansi')
+            ->assertOk()
+            ->assertSee('KUITANSI')
+            ->assertSee('Sari')
+            ->assertSee('Transfer BNI')
+            ->assertSee('Satu juta lima ratus ribu rupiah');
+    }
+
+    public function test_existing_customer_is_reused_by_phone_number(): void
+    {
+        $admin = $this->admin();
+        $existing = User::factory()->create(['name' => 'Pelanggan Lama', 'whatsapp' => '6281234567890', 'is_staff' => false]);
+
+        $this->actingAs($admin)->post('/admin/pesanan-manual', [
+            'channel' => 'shopee', 'customer_name' => 'Pelanggan Lama', 'customer_phone' => '081234567890',
+            'create_customer' => 1,
+            'items' => [['name' => 'Kabel PV 30m', 'quantity' => 1, 'unit_price' => 450000]],
+        ])->assertRedirect();
+
+        $this->assertSame($existing->id, Order::first()->user_id);
+        $this->assertSame(1, User::where('whatsapp', '6281234567890')->count());
+    }
+
+    public function test_manual_order_requires_items_and_customer_contact(): void
+    {
+        $this->actingAs($this->admin())->post('/admin/pesanan-manual', ['channel' => 'tokopedia'])
+            ->assertSessionHasErrors(['customer_name', 'customer_phone', 'items']);
+
+        $this->assertSame(0, Order::count());
+    }
+
+    public function test_terbilang_spells_rupiah_amounts(): void
+    {
+        $this->assertSame('Enam juta enam ratus delapan ribu dua ratus rupiah', Terbilang::rupiah(6608200));
+        $this->assertSame('Seribu rupiah', Terbilang::rupiah(1000));
+        $this->assertSame('Sebelas ribu lima ratus rupiah', Terbilang::rupiah(11500));
+        $this->assertSame('Nol rupiah', Terbilang::rupiah(0));
+    }
+}

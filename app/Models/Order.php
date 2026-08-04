@@ -17,6 +17,7 @@ class Order extends Model
 
     protected $fillable = [
         'order_number', 'public_token', 'user_id', 'affiliate_id',
+        'channel', 'external_reference', 'created_by',
         'customer_name', 'customer_email', 'customer_phone',
         'status', 'payment_status',
         'items_subtotal', 'product_discount', 'coupon_discount', 'coupon_code',
@@ -24,8 +25,23 @@ class Order extends Model
         'tax_amount', 'grand_total', 'paid_amount',
         'shipping_cost_confirmed', 'shipping_method', 'shipping_service_name', 'billable_weight_grams',
         'payment_method', 'customer_note', 'internal_note', 'idempotency_key',
-        'paid_at', 'completed_at', 'cancelled_at',
+        'paid_at', 'thanks_sent_at', 'completed_at', 'cancelled_at',
     ];
+
+    /** Sales channels an order can originate from. */
+    public const CHANNELS = [
+        'website' => 'Website energi.click',
+        'tokopedia' => 'Tokopedia',
+        'shopee' => 'Shopee',
+        'whatsapp' => 'WhatsApp / Chat',
+        'offline' => 'Offline / Showroom',
+        'lainnya' => 'Lainnya',
+    ];
+
+    public function channelLabel(): string
+    {
+        return self::CHANNELS[$this->channel] ?? ucfirst((string) $this->channel);
+    }
 
     protected $casts = [
         'items_subtotal' => 'decimal:2',
@@ -42,6 +58,7 @@ class Order extends Model
         'status' => OrderStatus::class,
         'payment_status' => PaymentStatus::class,
         'paid_at' => 'datetime',
+        'thanks_sent_at' => 'datetime',
         'completed_at' => 'datetime',
         'cancelled_at' => 'datetime',
     ];

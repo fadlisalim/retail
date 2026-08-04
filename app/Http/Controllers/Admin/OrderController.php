@@ -6,6 +6,9 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\Product;
+use App\Models\User;
+use App\Services\ManualOrderService;
 use App\Services\OrderService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,8 +17,87 @@ use Illuminate\View\View;
 
 class OrderController extends Controller
 {
-    public function __construct(private readonly OrderService $orders)
+    public function __construct(
+        private readonly OrderService $orders,
+        private readonly ManualOrderService $manualOrders,
+    ) {}
+
+    /** Form for recording a sale made on Tokopedia/WhatsApp/offline. */
+    public function create(): View
     {
+        return view('admin.orders.create', [
+            'products' => Product::query()->orderBy('name')->get(['id', 'name', 'sku', 'price', 'sale_price']),
+            'channels' => Order::CHANNELS,
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'channel' => ['required', Rule::in(array_keys(Order::CHANNELS))],
+            'external_reference' => ['nullable', 'string', 'max:60'],
+            'customer_name' => ['required', 'string', 'max:150'],
+            'customer_phone' => ['required', 'string', 'max:30'],
+            'customer_email' => ['nullable', 'email', 'max:191'],
+            'create_customer' => ['nullable', 'boolean'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.product_id' => ['nullable', 'exists:products,id'],
+            'items.*.variant_id' => ['nullable', 'exists:product_variants,id'],
+            'items.*.name' => ['nullable', 'string', 'max:191'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'discount' => ['nullable', 'numeric', 'min:0'],
+            'shipping_cost' => ['nullable', 'numeric', 'min:0'],
+            'tax_amount' => ['nullable', 'numeric', 'min:0'],
+            'shipping_method' => ['nullable', 'string', 'max:100'],
+            'payment_method' => ['nullable', 'string', 'max:100'],
+            'customer_note' => ['nullable', 'string', 'max:1000'],
+            'internal_note' => ['nullable', 'string', 'max:1000'],
+            'mark_paid' => ['nullable', 'boolean'],
+            'paid_at' => ['nullable', 'date'],
+            'send_thanks' => ['nullable', 'boolean'],
+        ]);
+
+        // A line needs either a catalogue product or a free-text name.
+        foreach ($data['items'] as $i => $item) {
+            if (empty($item['product_id']) && trim((string) ($item['name'] ?? '')) === '') {
+                return back()->withInput()->withErrors(["items.{$i}.name" => 'Pilih produk atau isi nama item.']);
+            }
+        }
+
+        $order = $this->manualOrders->create($data, $data['items'], $request->user());
+
+        $message = 'Pesanan '.$order->order_number.' tercatat.';
+        if ($order->payment_status === PaymentStatus::Paid && $request->boolean('send_thanks')) {
+            $message .= $this->manualOrders->sendThankYou($order)
+                ? ' Ucapan terima kasih terkirim via WhatsApp.'
+                : ' (Ucapan terima kasih belum terkirim — cek nomor WA / koneksi Wablas.)';
+        }
+
+        return redirect()->route('admin.orders.show', $order)->with('success', $message);
+    }
+
+    /** Payment receipt (kuitansi) — print-friendly, paid orders only. */
+    public function receipt(Order $order): View
+    {
+        abort_unless($order->payment_status === PaymentStatus::Paid, 404);
+
+        $order->load(['items', 'invoice', 'shippingAddress']);
+
+        return view('admin.orders.receipt', ['order' => $order]);
+    }
+
+    /** Manually (re)send the thank-you WhatsApp for a paid order. */
+    public function thanks(Order $order): RedirectResponse
+    {
+        abort_unless($order->payment_status === PaymentStatus::Paid, 404);
+
+        return back()->with(
+            'success',
+            $this->manualOrders->sendThankYou($order)
+                ? 'Ucapan terima kasih terkirim via WhatsApp.'
+                : 'Tidak terkirim — mungkin sudah pernah dikirim, nomor WA kosong, atau Wablas nonaktif.',
+        );
     }
 
     public function index(Request $request): View
@@ -105,6 +187,9 @@ class OrderController extends Controller
     {
         $this->orders->markPaid($order, $request->user());
 
-        return back()->with('success', 'Pembayaran berhasil diverifikasi.');
+        // Same courtesy as a manual sale: thank the customer on WhatsApp once.
+        $thanked = $this->manualOrders->sendThankYou($order->refresh());
+
+        return back()->with('success', 'Pembayaran berhasil diverifikasi.'.($thanked ? ' Ucapan terima kasih terkirim via WhatsApp.' : ''));
     }
 }

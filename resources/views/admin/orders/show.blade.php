@@ -22,12 +22,26 @@
             @if ($order->invoice)
                 <a href="{{ route('invoices.show', $order->invoice) }}" target="_blank" class="btn-outline">Lihat Invoice ↗</a>
             @endif
+            @if ($order->payment_status === \App\Enums\PaymentStatus::Paid)
+                <a href="{{ route('admin.orders.receipt', $order) }}" class="btn-outline">Kuitansi 🧾</a>
+                <form method="POST" action="{{ route('admin.orders.thanks', $order) }}"
+                      onsubmit="return confirm('Kirim ucapan terima kasih via WhatsApp ke pelanggan?')">
+                    @csrf
+                    <button type="submit" class="btn-outline text-green-700">Kirim Terima Kasih (WA)</button>
+                </form>
+            @endif
         </x-slot:actions>
     </x-admin.page-header>
 
     <div class="mb-4 flex flex-wrap gap-2">
         <span class="badge {{ $badgeClasses[$order->status->color()] ?? $badgeClasses['gray'] }}">{{ $order->status->label() }}</span>
         <span class="badge {{ $badgeClasses[$order->payment_status->color()] ?? $badgeClasses['gray'] }}">{{ $order->payment_status->label() }}</span>
+        @if ($order->channel !== 'website')
+            <span class="badge bg-indigo-100 text-indigo-700">{{ $order->channelLabel() }}@if ($order->external_reference) · {{ $order->external_reference }}@endif</span>
+        @endif
+        @if ($order->thanks_sent_at)
+            <span class="badge bg-green-100 text-green-700">Terima kasih terkirim {{ $order->thanks_sent_at->format('d/m H:i') }}</span>
+        @endif
         @if ($order->shipping_cost_confirmed)<span class="badge bg-green-100 text-green-700">Ongkir Dikonfirmasi</span>@endif
     </div>
 
