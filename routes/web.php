@@ -274,7 +274,11 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         // Manual/marketplace sale entry (Tokopedia, WhatsApp, showroom).
         Route::get('/pesanan-manual', [Admin\OrderController::class, 'create'])->middleware('permission:order.manage')->name('orders.create');
         Route::post('/pesanan-manual', [Admin\OrderController::class, 'store'])->middleware('permission:order.manage')->name('orders.store');
-        Route::get('/pesanan/{order}/kuitansi', [Admin\OrderController::class, 'receipt'])->name('orders.receipt');
+        // Kuitansi = bukti pelunasan, jadi hanya keuangan (payment.manage) yang
+        // boleh mencetaknya. Invoice tetap bisa dibuka semua pemegang order.view
+        // (mis. sales) lewat tautan invoice pada halaman pesanan.
+        Route::get('/pesanan/{order}/kuitansi', [Admin\OrderController::class, 'receipt'])
+            ->middleware('permission:payment.manage')->name('orders.receipt');
         // Per-order photo documentation (penyiapan, testing, pengiriman…).
         Route::post('/pesanan/{order}/dokumentasi', [Admin\OrderDocumentationController::class, 'store'])
             ->middleware('permission:order.manage')->name('orders.docs.store');

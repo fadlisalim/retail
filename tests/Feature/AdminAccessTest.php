@@ -50,6 +50,41 @@ class AdminAccessTest extends TestCase
         $this->get('/admin/pengaturan')->assertOk();
     }
 
+    /**
+     * Kuitansi is proof of settlement, so only finance (payment.manage) may
+     * print it — sales stops at the invoice.
+     */
+    public function test_sales_prints_invoice_but_only_finance_prints_the_receipt(): void
+    {
+        $order = \App\Models\Order::create([
+            'order_number' => 'ORD-KWT01',
+            'public_token' => \Illuminate\Support\Str::uuid(),
+            'customer_name' => 'Ussy',
+            'customer_email' => 'ussy@test.id',
+            'status' => \App\Enums\OrderStatus::Processing->value,
+            'payment_status' => \App\Enums\PaymentStatus::Paid->value,
+            'items_subtotal' => 1_500_000,
+            'tax_amount' => 0,
+            'grand_total' => 1_500_000,
+        ]);
+        $invoice = app(\App\Services\InvoiceService::class)->createForOrder($order);
+
+        $sales = User::factory()->create(['is_staff' => true, 'is_active' => true]);
+        $sales->roles()->attach(Role::where('slug', 'admin-sales')->first());
+
+        $this->actingAs($sales);
+        $this->get(route('admin.orders.show', $order))->assertOk();
+        $this->get(route('invoices.show', $invoice))->assertOk();
+        $this->get(route('admin.orders.receipt', $order))->assertForbidden();
+
+        $finance = User::factory()->create(['is_staff' => true, 'is_active' => true]);
+        $finance->roles()->attach(Role::where('slug', 'admin-keuangan')->first());
+
+        $this->actingAs($finance);
+        $this->get(route('invoices.show', $invoice))->assertOk();
+        $this->get(route('admin.orders.receipt', $order))->assertOk()->assertSee('Terbilang');
+    }
+
     public function test_catalog_admin_can_upload_and_remove_brand_logo(): void
     {
         \Illuminate\Support\Facades\Storage::fake('public');

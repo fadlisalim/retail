@@ -23,7 +23,10 @@
                 <a href="{{ route('invoices.show', $order->invoice) }}" target="_blank" class="btn-outline">Lihat Invoice ↗</a>
             @endif
             @if ($order->payment_status === \App\Enums\PaymentStatus::Paid)
-                <a href="{{ route('admin.orders.receipt', $order) }}" class="btn-outline">Kuitansi 🧾</a>
+                {{-- Kuitansi hanya untuk keuangan; sales cukup sampai invoice. --}}
+                @can('payment.manage')
+                    <a href="{{ route('admin.orders.receipt', $order) }}" class="btn-outline">Kuitansi 🧾</a>
+                @endcan
                 <form method="POST" action="{{ route('admin.orders.thanks', $order) }}"
                       onsubmit="return confirm('Kirim ucapan terima kasih via WhatsApp ke pelanggan?')">
                     @csrf
