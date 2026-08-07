@@ -195,4 +195,24 @@ class WaChatTest extends TestCase
         $this->assertSame('document', WaMessage::first()->media_type);
         Http::assertSent(fn ($req) => str_contains((string) $req->url(), 'send-document'));
     }
+
+    public function test_backfill_converts_old_media_text_rows(): void
+    {
+        config(['services.wablas.media_base_url' => 'https://pati.wablas.com/media/']);
+
+        WaMessage::create(['phone' => '628112231107', 'direction' => 'in', 'message' => '[media] 2TNEV6-AC8E0.pptx', 'created_at' => now()]);
+        WaMessage::create(['phone' => '628112231107', 'direction' => 'in', 'message' => '[media] 2TNEV6-AC1FF.f4v', 'created_at' => now()]);
+        WaMessage::create(['phone' => '628112231107', 'direction' => 'in', 'message' => 'pesan teks biasa', 'created_at' => now()]);
+
+        $this->artisan('wa:backfill-media')->assertSuccessful();
+
+        $doc = WaMessage::where('media_name', '2TNEV6-AC8E0.pptx')->first();
+        $this->assertSame('https://pati.wablas.com/media/2TNEV6-AC8E0.pptx', $doc->media_url);
+        $this->assertSame('document', $doc->media_type);
+        $this->assertSame('', $doc->message);
+
+        $this->assertSame('video', WaMessage::where('media_name', '2TNEV6-AC1FF.f4v')->first()->media_type);
+        // Plain text rows are left alone.
+        $this->assertNull(WaMessage::where('message', 'pesan teks biasa')->first()->media_url);
+    }
 }
