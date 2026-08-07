@@ -15,11 +15,13 @@ class BackfillWaMedia extends Command
 {
     protected $signature = 'wa:backfill-media {--dry-run : Tampilkan hasil tanpa menyimpan}';
 
-    protected $description = 'Ubah pesan WA lama berformat "[media] namafile" menjadi lampiran yang bisa ditampilkan';
+    protected $description = 'Ubah pesan WA lama berformat "[media] namafile" atau URL polos menjadi lampiran yang bisa ditampilkan';
 
     public function handle(): int
     {
-        $rows = WaMessage::where('message', 'like', '[media]%')->whereNull('media_url')->get();
+        $rows = WaMessage::whereNull('media_url')
+            ->where(fn ($q) => $q->where('message', 'like', '[media]%')->orWhere('message', 'like', 'http%'))
+            ->get();
 
         if ($rows->isEmpty()) {
             $this->info('Tidak ada pesan lama yang perlu dikonversi.');
@@ -31,7 +33,13 @@ class BackfillWaMedia extends Command
         $converted = 0;
 
         foreach ($rows as $row) {
-            $file = trim(preg_replace('/^\[media\]\s*/i', '', (string) $row->message));
+            $text = (string) $row->message;
+            // Two legacy shapes: "[media] namafile" and a bare media URL that
+            // the webhook used to record as ordinary text.
+            $file = str_starts_with(mb_strtolower(ltrim($text)), '[media]')
+                ? trim(preg_replace('/^\s*\[media\]\s*/i', '', $text))
+                : (string) WablasMedia::fromText($text);
+
             if ($file === '') {
                 continue;
             }

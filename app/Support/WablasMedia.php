@@ -12,6 +12,20 @@ use Illuminate\Support\Str;
  */
 class WablasMedia
 {
+    /** Extension => media type. Anything unlisted is treated as a document. */
+    private const TYPES = [
+        'image' => ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'],
+        'video' => ['mp4', 'mkv', '3gp', 'mov', 'f4v', 'flv', 'webm'],
+        'audio' => ['mp3', 'ogg', 'opus', 'wav', 'm4a', 'aac'],
+        'document' => ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'csv', 'txt', 'zip', 'rar'],
+    ];
+
+    /** Every extension we are willing to recognise inside a bare-URL message. */
+    private const EXTENSIONS = [
+        ...self::TYPES['image'], ...self::TYPES['video'],
+        ...self::TYPES['audio'], ...self::TYPES['document'],
+    ];
+
     /** Absolute URL when possible; otherwise the raw filename (never lost). */
     public static function url(string $file): ?string
     {
@@ -43,12 +57,34 @@ class WablasMedia
 
         $ext = mb_strtolower(pathinfo(parse_url($file, PHP_URL_PATH) ?: $file, PATHINFO_EXTENSION));
 
-        return match (true) {
-            in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'], true) => 'image',
-            in_array($ext, ['mp4', 'mkv', '3gp', 'mov', 'f4v', 'flv', 'webm'], true) => 'video',
-            in_array($ext, ['mp3', 'ogg', 'opus', 'wav', 'm4a', 'aac'], true) => 'audio',
-            default => 'document',
-        };
+        foreach (self::TYPES as $type => $extensions) {
+            if (in_array($ext, $extensions, true)) {
+                return $type;
+            }
+        }
+
+        return 'document';
+    }
+
+    /**
+     * Some Wablas setups deliver an attachment with no `file` field at all —
+     * the media URL simply arrives as the message body
+     * ("https://pati.wablas.com/image/SKJB-….jpeg"). Detect that so the inbox
+     * shows a thumbnail instead of a bare link. Only a message that is exactly
+     * one URL counts; a real sentence that happens to contain a link is left
+     * as text.
+     */
+    public static function fromText(string $message): ?string
+    {
+        $text = trim($message);
+
+        if ($text === '' || preg_match('/\s/', $text) || ! Str::startsWith($text, ['http://', 'https://'])) {
+            return null;
+        }
+
+        $ext = mb_strtolower(pathinfo((string) parse_url($text, PHP_URL_PATH), PATHINFO_EXTENSION));
+
+        return in_array($ext, self::EXTENSIONS, true) ? $text : null;
     }
 
     /** Filename shown as the label for non-image attachments. */

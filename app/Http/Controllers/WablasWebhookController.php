@@ -45,6 +45,15 @@ class WablasWebhookController extends Controller
         // depending on the Wablas server. Keep it as media (not text) so the
         // inbox can show a thumbnail instead of "[media] abc.jpeg".
         $file = trim((string) ($payload['file'] ?? $payload['url'] ?? ''));
+
+        // Fallback: some servers omit `file` entirely and put the media URL in
+        // the message body. Promote it so the attachment renders instead of
+        // sitting in the thread as a naked link.
+        if ($file === '' && ($fromBody = WablasMedia::fromText($message))) {
+            $file = $fromBody;
+            $message = '';
+        }
+
         $mediaUrl = WablasMedia::url($file);
         $mediaType = WablasMedia::type((string) ($payload['messageType'] ?? $payload['type'] ?? ''), $file);
 

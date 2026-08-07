@@ -152,6 +152,53 @@ class WaChatTest extends TestCase
         $this->assertFalse($m->isImage());
     }
 
+    /** Some servers send no `file` field at all — the URL is the message body. */
+    public function test_media_url_sent_as_plain_message_becomes_an_attachment(): void
+    {
+        $this->postJson('/webhook/wablas', [
+            'id' => 'WB-URL-1', 'phone' => '08170188989',
+            'message' => 'https://pati.wablas.com/image/SKJB-ACF325DCD45B14D42B40B0352EC3D0E8.jpeg',
+        ])->assertOk();
+        $this->postJson('/webhook/wablas', [
+            'id' => 'WB-URL-2', 'phone' => '08170188989',
+            'message' => 'https://pati.wablas.com/video/SKJB-A50F4B8D2B8E696631A8B5D2B8AFB895.mp4',
+        ])->assertOk();
+
+        [$image, $video] = WaMessage::orderBy('id')->get()->all();
+
+        $this->assertSame('image', $image->media_type);
+        $this->assertTrue($image->isImage());
+        $this->assertSame('SKJB-ACF325DCD45B14D42B40B0352EC3D0E8.jpeg', $image->media_name);
+        $this->assertSame('', $image->message);   // no leftover link text
+        $this->assertSame('video', $video->media_type);
+    }
+
+    /** A sentence that merely contains a link stays ordinary text. */
+    public function test_a_link_inside_a_sentence_is_not_treated_as_media(): void
+    {
+        $text = 'cek produknya di https://energi.click/produk/panel.jpg ya';
+
+        $this->postJson('/webhook/wablas', ['id' => 'WB-URL-3', 'phone' => '08170188989', 'message' => $text])->assertOk();
+
+        $m = WaMessage::first();
+        $this->assertNull($m->media_url);
+        $this->assertSame($text, $m->message);
+    }
+
+    public function test_backfill_converts_legacy_bare_url_messages(): void
+    {
+        $url = 'https://pati.wablas.com/document/SKJB-3EB0081DFD9ED1E34500E7.pdf';
+        WaMessage::create(['phone' => '628170188989', 'direction' => 'in', 'message' => $url, 'created_at' => now()]);
+
+        $this->artisan('wa:backfill-media')->assertSuccessful();
+
+        $m = WaMessage::first();
+        $this->assertSame($url, $m->media_url);
+        $this->assertSame('document', $m->media_type);
+        $this->assertSame('SKJB-3EB0081DFD9ED1E34500E7.pdf', $m->media_name);
+        $this->assertSame('', $m->message);
+    }
+
     public function test_admin_can_send_an_image_attachment(): void
     {
         \Illuminate\Support\Facades\Storage::fake('public');
