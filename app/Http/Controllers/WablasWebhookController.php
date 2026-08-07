@@ -39,12 +39,15 @@ class WablasWebhookController extends Controller
 
         $phone = $wa->normalize((string) ($payload['phone'] ?? $payload['sender'] ?? ''));
         $message = trim((string) ($payload['message'] ?? ''));
-        $file = trim((string) ($payload['file'] ?? $payload['url'] ?? ''));
-        if ($message === '' && $file !== '') {
-            $message = '[media] '.$file;
-        }
 
-        if (! $phone || $message === '') {
+        // Media arrives either as a full URL or as a bare stored filename,
+        // depending on the Wablas server. Keep it as media (not text) so the
+        // inbox can show a thumbnail instead of "[media] abc.jpeg".
+        $file = trim((string) ($payload['file'] ?? $payload['url'] ?? ''));
+        $mediaUrl = $this->mediaUrl($file);
+        $mediaType = $this->mediaType((string) ($payload['messageType'] ?? $payload['type'] ?? ''), $file);
+
+        if (! $phone || ($message === '' && $mediaUrl === null)) {
             return response('', 200);
         }
 
@@ -66,6 +69,9 @@ class WablasWebhookController extends Controller
                 'is_read' => $fromMe,
                 'sent_ok' => $fromMe ? true : null,
                 'message' => Str::limit($message, 4000),
+                'media_url' => $mediaUrl,
+                'media_type' => $mediaUrl ? $mediaType : null,
+                'media_name' => $mediaUrl ? Str::limit(basename(parse_url($file, PHP_URL_PATH) ?: $file), 191, '') : null,
                 'wablas_id' => $wablasId,
                 'created_at' => now(),
             ]);
@@ -78,5 +84,47 @@ class WablasWebhookController extends Controller
         // any text echoed back is auto-sent to the customer as a reply — a JSON
         // body here would land in the customer's WhatsApp as garbage.
         return response('', 200);
+    }
+
+    /**
+     * Absolute URL for an incoming media file. Wablas may send a full URL or
+     * just the stored filename — the latter needs WABLAS_MEDIA_BASE_URL to be
+     * resolvable, otherwise we keep the raw value so nothing is lost.
+     */
+    private function mediaUrl(string $file): ?string
+    {
+        if ($file === '') {
+            return null;
+        }
+
+        if (Str::startsWith($file, ['http://', 'https://'])) {
+            return Str::limit($file, 500, '');
+        }
+
+        $base = trim((string) config('services.wablas.media_base_url'));
+
+        return $base === ''
+            ? Str::limit($file, 500, '')            // filename only — shown as a label
+            : Str::limit(rtrim($base, '/').'/'.ltrim($file, '/'), 500, '');
+    }
+
+    /** Normalise Wablas' message type, falling back to the file extension. */
+    private function mediaType(string $reported, string $file): string
+    {
+        $reported = mb_strtolower(trim($reported));
+        foreach (['image', 'video', 'audio', 'document'] as $type) {
+            if (str_contains($reported, $type)) {
+                return $type;
+            }
+        }
+
+        $ext = mb_strtolower(pathinfo(parse_url($file, PHP_URL_PATH) ?: $file, PATHINFO_EXTENSION));
+
+        return match (true) {
+            in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true) => 'image',
+            in_array($ext, ['mp4', 'mkv', '3gp', 'mov'], true) => 'video',
+            in_array($ext, ['mp3', 'ogg', 'opus', 'wav', 'm4a'], true) => 'audio',
+            default => 'document',
+        };
     }
 }

@@ -75,6 +75,66 @@ class WhatsAppService
     }
 
     /**
+     * Send an image/document/video by URL. Wablas fetches the file itself, so
+     * the URL must be publicly reachable (we upload to the public disk first).
+     * Returns true when the gateway accepted it.
+     */
+    public function sendMedia(?string $phone, string $url, string $type = 'image', string $caption = ''): bool
+    {
+        $this->lastResult = null;
+
+        if (! $this->isEnabled()) {
+            $this->lastResult = ['ok' => false, 'status' => null, 'body' => 'Wablas belum aktif (env).'];
+
+            return false;
+        }
+
+        $phone = $this->normalize($phone);
+        if (! $phone || ! filter_var($url, FILTER_VALIDATE_URL)) {
+            $this->lastResult = ['ok' => false, 'status' => null, 'body' => 'Nomor atau URL media tidak valid.'];
+
+            return false;
+        }
+
+        // Endpoint and payload key differ per media type.
+        [$path, $key] = match ($type) {
+            'video' => ['/api/v2/send-video', 'video'],
+            'audio' => ['/api/v2/send-audio', 'audio'],
+            'document' => ['/api/v2/send-document', 'document'],
+            default => ['/api/v2/send-image', 'image'],
+        };
+
+        try {
+            $row = ['phone' => $phone, $key => $url, 'isGroup' => 'false'];
+            if ($caption !== '') {
+                // Documents carry the filename instead of a caption.
+                $row[$type === 'document' ? 'filename' : 'caption'] = $caption;
+            }
+
+            $response = Http::withHeaders(['Authorization' => (string) config('services.wablas.token')])
+                ->asJson()
+                ->timeout(30)
+                ->post($this->endpoint($path), ['data' => [$row]]);
+
+            $this->lastResult = ['ok' => false, 'status' => $response->status(), 'body' => $response->body()];
+
+            $status = $response->json('status');
+            if ($response->successful() && ($status === true || $status === 'true')) {
+                $this->lastResult['ok'] = true;
+
+                return true;
+            }
+
+            Log::warning('Wablas media send failed', ['phone' => $phone, 'type' => $type, 'body' => $response->body()]);
+        } catch (\Throwable $e) {
+            $this->lastResult = ['ok' => false, 'status' => null, 'body' => $e->getMessage()];
+            Log::warning('Wablas media send error: '.$e->getMessage(), ['phone' => $phone]);
+        }
+
+        return false;
+    }
+
+    /**
      * Normalise to international format (digits only, with country code). A leading
      * 0 is treated as a legacy Indonesian local number (→ 62…); any other number is
      * assumed to already carry its country code (from the phone picker) and is kept

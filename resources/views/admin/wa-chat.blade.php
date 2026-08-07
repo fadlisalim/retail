@@ -91,7 +91,23 @@
                             wrap.className = out ? 'flex justify-end' : 'flex justify-start';
                             const bubble = document.createElement('div');
                             bubble.className = 'relative max-w-[75%] whitespace-pre-wrap rounded-lg px-2.5 py-1.5 text-[13.5px] leading-snug shadow-sm ' + (out ? 'bg-[#d9fdd3] text-[#111b21] rounded-tr-none' : 'bg-white text-[#111b21] rounded-tl-none');
-                            bubble.textContent = m.message;
+                            // Media first (thumbnail for images, link otherwise), caption below.
+                            if (m.media_url) {
+                                const link = document.createElement('a');
+                                link.href = m.media_url; link.target = '_blank'; link.rel = 'noopener';
+                                link.className = 'mb-1 block';
+                                if (m.is_image) {
+                                    const img = document.createElement('img');
+                                    img.src = m.media_url; img.loading = 'lazy';
+                                    img.className = 'max-h-56 w-full rounded object-cover';
+                                    link.appendChild(img);
+                                } else {
+                                    link.className += ' rounded bg-black/5 px-2 py-1.5 text-xs font-medium text-blue-700 underline';
+                                    link.textContent = '📎 ' + (m.media_name || m.media_type || 'Lampiran');
+                                }
+                                bubble.appendChild(link);
+                            }
+                            bubble.appendChild(document.createTextNode(m.message || ''));
                             const meta = document.createElement('span');
                             meta.className = 'ml-2 inline-flex translate-y-[3px] items-center gap-0.5 whitespace-nowrap text-[10px] text-gray-500/80';
                             meta.textContent = (m.time || '') + (out ? (m.sent_ok === false ? ' ✗' : ' ✓') : '');
@@ -109,6 +125,29 @@
                                     this.scroll();
                                 }
                             } catch (e) { /* retry next tick */ }
+                        },
+                        /** Send the picked file (image/doc) with the composer text as caption. */
+                        async sendFile(event) {
+                            const file = event.target.files?.[0];
+                            if (!file || this.sending) return;
+                            this.sending = true; this.error = '';
+                            try {
+                                const body = new FormData();
+                                body.append('phone', this.phone);
+                                body.append('file', file);
+                                if (this.text.trim()) body.append('caption', this.text.trim());
+
+                                const res = await fetch(`{{ route('admin.wachat.media') }}`, {
+                                    method: 'POST',
+                                    headers: { 'X-CSRF-TOKEN': this.csrf(), Accept: 'application/json' },
+                                    body,
+                                });
+                                const data = await res.json().catch(() => ({}));
+                                if (res.ok && data.ok) { this.text = ''; await this.poll(); }
+                                else { this.error = data.error || 'Gagal mengirim lampiran.'; await this.poll(); }
+                            } catch (e) { this.error = 'Koneksi bermasalah.'; }
+                            this.sending = false;
+                            event.target.value = '';
                         },
                         async send() {
                             const msg = this.text.trim();
@@ -149,7 +188,7 @@
                             @endif
                             @php($out = $m->direction === 'out')
                             <div class="flex {{ $out ? 'justify-end' : 'justify-start' }}">
-                                <div class="relative max-w-[75%] whitespace-pre-wrap rounded-lg px-2.5 py-1.5 text-[13.5px] leading-snug shadow-sm {{ $out ? 'rounded-tr-none bg-[#d9fdd3] text-[#111b21]' : 'rounded-tl-none bg-white text-[#111b21]' }}">{{ $m->message }}<span class="ml-2 inline-flex translate-y-[3px] items-center gap-0.5 whitespace-nowrap text-[10px] {{ $out && $m->sent_ok === false ? 'text-red-500' : 'text-gray-500/80' }}">{{ $m->created_at?->format('H:i') }}{{ $out ? ($m->sent_ok === false ? ' ✗' : ' ✓') : '' }}</span></div>
+                                <div class="relative max-w-[75%] whitespace-pre-wrap rounded-lg px-2.5 py-1.5 text-[13.5px] leading-snug shadow-sm {{ $out ? 'rounded-tr-none bg-[#d9fdd3] text-[#111b21]' : 'rounded-tl-none bg-white text-[#111b21]' }}">@if ($m->media_url)@if ($m->isImage())<a href="{{ $m->media_url }}" target="_blank" rel="noopener" class="mb-1 block"><img src="{{ $m->media_url }}" alt="{{ $m->media_name }}" loading="lazy" class="max-h-56 w-full rounded object-cover"></a>@else<a href="{{ \Illuminate\Support\Str::startsWith($m->media_url, ['http://', 'https://']) ? $m->media_url : '#' }}" @if (\Illuminate\Support\Str::startsWith($m->media_url, ['http://', 'https://'])) target="_blank" rel="noopener" @endif class="mb-1 block rounded bg-black/5 px-2 py-1.5 text-xs font-medium text-blue-700 underline">📎 {{ $m->media_name ?? 'Lampiran' }}</a>@endif @endif{{ $m->message }}<span class="ml-2 inline-flex translate-y-[3px] items-center gap-0.5 whitespace-nowrap text-[10px] {{ $out && $m->sent_ok === false ? 'text-red-500' : 'text-gray-500/80' }}">{{ $m->created_at?->format('H:i') }}{{ $out ? ($m->sent_ok === false ? ' ✗' : ' ✓') : '' }}</span></div>
                             </div>
                         @endforeach
                     </div>
@@ -158,6 +197,15 @@
                     <div class="border-t border-gray-200 bg-gray-50 p-2.5">
                         <p x-show="error" x-cloak class="mb-1.5 px-1 text-xs text-red-600" x-text="error"></p>
                         <form @submit.prevent="send()" class="flex items-end gap-2">
+                            {{-- Attachment: Wablas fetches media by URL, so the file is
+                                 uploaded to the public disk first (see controller). --}}
+                            <input type="file" x-ref="file" class="hidden" @change="sendFile($event)"
+                                   accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.zip">
+                            <button type="button" @click="$refs.file.click()" :disabled="sending"
+                                    class="flex h-11 w-11 flex-none items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-200 disabled:opacity-50"
+                                    aria-label="Lampirkan file" title="Lampirkan foto / dokumen">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13"/></svg>
+                            </button>
                             <textarea x-model="text" @keydown.enter.prevent="send()" rows="1" placeholder="Ketik pesan"
                                       class="max-h-28 min-h-[2.75rem] flex-1 resize-none rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400"></textarea>
                             <button type="submit" :disabled="sending || !text.trim()"

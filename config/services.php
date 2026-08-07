@@ -51,6 +51,10 @@ return [
         // Shared secret for the incoming-message webhook (?token=... on the URL
         // configured in the Wablas console). Empty = no token check.
         'webhook_token' => env('WABLAS_WEBHOOK_TOKEN'),
+        // Some Wablas servers post only the stored FILENAME of incoming media
+        // ("abc.jpeg") instead of a URL. Set the base that serves those files
+        // (e.g. https://pati.wablas.com/media/) so the inbox can show them.
+        'media_base_url' => env('WABLAS_MEDIA_BASE_URL'),
     ],
 
     // CS Assistant (Claude / Anthropic). API key ONLY from .env — never hardcode.

@@ -106,4 +106,93 @@ class WaChatTest extends TestCase
 
         $this->actingAs($staff)->get('/admin/wa-chat')->assertForbidden();
     }
+
+    public function test_webhook_stores_incoming_media_as_media_not_text(): void
+    {
+        // Some Wablas servers post a full URL...
+        $this->postJson('/webhook/wablas', [
+            'id' => 'WB-IMG-1', 'phone' => '08170188989', 'pushName' => 'Sandi',
+            'message' => 'ini fotonya', 'messageType' => 'image',
+            'file' => 'https://pati.wablas.com/media/2TNEV6.jpeg',
+        ])->assertOk();
+
+        $m = WaMessage::first();
+        $this->assertSame('ini fotonya', $m->message);              // caption stays text
+        $this->assertSame('https://pati.wablas.com/media/2TNEV6.jpeg', $m->media_url);
+        $this->assertSame('image', $m->media_type);
+        $this->assertSame('2TNEV6.jpeg', $m->media_name);
+        $this->assertTrue($m->isImage());
+        $this->assertStringNotContainsString('[media]', (string) $m->message);
+    }
+
+    public function test_bare_media_filename_is_resolved_with_the_configured_base_url(): void
+    {
+        config(['services.wablas.media_base_url' => 'https://pati.wablas.com/media/']);
+
+        $this->postJson('/webhook/wablas', [
+            'id' => 'WB-IMG-2', 'phone' => '08170188989',
+            'file' => '2TNEV6-3A20A39D842FB54E2E84.jpeg', 'messageType' => 'image',
+        ])->assertOk();
+
+        $m = WaMessage::first();
+        $this->assertSame('https://pati.wablas.com/media/2TNEV6-3A20A39D842FB54E2E84.jpeg', $m->media_url);
+        $this->assertSame('image', $m->media_type);
+        $this->assertSame('', (string) $m->message);
+    }
+
+    public function test_media_type_falls_back_to_the_file_extension(): void
+    {
+        $this->postJson('/webhook/wablas', [
+            'id' => 'WB-DOC-1', 'phone' => '08170188989',
+            'file' => 'https://pati.wablas.com/media/invoice.pdf',
+        ])->assertOk();
+
+        $m = WaMessage::first();
+        $this->assertSame('document', $m->media_type);
+        $this->assertFalse($m->isImage());
+    }
+
+    public function test_admin_can_send_an_image_attachment(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        config(['services.wablas.enabled' => true, 'services.wablas.token' => 'tok', 'services.wablas.base_url' => 'https://pati.wablas.com']);
+        Http::fake(['pati.wablas.com/*' => Http::response(['status' => true], 200)]);
+
+        $this->actingAs($this->admin())->post('/admin/wa-chat/kirim-media', [
+            'phone' => '08170188989',
+            'caption' => 'Foto unit',
+            'file' => \Illuminate\Http\UploadedFile::fake()->image('unit.jpg'),
+        ])->assertOk()->assertJsonPath('ok', true);
+
+        $m = WaMessage::first();
+        $this->assertSame('out', $m->direction);
+        $this->assertSame('image', $m->media_type);
+        $this->assertSame('unit.jpg', $m->media_name);
+        $this->assertSame('Foto unit', $m->message);
+        $this->assertTrue($m->sent_ok);
+
+        // Wablas is told to fetch the file from our public URL.
+        Http::assertSent(function ($req) {
+            $row = $req['data'][0] ?? [];
+
+            return str_contains((string) $req->url(), 'send-image')
+                && str_starts_with((string) ($row['image'] ?? ''), 'http')
+                && ($row['caption'] ?? null) === 'Foto unit';
+        });
+    }
+
+    public function test_pdf_attachment_is_sent_as_a_document(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        config(['services.wablas.enabled' => true, 'services.wablas.token' => 'tok', 'services.wablas.base_url' => 'https://pati.wablas.com']);
+        Http::fake(['pati.wablas.com/*' => Http::response(['status' => true], 200)]);
+
+        $this->actingAs($this->admin())->post('/admin/wa-chat/kirim-media', [
+            'phone' => '08170188989',
+            'file' => \Illuminate\Http\UploadedFile::fake()->create('penawaran.pdf', 120, 'application/pdf'),
+        ])->assertOk();
+
+        $this->assertSame('document', WaMessage::first()->media_type);
+        Http::assertSent(fn ($req) => str_contains((string) $req->url(), 'send-document'));
+    }
 }

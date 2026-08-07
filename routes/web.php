@@ -355,6 +355,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/wa-chat', [Admin\WaChatController::class, 'index'])->name('wachat.index');
         Route::get('/wa-chat/pesan', [Admin\WaChatController::class, 'messages'])->name('wachat.messages');
         Route::post('/wa-chat/kirim', [Admin\WaChatController::class, 'send'])->middleware('throttle:30,1')->name('wachat.send');
+        Route::post('/wa-chat/kirim-media', [Admin\WaChatController::class, 'sendMedia'])->middleware('throttle:20,1')->name('wachat.media');
         Route::get('/trafik', [Admin\TrafficController::class, 'index'])
             ->middleware('permission:traffic.view')->name('traffic.index');
         Route::get('/chat-toko', [Admin\SiteChatController::class, 'index'])->name('sitechat.index');
