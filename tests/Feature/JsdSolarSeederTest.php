@@ -62,6 +62,42 @@ class JsdSolarSeederTest extends TestCase
         }
     }
 
+    /**
+     * Ketiga baterai memakai manual dengan tata letak identik, jadi angka
+     * gampang tersalin ke model yang salah — terutama Bluetooth yang HANYA
+     * ada di J12100.
+     */
+    public function test_the_batteries_carry_their_own_datasheet_figures(): void
+    {
+        $specs = fn (string $sku) => Product::where('sku', $sku)->firstOrFail()->specifications;
+
+        $this->assertStringContainsString('1.280 Wh', $specs('JSD-J12100'));
+        $this->assertStringContainsString('14,4 V ±0,2 V', $specs('JSD-J12100'));
+        $this->assertStringContainsString('Bluetooth (aplikasi', $specs('JSD-J12100'));
+
+        $this->assertStringContainsString('200 A', $specs('JSD-J12200'));
+        $this->assertStringContainsString('Tidak tersedia pada model ini', $specs('JSD-J12200'));
+
+        // 24V: tegangan pengisiannya dua kali lipat model 12V.
+        $this->assertStringContainsString('28,8 V ±0,2 V', $specs('JSD-J24100'));
+        $this->assertStringContainsString('Tidak tersedia pada model ini', $specs('JSD-J24100'));
+    }
+
+    /** Baris penampung diganti saat brosur datang — tapi suntingan admin aman. */
+    public function test_placeholder_rows_are_upgraded_but_admin_edits_are_kept(): void
+    {
+        $placeholder = Product::where('sku', 'JSD-J12100')->firstOrFail();
+        $placeholder->forceFill(['specifications' => '<p>Menyusul dari pabrikan</p>'])->save();
+
+        $edited = Product::where('sku', 'JSD-J12200')->firstOrFail();
+        $edited->forceFill(['specifications' => '<p>Ditulis ulang oleh admin</p>'])->save();
+
+        $this->seed(JsdSolarSeeder::class);
+
+        $this->assertStringContainsString('1.280 Wh', $placeholder->refresh()->specifications);
+        $this->assertSame('<p>Ditulis ulang oleh admin</p>', $edited->refresh()->specifications);
+    }
+
     public function test_a_seeded_product_page_opens(): void
     {
         $product = Product::where('sku', 'JSD-J6500HC')->firstOrFail();

@@ -36,6 +36,7 @@ class JsdSolarSeeder extends Seeder
         );
 
         $created = 0;
+        $upgraded = 0;
         $skipped = 0;
 
         foreach ($this->products() as $row) {
@@ -62,13 +63,39 @@ class JsdSolarSeeder extends Seeder
                 $product->categories()->sync($categories);
                 $this->setStock($product, $row['stock']);
                 $created++;
+            } elseif ($this->upgradePlaceholder($product, $row)) {
+                $upgraded++;
             } else {
                 $skipped++;
             }
         }
 
-        $this->command?->info("Produk JSD Solar: {$created} ditambahkan, {$skipped} dilewati (sudah ada).");
+        $this->command?->info("Produk JSD Solar: {$created} ditambahkan, {$upgraded} diperbarui, {$skipped} dilewati (sudah ada).");
         $this->command?->warn('Harga BELUM termasuk PPN & ongkir. Cek stok di Admin → Stok, dan unggah foto + brosur di Admin → Produk → Edit.');
+    }
+
+    /**
+     * Ketika brosur resmi akhirnya datang, baris yang masih memuat teks
+     * penampung "Menyusul dari pabrikan" diganti dengan data sungguhan.
+     * Baris yang sudah disunting admin (tidak lagi memuat penampung itu)
+     * TIDAK disentuh, supaya hasil kerja mereka tidak tertimpa.
+     */
+    private function upgradePlaceholder(Product $product, array $row): bool
+    {
+        $placeholder = 'Menyusul dari pabrikan';
+
+        if (! str_contains((string) $product->specifications, $placeholder)
+            || str_contains($row['specifications'], $placeholder)) {
+            return false;
+        }
+
+        $product->forceFill(Arr::only($row, [
+            'short_description', 'description', 'specifications',
+            'weight_grams', 'length_cm', 'width_cm', 'height_cm',
+            'warranty', 'keywords', 'meta_title', 'meta_description',
+        ]))->save();
+
+        return true;
     }
 
     /**
@@ -637,35 +664,57 @@ class JsdSolarSeeder extends Seeder
                 'price' => 3850000,
                 'stock' => 8,
                 'weight_grams' => 12000,
+                'length_cm' => 26.0,
+                'width_cm' => 16.8,
+                'height_cm' => 21.1,
                 'unit' => 'pcs',
                 'warranty' => 'Garansi 3 Tahun',
                 'estimated_processing' => '1-3 hari kerja',
-                'short_description' => 'Baterai LiFePO4 12V 100Ah (1,28 kWh) dengan BMS built-in — pengganti aki basah/VRLA yang jauh lebih awet dan bebas perawatan.',
+                'short_description' => 'Baterai LiFePO4 12,8V 100Ah (1.280 Wh) dengan BMS 100A, IP65, proteksi suhu rendah, dan pemantauan Bluetooth. Umur 6.000 siklus.',
                 'description' => $this->html(
-                    '<p><strong>JSD Solar J12100</strong> adalah baterai <strong>LiFePO4 12V 100Ah</strong> (energi <strong>1,28 kWh</strong>) dengan <strong>BMS terpasang</strong>. Dibanding aki basah/VRLA berkapasitas sama, baterai lithium ini jauh lebih ringan, bisa dikuras lebih dalam, dan usia pakainya berkali lipat lebih panjang.</p>',
+                    '<p><strong>JSD Solar J12100</strong> adalah baterai <strong>LiFePO4 12,8V 100Ah</strong> (energi <strong>1.280 Wh</strong>) dengan <strong>BMS 100A</strong> dan sel <strong>prismatik</strong>. Dibanding aki basah/VRLA berkapasitas sama, baterai ini jauh lebih ringan, boleh dikuras sampai habis, dan usia pakainya berkali lipat lebih panjang.</p>',
                     [
-                        '🔋 <strong>12,8 V / 100 Ah = 1,28 kWh</strong> energi tersimpan.',
-                        '🛡️ <strong>BMS built-in</strong> — proteksi kelebihan pengisian, pengosongan berlebih, arus lebih, dan hubung singkat.',
-                        '♻️ Kimia <strong>LiFePO4</strong> — lebih stabil dan aman dibanding lithium-ion biasa.',
-                        '🧰 <strong>Bebas perawatan</strong>, tidak perlu isi air aki, tidak mengeluarkan gas.',
+                        '♻️ <strong>6.000 siklus</strong> pada 100% DOD — dipakai penuh setiap hari pun bertahun-tahun umurnya. Aki VRLA biasanya habis di 300–500 siklus.',
+                        '⚡ <strong>Keluaran kontinu 1.280 W</strong> (arus 100 A) — sanggup menyalakan beban besar sesaat tanpa BMS memutus.',
+                        '📱 <strong>Bluetooth</strong> — pindai QR di bodi baterai, lalu pantau tegangan, arus, dan sisa kapasitas dari HP.',
+                        '❄️ <strong>Proteksi suhu rendah</strong> — pengisian otomatis diblokir saat sel terlalu dingin, penyebab kerusakan permanen yang sering luput.',
+                        '💦 <strong>IP65</strong>, casing ABS tahan api — aman di gudang, kendaraan, maupun ruang lembap.',
+                        '🔩 Terminal <strong>M8×1.25</strong>, sudah termasuk 2 baut terminal + tutup isolasi.',
+                        '🔌 Impedansi internal <strong>≤40 mΩ</strong> — rugi daya kecil, panas rendah.',
                     ],
-                    ['Sistem solar 12V', 'Backup lampu & elektronik ringan', 'Pengganti aki VRLA/deep-cycle', 'Kendaraan camper & perahu'],
-                ).'<p><em>Catatan: brosur teknis resmi untuk model ini sedang kami mintakan ke pabrikan. Dimensi dan berat pasti akan kami konfirmasikan sebelum pengiriman.</em></p>',
+                    ['Sistem solar 12V', 'Backup lampu, TV, kipas, dan router', 'Pengganti aki VRLA/deep-cycle', 'Kendaraan camper, perahu, dan food truck'],
+                ).'<p><em>Catatan penting: baterai ini <strong>bukan aki starter</strong> — jangan dipakai untuk menghidupkan mesin kendaraan. Untuk penyimpanan lama, simpan pada kondisi ±50% dan isi ulang tiap 3 bulan. Berat unit tidak dicantumkan pabrikan; kami konfirmasikan sebelum pengiriman.</em></p>',
                 'specifications' => $this->specs([
                     'Merek' => 'JSD Solar',
                     'Model' => 'J12100',
-                    'Tipe Sel' => 'LiFePO4 (Lithium Iron Phosphate)',
+                    'Tipe Sel' => 'LiFePO4 prismatik (Lithium Iron Phosphate)',
                     'Tegangan Nominal' => '12,8 VDC',
                     'Kapasitas' => '100 Ah',
-                    'Energi' => '1,28 kWh',
-                    'BMS' => 'Terpasang (built-in)',
+                    'Energi' => '1.280 Wh',
+                    'Impedansi Internal' => '≤40 mΩ',
+                    'Umur Siklus' => '6.000 siklus (25°C, 0.2C, 100% DOD)',
+                    'BMS' => '100 A',
+                    'Metode Pengisian' => 'CC/CV',
+                    'Tegangan Pengisian' => '14,4 V ±0,2 V',
+                    'Arus Pengisian Disarankan' => '20 A (0.2C)',
+                    'Arus Pengisian Kontinu Maks' => '100 A',
+                    'Arus Pengosongan Kontinu Maks' => '100 A',
+                    'Daya Keluaran Kontinu Maks' => '1.280 W',
+                    'Terminal' => 'M8 × 1.25 (baut terminal &amp; tutup isolasi termasuk)',
+                    'Bahan Casing' => 'ABS tahan api',
+                    'Proteksi Ingress' => 'IP65',
+                    'Proteksi Suhu Rendah' => 'Ya',
+                    'Pemantauan' => 'Bluetooth (aplikasi, pindai QR di bodi baterai)',
+                    'Suhu Pengisian' => '0°C s/d +50°C',
+                    'Suhu Pengosongan' => '-20°C s/d +60°C',
+                    'Suhu Penyimpanan' => '-10°C s/d +50°C',
+                    'Dimensi (P×L×T)' => '260 × 168 × 211 mm',
                     'Garansi' => '3 tahun',
-                    'Spesifikasi Teknis Rinci' => 'Menyusul dari pabrikan',
-                    'Berat Pengiriman' => '±12 kg (estimasi, dikonfirmasi ulang sebelum pengiriman)',
+                    'Berat Pengiriman' => '±12 kg (estimasi — tidak dicantumkan pabrikan)',
                 ]),
-                'keywords' => 'baterai lithium, lifepo4, jsd solar, j12100, 12v 100ah, baterai solar, pengganti aki, bms',
-                'meta_title' => 'Baterai Lithium LiFePO4 JSD Solar J12100 12V 100Ah — Energi.Click',
-                'meta_description' => 'Jual baterai LiFePO4 JSD Solar J12100 12V 100Ah (1,28 kWh) dengan BMS built-in. Bebas perawatan, garansi 3 tahun.',
+                'keywords' => 'baterai lithium, lifepo4, jsd solar, j12100, 12v 100ah, 1280wh, baterai solar, pengganti aki, bms, bluetooth, ip65, 6000 siklus',
+                'meta_title' => 'Baterai Lithium LiFePO4 JSD Solar J12100 12,8V 100Ah Bluetooth — Energi.Click',
+                'meta_description' => 'Jual baterai LiFePO4 JSD Solar J12100 12,8V 100Ah (1.280 Wh), BMS 100A, IP65, Bluetooth, 6.000 siklus. Garansi 3 tahun.',
             ],
             [
                 'slug' => 'baterai-lithium-lifepo4-jsd-solar-j12200-12v-200ah',
@@ -676,35 +725,55 @@ class JsdSolarSeeder extends Seeder
                 'price' => 7450000,
                 'stock' => 6,
                 'weight_grams' => 22000,
+                'length_cm' => 48.4,
+                'width_cm' => 17.0,
+                'height_cm' => 24.0,
                 'unit' => 'pcs',
                 'warranty' => 'Garansi 3 Tahun',
                 'estimated_processing' => '1-3 hari kerja',
-                'short_description' => 'Baterai LiFePO4 12V 200Ah (2,56 kWh) dengan BMS built-in — kapasitas dua kali lipat J12100 dalam satu unit, tanpa perlu paralel dua baterai.',
+                'short_description' => 'Baterai LiFePO4 12,8V 200Ah (2.560 Wh) dengan BMS 200A dan keluaran kontinu 2.560 W. IP65, proteksi suhu rendah, umur 6.000 siklus.',
                 'description' => $this->html(
-                    '<p><strong>JSD Solar J12200</strong> adalah baterai <strong>LiFePO4 12V 200Ah</strong> (energi <strong>2,56 kWh</strong>) dengan <strong>BMS terpasang</strong>. Satu unit menggantikan dua baterai 100Ah yang diparalel — kabel lebih sedikit, titik sambungan lebih sedikit, risiko gangguan lebih kecil.</p>',
+                    '<p><strong>JSD Solar J12200</strong> adalah baterai <strong>LiFePO4 12,8V 200Ah</strong> (energi <strong>2.560 Wh</strong>) dengan <strong>BMS 200A</strong>. Satu unit menggantikan dua baterai 100Ah yang diparalel — kabel lebih sedikit, titik sambungan lebih sedikit, dan risiko gangguan lebih kecil.</p>',
                     [
-                        '🔋 <strong>12,8 V / 200 Ah = 2,56 kWh</strong> energi tersimpan dalam satu unit.',
-                        '🛡️ <strong>BMS built-in</strong> — proteksi kelebihan pengisian, pengosongan berlebih, arus lebih, dan hubung singkat.',
-                        '♻️ Kimia <strong>LiFePO4</strong> yang stabil dan aman.',
-                        '🧰 <strong>Bebas perawatan</strong> dan tidak mengeluarkan gas.',
+                        '🔋 <strong>2.560 Wh dalam satu unit</strong> — tidak perlu memparalel dua baterai beserta kabel penyeimbangnya.',
+                        '⚡ <strong>Keluaran kontinu 2.560 W</strong> (arus 200 A) — sanggup menopang inverter kelas 2 kW tanpa BMS memutus.',
+                        '♻️ <strong>6.000 siklus</strong> pada 100% DOD. Aki VRLA biasanya habis di 300–500 siklus.',
+                        '❄️ <strong>Proteksi suhu rendah</strong> — pengisian otomatis diblokir saat sel terlalu dingin.',
+                        '💦 <strong>IP65</strong>, casing ABS tahan api — aman di gudang, kendaraan, maupun ruang lembap.',
+                        '🔌 Impedansi internal <strong>≤40 mΩ</strong> — rugi daya kecil, panas rendah.',
                     ],
                     ['Sistem solar 12V berkapasitas lebih besar', 'Backup rumah tangga kecil', 'Pengganti bank aki VRLA', 'Camper, perahu, dan mobil dinas lapangan'],
-                ).'<p><em>Catatan: brosur teknis resmi untuk model ini sedang kami mintakan ke pabrikan. Dimensi dan berat pasti akan kami konfirmasikan sebelum pengiriman.</em></p>',
+                ).'<p><em>Catatan penting: baterai ini <strong>bukan aki starter</strong> — jangan dipakai untuk menghidupkan mesin kendaraan. Model ini <strong>tidak dilengkapi Bluetooth</strong> (tersedia pada J12100). Berat unit tidak dicantumkan pabrikan; kami konfirmasikan sebelum pengiriman.</em></p>',
                 'specifications' => $this->specs([
                     'Merek' => 'JSD Solar',
                     'Model' => 'J12200',
-                    'Tipe Sel' => 'LiFePO4 (Lithium Iron Phosphate)',
+                    'Tipe Sel' => 'LiFePO4 prismatik (Lithium Iron Phosphate)',
                     'Tegangan Nominal' => '12,8 VDC',
                     'Kapasitas' => '200 Ah',
-                    'Energi' => '2,56 kWh',
-                    'BMS' => 'Terpasang (built-in)',
+                    'Energi' => '2.560 Wh',
+                    'Impedansi Internal' => '≤40 mΩ',
+                    'Umur Siklus' => '6.000 siklus (25°C, 0.2C, 100% DOD)',
+                    'BMS' => '200 A',
+                    'Metode Pengisian' => 'CC/CV',
+                    'Tegangan Pengisian' => '14,4 V ±0,2 V',
+                    'Arus Pengisian Disarankan' => '40 A (0.2C)',
+                    'Arus Pengisian Kontinu Maks' => '200 A',
+                    'Arus Pengosongan Kontinu Maks' => '200 A',
+                    'Daya Keluaran Kontinu Maks' => '2.560 W',
+                    'Bahan Casing' => 'ABS tahan api',
+                    'Proteksi Ingress' => 'IP65',
+                    'Proteksi Suhu Rendah' => 'Ya',
+                    'Pemantauan Bluetooth' => 'Tidak tersedia pada model ini',
+                    'Suhu Pengisian' => '0°C s/d +50°C',
+                    'Suhu Pengosongan' => '-20°C s/d +60°C',
+                    'Suhu Penyimpanan' => '-10°C s/d +50°C',
+                    'Dimensi (P×L×T)' => '484 × 170 × 240 mm',
                     'Garansi' => '3 tahun',
-                    'Spesifikasi Teknis Rinci' => 'Menyusul dari pabrikan',
-                    'Berat Pengiriman' => '±22 kg (estimasi, dikonfirmasi ulang sebelum pengiriman)',
+                    'Berat Pengiriman' => '±22 kg (estimasi — tidak dicantumkan pabrikan)',
                 ]),
-                'keywords' => 'baterai lithium, lifepo4, jsd solar, j12200, 12v 200ah, baterai solar, pengganti aki, bms',
-                'meta_title' => 'Baterai Lithium LiFePO4 JSD Solar J12200 12V 200Ah — Energi.Click',
-                'meta_description' => 'Jual baterai LiFePO4 JSD Solar J12200 12V 200Ah (2,56 kWh) dengan BMS built-in. Bebas perawatan, garansi 3 tahun.',
+                'keywords' => 'baterai lithium, lifepo4, jsd solar, j12200, 12v 200ah, 2560wh, baterai solar, pengganti aki, bms 200a, ip65, 6000 siklus',
+                'meta_title' => 'Baterai Lithium LiFePO4 JSD Solar J12200 12,8V 200Ah — Energi.Click',
+                'meta_description' => 'Jual baterai LiFePO4 JSD Solar J12200 12,8V 200Ah (2.560 Wh), BMS 200A, keluaran 2.560 W, IP65, 6.000 siklus. Garansi 3 tahun.',
             ],
             [
                 'slug' => 'baterai-lithium-lifepo4-jsd-solar-j24100-24v-100ah',
@@ -715,35 +784,55 @@ class JsdSolarSeeder extends Seeder
                 'price' => 7450000,
                 'stock' => 6,
                 'weight_grams' => 22000,
+                'length_cm' => 48.4,
+                'width_cm' => 17.0,
+                'height_cm' => 24.0,
                 'unit' => 'pcs',
                 'warranty' => 'Garansi 3 Tahun',
                 'estimated_processing' => '1-3 hari kerja',
-                'short_description' => 'Baterai LiFePO4 24V 100Ah (2,56 kWh) dengan BMS built-in — pasangan tepat untuk inverter sistem 24V seperti JSD J4000E.',
+                'short_description' => 'Baterai LiFePO4 25,6V 100Ah (2.560 Wh) dengan BMS 100A — pasangan tepat untuk inverter sistem 24V seperti JSD J4000E. IP65, 6.000 siklus.',
                 'description' => $this->html(
-                    '<p><strong>JSD Solar J24100</strong> adalah baterai <strong>LiFePO4 24V 100Ah</strong> (energi <strong>2,56 kWh</strong>) dengan <strong>BMS terpasang</strong> — dirancang untuk inverter sistem 24V, misalnya <strong>JSD Solar J4000E</strong>. Karena tegangannya dua kali lipat sistem 12V, arus yang mengalir jadi separuh: kabel lebih kecil, rugi daya lebih rendah.</p>',
+                    '<p><strong>JSD Solar J24100</strong> adalah baterai <strong>LiFePO4 25,6V 100Ah</strong> (energi <strong>2.560 Wh</strong>) dengan <strong>BMS 100A</strong> — dirancang untuk inverter sistem 24V, misalnya <strong>JSD Solar J4000E</strong>. Karena tegangannya dua kali lipat sistem 12V, arus yang mengalir jadi separuh: kabel lebih kecil dan rugi daya lebih rendah pada energi tersimpan yang sama.</p>',
                     [
-                        '🔋 <strong>25,6 V / 100 Ah = 2,56 kWh</strong> energi tersimpan.',
-                        '⚡ Tegangan 24V — <strong>arus lebih kecil, kabel lebih hemat</strong>, dan rugi daya lebih rendah dibanding 12V.',
-                        '🛡️ <strong>BMS built-in</strong> dengan proteksi lengkap.',
-                        '♻️ Kimia <strong>LiFePO4</strong> yang stabil, aman, dan bebas perawatan.',
+                        '⚡ Sistem 24V — pada energi yang sama, <strong>arusnya separuh sistem 12V</strong>: kabel lebih kecil, panas dan rugi daya lebih rendah.',
+                        '🔋 <strong>2.560 Wh</strong> energi tersimpan, keluaran kontinu <strong>2.560 W</strong>.',
+                        '♻️ <strong>6.000 siklus</strong> pada 100% DOD. Aki VRLA biasanya habis di 300–500 siklus.',
+                        '❄️ <strong>Proteksi suhu rendah</strong> — pengisian otomatis diblokir saat sel terlalu dingin.',
+                        '💦 <strong>IP65</strong>, casing ABS tahan api.',
+                        '🔌 Impedansi internal <strong>≤40 mΩ</strong> — rugi daya kecil, panas rendah.',
                     ],
                     ['Sistem solar 24V', 'Pasangan inverter JSD Solar J4000E', 'Backup rumah tangga', 'Peningkatan dari bank aki 24V'],
-                ).'<p><em>Catatan: brosur teknis resmi untuk model ini sedang kami mintakan ke pabrikan. Dimensi dan berat pasti akan kami konfirmasikan sebelum pengiriman.</em></p>',
+                ).'<p><em>Catatan penting: baterai ini <strong>bukan aki starter</strong> — jangan dipakai untuk menghidupkan mesin kendaraan. Model ini <strong>tidak dilengkapi Bluetooth</strong> (tersedia pada J12100). Berat unit tidak dicantumkan pabrikan; kami konfirmasikan sebelum pengiriman.</em></p>',
                 'specifications' => $this->specs([
                     'Merek' => 'JSD Solar',
                     'Model' => 'J24100',
-                    'Tipe Sel' => 'LiFePO4 (Lithium Iron Phosphate)',
+                    'Tipe Sel' => 'LiFePO4 prismatik (Lithium Iron Phosphate)',
                     'Tegangan Nominal' => '25,6 VDC',
                     'Kapasitas' => '100 Ah',
-                    'Energi' => '2,56 kWh',
-                    'BMS' => 'Terpasang (built-in)',
+                    'Energi' => '2.560 Wh',
+                    'Impedansi Internal' => '≤40 mΩ',
+                    'Umur Siklus' => '6.000 siklus (25°C, 0.2C, 100% DOD)',
+                    'BMS' => '100 A',
+                    'Metode Pengisian' => 'CC/CV',
+                    'Tegangan Pengisian' => '28,8 V ±0,2 V',
+                    'Arus Pengisian Disarankan' => '20 A (0.2C)',
+                    'Arus Pengisian Kontinu Maks' => '100 A',
+                    'Arus Pengosongan Kontinu Maks' => '100 A',
+                    'Daya Keluaran Kontinu Maks' => '2.560 W',
+                    'Bahan Casing' => 'ABS tahan api',
+                    'Proteksi Ingress' => 'IP65',
+                    'Proteksi Suhu Rendah' => 'Ya',
+                    'Pemantauan Bluetooth' => 'Tidak tersedia pada model ini',
+                    'Suhu Pengisian' => '0°C s/d +50°C',
+                    'Suhu Pengosongan' => '-20°C s/d +60°C',
+                    'Suhu Penyimpanan' => '-10°C s/d +50°C',
+                    'Dimensi (P×L×T)' => '484 × 170 × 240 mm',
                     'Garansi' => '3 tahun',
-                    'Spesifikasi Teknis Rinci' => 'Menyusul dari pabrikan',
-                    'Berat Pengiriman' => '±22 kg (estimasi, dikonfirmasi ulang sebelum pengiriman)',
+                    'Berat Pengiriman' => '±22 kg (estimasi — tidak dicantumkan pabrikan)',
                 ]),
-                'keywords' => 'baterai lithium, lifepo4, jsd solar, j24100, 24v 100ah, baterai solar, bms, j4000e',
-                'meta_title' => 'Baterai Lithium LiFePO4 JSD Solar J24100 24V 100Ah — Energi.Click',
-                'meta_description' => 'Jual baterai LiFePO4 JSD Solar J24100 24V 100Ah (2,56 kWh) dengan BMS built-in. Cocok untuk inverter 24V, garansi 3 tahun.',
+                'keywords' => 'baterai lithium, lifepo4, jsd solar, j24100, 24v 100ah, 2560wh, baterai solar, bms, j4000e, ip65, 6000 siklus',
+                'meta_title' => 'Baterai Lithium LiFePO4 JSD Solar J24100 25,6V 100Ah — Energi.Click',
+                'meta_description' => 'Jual baterai LiFePO4 JSD Solar J24100 25,6V 100Ah (2.560 Wh), BMS 100A, IP65, 6.000 siklus. Cocok untuk inverter 24V, garansi 3 tahun.',
             ],
             [
                 'slug' => 'baterai-lithium-lifepo4-jsd-solar-bg48100-5-12kwh-wall-mounted',
