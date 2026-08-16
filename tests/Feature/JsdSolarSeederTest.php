@@ -83,6 +83,23 @@ class JsdSolarSeederTest extends TestCase
         $this->assertStringContainsString('Tidak tersedia pada model ini', $specs('JSD-J24100'));
     }
 
+    /** Kedua all-in-one bermuatan angka brosur, dan kapasitas baterainya tidak tertukar. */
+    public function test_the_all_in_one_units_carry_their_own_battery_capacity(): void
+    {
+        $specs = fn (string $sku) => Product::where('sku', $sku)->firstOrFail()->specifications;
+
+        $this->assertStringContainsString('5.120 Wh', $specs('JSD-JHP5000'));
+        $this->assertStringContainsString('Layar sentuh', $specs('JSD-JHP5000'));
+        $this->assertStringContainsString('80 A / 60 A', $specs('JSD-JHP5000'));
+
+        $this->assertStringContainsString('6.144 Wh', $specs('JSD-XHP65K60'));
+        $this->assertStringContainsString('9.000 W', $specs('JSD-XHP65K60'));
+        $this->assertStringContainsString('53,5 kg', $specs('JSD-XHP65K60'));
+
+        // XHP4K30 satu-satunya AIO yang masih menunggu brosur.
+        $this->assertStringContainsString('Menyusul dari pabrikan', $specs('JSD-XHP4K30'));
+    }
+
     /** Baris penampung diganti saat brosur datang — tapi suntingan admin aman. */
     public function test_placeholder_rows_are_upgraded_but_admin_edits_are_kept(): void
     {
