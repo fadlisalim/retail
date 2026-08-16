@@ -98,6 +98,40 @@ class JsdSolarSeederTest extends TestCase
         $this->assertSame('<p>Ditulis ulang oleh admin</p>', $edited->refresh()->specifications);
     }
 
+    /**
+     * Price list menandai tiga model "INCLUDING WIFI". J6200HP tidak termasuk —
+     * WiFi-nya dijual terpisah sebagai WiFi Plug Pro, jadi jangan sampai
+     * tertukar dan membuat pembeli merasa dijanjikan yang tidak ada.
+     */
+    public function test_the_models_sold_with_wifi_say_so_and_the_others_do_not(): void
+    {
+        foreach (['JSD-J4000E', 'JSD-J6500HC', 'JSD-J11100HPC'] as $sku) {
+            $product = Product::where('sku', $sku)->firstOrFail();
+            $this->assertStringContainsString('WiFi', $product->name, $sku.' harus menyebut WiFi di nama');
+            $this->assertStringContainsString('WiFi', $product->specifications, $sku.' harus menyebut WiFi di spesifikasi');
+        }
+
+        $j6200 = Product::where('sku', 'JSD-J6200HP')->firstOrFail();
+        $this->assertStringNotContainsString('WiFi', $j6200->name);
+        $this->assertStringContainsString('opsional', $j6200->description);
+    }
+
+    /** Fitur yang wajib tercantum dipulihkan bila baris lama kehilangannya. */
+    public function test_a_row_that_lost_a_required_feature_is_refreshed(): void
+    {
+        $product = Product::where('sku', 'JSD-J11100HPC')->firstOrFail();
+        $product->forceFill([
+            'name' => 'Inverter Off-Grid JSD Solar J11100HPC 11kW 48V',
+            'specifications' => '<table><tbody><tr><th>Model</th><td>J11100HPC</td></tr></tbody></table>',
+        ])->save();
+
+        $this->seed(JsdSolarSeeder::class);
+
+        $product->refresh();
+        $this->assertStringContainsString('WiFi', $product->specifications);
+        $this->assertStringContainsString('WiFi', $product->name);
+    }
+
     public function test_a_seeded_product_page_opens(): void
     {
         $product = Product::where('sku', 'JSD-J6500HC')->firstOrFail();

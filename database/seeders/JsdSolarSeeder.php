@@ -47,7 +47,7 @@ class JsdSolarSeeder extends Seeder
 
             $product = Product::firstOrCreate(
                 ['slug' => $row['slug']],
-                Arr::except($row, ['slug', 'categories', 'stock']) + [
+                Arr::except($row, ['slug', 'categories', 'stock', 'requires']) + [
                     'category_id' => $categories[0] ?? null,
                     'brand_id' => $brand->id,
                     'product_type' => 'simple',
@@ -75,21 +75,33 @@ class JsdSolarSeeder extends Seeder
     }
 
     /**
-     * Ketika brosur resmi akhirnya datang, baris yang masih memuat teks
-     * penampung "Menyusul dari pabrikan" diganti dengan data sungguhan.
-     * Baris yang sudah disunting admin (tidak lagi memuat penampung itu)
-     * TIDAK disentuh, supaya hasil kerja mereka tidak tertimpa.
+     * Memperbarui baris yang datanya tertinggal. Dua pemicunya:
+     *
+     *  1. Baris masih memuat penampung "Menyusul dari pabrikan" sementara data
+     *     resminya sudah ada — brosur akhirnya datang.
+     *  2. Baris kehilangan fitur yang wajib tercantum (kunci 'requires'),
+     *     mis. keterangan WiFi yang sempat terlewat karena datasheet pabrikan
+     *     tidak menyebutnya padahal price list menandainya.
+     *
+     * Baris yang sudah disunting admin sampai penampungnya hilang DAN
+     * fiturnya tercantum tidak disentuh, supaya hasil kerja mereka aman.
      */
     private function upgradePlaceholder(Product $product, array $row): bool
     {
         $placeholder = 'Menyusul dari pabrikan';
+        $stored = (string) $product->specifications;
 
-        if (! str_contains((string) $product->specifications, $placeholder)
-            || str_contains($row['specifications'], $placeholder)) {
+        $hasStalePlaceholder = str_contains($stored, $placeholder) && ! str_contains($row['specifications'], $placeholder);
+
+        $missingFeature = collect($row['requires'] ?? [])
+            ->contains(fn (string $needle) => ! str_contains($stored, $needle) && str_contains($row['specifications'], $needle));
+
+        if (! $hasStalePlaceholder && ! $missingFeature) {
             return false;
         }
 
         $product->forceFill(Arr::only($row, [
+            'name',
             'short_description', 'description', 'specifications',
             'weight_grams', 'length_cm', 'width_cm', 'height_cm',
             'warranty', 'keywords', 'meta_title', 'meta_description',
@@ -225,6 +237,8 @@ class JsdSolarSeeder extends Seeder
                 'name' => 'Inverter Off-Grid JSD Solar J4000E 4kW 24V (MPPT 5000W, WiFi Built-in)',
                 'model' => 'J4000E',
                 'categories' => ['inverter-off-grid'],
+                // Price list JSD menandai model ini "INCLUDING WIFI".
+                'requires' => ['WiFi'],
                 'price' => 6200000,
                 'stock' => 5,
                 'weight_grams' => 6200,
@@ -282,6 +296,8 @@ class JsdSolarSeeder extends Seeder
                 'name' => 'Inverter Off-Grid JSD Solar J6500HC 6,5kW 48V (MPPT 9000W, WiFi)',
                 'model' => 'J6500HC',
                 'categories' => ['inverter-off-grid'],
+                // Price list JSD menandai model ini "INCLUDING WIFI".
+                'requires' => ['WiFi'],
                 'price' => 7350000,
                 'stock' => 5,
                 'weight_grams' => 10000,
@@ -393,9 +409,12 @@ class JsdSolarSeeder extends Seeder
             [
                 'slug' => 'inverter-off-grid-jsd-solar-j11100hpc-11kw-48v-dual-mppt',
                 'sku' => 'JSD-J11100HPC',
-                'name' => 'Inverter Off-Grid JSD Solar J11100HPC 11kW 48V (Dual MPPT, Paralel 6 Unit)',
+                'name' => 'Inverter Off-Grid JSD Solar J11100HPC 11kW 48V (Dual MPPT, WiFi, Paralel 6 Unit)',
                 'model' => 'J11100HPC',
                 'categories' => ['inverter-off-grid'],
+                // Price list JSD menandai model ini "INCLUDING WIFI"; datasheet
+                // pabrikan hanya menyebut RS232/RS485/dry contact.
+                'requires' => ['WiFi'],
                 'price' => 12200000,
                 'stock' => 3,
                 'weight_grams' => 16100,
@@ -404,7 +423,7 @@ class JsdSolarSeeder extends Seeder
                 'height_cm' => 12.0,
                 'warranty' => 'Garansi 1 Tahun',
                 'estimated_processing' => '1-3 hari kerja',
-                'short_description' => 'Inverter off-grid 11kW 48V dengan dua MPPT (2 × 5500W), surge 22kVA, paralel hingga 6 unit, dan aktivasi baterai lithium otomatis.',
+                'short_description' => 'Inverter off-grid 11kW 48V dengan dua MPPT (2 × 5500W), surge 22kVA, WiFi monitoring, paralel hingga 6 unit, dan aktivasi baterai lithium otomatis.',
                 'description' => $this->html(
                     '<p><strong>JSD Solar J11100HPC</strong> adalah inverter off-grid <strong>11 kVA / 11 kW sistem 48V</strong> dengan <strong>dua jalur MPPT independen (2 × 5500 W)</strong> — dua orientasi atap (misalnya timur dan barat) bisa dipasang terpisah tanpa saling menurunkan performa.</p>',
                     [
@@ -412,6 +431,7 @@ class JsdSolarSeeder extends Seeder
                         '🔆 <strong>Dual MPPT 2 × 5500 W</strong>, rentang 60–500 VDC, arus input 18 A per jalur.',
                         '🔗 <strong>Paralel hingga 6 unit</strong> untuk total 66 kW.',
                         '🔋 Arus pengisian hingga <strong>160 A</strong>, pengosongan hingga 220 A; <strong>aktivasi baterai lithium</strong> otomatis + komunikasi RS485.',
+                        '📶 <strong>WiFi monitoring sudah termasuk</strong> — pantau produksi surya dan status baterai dari HP tanpa beli dongle terpisah.',
                         '📊 Efisiensi puncak <strong>94%</strong>, layar LCD, komunikasi RS232/RS485/dry contact.',
                         '⚠️ Murni <strong>off-grid</strong> — tidak melakukan ekspor ke jaringan PLN (non grid-tie).',
                     ],
@@ -438,14 +458,15 @@ class JsdSolarSeeder extends Seeder
                     'Arus Pengisian Surya / AC / Maks' => '160 A / 120 A / 160 A',
                     'Arus Pengosongan Maks' => '220 A',
                     'Operasi Grid-Tie' => 'Tidak (murni off-grid)',
+                    'Monitoring' => 'WiFi (sudah termasuk)',
                     'Komunikasi' => 'RS232 / RS485 / dry contact, LCD',
                     'Suhu Operasi' => '-10°C s/d +50°C',
                     'Dimensi (D×L×T)' => '550 × 463 × 120 mm',
                     'Berat' => '16,1 kg',
                 ]),
-                'keywords' => 'inverter off grid, jsd solar, j11100hpc, j11000hp, inverter 11kw, dual mppt, paralel 6 unit, 48v',
-                'meta_title' => 'Inverter Off-Grid JSD Solar J11100HPC 11kW 48V Dual MPPT — Energi.Click',
-                'meta_description' => 'Jual inverter off-grid JSD Solar J11100HPC 11kW 48V, dual MPPT 2×5500W, surge 22kVA, paralel 6 unit. Garansi 1 tahun.',
+                'keywords' => 'inverter off grid, jsd solar, j11100hpc, j11000hp, inverter 11kw, dual mppt, paralel 6 unit, 48v, wifi',
+                'meta_title' => 'Inverter Off-Grid JSD Solar J11100HPC 11kW 48V Dual MPPT WiFi — Energi.Click',
+                'meta_description' => 'Jual inverter off-grid JSD Solar J11100HPC 11kW 48V, dual MPPT 2×5500W, surge 22kVA, WiFi, paralel 6 unit. Garansi 1 tahun.',
             ],
             [
                 'slug' => 'modul-wifi-jsd-solar-wifi-plug-pro-monitoring-inverter',
