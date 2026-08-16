@@ -23,6 +23,12 @@ class HomeController extends Controller
             'quotationBanner' => Banner::active()->where('position', 'quotation')->orderBy('sort_order')->first(),
             // All top-level categories, shown as a horizontally scrollable card row.
             'shortcutCategories' => Category::active()->whereNull('parent_id')->orderBy('sort_order')->get(),
+            // Produk terlaris berdasarkan jumlah unit yang benar-benar terjual
+            // (sold_count naik saat pesanan dibayar, termasuk penjualan manual
+            // Tokopedia/offline). Sebelum ada riwayat penjualan, bagian ini
+            // memakai produk unggulan pilihan admin agar beranda tidak kosong.
+            'bestSellers' => Product::published()->where('sold_count', '>', 0)
+                ->with(['brand', 'category'])->orderByDesc('sold_count')->latest('published_at')->take(10)->get(),
             'featured' => Product::published()->where('is_featured', true)->with(['brand', 'category'])->latest('published_at')->take(10)->get(),
             'newest' => Product::published()->where('is_new', true)->with(['brand', 'category'])->latest('published_at')->take(10)->get(),
             'promos' => Product::published()->whereNotNull('sale_price')->where('is_clearance', false)->with(['brand', 'category'])->take(10)->get(),

@@ -197,9 +197,14 @@
         @endforeach
     </section>
 
-    {{-- Produk Terpopuler — di mobile tepat setelah band Clearance --}}
+    {{-- Produk Terlaris (jumlah terjual nyata; kartu produk menampilkan "N terjual").
+         Sebelum ada riwayat penjualan, tampil produk unggulan agar tidak kosong. --}}
     <div class="order-3 sm:order-none">
-        <x-product-carousel title="Produk Terpopuler" :products="$featured" :view-all="route('products.index', ['featured' => 1])" />
+        @if ($bestSellers->isNotEmpty())
+            <x-product-carousel title="Produk Terlaris" :products="$bestSellers" :view-all="route('products.index', ['sort' => 'best_selling'])" />
+        @else
+            <x-product-carousel title="Produk Terpopuler" :products="$featured" :view-all="route('products.index', ['featured' => 1])" />
+        @endif
     </div>
 
     {{-- Sisa section — urutan sumber dipakai apa adanya di desktop --}}
