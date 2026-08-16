@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductSlugHistory;
 use App\Models\ProductView;
 use App\Models\RecentlyViewedProduct;
+use App\Services\ReviewService;
+use App\Services\WhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -37,7 +40,7 @@ class ProductController extends Controller
         $this->recordView($request, $product);
 
         $reviews = $product->visibleReviews()->with(['user', 'media'])->latest()->paginate(5);
-        $reviewService = app(\App\Services\ReviewService::class);
+        $reviewService = app(ReviewService::class);
 
         $breadcrumbs = [];
         foreach ($product->category?->ancestors() ?? [] as $c) {
@@ -58,21 +61,42 @@ class ProductController extends Controller
         ]);
     }
 
-    public function ask(Request $request, Product $product): RedirectResponse
+    /**
+     * Tanya Jawab produk: wajib login + nomor WA, karena jawabannya dikirim
+     * ke WhatsApp penanya (nomor tampil tersensor di halaman publik).
+     */
+    public function ask(Request $request, Product $product, WhatsAppService $wa): RedirectResponse
     {
+        $user = $request->user();
+
         $data = $request->validate([
             'question' => ['required', 'string', 'min:5', 'max:1000'],
-            'name' => ['nullable', 'string', 'max:100'],
+            // Wajib bila profil belum menyimpan nomor WA.
+            'whatsapp' => [$user->waNumber() ? 'nullable' : 'required', 'string', 'max:32'],
+        ], [
+            'whatsapp.required' => 'Isi nomor WhatsApp agar jawaban kami sampai ke Anda.',
         ]);
 
+        $phone = $wa->normalize($data['whatsapp'] ?? null) ?: $wa->normalize($user->waNumber());
+        if (! $phone) {
+            return back()->withErrors(['whatsapp' => 'Nomor WhatsApp tidak valid.'])->withInput();
+        }
+
+        // Simpan ke profil bila kolom WA-nya masih kosong — pertanyaan
+        // berikutnya (dan notifikasi lain) tidak perlu minta nomor lagi.
+        if (! $user->whatsapp) {
+            $user->forceFill(['whatsapp' => $phone])->save();
+        }
+
         $product->questions()->create([
-            'user_id' => auth()->id(),
-            'name' => auth()->user()?->name ?? $data['name'] ?? 'Anonim',
+            'user_id' => $user->id,
+            'name' => $user->name,
+            'phone' => $phone,
             'question' => $data['question'],
             'is_visible' => true,
         ]);
 
-        return back()->with('success', 'Pertanyaan Anda telah dikirim dan akan dijawab oleh tim kami.');
+        return back()->with('success', 'Pertanyaan Anda telah dikirim. Jawabannya akan tampil di sini dan dikirim ke WhatsApp Anda.');
     }
 
     private function recordView(Request $request, Product $product): void
@@ -156,7 +180,7 @@ class ProductController extends Controller
             return false;
         }
 
-        return \App\Models\OrderItem::where('product_id', $product->id)
+        return OrderItem::where('product_id', $product->id)
             ->whereHas('order', fn ($q) => $q->where('user_id', auth()->id())->where('status', 'completed'))
             ->whereDoesntHave('review')
             ->exists();

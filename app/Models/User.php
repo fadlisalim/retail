@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasRoles;
+use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -38,19 +40,25 @@ class User extends Authenticatable implements MustVerifyEmail
     /** Send the Indonesian email-verification notification. */
     public function sendEmailVerificationNotification(): void
     {
-        $this->notify(new \App\Notifications\VerifyEmailNotification);
+        $this->notify(new VerifyEmailNotification);
     }
 
     /** Send the Indonesian password-reset notification. */
     public function sendPasswordResetNotification($token): void
     {
-        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+        $this->notify(new ResetPasswordNotification($token));
     }
 
     /** WhatsApp number for notifications (Wablas) — prefers the WA field, else phone. */
     public function routeNotificationForWablas(): ?string
     {
         return $this->whatsapp ?: $this->phone;
+    }
+
+    /** Alias yang lebih terbaca untuk pemakaian di controller/view. */
+    public function waNumber(): ?string
+    {
+        return $this->routeNotificationForWablas();
     }
 
     public function profile(): HasOne

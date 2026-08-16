@@ -145,7 +145,8 @@ Route::post('/review/{review}/membantu', [ReviewController::class, 'helpful'])
     ->middleware('auth')->name('reviews.helpful');
 Route::post('/review/{review}/laporkan', [ReviewController::class, 'report'])
     ->middleware('auth')->name('reviews.report');
-Route::post('/produk/{product:slug}/tanya', [ProductController::class, 'ask'])->name('questions.store');
+Route::post('/produk/{product:slug}/tanya', [ProductController::class, 'ask'])
+    ->middleware(['auth', 'throttle:10,1'])->name('questions.store');
 
 /* Affiliate program (public landing) */
 Route::get('/afiliasi', [AffiliateController::class, 'landing'])->name('affiliate.landing');
@@ -332,6 +333,11 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/review', [Admin\ReviewController::class, 'index'])->name('reviews.index');
         Route::post('/review/{review}/visibilitas', [Admin\ReviewController::class, 'toggleVisibility'])->name('reviews.visibility');
         Route::post('/review/{review}/balas', [Admin\ReviewController::class, 'reply'])->name('reviews.reply');
+
+        // Tanya Jawab produk (permission-nya satu payung dengan moderasi review).
+        Route::get('/tanya-jawab', [Admin\QuestionController::class, 'index'])->name('questions.index');
+        Route::post('/tanya-jawab/{question}/jawab', [Admin\QuestionController::class, 'answer'])->name('questions.answer');
+        Route::post('/tanya-jawab/{question}/visibilitas', [Admin\QuestionController::class, 'toggleVisibility'])->name('questions.visibility');
     });
 
     Route::middleware('permission:content.manage')->group(function () {

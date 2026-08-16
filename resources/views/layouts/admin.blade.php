@@ -31,6 +31,7 @@
                 ['admin.orders.index', 'Pesanan', 'order.view', 'orders'],
                 ['admin.quotations.index', 'Quotation', 'quotation.manage', 'quotations'],
                 ['admin.reviews.index', 'Review', 'review.moderate', 'reviews'],
+                ['admin.questions.index', 'Tanya Jawab', 'review.moderate', 'questions'],
                 ['admin.customers.index', 'Customer', 'customer.manage'],
                 ['admin.affiliates.index', 'Afiliasi', 'affiliate.manage', 'affiliates'],
                 ['admin.banners.index', 'Banner', 'content.manage'],

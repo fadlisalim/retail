@@ -615,16 +615,29 @@
     {{-- Q&A --}}
     <section class="mt-10">
         <h2 class="mb-4 text-lg font-bold text-gray-900">Tanya Jawab Produk</h2>
-        <form action="{{ route('questions.store', $product->slug) }}" method="POST" class="card mb-4 flex flex-col gap-2 p-4 sm:flex-row">
-            @csrf
-            @guest<input name="name" placeholder="Nama Anda" class="form-input sm:w-48" required>@endguest
-            <input name="question" placeholder="Tulis pertanyaan Anda tentang produk ini…" class="form-input flex-1" required minlength="5">
-            <button class="btn-primary">Kirim</button>
-        </form>
+        @auth
+            <form action="{{ route('questions.store', $product->slug) }}" method="POST" class="card mb-1 flex flex-col gap-2 p-4 sm:flex-row">
+                @csrf
+                @unless (auth()->user()->waNumber())
+                    <input name="whatsapp" value="{{ old('whatsapp') }}" placeholder="No. WhatsApp Anda" class="form-input sm:w-48" required inputmode="tel">
+                @endunless
+                <input name="question" value="{{ old('question') }}" placeholder="Tulis pertanyaan Anda tentang produk ini…" class="form-input flex-1" required minlength="5">
+                <button class="btn-primary">Kirim</button>
+            </form>
+            @error('whatsapp')<p class="mb-2 text-sm text-red-600">{{ $message }}</p>@enderror
+            @error('question')<p class="mb-2 text-sm text-red-600">{{ $message }}</p>@enderror
+            <p class="mb-4 text-xs text-gray-400">Jawaban kami tampil di halaman ini dan dikirim ke WhatsApp Anda. Nomor WA tidak ditampilkan utuh ke publik.</p>
+        @else
+            <div class="card mb-4 flex flex-col items-start gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-sm text-gray-600">Masuk dulu untuk bertanya — jawabannya kami kirim juga ke WhatsApp Anda.</p>
+                <a href="{{ route('login', ['redirect' => url()->current()]) }}" class="btn-primary text-sm">Masuk / Daftar</a>
+            </div>
+        @endauth
         <div class="space-y-3">
             @forelse ($product->questions as $q)
                 <div class="card p-4">
                     <p class="text-sm font-medium text-gray-800">T: {{ $q->question }}</p>
+                    <p class="text-xs text-gray-400">{{ $q->name }}@if ($q->maskedPhone()) · {{ $q->maskedPhone() }}@endif · {{ $q->created_at?->format('d M Y') }}</p>
                     @foreach ($q->answers as $a)
                         <p class="mt-1 text-sm text-gray-600">J: {{ $a->answer }} @if($a->is_staff)<span class="badge bg-brand-100 text-brand-700">Rekasurya</span>@endif</p>
                     @endforeach
