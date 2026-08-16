@@ -3,15 +3,18 @@
 use App\Http\Controllers\Account;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\AffiliateController;
+use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\CategoryOgImageController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CompareController;
 use App\Http\Controllers\ContentController;
+use App\Http\Controllers\DocumentationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentWebhookController;
@@ -21,6 +24,9 @@ use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SeoController;
+use App\Http\Controllers\ShortLinkController;
+use App\Http\Controllers\SiteChatController;
+use App\Http\Controllers\WablasWebhookController;
 use App\Http\Controllers\WishlistController;
 use Illuminate\Support\Facades\Route;
 
@@ -45,33 +51,33 @@ Route::get('/api/pencarian/suggest', [SearchController::class, 'suggest'])
 
 // CS chat assistant (Claude-powered, grounded in the catalogue). JSON endpoint
 // under /api/* so validation errors render as JSON (see bootstrap/app.php).
-Route::post('/api/asisten/tanya', [\App\Http\Controllers\AssistantController::class, 'chat'])
+Route::post('/api/asisten/tanya', [AssistantController::class, 'chat'])
     ->middleware('throttle:15,1')->name('assistant.chat');
-Route::get('/api/asisten/riwayat', [\App\Http\Controllers\AssistantController::class, 'history'])
+Route::get('/api/asisten/riwayat', [AssistantController::class, 'history'])
     ->middleware('throttle:30,1')->name('assistant.history');
-Route::post('/api/asisten/kontak', [\App\Http\Controllers\AssistantController::class, 'contact'])
+Route::post('/api/asisten/kontak', [AssistantController::class, 'contact'])
     ->middleware('throttle:10,1')->name('assistant.contact');
 
 // Chat Toko (customer ↔ admin, Tokopedia-style; NOT the AI assistant).
-Route::post('/api/chat-toko/kirim', [\App\Http\Controllers\SiteChatController::class, 'send'])
+Route::post('/api/chat-toko/kirim', [SiteChatController::class, 'send'])
     ->middleware('throttle:20,1')->name('sitechat.send');
-Route::get('/api/chat-toko/pesan', [\App\Http\Controllers\SiteChatController::class, 'messages'])
+Route::get('/api/chat-toko/pesan', [SiteChatController::class, 'messages'])
     ->middleware('throttle:60,1')->name('sitechat.messages');
-Route::get('/api/chat-toko/notif', [\App\Http\Controllers\SiteChatController::class, 'unread'])
+Route::get('/api/chat-toko/notif', [SiteChatController::class, 'unread'])
     ->middleware('throttle:60,1')->name('sitechat.unread');
 
 // Public documentation gallery — real photos of orders being prepared & shipped.
-Route::get('/dokumentasi', [\App\Http\Controllers\DocumentationController::class, 'index'])->name('documentation');
+Route::get('/dokumentasi', [DocumentationController::class, 'index'])->name('documentation');
 
 Route::get('/kategori', [CatalogController::class, 'categories'])->name('categories.index');
 // 1200x630 social-share (og:image) card for a category page (see products.og).
-Route::get('/kategori/{category:slug}/og.png', \App\Http\Controllers\CategoryOgImageController::class)->name('categories.og');
+Route::get('/kategori/{category:slug}/og.png', CategoryOgImageController::class)->name('categories.og');
 Route::get('/kategori/{category:slug}', [CatalogController::class, 'category'])->name('categories.show');
 Route::get('/brand', [CatalogController::class, 'brands'])->name('brands.index');
 Route::get('/brand/{brand:slug}', [CatalogController::class, 'brand'])->name('brands.show');
 
 // Short-link resolver — e.g. /s/Ab3xYz → redirect to the real (possibly ?ref=) URL.
-Route::get('/s/{code}', [\App\Http\Controllers\ShortLinkController::class, 'resolve'])->name('short.resolve');
+Route::get('/s/{code}', [ShortLinkController::class, 'resolve'])->name('short.resolve');
 
 // Product detail resolves slug manually (to support old-slug redirects).
 Route::get('/produk/{slug}', [ProductController::class, 'show'])->name('products.show');
@@ -163,7 +169,7 @@ Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 Route::post('/webhook/pembayaran/{provider}', PaymentWebhookController::class)->name('webhook.payment');
 
 // Wablas incoming-message webhook (CSRF-exempt; shared-token check inside).
-Route::post('/webhook/wablas', \App\Http\Controllers\WablasWebhookController::class)->name('webhook.wablas');
+Route::post('/webhook/wablas', WablasWebhookController::class)->name('webhook.wablas');
 // Friendly status page when the webhook URL is opened in a browser (Wablas POSTs).
 Route::get('/webhook/wablas', fn () => response('Webhook Wablas aktif ✅ — endpoint ini menerima POST dari server Wablas, bukan akses browser.', 200)->header('Content-Type', 'text/plain; charset=utf-8'));
 
@@ -240,6 +246,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::resource('brand', Admin\BrandController::class)->names('brands')->except('show');
         Route::resource('produk', Admin\ProductController::class)->names('products')->except('show');
         Route::put('produk/{produk}/cepat', [Admin\ProductController::class, 'quickUpdate'])->name('products.quick');
+        Route::post('produk/status-massal', [Admin\ProductController::class, 'bulkStatus'])->name('products.bulk-status');
         Route::resource('atribut', Admin\AttributeController::class)->names('attributes')->except('show');
 
         // Product media (gallery images, datasheet PDFs, YouTube videos).

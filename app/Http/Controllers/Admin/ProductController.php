@@ -183,6 +183,32 @@ class ProductController extends Controller
         return back()->with('success', 'Produk "'.$produk->name.'" diperbarui.');
     }
 
+    /** Ubah status beberapa produk sekaligus dari daftar (pilih lalu terapkan). */
+    public function bulkStatus(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'exists:products,id'],
+            'status' => ['required', Rule::in(['draft', 'published', 'archived'])],
+        ]);
+
+        $products = Product::whereIn('id', $data['ids'])->get();
+
+        foreach ($products as $product) {
+            $product->status = $data['status'];
+            // Tanggal terbit hanya diisi sekali, agar urutan "produk baru" tidak
+            // ikut teracak saat produk lama diterbitkan ulang.
+            if ($data['status'] === 'published' && ! $product->published_at) {
+                $product->published_at = now();
+            }
+            $product->save();
+        }
+
+        $label = ['draft' => 'Draft', 'published' => 'Terbit', 'archived' => 'Arsip'][$data['status']];
+
+        return back()->with('success', $products->count().' produk diubah ke status '.$label.'.');
+    }
+
     /** Build a unique SKU from the product name (fallback when the field is blank). */
     private function generateSku(string $name): string
     {

@@ -163,6 +163,75 @@ class ProductInlineBrandTest extends TestCase
             ->assertSee('7,5%');       // the product's own rate
     }
 
+    public function test_bulk_status_publishes_selected_products_only(): void
+    {
+        $this->actingAs($this->staff());
+        $a = $this->stockedProduct(0, ['status' => 'draft']);
+        $b = $this->stockedProduct(0, ['status' => 'draft']);
+        $untouched = $this->stockedProduct(0, ['status' => 'draft']);
+
+        $this->post(route('admin.products.bulk-status'), [
+            'ids' => [$a->id, $b->id],
+            'status' => 'published',
+        ])->assertRedirect();
+
+        $this->assertSame('published', $a->fresh()->status);
+        $this->assertNotNull($a->fresh()->published_at);
+        $this->assertSame('published', $b->fresh()->status);
+        $this->assertSame('draft', $untouched->fresh()->status);
+    }
+
+    /** Menerbitkan ulang tidak boleh menggeser tanggal terbit yang sudah ada. */
+    public function test_bulk_status_keeps_the_original_publish_date(): void
+    {
+        $this->actingAs($this->staff());
+        $published = $this->stockedProduct(0, ['status' => 'published', 'published_at' => now()->subMonth()]);
+        $original = $published->published_at;
+
+        $this->post(route('admin.products.bulk-status'), ['ids' => [$published->id], 'status' => 'draft']);
+        $this->post(route('admin.products.bulk-status'), ['ids' => [$published->id], 'status' => 'published']);
+
+        $this->assertTrue($original->equalTo($published->fresh()->published_at));
+    }
+
+    public function test_bulk_status_rejects_an_unknown_status(): void
+    {
+        $this->actingAs($this->staff());
+        $product = $this->stockedProduct(0, ['status' => 'draft']);
+
+        $this->post(route('admin.products.bulk-status'), [
+            'ids' => [$product->id],
+            'status' => 'terbit-banget',
+        ])->assertSessionHasErrors('status');
+
+        $this->assertSame('draft', $product->fresh()->status);
+    }
+
+    public function test_bulk_status_is_closed_to_staff_without_catalog_permission(): void
+    {
+        $this->seed(RoleSeeder::class);
+        $sales = User::factory()->create(['is_staff' => true, 'is_active' => true]);
+        $sales->roles()->attach(Role::where('slug', 'admin-sales')->first());
+        $product = $this->stockedProduct(0, ['status' => 'draft']);
+
+        $this->actingAs($sales)
+            ->post(route('admin.products.bulk-status'), ['ids' => [$product->id], 'status' => 'published'])
+            ->assertForbidden();
+
+        $this->assertSame('draft', $product->fresh()->status);
+    }
+
+    public function test_index_shows_the_bulk_select_column(): void
+    {
+        $this->actingAs($this->staff());
+        $this->stockedProduct(0, ['status' => 'draft']);
+
+        $this->get(route('admin.products.index'))
+            ->assertOk()
+            ->assertSee('bulk-status-form')
+            ->assertSee('produk dipilih');
+    }
+
     public function test_fast_edit_updates_price_commission_status_and_stock(): void
     {
         $this->actingAs($this->staff());

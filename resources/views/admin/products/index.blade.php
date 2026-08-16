@@ -49,11 +49,48 @@
 
     @php
         $defaultAffiliateRate = (float) setting('affiliate.default_rate', 2.5);
+        $statusOptions = ['draft' => 'Draft', 'published' => 'Terbit', 'archived' => 'Arsip'];
     @endphp
+
+    {{-- Bulk status. Kotak centangnya ada DI DALAM tabel (yang sudah punya form
+         hapus & edit cepat), jadi form-nya diletakkan di luar dan dirujuk lewat
+         atribut form="..." — form bersarang tidak valid di HTML. --}}
+    <div x-data="{ selected: [], pageIds: {{ $products->pluck('id')->toJson() }} }">
+        <form id="bulk-status-form" method="POST" action="{{ route('admin.products.bulk-status') }}" x-ref="bulkForm">
+            @csrf
+            <input type="hidden" name="status" x-ref="bulkStatus">
+        </form>
+
+        <div x-show="selected.length" x-cloak
+             class="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-4 py-3">
+            <span class="text-sm font-medium text-brand-800">
+                <span x-text="selected.length"></span> produk dipilih
+            </span>
+            <span class="text-sm text-brand-700">— ubah status ke:</span>
+            <button type="button"
+                    x-on:click="$refs.bulkStatus.value = 'published'; $refs.bulkForm.submit()"
+                    class="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-green-700">Terbit</button>
+            <button type="button"
+                    x-on:click="$refs.bulkStatus.value = 'draft'; $refs.bulkForm.submit()"
+                    class="rounded-md bg-gray-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-gray-700">Draft</button>
+            <button type="button"
+                    x-on:click="if (confirm('Arsipkan ' + selected.length + ' produk? Produk arsip tidak tampil di toko.')) { $refs.bulkStatus.value = 'archived'; $refs.bulkForm.submit() }"
+                    class="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-700">Arsip</button>
+            <button type="button" x-on:click="selected = []"
+                    class="ml-auto text-xs font-medium text-brand-700 underline">Batalkan pilihan</button>
+        </div>
+
     <div class="card overflow-x-auto">
         <table class="w-full text-sm">
             <thead>
                 <tr class="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                    <th class="px-4 py-3">
+                        <input type="checkbox" title="Pilih semua di halaman ini"
+                               class="h-4 w-4 rounded border-gray-300 text-brand-600"
+                               x-on:change="selected = $event.target.checked ? [...pageIds] : []"
+                               :checked="selected.length === pageIds.length && pageIds.length > 0">
+                    </th>
+                    <th class="px-4 py-3 text-center">Status</th>
                     <th class="px-4 py-3">Aksi</th>
                     <th class="px-4 py-3">Produk</th>
                     <th class="px-4 py-3">Kategori</th>
@@ -61,7 +98,6 @@
                     <th class="px-4 py-3 text-center">Stok</th>
                     <th class="px-4 py-3 text-center">Komisi</th>
                     <th class="px-4 py-3 text-center">Dilihat</th>
-                    <th class="px-4 py-3 text-center">Status</th>
                 </tr>
             </thead>
             @forelse ($products as $product)
@@ -81,7 +117,15 @@
                     $fmtRate = fn ($r) => rtrim(rtrim(number_format((float) $r, 2, ',', '.'), '0'), ',').'%';
                 @endphp
                 <tbody class="border-t border-gray-100" x-data="{ open: false }">
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50" :class="selected.includes({{ $product->id }}) && 'bg-brand-50/60'">
+                        <td class="px-4 py-3 align-top">
+                            <input type="checkbox" form="bulk-status-form" name="ids[]" value="{{ $product->id }}"
+                                   x-model.number="selected" aria-label="Pilih {{ $product->name }}"
+                                   class="h-4 w-4 rounded border-gray-300 text-brand-600">
+                        </td>
+                        <td class="px-4 py-3 text-center align-top">
+                            <span class="badge {{ $statusBadge }}">{{ $statusLabel }}</span>
+                        </td>
                         <td class="px-4 py-3 align-top">
                             <div class="flex items-center gap-1.5 whitespace-nowrap">
                                 <button type="button" @click="open = !open"
@@ -130,14 +174,11 @@
                             <span class="font-semibold text-gray-800" title="Pengunjung unik">{{ number_format((int) $product->unique_views, 0, ',', '.') }}</span>
                             <div class="text-[11px] text-gray-400" title="Total kunjungan (termasuk berulang)">{{ number_format((int) $product->view_count, 0, ',', '.') }} total</div>
                         </td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="badge {{ $statusBadge }}">{{ $statusLabel }}</span>
-                        </td>
                     </tr>
 
                     {{-- Fast-edit row --}}
                     <tr x-show="open" x-cloak class="bg-amber-50/40">
-                        <td colspan="8" class="px-4 py-4">
+                        <td colspan="9" class="px-4 py-4">
                             <form action="{{ route('admin.products.quick', $product) }}" method="POST"
                                   class="flex flex-wrap items-end gap-3">
                                 @csrf
@@ -181,10 +222,11 @@
                 </tbody>
             @empty
                 <tbody>
-                    <tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">Belum ada produk.</td></tr>
+                    <tr><td colspan="9" class="px-4 py-8 text-center text-gray-400">Belum ada produk.</td></tr>
                 </tbody>
             @endforelse
         </table>
+    </div>
     </div>
 
     <div class="mt-4">{{ $products->links() }}</div>
