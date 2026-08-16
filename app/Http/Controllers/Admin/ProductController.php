@@ -22,8 +22,10 @@ class ProductController extends Controller
         $status = $request->query('status');
         $categoryId = $request->query('category');
         $brandId = $request->query('brand');
+        $media = $request->query('media');
 
         $products = Product::with(['brand', 'category'])
+            ->withCount(['images', 'documents', 'videos'])
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($sub) use ($q) {
                     $sub->where('name', 'like', "%{$q}%")
@@ -43,6 +45,7 @@ class ProductController extends Controller
                 }
             })
             ->when($brandId, fn ($query) => $query->where('brand_id', $brandId))
+            ->when($media, fn ($query) => $this->applyMediaFilter($query, $media))
             ->latest('id')
             ->paginate(20)
             ->withQueryString();
@@ -53,9 +56,42 @@ class ProductController extends Controller
             'status' => $status,
             'categoryId' => $categoryId,
             'brandId' => $brandId,
+            'media' => $media,
+            'mediaOptions' => self::MEDIA_FILTERS,
             'categoryOptions' => $this->categoryOptions(),
             'brandOptions' => Brand::orderBy('name')->pluck('name', 'id'),
         ]);
+    }
+
+    /** Pilihan filter kelengkapan media pada daftar produk. */
+    public const MEDIA_FILTERS = [
+        'no-image' => 'Belum ada foto',
+        'no-document' => 'Belum ada dokumen',
+        'no-video' => 'Belum ada video',
+        'incomplete' => 'Belum lengkap (salah satu kosong)',
+    ];
+
+    /**
+     * "Belum ada foto" berarti benar-benar tidak punya gambar: tanpa galeri DAN
+     * tanpa foto utama — produk yang punya galeri tapi belum dipilih foto
+     * utamanya tetap dianggap punya foto (thumbnail-nya memang belum muncul,
+     * tetapi materinya sudah ada dan tinggal ditandai di halaman Edit).
+     */
+    private function applyMediaFilter($query, string $media): void
+    {
+        $withoutImage = fn ($sub) => $sub->whereDoesntHave('images')
+            ->where(fn ($q) => $q->whereNull('main_image_path')->orWhere('main_image_path', ''));
+
+        match ($media) {
+            'no-image' => $withoutImage($query),
+            'no-document' => $query->whereDoesntHave('documents'),
+            'no-video' => $query->whereDoesntHave('videos'),
+            'incomplete' => $query->where(fn ($sub) => $sub
+                ->where($withoutImage)
+                ->orWhereDoesntHave('documents')
+                ->orWhereDoesntHave('videos')),
+            default => null,
+        };
     }
 
     public function create(): View

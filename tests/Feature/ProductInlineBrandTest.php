@@ -163,6 +163,55 @@ class ProductInlineBrandTest extends TestCase
             ->assertSee('7,5%');       // the product's own rate
     }
 
+    /** Filter kelengkapan media: cari produk yang fotonya/dokumennya/videonya kosong. */
+    public function test_media_filter_finds_products_with_missing_media(): void
+    {
+        $this->actingAs($this->staff());
+
+        $complete = $this->stockedProduct(0, ['name' => 'ProdukLengkap', 'main_image_path' => 'produk/a.jpg']);
+        $complete->images()->create(['path' => 'produk/a.jpg', 'sort_order' => 1]);
+        $complete->documents()->create(['type' => 'datasheet', 'title' => 'Datasheet', 'path' => 'dok/a.pdf']);
+        $complete->videos()->create(['title' => 'Demo', 'url' => 'https://youtu.be/abc']);
+
+        $noPhoto = $this->stockedProduct(0, ['name' => 'ProdukTanpaFoto']);
+        $noPhoto->documents()->create(['type' => 'datasheet', 'title' => 'Datasheet', 'path' => 'dok/b.pdf']);
+        $noPhoto->videos()->create(['title' => 'Demo', 'url' => 'https://youtu.be/def']);
+
+        $this->get(route('admin.products.index', ['media' => 'no-image']))
+            ->assertOk()->assertSee('ProdukTanpaFoto')->assertDontSee('ProdukLengkap');
+
+        $this->get(route('admin.products.index', ['media' => 'no-document']))
+            ->assertOk()->assertDontSee('ProdukLengkap')->assertDontSee('ProdukTanpaFoto');
+
+        $this->get(route('admin.products.index', ['media' => 'incomplete']))
+            ->assertOk()->assertSee('ProdukTanpaFoto')->assertDontSee('ProdukLengkap');
+
+        // Tanpa filter, keduanya tetap tampil.
+        $this->get(route('admin.products.index'))
+            ->assertOk()->assertSee('ProdukLengkap')->assertSee('ProdukTanpaFoto');
+    }
+
+    /** Punya galeri tapi belum ditandai foto utama tetap dihitung "punya foto". */
+    public function test_gallery_without_a_primary_image_still_counts_as_having_photos(): void
+    {
+        $this->actingAs($this->staff());
+        $product = $this->stockedProduct(0, ['name' => 'ProdukGaleriSaja', 'main_image_path' => null]);
+        $product->images()->create(['path' => 'produk/c.jpg', 'sort_order' => 1]);
+
+        $this->get(route('admin.products.index', ['media' => 'no-image']))
+            ->assertOk()->assertDontSee('ProdukGaleriSaja');
+    }
+
+    public function test_index_marks_which_media_a_product_is_missing(): void
+    {
+        $this->actingAs($this->staff());
+        $this->stockedProduct(0, ['name' => 'ProdukKosongMedia']);
+
+        $this->get(route('admin.products.index'))
+            ->assertOk()
+            ->assertSee('Belum ada: foto · dokumen · video', false);
+    }
+
     public function test_bulk_status_publishes_selected_products_only(): void
     {
         $this->actingAs($this->staff());

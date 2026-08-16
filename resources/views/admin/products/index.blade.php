@@ -41,8 +41,17 @@
                 @endforeach
             </select>
         </div>
+        <div>
+            <label class="input-label" for="media">Kelengkapan</label>
+            <select name="media" id="media" class="form-select">
+                <option value="">Semua produk</option>
+                @foreach ($mediaOptions as $val => $lbl)
+                    <option value="{{ $val }}" @selected($media === $val)>{{ $lbl }}</option>
+                @endforeach
+            </select>
+        </div>
         <button type="submit" class="btn-primary">Filter</button>
-        @if ($q !== '' || $status || $categoryId || $brandId)
+        @if ($q !== '' || $status || $categoryId || $brandId || $media)
             <a href="{{ route('admin.products.index') }}" class="btn-outline">Reset</a>
         @endif
     </form>
@@ -115,6 +124,11 @@
                     $comparePrice = $product->isOnSale() ? $product->price : null;
                     $isVariable = $product->product_type === 'variable';
                     $fmtRate = fn ($r) => rtrim(rtrim(number_format((float) $r, 2, ',', '.'), '0'), ',').'%';
+                    $missingMedia = array_keys(array_filter([
+                        'foto' => $product->images_count === 0 && ! $product->main_image_path,
+                        'dokumen' => $product->documents_count === 0,
+                        'video' => $product->videos_count === 0,
+                    ]));
                 @endphp
                 <tbody class="border-t border-gray-100" x-data="{ open: false }">
                     <tr class="hover:bg-gray-50" :class="selected.includes({{ $product->id }}) && 'bg-brand-50/60'">
@@ -150,6 +164,11 @@
                                 <div class="min-w-0">
                                     <p class="truncate font-medium text-gray-800">{{ $product->name }}</p>
                                     <p class="text-xs text-gray-400">{{ $product->sku }} &middot; {{ $product->brand?->name ?? '—' }}</p>
+                                    @if ($missingMedia)
+                                        <p class="mt-1 text-[11px] font-medium text-amber-600" title="Lengkapi lewat Edit → Media">
+                                            Belum ada: {{ implode(' · ', $missingMedia) }}
+                                        </p>
+                                    @endif
                                 </div>
                             </div>
                         </td>
