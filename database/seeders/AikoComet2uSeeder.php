@@ -95,12 +95,13 @@ HTML;
             ],
         );
 
-        // Wattage variants. Only 650 Wp is ready (20 pcs); others start at 0.
+        // Wattage variants. Ready: 650 Wp (batch awal, 30 pcs) dan 640 Wp
+        // (batch Agustus 2026, 20 pcs); others start at 0.
         // Efficiency figures per datasheet (STC).
         $variants = [
-            ['wp' => 640, 'eff' => '23,7%', 'stock' => 0],
+            ['wp' => 640, 'eff' => '23,7%', 'stock' => 20],
             ['wp' => 645, 'eff' => '23,9%', 'stock' => 0],
-            ['wp' => 650, 'eff' => '24,1%', 'stock' => 20],
+            ['wp' => 650, 'eff' => '24,1%', 'stock' => 30],
             ['wp' => 655, 'eff' => '24,2%', 'stock' => 0],
             ['wp' => 660, 'eff' => '24,4%', 'stock' => 0],
             ['wp' => 665, 'eff' => '24,6%', 'stock' => 0],
@@ -128,7 +129,7 @@ HTML;
         }
 
         $this->command?->info('Produk AIKO Comet 2U (7 varian daya) berhasil ditambahkan/diperbarui (slug: '.$product->slug.').');
-        $this->command?->warn('Ready: 650 Wp = 20 pcs (hanya saat pertama dibuat). Varian lain stok 0 — aktifkan saat tersedia.');
+        $this->command?->warn('Ready: 640 Wp = 20 pcs & 650 Wp = 30 pcs (hanya saat pertama dibuat). Varian lain stok 0 — aktifkan saat tersedia.');
         $this->command?->warn('Ingat: upload gambar produk + PDF datasheet lewat Admin → Produk → Edit.');
     }
 
