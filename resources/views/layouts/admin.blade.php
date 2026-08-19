@@ -28,6 +28,7 @@
                 ['admin.stock.index', 'Stok', 'inventory.manage'],
                 ['admin.warehouses.index', 'Gudang', 'inventory.manage'],
                 ['admin.coupons.index', 'Voucher', 'price.manage'],
+                ['admin.prices.index', 'Harga & Margin', 'price.manage', 'prices'],
                 ['admin.orders.index', 'Pesanan', 'order.view', 'orders'],
                 ['admin.quotations.index', 'Quotation', 'quotation.manage', 'quotations'],
                 ['admin.reviews.index', 'Review', 'review.moderate', 'reviews'],

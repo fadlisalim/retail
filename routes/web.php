@@ -275,6 +275,10 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
 
     Route::middleware('permission:price.manage')->group(function () {
         Route::resource('kupon', Admin\CouponController::class)->names('coupons')->except('show');
+
+        // Tabel harga & margin ala spreadsheet (inline edit per baris).
+        Route::get('/harga', [Admin\PriceController::class, 'index'])->name('prices.index');
+        Route::patch('/harga/{produk}', [Admin\PriceController::class, 'update'])->name('prices.update');
     });
 
     Route::middleware('permission:order.view')->group(function () {

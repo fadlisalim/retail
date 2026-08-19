@@ -37,7 +37,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // JSON dipaksa untuk /api/* (walau tanpa header Accept), dan tetap
+        // dihormati untuk request lain yang memang meminta JSON — mis. fetch
+        // inline-edit di halaman admin Harga & Margin, yang butuh 422 JSON,
+        // bukan redirect 302.
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*'),
+            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
     })->create();
