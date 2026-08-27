@@ -82,12 +82,13 @@ class AffiliateProductsPageTest extends TestCase
     {
         $this->stockedProduct(5, ['name' => 'Produk Fee Jumbo', 'affiliate_rate' => 8, 'price' => 2_000_000, 'status' => 'published', 'published_at' => now()]);
 
-        // Tamu: tabel tampil tanpa tombol salin link.
+        // Tamu: kartu komisi tampil tanpa tombol salin link, dengan ajakan daftar.
         $this->get(route('affiliate.landing'))
             ->assertOk()
-            ->assertSee('Tabel Komisi per Produk')
+            ->assertSee('Komisi per Produk')
             ->assertSee('Produk Fee Jumbo')
             ->assertSee('160.000')
+            ->assertSee('Jadi Afiliator')
             ->assertDontSee('Salin Link');
 
         // Afiliator aktif: tombol salin link pribadinya ikut tampil.
@@ -95,8 +96,32 @@ class AffiliateProductsPageTest extends TestCase
         $this->actingAs($affiliate->user)
             ->get(route('affiliate.landing'))
             ->assertOk()
-            ->assertSee('Salin Link')
+            ->assertSee('Salin Link Afiliasi')
             ->assertSee('?ref=KODE99', false);
+    }
+
+    /** Hanya 6 kartu fee teratas per halaman; sisanya lewat paginasi. */
+    public function test_the_landing_shows_the_top_six_fees_and_paginates_the_rest(): void
+    {
+        foreach (range(1, 7) as $i) {
+            $this->stockedProduct(5, [
+                'name' => "Produk Peringkat {$i}",
+                'affiliate_rate' => 10 - $i,   // peringkat 1 = fee 9%, peringkat 7 = 3%
+                'price' => 1_000_000,
+                'status' => 'published', 'published_at' => now(),
+            ]);
+        }
+
+        $this->get(route('affiliate.landing'))
+            ->assertOk()
+            ->assertSee('Produk Peringkat 1')
+            ->assertSee('Produk Peringkat 6')
+            ->assertDontSee('Produk Peringkat 7');
+
+        $this->get(route('affiliate.landing', ['hal' => 2]))
+            ->assertOk()
+            ->assertSee('Produk Peringkat 7')
+            ->assertDontSee('Produk Peringkat 1');
     }
 
     public function test_non_active_affiliates_are_sent_back_to_the_dashboard(): void

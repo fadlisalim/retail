@@ -35,7 +35,9 @@ class AffiliateController extends Controller
             ->with(['brand:id,name', 'variants' => fn ($v) => $v->where('is_active', true)])
             ->orderByRaw('COALESCE(affiliate_rate, ?) DESC', [$defaultRate])
             ->orderByDesc('price')
-            ->paginate(15, ['*'], 'hal')
+            // 6 kartu per halaman: fee terbesar langsung terlihat, sisanya
+            // lewat tombol halaman berikutnya.
+            ->paginate(6, ['*'], 'hal')
             ->withQueryString();
 
         return view('affiliate.landing', [

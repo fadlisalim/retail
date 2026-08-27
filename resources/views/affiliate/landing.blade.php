@@ -26,6 +26,82 @@
         </div>
     </section>
 
+    {{-- Komisi per produk — kartu, fee terbesar dulu. --}}
+    <section class="mt-10" id="komisi">
+        @php
+            $isActiveAffiliate = $affiliate?->isActive() ?? false;
+            $fmtPct = fn ($r) => rtrim(rtrim(number_format((float) $r, 2, ',', '.'), '0'), ',').'%';
+        @endphp
+        <div class="mb-4">
+            <h2 class="text-xl font-bold text-gray-900">Komisi per Produk</h2>
+            <p class="text-sm text-gray-500">Diurutkan dari fee tertinggi.
+                @if ($isActiveAffiliate) Salin link produknya dan mulai bagikan.
+                @else Daftar jadi afiliator untuk mendapatkan link pribadi Anda. @endif
+            </p>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach ($products as $product)
+                @php
+                    $rate = $product->affiliate_rate !== null ? (float) $product->affiliate_rate : $defaultRate;
+                    $price = $product->effectivePrice();
+                    $activeVariants = $product->variants;
+                    $isVariable = $product->product_type === 'variable' && $activeVariants->isNotEmpty();
+                @endphp
+                <div class="card flex flex-col overflow-hidden">
+                    <div class="relative">
+                        <img src="{{ $product->primaryImageUrl() }}" alt="{{ $product->name }}" loading="lazy"
+                             class="h-36 w-full object-cover">
+                        {{-- Fee selalu terlihat — tidak ada yang perlu digeser. --}}
+                        <span class="absolute right-2 top-2 rounded-full bg-green-600 px-3 py-1 text-sm font-bold text-white shadow">
+                            Fee {{ $fmtPct($rate) }}
+                        </span>
+                    </div>
+                    <div class="flex flex-1 flex-col gap-2 p-4">
+                        <a href="{{ route('products.show', $product->slug) }}" target="_blank"
+                           class="line-clamp-2 font-semibold text-gray-800 hover:text-brand-700">{{ $product->name }}</a>
+                        <p class="text-xs text-gray-400">{{ $product->brand?->name ?? '—' }} · {{ $isVariable ? 'mulai ' : '' }}{{ rupiah($price) }}</p>
+
+                        <p class="text-sm">
+                            <span class="text-gray-500">Komisi</span>
+                            <span class="font-bold text-green-700">≈ {{ rupiah(round($price * $rate / 100)) }}{{ $isVariable ? '+' : '' }}</span>
+                            <span class="text-xs text-gray-400">/unit</span>
+                        </p>
+
+                        @if ($isVariable)
+                            <div class="flex flex-wrap gap-1">
+                                @foreach ($activeVariants as $variant)
+                                    <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600"
+                                          title="Komisi ≈ {{ rupiah(round((float) $variant->price * $rate / 100)) }}">
+                                        {{ $variant->name }} · {{ rupiah($variant->price) }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        <div class="mt-auto pt-1">
+                            @if ($isActiveAffiliate)
+                                <button type="button"
+                                        x-data="{ copied: false }"
+                                        @click="navigator.clipboard.writeText(@js($affiliate->productReferralUrl($product))); copied = true; setTimeout(() => copied = false, 1500)"
+                                        class="btn-primary w-full text-sm">
+                                    <span x-show="!copied">Salin Link Afiliasi</span>
+                                    <span x-show="copied" x-cloak>Tersalin ✓</span>
+                                </button>
+                            @else
+                                <a href="{{ $affiliate ? route('account.affiliate.dashboard') : (auth()->check() ? route('account.affiliate.register') : route('register')) }}"
+                                   class="btn-outline w-full text-sm">Jadi Afiliator →</a>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="mt-4">{{ $products->fragment('komisi')->links() }}</div>
+        <p class="mt-2 text-xs text-gray-400">Perkiraan komisi = harga jual saat ini × fee. Komisi final mengikuti harga saat pesanan dan cair setelah pesanan selesai.</p>
+    </section>
+
     {{-- How it works --}}
     <section class="mt-10">
         <h2 class="mb-4 text-xl font-bold text-gray-900">Cara Kerjanya</h2>
@@ -76,85 +152,6 @@
             <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-600 text-xs font-bold text-white">3</span> <span>Unggah <strong>NPWP, foto KTP, dan selfie</strong> untuk verifikasi identitas.</span></li>
             <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-600 text-xs font-bold text-white">4</span> <span>Tunggu <strong>verifikasi tim kami</strong>. Setelah disetujui, link referral Anda langsung aktif!</span></li>
         </ol>
-    </section>
-
-    {{-- Commission table: fee per produk, urut dari yang terbesar. --}}
-    <section class="mt-10" id="tabel-komisi">
-        @php
-            $isActiveAffiliate = $affiliate?->isActive() ?? false;
-            $fmtPct = fn ($r) => rtrim(rtrim(number_format((float) $r, 2, ',', '.'), '0'), ',').'%';
-        @endphp
-        <div class="mb-4 flex flex-wrap items-end justify-between gap-2">
-            <div>
-                <h2 class="text-xl font-bold text-gray-900">Tabel Komisi per Produk</h2>
-                <p class="text-sm text-gray-500">Diurutkan dari fee tertinggi.
-                    @if ($isActiveAffiliate) Salin link produknya dan mulai bagikan.
-                    @else Daftar jadi afiliator untuk mendapatkan link pribadi Anda. @endif
-                </p>
-            </div>
-        </div>
-        <div class="card overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="bg-gray-50 text-left text-xs uppercase text-gray-500">
-                        <th class="px-4 py-3">Produk</th>
-                        <th class="px-3 py-3 text-right">Harga</th>
-                        <th class="px-3 py-3 text-center">Fee</th>
-                        <th class="px-3 py-3 text-right">Komisi/Unit</th>
-                        @if ($isActiveAffiliate)<th class="px-3 py-3 text-center">Link Anda</th>@endif
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @foreach ($products as $product)
-                        @php
-                            $rate = $product->affiliate_rate !== null ? (float) $product->affiliate_rate : $defaultRate;
-                            $price = $product->effectivePrice();
-                            $activeVariants = $product->variants;
-                            $isVariable = $product->product_type === 'variable' && $activeVariants->isNotEmpty();
-                        @endphp
-                        <tr class="align-top hover:bg-gray-50">
-                            <td class="px-4 py-3">
-                                <div class="flex items-start gap-3">
-                                    <img src="{{ $product->primaryImageUrl() }}" alt="{{ $product->name }}"
-                                         class="h-12 w-12 flex-none rounded-lg object-cover">
-                                    <div class="min-w-0">
-                                        <a href="{{ route('products.show', $product->slug) }}" target="_blank"
-                                           class="line-clamp-2 font-medium text-gray-800 hover:text-brand-700">{{ $product->name }}</a>
-                                        <p class="text-xs text-gray-400">{{ $product->brand?->name ?? '—' }}</p>
-                                        @if ($isVariable)
-                                            <div class="mt-1 flex flex-wrap gap-1">
-                                                @foreach ($activeVariants as $variant)
-                                                    <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600"
-                                                          title="Komisi ≈ {{ rupiah(round((float) $variant->price * $rate / 100)) }}">
-                                                        {{ $variant->name }} · {{ rupiah($variant->price) }}
-                                                    </span>
-                                                @endforeach
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-3 text-right text-gray-700">{{ $isVariable ? 'mulai ' : '' }}{{ rupiah($price) }}</td>
-                            <td class="px-3 py-3 text-center"><span class="badge bg-green-100 font-bold text-green-700">{{ $fmtPct($rate) }}</span></td>
-                            <td class="whitespace-nowrap px-3 py-3 text-right font-semibold text-gray-800">≈ {{ rupiah(round($price * $rate / 100)) }}{{ $isVariable ? '+' : '' }}</td>
-                            @if ($isActiveAffiliate)
-                                <td class="px-3 py-3 text-center">
-                                    <button type="button"
-                                            x-data="{ copied: false }"
-                                            @click="navigator.clipboard.writeText(@js($affiliate->productReferralUrl($product))); copied = true; setTimeout(() => copied = false, 1500)"
-                                            class="rounded-md bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-700 transition hover:bg-brand-100">
-                                        <span x-show="!copied">Salin Link</span>
-                                        <span x-show="copied" x-cloak>Tersalin ✓</span>
-                                    </button>
-                                </td>
-                            @endif
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-        <div class="mt-3">{{ $products->links() }}</div>
-        <p class="mt-2 text-xs text-gray-400">Perkiraan komisi = harga jual saat ini × fee. Komisi final mengikuti harga saat pesanan dan cair setelah pesanan selesai.</p>
     </section>
 
     {{-- Terms --}}
