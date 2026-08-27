@@ -82,8 +82,13 @@
             <tr>
                 <td style="width: 55%;">
                     <div class="billto-label">Ditagihkan Kepada</div>
-                    <div style="font-weight: bold;">{{ $customer['name'] ?? '-' }}</div>
-                    @if (! empty($customer['company']))<div class="small">{{ $customer['company'] }}</div>@endif
+                    @if (! empty($customer['company']))
+                        <div style="font-weight: bold;">{{ $customer['company'] }}</div>
+                        <div class="small">u.p. {{ $customer['pic'] ?? ($customer['name'] ?? '-') }}</div>
+                    @else
+                        <div style="font-weight: bold;">{{ $customer['name'] ?? '-' }}</div>
+                        @if (! empty($customer['pic']))<div class="small">u.p. {{ $customer['pic'] }}</div>@endif
+                    @endif
                     @if (! empty($customer['address']))<div class="small muted">{{ $customer['address'] }}</div>@endif
                     @if (! empty($customer['phone']))<div class="small muted">{{ $customer['phone'] }}</div>@endif
                     @if (! empty($customer['email']))<div class="small muted">{{ $customer['email'] }}</div>@endif

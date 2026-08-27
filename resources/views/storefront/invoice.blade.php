@@ -70,8 +70,13 @@
             <div class="grid gap-6 py-6 sm:grid-cols-2">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Ditagihkan Kepada</p>
-                    <p class="mt-1 font-medium text-gray-800">{{ $customer['name'] ?? '—' }}</p>
-                    @if (! empty($customer['company']))<p class="text-sm text-gray-600">{{ $customer['company'] }}</p>@endif
+                    @if (! empty($customer['company']))
+                        <p class="mt-1 font-medium text-gray-800">{{ $customer['company'] }}</p>
+                        <p class="text-sm text-gray-600">u.p. {{ $customer['pic'] ?? ($customer['name'] ?? '—') }}</p>
+                    @else
+                        <p class="mt-1 font-medium text-gray-800">{{ $customer['name'] ?? '—' }}</p>
+                        @if (! empty($customer['pic']))<p class="text-sm text-gray-600">u.p. {{ $customer['pic'] }}</p>@endif
+                    @endif
                     @if (! empty($customer['address']))<p class="text-sm text-gray-500">{{ $customer['address'] }}</p>@endif
                     @if (! empty($customer['phone']))<p class="text-sm text-gray-500">{{ $customer['phone'] }}</p>@endif
                     @if (! empty($customer['email']))<p class="text-sm text-gray-500">{{ $customer['email'] }}</p>@endif

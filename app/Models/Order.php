@@ -118,6 +118,18 @@ class Order extends Model
         return $this->hasOne(Invoice::class);
     }
 
+    /**
+     * Invoice & kuitansi terkunci begitu transaksi tutup (selesai, batal,
+     * atau diretur) — dokumen keuangan yang sudah confirmed tidak boleh
+     * diubah lagi.
+     */
+    public function isInvoiceLocked(): bool
+    {
+        return in_array($this->status, [
+            OrderStatus::Completed, OrderStatus::Cancelled, OrderStatus::Returned,
+        ], true);
+    }
+
     /** Photo documentation of how this order was prepared, tested and shipped. */
     public function documentations(): HasMany
     {

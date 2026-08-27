@@ -286,6 +286,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/pesanan', [Admin\OrderController::class, 'index'])->name('orders.index');
         // Manual/marketplace sale entry (Tokopedia, WhatsApp, showroom).
         Route::get('/pesanan-manual', [Admin\OrderController::class, 'create'])->middleware('permission:order.manage')->name('orders.create');
+        Route::put('/pesanan/{order}/invoice', [Admin\OrderController::class, 'updateInvoice'])->middleware('permission:order.manage')->name('orders.invoice.update');
         Route::post('/pesanan-manual', [Admin\OrderController::class, 'store'])->middleware('permission:order.manage')->name('orders.store');
         // Kuitansi = bukti pelunasan, jadi hanya keuangan (payment.manage) yang
         // boleh mencetaknya. Invoice tetap bisa dibuka semua pemegang order.view

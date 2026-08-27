@@ -105,6 +105,74 @@
                 </dl>
             </div>
 
+            {{-- Invoice & kuitansi: data penerima yang tercetak di dokumen. --}}
+            @if ($order->invoice)
+                @php
+                    $snap = (array) $order->invoice->customer_snapshot;
+                    $invoiceLocked = $order->isInvoiceLocked();
+                @endphp
+                <div class="card p-5" x-data="{ open: {{ $errors->has('invoice') || $errors->hasAny(['name', 'company', 'pic']) ? 'true' : 'false' }} }">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h2 class="font-semibold text-gray-900">Data Invoice &amp; Kuitansi</h2>
+                            <p class="text-sm text-gray-500">
+                                {{ $snap['company'] ?? null ? $snap['company'].(($snap['pic'] ?? null) ? ' — u.p. '.$snap['pic'] : '') : ($snap['name'] ?? $order->customer_name) }}
+                            </p>
+                        </div>
+                        @if ($invoiceLocked)
+                            <span class="badge bg-gray-200 text-gray-600" title="Pesanan sudah {{ $order->status->label() }}">🔒 Terkunci — pesanan {{ $order->status->label() }}</span>
+                        @else
+                            <button type="button" @click="open = !open" class="btn-outline text-sm">
+                                <span x-show="!open">Edit Data Dokumen</span><span x-show="open" x-cloak>Tutup</span>
+                            </button>
+                        @endif
+                    </div>
+
+                    @error('invoice')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+
+                    @unless ($invoiceLocked)
+                        <form x-show="open" x-cloak method="POST" action="{{ route('admin.orders.invoice.update', $order) }}"
+                              class="mt-4 grid gap-3 sm:grid-cols-2">
+                            @csrf
+                            @method('PUT')
+                            <div>
+                                <label class="input-label">Nama Customer / Penerima</label>
+                                <input name="name" required maxlength="150" value="{{ old('name', $snap['name'] ?? $order->customer_name) }}" class="form-input">
+                            </div>
+                            <div>
+                                <label class="input-label">Nama Perusahaan <span class="text-gray-400">(opsional)</span></label>
+                                <input name="company" maxlength="150" value="{{ old('company', $snap['company'] ?? '') }}" placeholder="PT / CV / instansi" class="form-input">
+                            </div>
+                            <div>
+                                <label class="input-label">Nama PIC <span class="text-gray-400">(opsional)</span></label>
+                                <input name="pic" maxlength="150" value="{{ old('pic', $snap['pic'] ?? '') }}" placeholder="u.p. — orang yang dituju" class="form-input">
+                            </div>
+                            <div>
+                                <label class="input-label">No. HP / WA</label>
+                                <input name="phone" maxlength="30" value="{{ old('phone', $snap['phone'] ?? $order->customer_phone) }}" class="form-input">
+                            </div>
+                            <div>
+                                <label class="input-label">Email</label>
+                                <input type="email" name="email" maxlength="191" value="{{ old('email', $snap['email'] ?? $order->customer_email) }}" class="form-input">
+                            </div>
+                            <div>
+                                <label class="input-label">NPWP <span class="text-gray-400">(opsional)</span></label>
+                                <input name="npwp" maxlength="40" value="{{ old('npwp', $snap['npwp'] ?? '') }}" class="form-input">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="input-label">Alamat Penagihan</label>
+                                <input name="address" maxlength="500" value="{{ old('address', $snap['address'] ?? '') }}" class="form-input">
+                            </div>
+                            <div class="flex gap-2 sm:col-span-2">
+                                <button type="submit" class="btn-primary">Simpan ke Invoice &amp; Kuitansi</button>
+                                <button type="button" @click="open = false" class="btn-outline">Batal</button>
+                            </div>
+                            <p class="text-xs text-gray-400 sm:col-span-2">Perubahan langsung tampil di invoice (web &amp; PDF) dan kuitansi. Setelah pesanan Selesai, dokumen terkunci.</p>
+                        </form>
+                    @endunless
+                </div>
+            @endif
+
             {{-- Customer & shipping --}}
             <div class="grid gap-6 sm:grid-cols-2">
                 <div class="card p-5">

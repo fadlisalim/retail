@@ -31,7 +31,17 @@
         </div>
 
         <dl class="mt-5 grid grid-cols-1 gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
-            <div class="flex gap-2"><dt class="w-36 shrink-0 text-gray-500">Telah diterima dari</dt><dd class="font-semibold text-gray-900">{{ $order->customer_name }}</dd></div>
+            @php($snap = (array) ($order->invoice?->customer_snapshot ?? []))
+            <div class="flex gap-2">
+                <dt class="w-36 shrink-0 text-gray-500">Telah diterima dari</dt>
+                <dd class="font-semibold text-gray-900">
+                    @if (! empty($snap['company']))
+                        {{ $snap['company'] }}@if (! empty($snap['pic']) || ! empty($snap['name'])) <span class="font-normal text-gray-600">(u.p. {{ $snap['pic'] ?? $snap['name'] }})</span>@endif
+                    @else
+                        {{ $snap['name'] ?? $order->customer_name }}@if (! empty($snap['pic'])) <span class="font-normal text-gray-600">(u.p. {{ $snap['pic'] }})</span>@endif
+                    @endif
+                </dd>
+            </div>
             <div class="flex gap-2"><dt class="w-36 shrink-0 text-gray-500">Tanggal bayar</dt><dd class="font-medium text-gray-800">{{ ($order->paid_at ?? $order->created_at)->translatedFormat('d F Y') }}</dd></div>
             <div class="flex gap-2"><dt class="w-36 shrink-0 text-gray-500">No. HP / WA</dt><dd class="text-gray-800">{{ $order->customer_phone ?? '—' }}</dd></div>
             <div class="flex gap-2"><dt class="w-36 shrink-0 text-gray-500">No. Pesanan</dt><dd class="text-gray-800">{{ $order->order_number }}</dd></div>

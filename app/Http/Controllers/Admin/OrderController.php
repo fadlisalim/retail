@@ -7,7 +7,7 @@ use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
-use App\Models\User;
+use App\Models\ProductVariant;
 use App\Services\ManualOrderService;
 use App\Services\OrderService;
 use Illuminate\Http\RedirectResponse;
@@ -73,7 +73,7 @@ class OrderController extends Controller
             // A variable product's stock/price sit on the variant, so one must
             // be chosen — and it has to belong to the selected product.
             if (! empty($item['product_id'])) {
-                $variants = \App\Models\ProductVariant::where('product_id', $item['product_id'])->where('is_active', true);
+                $variants = ProductVariant::where('product_id', $item['product_id'])->where('is_active', true);
                 if (empty($item['variant_id'])) {
                     if ($variants->exists()) {
                         return back()->withInput()->withErrors(["items.{$i}.variant_id" => 'Produk ini punya varian — pilih variannya.']);
@@ -106,6 +106,46 @@ class OrderController extends Controller
         }
 
         return redirect()->route('admin.orders.show', $order)->with('success', $message);
+    }
+
+    /**
+     * Sunting data penerima pada invoice & kuitansi: nama perusahaan, nama
+     * PIC, dan detail penagihan lain. Terkunci begitu pesanan CONFIRMED
+     * (Selesai/Dibatalkan/Diretur) — dokumen keuangan transaksi yang sudah
+     * tutup tidak boleh berubah lagi.
+     */
+    public function updateInvoice(Request $request, Order $order): RedirectResponse
+    {
+        $invoice = $order->invoice;
+        abort_unless($invoice, 404);
+
+        if ($order->isInvoiceLocked()) {
+            return back()->withErrors(['invoice' => 'Pesanan sudah '.$order->status->label().' — invoice & kuitansi terkunci dan tidak bisa diedit lagi.']);
+        }
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'company' => ['nullable', 'string', 'max:150'],
+            'pic' => ['nullable', 'string', 'max:150'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'email' => ['nullable', 'email', 'max:191'],
+            'address' => ['nullable', 'string', 'max:500'],
+            'npwp' => ['nullable', 'string', 'max:40'],
+        ]);
+
+        $invoice->update([
+            'customer_snapshot' => array_merge((array) $invoice->customer_snapshot, [
+                'name' => $data['name'],
+                'company' => $data['company'] ?: null,
+                'pic' => $data['pic'] ?: null,
+                'phone' => $data['phone'] ?: null,
+                'email' => $data['email'] ?: null,
+                'address' => $data['address'] ?: null,
+                'npwp' => $data['npwp'] ?: null,
+            ]),
+        ]);
+
+        return back()->with('success', 'Data invoice & kuitansi diperbarui.');
     }
 
     /** Payment receipt (kuitansi) — print-friendly, paid orders only. */
