@@ -160,9 +160,9 @@
         <ul class="card space-y-2 p-6 text-sm text-gray-600">
             <li>• Komisi berkisar <strong>2,5%–10%</strong> tergantung produk.</li>
             <li>• Komisi dihitung dari harga barang (di luar ongkir, packing, dan pajak).</li>
-            <li>• Atribusi berbasis klik terakhir dengan masa berlaku 30 hari.</li>
+            <li>• Atribusi berbasis <strong>klik pertama</strong> dengan masa berlaku 30 hari — afiliator yang pertama memperkenalkan yang berhak atas komisinya, dan link lain tidak bisa merebutnya selama masa itu.</li>
             <li>• Komisi cair setelah pesanan berstatus <strong>Selesai</strong> (aman dari retur/pembatalan).</li>
-            <li>• Pembelian melalui link sendiri tidak menghasilkan komisi.</li>
+            <li>• Pembelian melalui link sendiri tidak menghasilkan komisi — termasuk melalui akun lain milik sendiri. Pelanggaran berulang dapat berakibat akun afiliasi ditangguhkan.</li>
             <li>• Minimum penarikan dana <strong>{{ rupiah($minPayout) }}</strong>, dibayar via transfer bank.</li>
             <li>• Wajib memiliki <strong>NPWP</strong> serta melampirkan foto KTP & selfie untuk verifikasi identitas oleh admin.</li>
         </ul>

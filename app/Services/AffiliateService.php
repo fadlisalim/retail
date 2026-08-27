@@ -9,6 +9,7 @@ use App\Models\Affiliate;
 use App\Models\AffiliateCommission;
 use App\Models\AffiliatePayout;
 use App\Models\Order;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +19,8 @@ use Illuminate\Validation\ValidationException;
 /**
  * Referral attribution + commission lifecycle.
  *
- * Attribution is last-click via a cookie set when someone visits with ?ref=CODE.
+ * Attribution is FIRST-click via a cookie set when someone visits with ?ref=CODE
+ * (an existing cookie for an active affiliate is never overwritten by another code).
  * Commissions are recorded (held) when an attributed order is paid, cleared when
  * the order completes, and voided if it is cancelled/returned.
  */
@@ -26,9 +28,7 @@ class AffiliateService
 {
     public const COOKIE = 'ref';
 
-    public function __construct(private readonly SettingService $settings)
-    {
-    }
+    public function __construct(private readonly SettingService $settings) {}
 
     public function windowDays(): int
     {
@@ -46,18 +46,44 @@ class AffiliateService
     }
 
     /** Commission percentage that applies to a product (per-product override, else default). */
-    public function rateForProduct(?\App\Models\Product $product): float
+    public function rateForProduct(?Product $product): float
     {
         $rate = $product?->affiliate_rate;
 
         return $rate !== null ? (float) $rate : $this->defaultRate();
     }
 
-    /** Record a click and drop the attribution cookie if the code maps to an active affiliate. */
+    /**
+     * Record a click and drop the attribution cookie if the code maps to an
+     * active affiliate.
+     *
+     * Atribusi KLIK PERTAMA: cookie yang sudah ada dan masih menunjuk
+     * afiliator aktif TIDAK ditimpa kode lain. Ini melindungi afiliator yang
+     * pertama memperkenalkan — tanpa ini, pembeli bisa mendaftar jadi
+     * afiliator lalu mengeklik link sendiri untuk merebut (dan karena
+     * self-referral diblokir, akhirnya menghanguskan) komisi si pengenal
+     * awal. Klik dengan kode yang SAMA tetap memperbarui masa berlaku, dan
+     * cookie milik afiliator yang sudah nonaktif boleh digantikan.
+     */
     public function trackClick(string $code, Request $request): bool
     {
         $affiliate = Affiliate::where('code', $code)->where('status', AffiliateStatus::Active->value)->first();
         if (! $affiliate) {
+            return false;
+        }
+
+        $existing = (string) $request->cookie(self::COOKIE);
+        if ($existing !== '' && $existing !== $affiliate->code
+            && Affiliate::where('code', $existing)->where('status', AffiliateStatus::Active->value)->exists()) {
+            // Pengenal pertama masih berhak — klik ini dicatat untuk statistik,
+            // tetapi atribusinya tidak berpindah.
+            $affiliate->clicks()->create([
+                'ip' => $request->ip(),
+                'user_agent' => Str::limit((string) $request->userAgent(), 500, ''),
+                'landing_url' => Str::limit($request->fullUrl(), 1000, ''),
+                'referrer' => Str::limit((string) $request->headers->get('referer'), 1000, ''),
+            ]);
+
             return false;
         }
 

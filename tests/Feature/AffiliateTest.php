@@ -4,15 +4,22 @@ namespace Tests\Feature;
 
 use App\Enums\AffiliateStatus;
 use App\Enums\CommissionStatus;
+use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\PayoutStatus;
 use App\Models\Affiliate;
 use App\Models\Order;
 use App\Models\Role;
 use App\Models\User;
+use App\Notifications\SystemNotification;
 use App\Services\AffiliateService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class AffiliateTest extends TestCase
@@ -42,7 +49,7 @@ class AffiliateTest extends TestCase
 
         $order = Order::create([
             'order_number' => 'ORD-'.uniqid(),
-            'public_token' => \Illuminate\Support\Str::uuid(),
+            'public_token' => Str::uuid(),
             'user_id' => $buyer->id,
             'affiliate_id' => $affiliate->id,
             'customer_name' => $buyer->name,
@@ -128,7 +135,7 @@ class AffiliateTest extends TestCase
         // Buyer IS the affiliate's own user
         $order = Order::create([
             'order_number' => 'ORD-SELF',
-            'public_token' => \Illuminate\Support\Str::uuid(),
+            'public_token' => Str::uuid(),
             'user_id' => $affiliate->user_id,
             'customer_name' => 'x', 'customer_email' => 'x@x.test',
         ]);
@@ -160,6 +167,76 @@ class AffiliateTest extends TestCase
             ->assertCookieMissing(AffiliateService::COOKIE);
     }
 
+    /**
+     * Atribusi klik pertama: pengenal awal tidak bisa direbut oleh klik kode
+     * lain — termasuk pembeli yang mendaftar jadi afiliator lalu mengeklik
+     * link sendiri agar komisi si pengenal hangus.
+     */
+    public function test_first_click_attribution_is_not_stolen_by_a_later_code(): void
+    {
+        $first = $this->activeAffiliate();
+        $second = $this->activeAffiliate();
+
+        // Cookie $first masih hidup; klik kode lain TIDAK mengganti cookie.
+        $this->withCookie(AffiliateService::COOKIE, $first->code)
+            ->get('/?ref='.$second->code)
+            ->assertCookieMissing(AffiliateService::COOKIE);
+
+        // Kliknya tetap tercatat untuk statistik $second.
+        $this->assertEquals(1, $second->clicks()->count());
+    }
+
+    public function test_a_repeat_click_of_the_same_code_refreshes_the_window(): void
+    {
+        $affiliate = $this->activeAffiliate();
+
+        $this->withCookie(AffiliateService::COOKIE, $affiliate->code)
+            ->get('/?ref='.$affiliate->code)
+            ->assertCookie(AffiliateService::COOKIE, $affiliate->code);
+    }
+
+    /** Cookie milik afiliator yang sudah nonaktif boleh digantikan kode aktif. */
+    public function test_a_dead_referrers_cookie_can_be_replaced(): void
+    {
+        $suspended = $this->activeAffiliate(['status' => AffiliateStatus::Suspended]);
+        $active = $this->activeAffiliate();
+
+        $this->withCookie(AffiliateService::COOKIE, $suspended->code)
+            ->get('/?ref='.$active->code)
+            ->assertCookie(AffiliateService::COOKIE, $active->code);
+    }
+
+    /**
+     * Skenario lengkap: pembeli datang lewat link A, lalu jadi afiliator dan
+     * mengeklik link sendiri — pesanan tetap teratribusi ke A.
+     */
+    public function test_buyer_turned_affiliate_cannot_void_the_original_referrer(): void
+    {
+        $original = $this->activeAffiliate();
+        $buyerUser = $this->customer();
+        $buyerAffiliate = Affiliate::create([
+            'user_id' => $buyerUser->id, 'code' => 'SELF01', 'status' => AffiliateStatus::Active,
+            'full_name' => 'Pembeli Nakal', 'verified_at' => now(),
+        ]);
+
+        // Klik link sendiri saat cookie A masih hidup → cookie tidak berubah.
+        $this->withCookie(AffiliateService::COOKIE, $original->code)
+            ->get('/?ref='.$buyerAffiliate->code)
+            ->assertCookieMissing(AffiliateService::COOKIE);
+
+        // Pesanan dibuat dengan cookie A → teratribusi ke A, bukan hangus.
+        $order = Order::create([
+            'order_number' => 'ORD-FIRSTCLICK', 'public_token' => Str::uuid(),
+            'user_id' => $buyerUser->id, 'customer_name' => 'Pembeli Nakal', 'customer_email' => 'nakal@test.id',
+            'status' => OrderStatus::AwaitingPayment->value,
+            'payment_status' => PaymentStatus::Unpaid->value,
+        ]);
+        request()->cookies->set(AffiliateService::COOKIE, $original->code);
+        app(AffiliateService::class)->attributeOrder($order);
+
+        $this->assertSame($original->id, $order->fresh()->affiliate_id);
+    }
+
     public function test_admin_can_verify_pending_affiliate(): void
     {
         $this->seed(RoleSeeder::class);
@@ -177,7 +254,7 @@ class AffiliateTest extends TestCase
 
     public function test_admin_reject_requires_reason_and_notifies_applicant(): void
     {
-        \Illuminate\Support\Facades\Notification::fake();
+        Notification::fake();
         $this->seed(RoleSeeder::class);
         $admin = User::factory()->create(['is_staff' => true, 'is_active' => true]);
         $admin->roles()->attach(Role::where('slug', 'admin-keuangan')->first());
@@ -199,23 +276,23 @@ class AffiliateTest extends TestCase
         $this->assertSame(AffiliateStatus::Rejected, $fresh->status);
         $this->assertSame('Foto selfie tidak memegang KTP.', $fresh->note);
 
-        \Illuminate\Support\Facades\Notification::assertSentTo(
+        Notification::assertSentTo(
             $affiliate->user,
-            \App\Notifications\SystemNotification::class,
+            SystemNotification::class,
             fn ($n) => str_contains($n->message, 'Foto selfie tidak memegang KTP.') && $n->email === true,
         );
     }
 
     public function test_rejected_applicant_can_reapply(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('local');
+        Storage::fake('local');
         $affiliate = $this->activeAffiliate([
             'status' => AffiliateStatus::Rejected,
             'note' => 'Data kurang lengkap',
             'ktp_photo_path' => 'affiliate-kyc/old-ktp.jpg',
             'selfie_photo_path' => 'affiliate-kyc/old-selfie.jpg',
         ]);
-        \Illuminate\Support\Facades\Storage::disk('local')->put('affiliate-kyc/old-ktp.jpg', 'x');
+        Storage::disk('local')->put('affiliate-kyc/old-ktp.jpg', 'x');
 
         $this->actingAs($affiliate->user)->post(route('account.affiliate.store'), [
             'full_name' => 'Budi Afiliasi',
@@ -223,8 +300,8 @@ class AffiliateTest extends TestCase
             'phone' => '08123456789',
             'address' => 'Jl. Test No. 1',
             'npwp' => '09.876.543.2-101.000',
-            'ktp_photo' => \Illuminate\Http\UploadedFile::fake()->image('ktp.jpg'),
-            'selfie_photo' => \Illuminate\Http\UploadedFile::fake()->image('selfie.jpg'),
+            'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
+            'selfie_photo' => UploadedFile::fake()->image('selfie.jpg'),
             'bank_name' => 'BCA',
             'bank_account_number' => '9876543210',
             'bank_account_holder' => 'Budi Afiliasi',
@@ -236,7 +313,7 @@ class AffiliateTest extends TestCase
         $this->assertSame(AffiliateStatus::Pending, $fresh->status);
         $this->assertNull($fresh->note);
         $this->assertEquals(1, Affiliate::where('user_id', $affiliate->user_id)->count());
-        \Illuminate\Support\Facades\Storage::disk('local')->assertMissing('affiliate-kyc/old-ktp.jpg');
+        Storage::disk('local')->assertMissing('affiliate-kyc/old-ktp.jpg');
     }
 
     public function test_pages_render(): void
@@ -281,7 +358,7 @@ class AffiliateTest extends TestCase
 
     public function test_customer_can_apply_as_affiliate(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('local');
+        Storage::fake('local');
         $user = $this->customer();
 
         $this->actingAs($user)->post(route('account.affiliate.store'), [
@@ -290,8 +367,8 @@ class AffiliateTest extends TestCase
             'phone' => '08123456789',
             'address' => 'Jl. Test No. 1',
             'npwp' => '09.876.543.2-101.000',
-            'ktp_photo' => \Illuminate\Http\UploadedFile::fake()->image('ktp.jpg'),
-            'selfie_photo' => \Illuminate\Http\UploadedFile::fake()->image('selfie.jpg'),
+            'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
+            'selfie_photo' => UploadedFile::fake()->image('selfie.jpg'),
             'bank_name' => 'BCA',
             'bank_account_number' => '9876543210',
             'bank_account_holder' => 'Budi Afiliasi',
@@ -305,7 +382,7 @@ class AffiliateTest extends TestCase
         // KYC photos stored privately.
         $this->assertNotNull($affiliate->ktp_photo_path);
         $this->assertNotNull($affiliate->selfie_photo_path);
-        \Illuminate\Support\Facades\Storage::disk('local')->assertExists($affiliate->ktp_photo_path);
+        Storage::disk('local')->assertExists($affiliate->ktp_photo_path);
     }
 
     public function test_application_requires_photos_but_not_npwp(): void
