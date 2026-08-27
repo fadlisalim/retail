@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AffiliateStatus;
-use App\Enums\CommissionStatus;
 use App\Models\Affiliate;
+use App\Models\Product;
 use App\Services\AffiliateService;
 use App\Services\NotificationService;
+use App\Services\WhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -17,8 +18,7 @@ class AffiliateController extends Controller
     public function __construct(
         private readonly AffiliateService $affiliates,
         private readonly NotificationService $notifications,
-    ) {
-    }
+    ) {}
 
     /** Public program landing page. */
     public function landing(): View
@@ -77,7 +77,7 @@ class AffiliateController extends Controller
         unset($data['agree']);
 
         // Store contact number in international format (08… → 62…).
-        $data['phone'] = app(\App\Services\WhatsAppService::class)->normalize($data['phone']) ?? $data['phone'];
+        $data['phone'] = app(WhatsAppService::class)->normalize($data['phone']) ?? $data['phone'];
 
         // KYC photos go on the PRIVATE disk (sensitive PII) — served only to admins.
         $data['ktp_photo_path'] = $request->file('ktp_photo')->store('affiliate-kyc', 'local');
@@ -142,6 +142,41 @@ class AffiliateController extends Controller
                 'available' => $affiliate->availableBalance(),
             ],
             'minPayout' => $this->affiliates->minPayout(),
+        ]);
+    }
+
+    /**
+     * Katalog komisi untuk afiliator: produk diurutkan dari fee tertinggi,
+     * lengkap dengan link referral per produk yang tinggal disalin.
+     */
+    public function products(Request $request): View|RedirectResponse
+    {
+        $affiliate = auth()->user()->affiliate;
+
+        if (! $affiliate || ! $affiliate->isActive()) {
+            return redirect()->route('account.affiliate.dashboard');
+        }
+
+        $q = trim((string) $request->query('q', ''));
+        $defaultRate = $this->affiliates->defaultRate();
+
+        $products = Product::query()
+            ->where('status', 'published')
+            ->where('is_purchasable', true)
+            ->where('requires_quotation', false)
+            ->when($q !== '', fn ($query) => $query->where('name', 'like', "%{$q}%"))
+            ->with(['brand:id,name', 'variants' => fn ($v) => $v->where('is_active', true)])
+            // Fee efektif = rate produk, atau rate default toko bila kosong.
+            ->orderByRaw('COALESCE(affiliate_rate, ?) DESC', [$defaultRate])
+            ->orderByDesc('price')
+            ->paginate(24)
+            ->withQueryString();
+
+        return view('affiliate.products', [
+            'affiliate' => $affiliate,
+            'products' => $products,
+            'defaultRate' => $defaultRate,
+            'q' => $q,
         ]);
     }
 

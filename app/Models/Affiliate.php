@@ -59,6 +59,12 @@ class Affiliate extends Model
         return url('/').'?ref='.$this->code;
     }
 
+    /** Link referral yang mendarat langsung di halaman satu produk. */
+    public function productReferralUrl(Product $product): string
+    {
+        return route('products.show', $product->slug).'?ref='.$this->code;
+    }
+
     /** Total commission that has cleared (order completed). */
     public function approvedTotal(): float
     {

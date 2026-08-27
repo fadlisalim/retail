@@ -228,6 +228,7 @@ Route::middleware(['auth', 'verified'])->prefix('akun')->name('account.')->group
 
     // Affiliate program
     Route::get('/afiliasi', [AffiliateController::class, 'dashboard'])->name('affiliate.dashboard');
+    Route::get('/afiliasi/produk', [AffiliateController::class, 'products'])->name('affiliate.products');
     Route::get('/afiliasi/daftar', [AffiliateController::class, 'create'])->name('affiliate.register');
     Route::post('/afiliasi/daftar', [AffiliateController::class, 'store'])->name('affiliate.store');
     Route::put('/afiliasi/rekening', [AffiliateController::class, 'updateBank'])->name('affiliate.bank');

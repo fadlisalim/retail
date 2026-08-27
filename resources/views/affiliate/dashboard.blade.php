@@ -46,6 +46,10 @@
                         </button>
                     </div>
                     <p class="mt-2 text-xs text-gray-400">Kode: <span class="font-mono font-semibold text-gray-600">{{ $affiliate->code }}</span> • Berlaku 30 hari sejak diklik.</p>
+                    <a href="{{ route('account.affiliate.products') }}"
+                       class="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline">
+                        Lihat Produk &amp; Komisi — fee per produk + link siap salin →
+                    </a>
                 </div>
             @endif
 
