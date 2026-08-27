@@ -33,9 +33,13 @@ class AuroraPowerSeeder extends Seeder
 {
     private const PLACEHOLDER = 'Menyusul dari pabrikan';
 
-    /** Harga ECHO baru (modal ÷ 0,8). Lihat catatan konvensi di docblock. */
+    /**
+     * Harga ECHO baru (modal ÷ 0,8). Lihat catatan konvensi di docblock.
+     * ECHO-1 dikecualikan atas keputusan pemilik (Agu 2026): dipatok
+     * Rp 6.950.000 — margin 19,3%, sedikit di bawah target 20%.
+     */
     private const ECHO_PRICES = [
-        'AURORA-ECHO-1' => 7050000,
+        'AURORA-ECHO-1' => 6950000,
         'AURORA-ECHO-2' => 10700000,
         'AURORA-ECHO-8' => 37450000,
         'AURORA-ECHO-16' => 66600000,

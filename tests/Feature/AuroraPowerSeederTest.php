@@ -136,7 +136,8 @@ class AuroraPowerSeederTest extends TestCase
 
         $this->seed(AuroraPowerSeeder::class);
 
-        $this->assertSame(7_050_000.0, (float) ProductVariant::where('sku', 'AURORA-ECHO-1')->firstOrFail()->price);
+        // ECHO-1 dipatok 6,95jt atas keputusan pemilik (margin 19,3%).
+        $this->assertSame(6_950_000.0, (float) ProductVariant::where('sku', 'AURORA-ECHO-1')->firstOrFail()->price);
         $this->assertSame(10_700_000.0, (float) ProductVariant::where('sku', 'AURORA-ECHO-2')->firstOrFail()->price);
         $this->assertSame(37_450_000.0, (float) ProductVariant::where('sku', 'AURORA-ECHO-8')->firstOrFail()->price);
         $this->assertSame(66_600_000.0, (float) ProductVariant::where('sku', 'AURORA-ECHO-16')->firstOrFail()->price);

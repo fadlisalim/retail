@@ -13,7 +13,8 @@ use Illuminate\Database\Seeder;
  * Baterai Lithium PJU Tenaga Surya 12,8V 60Ah — paket baterai untuk lampu PJU
  * tenaga surya (otomatis nyala/mati), sudah termasuk Solar Charge Controller +
  * LED Driver. Kondisi: Baru - Sisa Proyek (Clearance), garansi 6 bulan.
- * Harga coret Rp 2,7 jt → clearance Rp 1,95 jt. Tag "Termurah!".
+ * Harga coret Rp 2,7 jt → clearance Rp 1,25 jt (turun lagi Agu 2026 dari 1,95 jt).
+ * Tag "Termurah!".
  *
  * Idempotent (firstOrCreate): aman dijalankan ulang — tidak menimpa produk yang
  * sudah diedit admin, dan hanya mengisi stok awal saat produk pertama dibuat.
@@ -77,7 +78,7 @@ HTML;
                 'description' => $description,
                 'specifications' => $specifications,
                 'price' => 2700000,        // Harga coret
-                'sale_price' => 1950000,   // Harga clearance
+                'sale_price' => 1250000,   // Harga clearance (diturunkan lagi Agu 2026 dari 1,95 jt)
                 'unit' => 'unit',
                 'weight_grams' => 6000,
                 'length_cm' => 36,
@@ -93,9 +94,17 @@ HTML;
                 'status' => 'published',
                 'published_at' => now(),
                 'meta_title' => 'Baterai Lithium PJU Tenaga Surya 12,8V 60Ah — Clearance Termurah',
-                'meta_description' => 'Baterai Lithium 12,8V 60Ah untuk PJU tenaga surya otomatis, termasuk Solar Charge Controller + LED Driver. Baru sisa proyek, garansi 6 bulan. Rp 1,95 jt dari Rp 2,7 jt.',
+                'meta_description' => 'Baterai Lithium 12,8V 60Ah untuk PJU tenaga surya otomatis, termasuk Solar Charge Controller + LED Driver. Baru sisa proyek, garansi 6 bulan. Rp 1,25 jt dari Rp 2,7 jt.',
             ],
         );
+
+        // Penurunan harga Agustus 2026: baris LAMA yang masih di clearance
+        // 1,95 jt diturunkan ke 1,25 jt. Hanya menyasar nilai lama itu, jadi
+        // harga yang sudah diubah admin ke angka lain tidak tertimpa.
+        if (! $product->wasRecentlyCreated && (float) $product->sale_price === 1950000.0) {
+            $product->forceFill(['sale_price' => 1250000])->save();
+            $this->command?->info('Harga clearance diturunkan: Rp 1.950.000 → Rp 1.250.000.');
+        }
 
         // Kondisi "Baru - Sisa Proyek" — detail kondisi untuk halaman produk.
         $stockTarget = 20;
@@ -119,7 +128,7 @@ HTML;
         }
 
         $this->command?->info('Produk Baterai Lithium PJU 12,8V 60Ah '.($product->wasRecentlyCreated ? 'ditambahkan' : 'sudah ada, dilewati').' (slug: '.$product->slug.').');
-        $this->command?->warn('Harga: Rp 2.700.000 → Rp 1.950.000 • Stok awal '.$stockTarget.' • Tag: Termurah! • Kondisi: Baru - Sisa Proyek.');
+        $this->command?->warn('Harga: Rp 2.700.000 → Rp 1.250.000 • Stok awal '.$stockTarget.' • Tag: Termurah! • Kondisi: Baru - Sisa Proyek.');
         $this->command?->warn('Ingat: upload gambar produk lewat Admin → Produk → Edit, dan sesuaikan stok bila perlu.');
     }
 
