@@ -78,6 +78,85 @@
         </ol>
     </section>
 
+    {{-- Commission table: fee per produk, urut dari yang terbesar. --}}
+    <section class="mt-10" id="tabel-komisi">
+        @php
+            $isActiveAffiliate = $affiliate?->isActive() ?? false;
+            $fmtPct = fn ($r) => rtrim(rtrim(number_format((float) $r, 2, ',', '.'), '0'), ',').'%';
+        @endphp
+        <div class="mb-4 flex flex-wrap items-end justify-between gap-2">
+            <div>
+                <h2 class="text-xl font-bold text-gray-900">Tabel Komisi per Produk</h2>
+                <p class="text-sm text-gray-500">Diurutkan dari fee tertinggi.
+                    @if ($isActiveAffiliate) Salin link produknya dan mulai bagikan.
+                    @else Daftar jadi afiliator untuk mendapatkan link pribadi Anda. @endif
+                </p>
+            </div>
+        </div>
+        <div class="card overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                        <th class="px-4 py-3">Produk</th>
+                        <th class="px-3 py-3 text-right">Harga</th>
+                        <th class="px-3 py-3 text-center">Fee</th>
+                        <th class="px-3 py-3 text-right">Komisi/Unit</th>
+                        @if ($isActiveAffiliate)<th class="px-3 py-3 text-center">Link Anda</th>@endif
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach ($products as $product)
+                        @php
+                            $rate = $product->affiliate_rate !== null ? (float) $product->affiliate_rate : $defaultRate;
+                            $price = $product->effectivePrice();
+                            $activeVariants = $product->variants;
+                            $isVariable = $product->product_type === 'variable' && $activeVariants->isNotEmpty();
+                        @endphp
+                        <tr class="align-top hover:bg-gray-50">
+                            <td class="px-4 py-3">
+                                <div class="flex items-start gap-3">
+                                    <img src="{{ $product->primaryImageUrl() }}" alt="{{ $product->name }}"
+                                         class="h-12 w-12 flex-none rounded-lg object-cover">
+                                    <div class="min-w-0">
+                                        <a href="{{ route('products.show', $product->slug) }}" target="_blank"
+                                           class="line-clamp-2 font-medium text-gray-800 hover:text-brand-700">{{ $product->name }}</a>
+                                        <p class="text-xs text-gray-400">{{ $product->brand?->name ?? '—' }}</p>
+                                        @if ($isVariable)
+                                            <div class="mt-1 flex flex-wrap gap-1">
+                                                @foreach ($activeVariants as $variant)
+                                                    <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600"
+                                                          title="Komisi ≈ {{ rupiah(round((float) $variant->price * $rate / 100)) }}">
+                                                        {{ $variant->name }} · {{ rupiah($variant->price) }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap px-3 py-3 text-right text-gray-700">{{ $isVariable ? 'mulai ' : '' }}{{ rupiah($price) }}</td>
+                            <td class="px-3 py-3 text-center"><span class="badge bg-green-100 font-bold text-green-700">{{ $fmtPct($rate) }}</span></td>
+                            <td class="whitespace-nowrap px-3 py-3 text-right font-semibold text-gray-800">≈ {{ rupiah(round($price * $rate / 100)) }}{{ $isVariable ? '+' : '' }}</td>
+                            @if ($isActiveAffiliate)
+                                <td class="px-3 py-3 text-center">
+                                    <button type="button"
+                                            x-data="{ copied: false }"
+                                            @click="navigator.clipboard.writeText(@js($affiliate->productReferralUrl($product))); copied = true; setTimeout(() => copied = false, 1500)"
+                                            class="rounded-md bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-700 transition hover:bg-brand-100">
+                                        <span x-show="!copied">Salin Link</span>
+                                        <span x-show="copied" x-cloak>Tersalin ✓</span>
+                                    </button>
+                                </td>
+                            @endif
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-3">{{ $products->links() }}</div>
+        <p class="mt-2 text-xs text-gray-400">Perkiraan komisi = harga jual saat ini × fee. Komisi final mengikuti harga saat pesanan dan cair setelah pesanan selesai.</p>
+    </section>
+
     {{-- Terms --}}
     <section class="mt-10">
         <h2 class="mb-4 text-xl font-bold text-gray-900">Ketentuan Komisi</h2>

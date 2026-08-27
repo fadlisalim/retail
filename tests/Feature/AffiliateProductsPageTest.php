@@ -77,6 +77,28 @@ class AffiliateProductsPageTest extends TestCase
             ->assertDontSee('Inverter Proyek 40kW');
     }
 
+    /** Tabel komisi juga tampil di landing publik /afiliasi. */
+    public function test_the_public_landing_shows_the_commission_table(): void
+    {
+        $this->stockedProduct(5, ['name' => 'Produk Fee Jumbo', 'affiliate_rate' => 8, 'price' => 2_000_000, 'status' => 'published', 'published_at' => now()]);
+
+        // Tamu: tabel tampil tanpa tombol salin link.
+        $this->get(route('affiliate.landing'))
+            ->assertOk()
+            ->assertSee('Tabel Komisi per Produk')
+            ->assertSee('Produk Fee Jumbo')
+            ->assertSee('160.000')
+            ->assertDontSee('Salin Link');
+
+        // Afiliator aktif: tombol salin link pribadinya ikut tampil.
+        $affiliate = $this->activeAffiliate();
+        $this->actingAs($affiliate->user)
+            ->get(route('affiliate.landing'))
+            ->assertOk()
+            ->assertSee('Salin Link')
+            ->assertSee('?ref=KODE99', false);
+    }
+
     public function test_non_active_affiliates_are_sent_back_to_the_dashboard(): void
     {
         $user = User::factory()->create(['is_staff' => false, 'is_active' => true]);

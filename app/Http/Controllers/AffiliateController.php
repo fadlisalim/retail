@@ -20,15 +20,29 @@ class AffiliateController extends Controller
         private readonly NotificationService $notifications,
     ) {}
 
-    /** Public program landing page. */
-    public function landing(): View
+    /** Public program landing page — termasuk tabel fee komisi per produk. */
+    public function landing(Request $request): View
     {
         $affiliate = auth()->user()?->affiliate;
+        $defaultRate = $this->affiliates->defaultRate();
+
+        // Tabel komisi publik: urut fee tertinggi, jadi materi rekrutmen
+        // sekaligus katalog kerja untuk afiliator yang sudah aktif.
+        $products = Product::query()
+            ->where('status', 'published')
+            ->where('is_purchasable', true)
+            ->where('requires_quotation', false)
+            ->with(['brand:id,name', 'variants' => fn ($v) => $v->where('is_active', true)])
+            ->orderByRaw('COALESCE(affiliate_rate, ?) DESC', [$defaultRate])
+            ->orderByDesc('price')
+            ->paginate(15, ['*'], 'hal')
+            ->withQueryString();
 
         return view('affiliate.landing', [
             'affiliate' => $affiliate,
-            'defaultRate' => $this->affiliates->defaultRate(),
+            'defaultRate' => $defaultRate,
             'minPayout' => $this->affiliates->minPayout(),
+            'products' => $products,
         ]);
     }
 
