@@ -111,7 +111,11 @@
                     $snap = (array) $order->invoice->customer_snapshot;
                     $invoiceLocked = $order->isInvoiceLocked();
                 @endphp
-                <div class="card p-5" x-data="{ open: {{ $errors->has('invoice') || $errors->hasAny(['name', 'company', 'pic']) ? 'true' : 'false' }} }">
+                <div class="card p-5"
+                     x-data="{ open: {{ $errors->has('invoice') || $errors->hasAny(['name', 'company', 'pic', 'items']) ? 'true' : 'false' }},
+                               docItems: {{ json_encode(array_map(fn ($i) => ['name' => $i['name'], 'sku' => $i['sku'] ?? '', 'quantity' => $i['quantity'], 'unit_price' => $i['unit_price']], $order->invoice->lineItems())) }},
+                               rupiah(n) { return 'Rp ' + Number(n || 0).toLocaleString('id-ID'); },
+                               subtotal() { return this.docItems.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unit_price) || 0), 0); } }">
                     <div class="flex flex-wrap items-center justify-between gap-2">
                         <div>
                             <h2 class="font-semibold text-gray-900">Data Invoice &amp; Kuitansi</h2>
@@ -163,6 +167,35 @@
                                 <label class="input-label">Alamat Penagihan</label>
                                 <input name="address" maxlength="500" value="{{ old('address', $snap['address'] ?? '') }}" class="form-input">
                             </div>
+
+                            {{-- Baris barang di dokumen — order_items (stok/komisi) tidak berubah. --}}
+                            <div class="sm:col-span-2">
+                                <div class="mb-2 flex items-center justify-between">
+                                    <label class="input-label mb-0">Barang di Dokumen</label>
+                                    <button type="button" @click="docItems.push({ name: '', sku: '', quantity: 1, unit_price: 0 })"
+                                            class="text-sm font-medium text-brand-700 hover:underline">+ Tambah baris</button>
+                                </div>
+                                <div class="space-y-2">
+                                    <template x-for="(item, index) in docItems" :key="index">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <input :name="'items[' + index + '][name]'" x-model="item.name" required maxlength="191"
+                                                   placeholder="Uraian barang/jasa" class="form-input min-w-[200px] flex-1">
+                                            <input type="hidden" :name="'items[' + index + '][sku]'" :value="item.sku">
+                                            <input type="number" :name="'items[' + index + '][quantity]'" x-model.number="item.quantity"
+                                                   required min="1" class="form-input w-20 text-center" title="Qty">
+                                            <input type="number" :name="'items[' + index + '][unit_price]'" x-model.number="item.unit_price"
+                                                   required min="0" step="1" class="form-input w-36 text-right" title="Harga satuan">
+                                            <span class="w-28 text-right text-sm text-gray-600"
+                                                  x-text="rupiah((Number(item.quantity) || 0) * (Number(item.unit_price) || 0))"></span>
+                                            <button type="button" @click="docItems.splice(index, 1)" x-show="docItems.length > 1"
+                                                    class="rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-100">✕</button>
+                                        </div>
+                                    </template>
+                                </div>
+                                <p class="mt-2 text-right text-sm font-semibold text-gray-800">Subtotal dokumen: <span x-text="rupiah(subtotal())"></span></p>
+                                <p class="mt-1 text-xs text-gray-400">Mengubah baris ini hanya mengubah yang TERCETAK di invoice & kuitansi — item pesanan, stok, dan komisi tidak tersentuh. Total dokumen dihitung ulang (subtotal − diskon + ongkir + PPN dokumen).</p>
+                            </div>
+
                             <div class="flex gap-2 sm:col-span-2">
                                 <button type="submit" class="btn-primary">Simpan ke Invoice &amp; Kuitansi</button>
                                 <button type="button" @click="open = false" class="btn-outline">Batal</button>

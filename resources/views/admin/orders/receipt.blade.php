@@ -31,7 +31,11 @@
         </div>
 
         <dl class="mt-5 grid grid-cols-1 gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
-            @php($snap = (array) ($order->invoice?->customer_snapshot ?? []))
+            {{-- Bentuk BLOK, bukan @php(...) inline: inline akan salah
+                 berpasangan dengan @endphp blok di bawah dan menelan markup. --}}
+            @php
+                $snap = (array) ($order->invoice?->customer_snapshot ?? []);
+            @endphp
             <div class="flex gap-2">
                 <dt class="w-36 shrink-0 text-gray-500">Telah diterima dari</dt>
                 <dd class="font-semibold text-gray-900">
@@ -61,13 +65,26 @@
                     <th class="py-2 text-right">Jumlah</th>
                 </tr>
             </thead>
+            @php
+                // Kuitansi mengikuti DOKUMEN invoice (termasuk suntingan admin);
+                // pesanan tanpa invoice memakai angka pesanan apa adanya.
+                $docItems = $order->invoice?->lineItems() ?: $order->items->map(fn ($i) => [
+                    'name' => $i->name, 'sku' => $i->sku, 'quantity' => (int) $i->quantity,
+                    'unit_price' => (float) $i->unit_price, 'line_total' => (float) $i->line_total,
+                ])->all();
+                $docSubtotal = (float) ($order->invoice?->subtotal ?? $order->items_subtotal);
+                $docDiscount = (float) ($order->invoice?->discount ?? ((float) $order->product_discount + (float) $order->coupon_discount));
+                $docShipping = (float) ($order->invoice?->shipping ?? $order->shipping_cost);
+                $docTax = (float) ($order->invoice?->tax ?? $order->tax_amount);
+                $docTotal = (float) ($order->invoice?->total ?? $order->grand_total);
+            @endphp
             <tbody class="divide-y divide-gray-100">
-                @foreach ($order->items as $item)
+                @foreach ($docItems as $item)
                     <tr>
-                        <td class="py-2 pr-2 text-gray-800">{{ $item->name }}</td>
-                        <td class="py-2 text-center text-gray-600">{{ $item->quantity }}</td>
-                        <td class="py-2 text-right text-gray-600">{{ rupiah((float) $item->unit_price) }}</td>
-                        <td class="py-2 text-right font-medium text-gray-800">{{ rupiah((float) $item->line_total) }}</td>
+                        <td class="py-2 pr-2 text-gray-800">{{ $item['name'] }}</td>
+                        <td class="py-2 text-center text-gray-600">{{ $item['quantity'] }}</td>
+                        <td class="py-2 text-right text-gray-600">{{ rupiah((float) $item['unit_price']) }}</td>
+                        <td class="py-2 text-right font-medium text-gray-800">{{ rupiah((float) $item['line_total']) }}</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -75,24 +92,24 @@
 
         <div class="mt-4 flex justify-end">
             <dl class="w-full max-w-xs space-y-1 text-sm">
-                <div class="flex justify-between"><dt class="text-gray-500">Subtotal</dt><dd>{{ rupiah((float) $order->items_subtotal) }}</dd></div>
-                @if ((float) $order->product_discount + (float) $order->coupon_discount > 0)
-                    <div class="flex justify-between"><dt class="text-gray-500">Diskon</dt><dd class="text-red-600">- {{ rupiah((float) $order->product_discount + (float) $order->coupon_discount) }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Subtotal</dt><dd>{{ rupiah($docSubtotal) }}</dd></div>
+                @if ($docDiscount > 0)
+                    <div class="flex justify-between"><dt class="text-gray-500">Diskon</dt><dd class="text-red-600">- {{ rupiah($docDiscount) }}</dd></div>
                 @endif
-                @if ((float) $order->shipping_cost > 0)
-                    <div class="flex justify-between"><dt class="text-gray-500">Ongkos kirim</dt><dd>{{ rupiah((float) $order->shipping_cost) }}</dd></div>
+                @if ($docShipping > 0)
+                    <div class="flex justify-between"><dt class="text-gray-500">Ongkos kirim</dt><dd>{{ rupiah($docShipping) }}</dd></div>
                 @endif
-                @if ((float) $order->tax_amount > 0)
-                    <div class="flex justify-between"><dt class="text-gray-500">PPN</dt><dd>{{ rupiah((float) $order->tax_amount) }}</dd></div>
+                @if ($docTax > 0)
+                    <div class="flex justify-between"><dt class="text-gray-500">PPN</dt><dd>{{ rupiah($docTax) }}</dd></div>
                 @endif
                 <div class="flex justify-between border-t border-gray-300 pt-2 text-base font-bold text-gray-900">
-                    <dt>Total dibayar</dt><dd>{{ rupiah((float) $order->grand_total) }}</dd>
+                    <dt>Total dibayar</dt><dd>{{ rupiah($docTotal) }}</dd>
                 </div>
             </dl>
         </div>
 
         <p class="mt-5 rounded-lg bg-gray-50 p-3 text-sm text-gray-700 print:bg-white print:px-0">
-            Terbilang: <span class="font-semibold">{{ \App\Support\Terbilang::rupiah((float) $order->grand_total) }}</span>
+            Terbilang: <span class="font-semibold">{{ \App\Support\Terbilang::rupiah($docTotal) }}</span>
         </p>
 
         <div class="mt-8 flex items-end justify-between">

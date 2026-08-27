@@ -83,6 +83,47 @@ class InvoiceEditTest extends TestCase
             ->assertSee('u.p. Ibu Sari (Finance)');
     }
 
+    /** Baris barang dokumen bisa disunting tanpa menyentuh order_items. */
+    public function test_document_line_items_can_be_edited_without_touching_the_order(): void
+    {
+        $order = $this->paidOrder();
+        $order->items()->create([
+            'product_id' => null, 'sku' => 'MANUAL', 'name' => 'Inverter 5kW',
+            'unit_price' => 5_000_000, 'quantity' => 1, 'line_total' => 5_000_000,
+        ]);
+
+        $this->actingAs($this->sales())
+            ->put(route('admin.orders.invoice.update', $order), [
+                'name' => 'Budi Perorangan',
+                'items' => [
+                    ['name' => 'Inverter Hybrid 5kW (termasuk instalasi)', 'quantity' => 1, 'unit_price' => 4_500_000],
+                    ['name' => 'Jasa komisioning & training', 'quantity' => 2, 'unit_price' => 250_000],
+                ],
+            ])->assertRedirect()->assertSessionHas('success');
+
+        $invoice = $order->fresh()->invoice;
+        // Dokumen berubah: 4,5jt + 2×250rb = 5jt.
+        $this->assertCount(2, $invoice->lineItems());
+        $this->assertEquals(5_000_000, (float) $invoice->subtotal);
+        $this->assertEquals(5_000_000, (float) $invoice->total);
+        // Item pesanan asli tidak tersentuh.
+        $this->assertSame('Inverter 5kW', $order->items()->first()->name);
+
+        // Ketiga dokumen menampilkan baris hasil suntingan.
+        $this->get(route('invoices.show', $invoice->public_token))
+            ->assertOk()
+            ->assertSee('Inverter Hybrid 5kW (termasuk instalasi)')
+            ->assertSee('Jasa komisioning')
+            ->assertDontSee('>Inverter 5kW<', false);
+
+        $admin = User::factory()->create(['is_staff' => true, 'is_active' => true]);
+        $admin->roles()->attach(Role::where('slug', 'super-admin')->first());
+        $this->actingAs($admin)
+            ->get(route('admin.orders.receipt', $order))
+            ->assertOk()
+            ->assertSee('Jasa komisioning');
+    }
+
     public function test_documents_are_locked_once_the_order_is_confirmed_done(): void
     {
         $order = $this->paidOrder(OrderStatus::Completed->value);

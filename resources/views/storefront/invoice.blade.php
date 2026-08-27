@@ -96,15 +96,15 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                        @foreach ($order?->items ?? [] as $item)
+                        @foreach ($invoice->lineItems() as $item)
                             <tr>
                                 <td class="py-3 pr-2">
-                                    <p class="font-medium text-gray-800">{{ $item->name }}</p>
-                                    <p class="text-xs text-gray-400">{{ $item->sku }}</p>
+                                    <p class="font-medium text-gray-800">{{ $item['name'] }}</p>
+                                    @if (! empty($item['sku']))<p class="text-xs text-gray-400">{{ $item['sku'] }}</p>@endif
                                 </td>
-                                <td class="px-2 py-3 text-center text-gray-600">{{ $item->quantity }}</td>
-                                <td class="px-2 py-3 text-right text-gray-700">{{ rupiah($item->unit_price) }}</td>
-                                <td class="py-3 pl-2 text-right font-medium text-gray-800">{{ rupiah($item->line_total) }}</td>
+                                <td class="px-2 py-3 text-center text-gray-600">{{ $item['quantity'] }}</td>
+                                <td class="px-2 py-3 text-right text-gray-700">{{ rupiah($item['unit_price']) }}</td>
+                                <td class="py-3 pl-2 text-right font-medium text-gray-800">{{ rupiah($item['line_total']) }}</td>
                             </tr>
                         @endforeach
                     </tbody>

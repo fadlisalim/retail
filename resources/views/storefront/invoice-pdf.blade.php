@@ -108,15 +108,15 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($order?->items ?? [] as $item)
+                @foreach ($invoice->lineItems() as $item)
                     <tr>
                         <td>
-                            {{ $item->name }}
-                            <div class="sku">{{ $item->sku }}</div>
+                            {{ $item['name'] }}
+                            @if (! empty($item['sku']))<div class="sku">{{ $item['sku'] }}</div>@endif
                         </td>
-                        <td class="qty">{{ $item->quantity }}</td>
-                        <td class="num">{{ rupiah($item->unit_price) }}</td>
-                        <td class="num">{{ rupiah($item->line_total) }}</td>
+                        <td class="qty">{{ $item['quantity'] }}</td>
+                        <td class="num">{{ rupiah($item['unit_price']) }}</td>
+                        <td class="num">{{ rupiah($item['line_total']) }}</td>
                     </tr>
                 @endforeach
             </tbody>

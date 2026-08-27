@@ -131,21 +131,50 @@ class OrderController extends Controller
             'email' => ['nullable', 'email', 'max:191'],
             'address' => ['nullable', 'string', 'max:500'],
             'npwp' => ['nullable', 'string', 'max:40'],
+            // Baris barang di DOKUMEN — order_items (stok/komisi) tidak disentuh.
+            'items' => ['sometimes', 'array', 'min:1'],
+            'items.*.name' => ['required_with:items', 'string', 'max:191'],
+            'items.*.sku' => ['nullable', 'string', 'max:64'],
+            'items.*.quantity' => ['required_with:items', 'integer', 'min:1'],
+            'items.*.unit_price' => ['required_with:items', 'numeric', 'min:0'],
         ]);
 
-        $invoice->update([
+        $update = [
             'customer_snapshot' => array_merge((array) $invoice->customer_snapshot, [
                 'name' => $data['name'],
-                'company' => $data['company'] ?: null,
-                'pic' => $data['pic'] ?: null,
-                'phone' => $data['phone'] ?: null,
-                'email' => $data['email'] ?: null,
-                'address' => $data['address'] ?: null,
-                'npwp' => $data['npwp'] ?: null,
+                'company' => ($data['company'] ?? null) ?: null,
+                'pic' => ($data['pic'] ?? null) ?: null,
+                'phone' => ($data['phone'] ?? null) ?: null,
+                'email' => ($data['email'] ?? null) ?: null,
+                'address' => ($data['address'] ?? null) ?: null,
+                'npwp' => ($data['npwp'] ?? null) ?: null,
             ]),
-        ]);
+        ];
 
-        return back()->with('success', 'Data invoice & kuitansi diperbarui.');
+        if (array_key_exists('items', $data)) {
+            $snapshot = collect($data['items'])->map(fn (array $row) => [
+                'name' => $row['name'],
+                'sku' => $row['sku'] ?? null,
+                'quantity' => (int) $row['quantity'],
+                'unit_price' => round((float) $row['unit_price'], 2),
+                'line_total' => round((int) $row['quantity'] * (float) $row['unit_price'], 2),
+            ])->values()->all();
+
+            // Total dokumen mengikuti baris baru; diskon/ongkir/PPN dokumen tetap.
+            $subtotal = array_sum(array_column($snapshot, 'line_total'));
+            $update['items_snapshot'] = $snapshot;
+            $update['subtotal'] = $subtotal;
+            $update['total'] = max(0, round($subtotal - (float) $invoice->discount + (float) $invoice->shipping + (float) $invoice->tax, 2));
+        }
+
+        $invoice->update($update);
+
+        $message = 'Data invoice & kuitansi diperbarui.';
+        if (isset($update['total']) && round((float) $update['total']) !== round((float) $order->grand_total)) {
+            $message .= ' Perhatian: total dokumen ('.rupiah((float) $update['total']).') kini berbeda dari total pesanan ('.rupiah((float) $order->grand_total).').';
+        }
+
+        return back()->with('success', $message);
     }
 
     /** Payment receipt (kuitansi) — print-friendly, paid orders only. */
