@@ -124,6 +124,17 @@ class AffiliateProductsPageTest extends TestCase
             ->assertDontSee('Produk Peringkat 1');
     }
 
+    /** PDF panduan tersedia dan tombol unduhnya tampil di landing. */
+    public function test_the_guide_pdf_exists_and_is_linked_from_the_landing(): void
+    {
+        $this->assertFileExists(public_path('panduan-afiliator.pdf'));
+
+        $this->get(route('affiliate.landing'))
+            ->assertOk()
+            ->assertSee('Unduh Panduan')
+            ->assertSee('panduan-afiliator.pdf');
+    }
+
     public function test_non_active_affiliates_are_sent_back_to_the_dashboard(): void
     {
         $user = User::factory()->create(['is_staff' => false, 'is_active' => true]);

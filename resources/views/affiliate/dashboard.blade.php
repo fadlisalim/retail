@@ -46,10 +46,16 @@
                         </button>
                     </div>
                     <p class="mt-2 text-xs text-gray-400">Kode: <span class="font-mono font-semibold text-gray-600">{{ $affiliate->code }}</span> • Berlaku 30 hari sejak diklik.</p>
-                    <a href="{{ route('account.affiliate.products') }}"
-                       class="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline">
-                        Lihat Produk &amp; Komisi — fee per produk + link siap salin →
-                    </a>
+                    <div class="mt-3 flex flex-wrap gap-x-5 gap-y-1">
+                        <a href="{{ route('account.affiliate.products') }}"
+                           class="inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline">
+                            Lihat Produk &amp; Komisi — fee per produk + link siap salin →
+                        </a>
+                        <a href="{{ asset('panduan-afiliator.pdf') }}" target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline">
+                            📄 Unduh Panduan Afiliator (PDF)
+                        </a>
+                    </div>
                 </div>
             @endif
 

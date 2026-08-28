@@ -22,6 +22,10 @@
                     <a href="{{ route('register') }}" class="btn-accent">Daftar Akun Dulu</a>
                     <a href="{{ route('login') }}" class="inline-flex items-center justify-center rounded-lg border border-white/70 bg-transparent px-5 py-2.5 font-semibold text-white transition hover:bg-white/10">Masuk</a>
                 @endauth
+                <a href="{{ asset('panduan-afiliator.pdf') }}" target="_blank" rel="noopener"
+                   class="inline-flex items-center gap-2 rounded-lg border border-white/70 bg-transparent px-5 py-2.5 font-semibold text-white transition hover:bg-white/10">
+                    📄 Unduh Panduan (PDF)
+                </a>
             </div>
         </div>
     </section>
