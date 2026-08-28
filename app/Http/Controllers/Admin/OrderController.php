@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AffiliateStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Affiliate;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -33,6 +35,8 @@ class OrderController extends Controller
                 ->orderBy('name')
                 ->get(['id', 'name', 'sku', 'price', 'sale_price', 'product_type']),
             'channels' => Order::CHANNELS,
+            'affiliates' => Affiliate::where('status', AffiliateStatus::Active->value)
+                ->orderBy('full_name')->get(['id', 'full_name', 'code']),
         ]);
     }
 
@@ -45,6 +49,9 @@ class OrderController extends Controller
             'customer_phone' => ['required', 'string', 'max:30'],
             'customer_email' => ['nullable', 'email', 'max:191'],
             'create_customer' => ['nullable', 'boolean'],
+            // Kredit komisi untuk penjualan yang datang lewat afiliator
+            // (order WA/offline tidak membawa cookie atribusi).
+            'affiliate_id' => ['nullable', 'exists:affiliates,id'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['nullable', 'exists:products,id'],
             'items.*.variant_id' => ['nullable', 'exists:product_variants,id'],

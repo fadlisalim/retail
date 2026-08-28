@@ -2,10 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AffiliateStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\StockMovementType;
+use App\Models\Affiliate;
 use App\Models\Order;
+use App\Models\ProductVariant;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\StockService;
 use App\Support\Terbilang;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -74,6 +79,54 @@ class ManualOrderTest extends TestCase
             && str_contains($req['data'][0]['message'], 'Terima kasih')
             && str_contains($req['data'][0]['message'], $order->order_number));
         $this->assertNotNull($order->fresh()->thanks_sent_at);
+    }
+
+    /** Pesanan manual bisa dikreditkan ke afiliator — komisi tercatat saat dibayar. */
+    public function test_manual_order_credits_the_chosen_affiliate(): void
+    {
+        $affUser = $this->customer();
+        $affiliate = Affiliate::create([
+            'user_id' => $affUser->id, 'code' => 'MANUAL1', 'status' => AffiliateStatus::Active,
+            'full_name' => 'Afiliator WA', 'verified_at' => now(),
+        ]);
+        $product = $this->stockedProduct(5, ['affiliate_rate' => 5, 'price' => 10_000_000]);
+
+        $this->actingAs($this->admin())->post(route('admin.orders.store'), [
+            'channel' => 'whatsapp', 'customer_name' => 'Pembeli WA', 'customer_phone' => '08988877766',
+            'affiliate_id' => $affiliate->id,
+            'items' => [['product_id' => $product->id, 'quantity' => 1, 'unit_price' => '']],
+            'mark_paid' => 1,
+        ])->assertRedirect();
+
+        $order = Order::latest('id')->first();
+        $this->assertSame($affiliate->id, $order->affiliate_id);
+        // 5% × 10jt = 500rb, status tertahan sampai pesanan Selesai.
+        $commission = $affiliate->commissions()->first();
+        $this->assertNotNull($commission);
+        $this->assertEquals(500_000, (float) $commission->amount);
+    }
+
+    /** Guard self-referral tetap berlaku di jalur manual. */
+    public function test_manual_order_never_credits_an_affiliate_for_their_own_purchase(): void
+    {
+        $affUser = $this->customer(['phone' => '628111222333', 'whatsapp' => '628111222333']);
+        $affiliate = Affiliate::create([
+            'user_id' => $affUser->id, 'code' => 'SELFMN', 'status' => AffiliateStatus::Active,
+            'full_name' => 'Afiliator Nakal', 'verified_at' => now(),
+        ]);
+        $product = $this->stockedProduct(5, ['affiliate_rate' => 5, 'price' => 1_000_000]);
+
+        // Nomor WA pembeli = nomor akun si afiliator → resolveCustomer menemukan
+        // user yang sama → kredit afiliator digugurkan.
+        $this->actingAs($this->admin())->post(route('admin.orders.store'), [
+            'channel' => 'whatsapp', 'customer_name' => 'Afiliator Nakal', 'customer_phone' => '08111222333',
+            'affiliate_id' => $affiliate->id,
+            'items' => [['product_id' => $product->id, 'quantity' => 1, 'unit_price' => '']],
+            'mark_paid' => 1,
+        ])->assertRedirect();
+
+        $this->assertNull(Order::latest('id')->first()->affiliate_id);
+        $this->assertSame(0, $affiliate->commissions()->count());
     }
 
     public function test_thank_you_is_never_sent_twice(): void
@@ -206,12 +259,12 @@ class ManualOrderTest extends TestCase
     {
         $admin = $this->admin();
         $product = $this->stockedProduct(0, ['name' => 'Panel Bekas Sisa Proyek', 'product_type' => 'variable', 'price' => 300000]);
-        $variant = \App\Models\ProductVariant::create([
+        $variant = ProductVariant::create([
             'product_id' => $product->id, 'sku' => 'PANEL-BEKAS-100', 'name' => '100 Wp',
             'price' => 340000, 'is_active' => true,
         ]);
-        app(\App\Services\StockService::class)->adjust(
-            $product, $variant, 20, \App\Enums\StockMovementType::Purchase, note: 'stok awal varian',
+        app(StockService::class)->adjust(
+            $product, $variant, 20, StockMovementType::Purchase, note: 'stok awal varian',
         );
 
         // Without a variant the form must refuse, not blow up.
@@ -240,7 +293,7 @@ class ManualOrderTest extends TestCase
         $admin = $this->admin();
         $productA = $this->stockedProduct(5, ['price' => 100000]);
         $productB = $this->stockedProduct(5, ['price' => 100000]);
-        $foreign = \App\Models\ProductVariant::create([
+        $foreign = ProductVariant::create([
             'product_id' => $productB->id, 'sku' => 'LAIN-1', 'name' => 'Varian Lain', 'price' => 1, 'is_active' => true,
         ]);
 
@@ -256,7 +309,7 @@ class ManualOrderTest extends TestCase
     {
         $admin = $this->admin();
         $product = $this->stockedProduct(0, ['product_type' => 'variable', 'price' => 100000]);
-        $variant = \App\Models\ProductVariant::create([
+        $variant = ProductVariant::create([
             'product_id' => $product->id, 'sku' => 'VAR-1', 'name' => '50 Wp', 'price' => 100000, 'is_active' => true,
         ]);
 

@@ -178,6 +178,16 @@
             <div class="grid gap-4 sm:grid-cols-2">
                 <x-form.input name="payment_method" label="Metode Pembayaran" :value="old('payment_method')" hint="Contoh: Tokopedia (BCA VA), Transfer BNI, Tunai" />
                 <x-form.input name="shipping_method" label="Pengiriman" :value="old('shipping_method')" hint="Contoh: JNE REG, Ambil di gudang" />
+                <div class="sm:col-span-2">
+                    <label class="input-label" for="affiliate_id">Afiliator <span class="text-gray-400">(opsional)</span></label>
+                    <select name="affiliate_id" id="affiliate_id" class="form-select">
+                        <option value="">— Tanpa afiliator —</option>
+                        @foreach ($affiliates as $aff)
+                            <option value="{{ $aff->id }}" @selected((string) old('affiliate_id') === (string) $aff->id)>{{ $aff->full_name }} ({{ $aff->code }})</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-400">Pesanan WA/offline tidak membawa cookie referral — pilih afiliatornya di sini agar komisinya tetap tercatat (masuk saat dibayar, cair saat pesanan Selesai).</p>
+                </div>
                 <div class="sm:col-span-2 space-y-2 border-t border-gray-100 pt-3">
                     <label class="flex items-center gap-2 text-sm text-gray-700">
                         <input type="hidden" name="mark_paid" value="0">

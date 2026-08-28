@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\AffiliateStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
+use App\Models\Affiliate;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Product;
@@ -41,11 +43,23 @@ class ManualOrderService
         return DB::transaction(function () use ($data, $items, $actor) {
             $customer = $this->resolveCustomer($data);
 
+            // Kredit afiliator untuk penjualan WA/offline: admin memilih
+            // afiliatornya secara manual. Guard self-referral tetap berlaku —
+            // afiliator tidak bisa dikreditkan atas pembeliannya sendiri.
+            $affiliate = ! empty($data['affiliate_id'])
+                ? Affiliate::where('id', $data['affiliate_id'])
+                    ->where('status', AffiliateStatus::Active->value)->first()
+                : null;
+            if ($affiliate && $customer && $affiliate->user_id === $customer->id) {
+                $affiliate = null;
+            }
+
             $order = Order::create([
                 'order_number' => $this->generateOrderNumber(),
                 'public_token' => (string) Str::uuid(),
                 'channel' => $data['channel'],
                 'external_reference' => $data['external_reference'] ?? null,
+                'affiliate_id' => $affiliate?->id,
                 'user_id' => $customer?->id,
                 'created_by' => $actor?->id,
                 'customer_name' => $data['customer_name'],
