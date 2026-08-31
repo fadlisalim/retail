@@ -2,6 +2,13 @@
     $company = $invoice->company_snapshot ?? [];
     $customer = $invoice->customer_snapshot ?? [];
     $order = $invoice->order;
+    // Rekening pembayaran hanya relevan selama tagihan belum lunas penuh.
+    $awaitingPayment = $order && ! in_array($order->payment_status, [
+        \App\Enums\PaymentStatus::Paid,
+        \App\Enums\PaymentStatus::Refunded,
+        \App\Enums\PaymentStatus::PartiallyRefunded,
+    ], true);
+    $bankAccount = trim((string) setting('payment.bank_account', ''));
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -80,7 +87,7 @@
         {{-- Bill to --}}
         <table>
             <tr>
-                <td style="width: 55%;">
+                <td style="width: 55%; vertical-align: top;">
                     <div class="billto-label">Ditagihkan Kepada</div>
                     @if (! empty($customer['company']))
                         <div style="font-weight: bold;">{{ $customer['company'] }}</div>
@@ -94,6 +101,15 @@
                     @if (! empty($customer['email']))<div class="small muted">{{ $customer['email'] }}</div>@endif
                     @if (! empty($customer['npwp']))<div class="small muted">NPWP: {{ $customer['npwp'] }}</div>@endif
                 </td>
+                @if ($awaitingPayment && $bankAccount !== '')
+                    <td style="width: 45%; vertical-align: top;">
+                        <div style="border: 1px solid #99e0d2; background: #f0faf7; border-radius: 6px; padding: 10px 12px;">
+                            <div class="billto-label" style="color: #0f766e;">Pembayaran Transfer Ke</div>
+                            <div class="small" style="font-weight: bold; white-space: pre-line;">{{ $bankAccount }}</div>
+                            <div class="small muted" style="margin-top: 6px; font-size: 10px;">Mohon konfirmasi setelah transfer &amp; sertakan nomor invoice pada berita transfer.</div>
+                        </div>
+                    </td>
+                @endif
             </tr>
         </table>
 

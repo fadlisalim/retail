@@ -7,6 +7,13 @@
     $company = $invoice->company_snapshot ?? [];
     $customer = $invoice->customer_snapshot ?? [];
     $order = $invoice->order;
+    // Rekening pembayaran hanya relevan selama tagihan belum lunas penuh.
+    $awaitingPayment = $order && ! in_array($order->payment_status, [
+        \App\Enums\PaymentStatus::Paid,
+        \App\Enums\PaymentStatus::Refunded,
+        \App\Enums\PaymentStatus::PartiallyRefunded,
+    ], true);
+    $bankAccount = trim((string) setting('payment.bank_account', ''));
     $badgeColors = [
         'gray' => 'bg-gray-100 text-gray-700',
         'amber' => 'bg-amber-100 text-amber-700',
@@ -82,6 +89,13 @@
                     @if (! empty($customer['email']))<p class="text-sm text-gray-500">{{ $customer['email'] }}</p>@endif
                     @if (! empty($customer['npwp']))<p class="text-sm text-gray-500">NPWP: {{ $customer['npwp'] }}</p>@endif
                 </div>
+                @if ($awaitingPayment && $bankAccount !== '')
+                    <div class="rounded-lg border border-brand-100 bg-brand-50/50 p-4 sm:justify-self-end sm:text-right">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-brand-700">Pembayaran Transfer Ke</p>
+                        <p class="mt-1 whitespace-pre-line text-sm font-medium text-gray-800">{{ $bankAccount }}</p>
+                        <p class="mt-2 text-xs text-gray-500">Mohon konfirmasi setelah transfer &amp; sertakan nomor invoice pada berita transfer.</p>
+                    </div>
+                @endif
             </div>
 
             {{-- Items --}}
