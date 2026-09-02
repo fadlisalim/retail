@@ -181,7 +181,8 @@ Route::get('/webhook/wablas', fn () => response('Webhook Wablas aktif ✅ — en
 */
 Route::middleware('guest')->group(function () {
     Route::get('/masuk', [LoginController::class, 'create'])->name('login');
-    Route::post('/masuk', [LoginController::class, 'store'])->middleware('throttle:10,1');
+    // Limiter 'login' (AppServiceProvider): 8/menit per email+IP, 40/menit per IP.
+    Route::post('/masuk', [LoginController::class, 'store'])->middleware('throttle:login');
     Route::get('/daftar', [RegisterController::class, 'create'])->name('register');
     Route::post('/daftar', [RegisterController::class, 'store'])->middleware('throttle:10,1');
 

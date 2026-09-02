@@ -17,6 +17,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Di belakang reverse proxy / CDN (LiteSpeed, Cloudflare) IP asli
+        // pengunjung datang lewat X-Forwarded-For. Tanpa trusted proxy semua
+        // throttle per-IP menghitung IP si proxy — satu jatah (mis. 10 login/
+        // menit) dibagi SELURUH pengunjung situs → 429 acak. Set
+        // TRUSTED_PROXIES di .env ('*' atau daftar IP dipisah koma).
+        $proxies = trim((string) env('TRUSTED_PROXIES', ''));
+        if ($proxies !== '') {
+            $middleware->trustProxies(at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
+        }
+
         // Every web request carries a stable guest token for cart/wishlist merging.
         $middleware->web(append: [
             SyncGuestSession::class,

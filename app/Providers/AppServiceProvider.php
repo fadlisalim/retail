@@ -8,9 +8,13 @@ use App\Services\SettingService;
 use App\Support\Rbac;
 use App\View\Composers\AdminMenuComposer;
 use App\View\Composers\StorefrontComposer;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,5 +42,16 @@ class AppServiceProvider extends ServiceProvider
 
         // "Needs attention" counts for the admin sidebar badges.
         View::composer('layouts.admin', AdminMenuComposer::class);
+
+        // Login: ketat per akun (anti brute-force), longgar per IP — kantor/
+        // warnet yang berbagi satu IP tidak saling mengunci saat login.
+        RateLimiter::for('login', function (Request $request) {
+            $email = Str::lower((string) $request->input('email'));
+
+            return [
+                Limit::perMinute(8)->by('login:e|'.$email.'|'.$request->ip()),
+                Limit::perMinute(40)->by('login:ip|'.$request->ip()),
+            ];
+        });
     }
 }
