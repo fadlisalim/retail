@@ -83,6 +83,14 @@
                         <td class="px-4 py-3">
                             <div class="text-gray-800">{{ $order->customer_name ?? $order->user?->name ?? '—' }}</div>
                             <div class="text-xs text-gray-400">{{ $order->customer_email }}</div>
+                            @php
+                                $waPhone = app(\App\Services\WhatsAppService::class)->normalize($order->customer_phone);
+                            @endphp
+                            @if ($waPhone)
+                                <a href="https://wa.me/{{ $waPhone }}" target="_blank" rel="noopener"
+                                   class="mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-green-600 hover:underline"
+                                   title="Buka WhatsApp pelanggan">💬 {{ $order->customer_phone }}</a>
+                            @endif
                         </td>
                         <td class="px-4 py-3">
                             <span class="badge {{ $badgeClasses[$order->status->color()] ?? $badgeClasses['gray'] }}">{{ $order->status->label() }}</span>

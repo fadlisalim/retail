@@ -11,6 +11,7 @@ use App\Services\CheckoutService;
 use App\Services\NotificationService;
 use App\Services\PaymentManager;
 use App\Services\ShippingService;
+use App\Services\WhatsAppService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -92,8 +93,21 @@ class CheckoutController extends Controller
             return back()->withInput()->with('error', 'Opsi pengiriman tidak valid. Silakan pilih ulang.');
         }
 
+        // Nomor WA pelanggan disimpan dalam format internasional (08… → 62…)
+        // supaya tombol kontak admin, WA Chat, dan notifikasi Wablas konsisten.
+        $validated = $request->validated();
+        $normalizedPhone = app(WhatsAppService::class)->normalize($validated['customer_phone'] ?? null);
+        $validated['customer_phone'] = $normalizedPhone ?? $validated['customer_phone'];
+
+        // Akun lama / login sosial bisa belum punya nomor WA di profil —
+        // lengkapi dari checkout supaya notifikasi Wablas & kontak tim jalan.
+        $user = $request->user();
+        if ($normalizedPhone && ! $user->whatsapp) {
+            $user->forceFill(['whatsapp' => $normalizedPhone, 'phone' => $user->phone ?: $normalizedPhone])->save();
+        }
+
         // Copy the saved address into the order's shipping details.
-        $data = $request->validated() + [
+        $data = $validated + [
             'recipient_name' => $address->recipient_name,
             'recipient_phone' => $address->phone,
             'company_name' => $address->company_name,

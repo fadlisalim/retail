@@ -218,6 +218,23 @@
                             <div class="pt-1"><a href="{{ route('admin.customers.show', $order->user) }}" class="text-brand-700 hover:underline">Lihat profil pelanggan &rarr;</a></div>
                         @endif
                     </dl>
+                    {{-- Kontak cepat via WhatsApp — nomor dari checkout (wajib diisi pembeli). --}}
+                    @php
+                        $waPhone = app(\App\Services\WhatsAppService::class)->normalize($order->customer_phone);
+                    @endphp
+                    @if ($waPhone)
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <a href="{{ route('admin.wachat.index', ['phone' => $waPhone]) }}"
+                               class="inline-flex items-center gap-1.5 rounded-lg bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-100">
+                                💬 Chat di WA Chat
+                            </a>
+                            <a href="https://wa.me/{{ $waPhone }}?text={{ rawurlencode('Halo Kak '.($order->customer_name ?? '').', kami dari '.brand().' terkait pesanan '.$order->order_number.'. ') }}"
+                               target="_blank" rel="noopener"
+                               class="inline-flex items-center gap-1.5 rounded-lg bg-green-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-green-600">
+                                Buka WhatsApp ↗
+                            </a>
+                        </div>
+                    @endif
                 </div>
                 <div class="card p-5">
                     <h2 class="mb-3 font-semibold text-gray-900">Alamat Pengiriman</h2>
