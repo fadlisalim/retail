@@ -20,7 +20,6 @@ class MountingKabelSeederTest extends TestCase
 
     /** slug => [modal, harga, stok, markup minimal]. */
     private const ROWS = [
-        'cable-clip-rekasurya-mr-is-cc' => [2315.58, 4000, 182, 1.7],
         'end-clamp-antai-cg-018-35-40' => [8237.38, 14100, 313, 1.7],
         'mid-clamp-antai-gn-003' => [7924.67, 13500, 1077, 1.7],
         'grounding-clip-antai-at-ec-01' => [1198.97, 2100, 50, 1.7],
@@ -151,7 +150,9 @@ class MountingKabelSeederTest extends TestCase
 
         $this->assertSame(15000.0, (float) $p->fresh()->price);
         $this->assertSame(313, (int) $p->fresh()->stock);
-        $this->assertSame(10, Product::whereIn('slug', array_keys(self::ROWS))->count());
+        $this->assertSame(9, Product::whereIn('slug', array_keys(self::ROWS))->count());
+        // Cable Clip Rekasurya dihapus owner — seeder tidak membuatnya lagi.
+        $this->assertNull(Product::where('slug', 'cable-clip-rekasurya-mr-is-cc')->first());
         // Rel 2,6 m wajib jalur kargo.
         $this->assertTrue((bool) Product::where('slug', 'aluminium-rail-antai-cg-010-2600mm')->value('requires_freight'));
         // Re-run tidak menggandakan produk/varian NYAF.

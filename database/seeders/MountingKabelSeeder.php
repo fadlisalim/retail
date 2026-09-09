@@ -26,21 +26,8 @@ class MountingKabelSeeder extends Seeder
 {
     private const ROWS = [
         // --- Support module / aksesoris mounting (modal × 1,7) ---
-        [
-            'slug' => 'cable-clip-rekasurya-mr-is-cc',
-            'sku' => 'MR-IS-CC',
-            'name' => 'Cable Clip Rekasurya MR-IS-CC',
-            'brand' => null, 'category' => 'mounting-rangka',
-            'model' => 'MR-IS-CC',
-            'price' => 4000, 'cost' => 2315.58, 'stock' => 182,
-            'unit' => 'pcs', 'weight' => 15, 'dims' => [5, 3, 2],
-            'short' => 'Klip perapi kabel untuk rangka mounting panel surya — menjaga kabel PV tertata rapi di sepanjang rel.',
-            'specs' => [
-                'Jenis' => 'Cable clip (klip kabel mounting)',
-                'Model' => 'MR-IS-CC',
-                'Kegunaan' => 'Merapikan kabel PV pada rel mounting panel surya',
-            ],
-        ],
+        // Cable Clip Rekasurya MR-IS-CC: dihapus owner dari katalog (Sep 2026)
+        // — sengaja tidak di-seed lagi supaya tidak muncul kembali saat re-run.
         [
             'slug' => 'end-clamp-antai-cg-018-35-40',
             'sku' => 'ANTAI-CG-018',
