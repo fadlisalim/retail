@@ -107,6 +107,7 @@ HTML;
                 'sale_price' => null,
                 'unit' => 'paket',
                 'weight_grams' => 80000,
+                'requires_freight' => true, // 80–555 kg: jalur kargo, ongkir dikonfirmasi
                 'warranty' => 'Inverter 5 Thn · Baterai 6 Thn · Panel Surya 10 Thn',
                 'keywords' => 'paket plts hybrid, bezvolt, power home, inverter hybrid 6kw, 1 fasa, baterai lithium, 2 kwp, 3 kwp, 4 kwp, 5 kwp, plts rumah, anti mati lampu',
                 'is_new' => true,

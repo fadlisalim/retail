@@ -35,7 +35,8 @@ class MountingKabelSeeder extends Seeder
             'brand' => 'ANTAI', 'category' => 'mounting-rangka',
             'model' => 'CG-018',
             'price' => 14100, 'cost' => 8237.38, 'stock' => 313,
-            'unit' => 'pcs', 'weight' => 90, 'dims' => [6, 4, 4],
+            // ± 55 g: clamp aluminium kecil + baut M8 (audit berat, Sep 2026).
+            'unit' => 'pcs', 'weight' => 55, 'weight_was' => 90, 'dims' => [5, 4, 4],
             'short' => 'Penjepit ujung (end clamp) ANTAI CG-018 untuk panel surya frame 35/40mm — mengunci panel paling pinggir ke rel mounting.',
             'specs' => [
                 'Jenis' => 'End clamp (penjepit ujung panel)',
@@ -52,7 +53,8 @@ class MountingKabelSeeder extends Seeder
             'brand' => 'ANTAI', 'category' => 'mounting-rangka',
             'model' => 'GN-003',
             'price' => 13500, 'cost' => 7924.67, 'stock' => 1077,
-            'unit' => 'pcs', 'weight' => 90, 'dims' => [6, 4, 4],
+            // ± 60 g: mid clamp + baut M8 (audit berat, Sep 2026).
+            'unit' => 'pcs', 'weight' => 60, 'weight_was' => 90, 'dims' => [5, 4, 4],
             'short' => 'Penjepit tengah (mid clamp) ANTAI GN-003 — mengunci sisi antar dua panel surya yang bersebelahan pada rel mounting.',
             'specs' => [
                 'Jenis' => 'Mid clamp (penjepit antar panel)',
@@ -168,7 +170,9 @@ class MountingKabelSeeder extends Seeder
             'brand' => 'ANTAI', 'category' => 'mounting-rangka',
             'model' => 'ATL-FWNY-05',
             'price' => 21300, 'cost' => 12482.06, 'stock' => 32,
-            'unit' => 'pcs', 'weight' => 250, 'dims' => [12, 6, 6],
+            // ± 100 g: L-feet aluminium ±50×40×40 mm + baut hex M8 + bantalan
+            // EPDM. Versi awal 250 g / 12×6×6 cm terlalu berat (audit Sep 2026).
+            'unit' => 'pcs', 'weight' => 100, 'weight_was' => 250, 'dims' => [6, 5, 4],
             'short' => 'Kaki dudukan (L-feet) ANTAI ATL-FWNY-05 — tumpuan rel mounting panel surya di atap logam/spandek atau permukaan datar, dibaut langsung ke rangka atap.',
             'specs' => [
                 'Jenis' => 'L-Feet (kaki dudukan rel)',
@@ -256,6 +260,18 @@ class MountingKabelSeeder extends Seeder
                     'meta_description' => 'Jual '.$row['name'].' Rp '.number_format($row['price'], 0, ',', '.').($perMeter ? '/meter' : '').'. Aksesoris instalasi panel surya, kirim ke seluruh Indonesia.',
                 ])->save();
                 $this->command?->info('Nama dikoreksi: "'.$row['rename_from'].'" → "'.$row['name'].'".');
+            }
+
+            // Koreksi berat/dimensi tertarget: hanya bila nilainya masih sama
+            // dengan estimasi awal seeder — angka yang sudah diedit admin aman.
+            if (! $product->wasRecentlyCreated && isset($row['weight_was']) && (int) $product->weight_grams === (int) $row['weight_was']) {
+                $product->forceFill([
+                    'weight_grams' => $row['weight'],
+                    'length_cm' => $row['dims'][0],
+                    'width_cm' => $row['dims'][1],
+                    'height_cm' => $row['dims'][2],
+                ])->save();
+                $this->command?->info('Berat dikoreksi: '.$row['name'].' '.$row['weight_was'].' g → '.$row['weight'].' g.');
             }
 
             // Stok awal sesuai catatan gudang — hanya saat produk baru dibuat.

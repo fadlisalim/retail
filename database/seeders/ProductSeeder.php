@@ -14,8 +14,11 @@ use Illuminate\Support\Str;
 class ProductSeeder extends Seeder
 {
     private StockService $stock;
+
     private $categories;
+
     private $brands;
+
     private $attributes;
 
     public function run(): void
@@ -175,8 +178,8 @@ class ProductSeeder extends Seeder
 
     private function seedAccessories(): void
     {
-        $this->make(['sku' => 'ACC-KBL-6', 'name' => 'Kabel Solar PV 6mm² (per meter)', 'category' => 'aksesoris-kabel', 'brand' => 'kabelsurya', 'price' => 18000, 'weight_grams' => 80, 'unit' => 'meter', 'short' => 'Kabel PV 6mm² tahan UV bersertifikat TUV.', 'stock' => 5000, 'min_purchase' => 10]);
-        $this->make(['sku' => 'ACC-MC4', 'name' => 'Konektor MC4 (sepasang)', 'category' => 'aksesoris-konektor', 'brand' => 'kabelsurya', 'price' => 25000, 'weight_grams' => 60, 'short' => 'Konektor MC4 IP67 original.', 'stock' => 800]);
+        $this->make(['sku' => 'ACC-KBL-6', 'name' => 'Kabel Solar PV 6mm² (per meter)', 'category' => 'aksesoris-kabel', 'brand' => 'kabelsurya', 'price' => 18000, 'weight_grams' => 80, 'length_cm' => 15, 'width_cm' => 15, 'height_cm' => 2, 'unit' => 'meter', 'short' => 'Kabel PV 6mm² tahan UV bersertifikat TUV.', 'stock' => 5000, 'min_purchase' => 10]);
+        $this->make(['sku' => 'ACC-MC4', 'name' => 'Konektor MC4 (sepasang)', 'category' => 'aksesoris-konektor', 'brand' => 'kabelsurya', 'price' => 25000, 'weight_grams' => 60, 'length_cm' => 6, 'width_cm' => 4, 'height_cm' => 3, 'short' => 'Konektor MC4 IP67 original.', 'stock' => 800]);
         $this->make(['sku' => 'ACC-MNT-RAIL', 'name' => 'Rail Mounting Aluminium 4.2m', 'category' => 'aksesoris-mounting', 'brand' => 'solarprime', 'price' => 320000, 'weight_grams' => 4200, 'length_cm' => 420, 'width_cm' => 4, 'height_cm' => 4, 'requires_freight' => true, 'short' => 'Rail aluminium anodized untuk struktur panel.', 'stock' => 200]);
         $this->make(['sku' => 'ACC-CMB-4', 'name' => 'Combiner Box 4 String DC', 'category' => 'aksesoris-combiner-box', 'brand' => 'gridtech', 'price' => 1250000, 'weight_grams' => 3500, 'short' => 'Combiner box 4 string dengan proteksi SPD & fuse.', 'stock' => 30]);
     }
@@ -245,19 +248,21 @@ class ProductSeeder extends Seeder
                 'weight_grams' => 20000, 'requires_freight' => true, 'short' => $reason, 'stock' => $stock,
             ]);
 
-            if ($product->wasRecentlyCreated) $product->conditionDetail()->updateOrCreate([], [
-                'reason_for_sale' => $reason,
-                'item_location' => 'Gudang Jakarta',
-                'available_quantity' => $stock,
-                'purchase_year' => now()->year - 1,
-                'remaining_warranty' => str_starts_with($condition, 'new') ? '12 tahun' : '3-6 bulan garansi toko',
-                'completeness' => 'Unit + manual',
-                'defect_notes' => $condition === 'used' ? 'Terdapat goresan pemakaian wajar.' : 'Tidak ada cacat fungsi.',
-                'is_returnable' => str_starts_with($condition, 'new'),
-                'is_negotiable' => $negotiable,
-                'pickup_required' => false,
-                'auto_shipping' => true,
-            ]);
+            if ($product->wasRecentlyCreated) {
+                $product->conditionDetail()->updateOrCreate([], [
+                    'reason_for_sale' => $reason,
+                    'item_location' => 'Gudang Jakarta',
+                    'available_quantity' => $stock,
+                    'purchase_year' => now()->year - 1,
+                    'remaining_warranty' => str_starts_with($condition, 'new') ? '12 tahun' : '3-6 bulan garansi toko',
+                    'completeness' => 'Unit + manual',
+                    'defect_notes' => $condition === 'used' ? 'Terdapat goresan pemakaian wajar.' : 'Tidak ada cacat fungsi.',
+                    'is_returnable' => str_starts_with($condition, 'new'),
+                    'is_negotiable' => $negotiable,
+                    'pickup_required' => false,
+                    'auto_shipping' => true,
+                ]);
+            }
         }
     }
 

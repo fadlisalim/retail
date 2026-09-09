@@ -83,6 +83,7 @@ HTML;
                 'price' => 64900000,
                 'unit' => 'paket',
                 'weight_grams' => 340000,
+                'requires_freight' => true,
                 'warranty' => 'Garansi Paket 3 Tahun',
                 'keywords' => 'paket plts hybrid, echo-8, aurora, 4 kwp, all in one, solar generator, plts rumah, anti mati lampu, 8 kwh, paket panel surya',
                 'is_new' => true,
@@ -97,6 +98,12 @@ HTML;
         if ($product->wasRecentlyCreated) {
             $product->categories()->sync(array_values(array_filter([$category?->id, $rumah?->id])));
             $this->setStock($product, 5); // placeholder — sesuaikan di Admin
+        }
+
+        // Paket ±340 kg wajib jalur kargo (ongkir dikonfirmasi), bukan kurir
+        // reguler — dilengkapi juga untuk baris yang sudah ada di produksi.
+        if (! $product->requires_freight) {
+            $product->forceFill(['requires_freight' => true])->save();
         }
 
         $this->command?->info('Paket ECHO-8 Hybrid 4kWp '.($product->wasRecentlyCreated ? 'ditambahkan' : 'sudah ada, dilewati').' (slug: '.$product->slug.').');

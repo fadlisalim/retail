@@ -87,6 +87,7 @@ HTML;
                 'price' => 38900000,   // harga "mulai dari" (varian Tanpa B300K)
                 'unit' => 'paket',
                 'weight_grams' => 85000,
+                'requires_freight' => true,
                 'is_new' => true,
                 'is_featured' => true,
                 'status' => 'published',
@@ -100,6 +101,12 @@ HTML;
         if ($product->wasRecentlyCreated) {
             $ids = array_values(array_filter([$product->category_id, $paketCategory?->id]));
             $product->categories()->sync($ids);
+        }
+
+        // Paket 85–174 kg wajib jalur kargo (ongkir dikonfirmasi) — dilengkapi
+        // juga untuk baris yang sudah ada di produksi.
+        if (! $product->requires_freight) {
+            $product->forceFill(['requires_freight' => true])->save();
         }
 
         // Varian: jumlah baterai B300K (0..3). +20jt per B300K.
