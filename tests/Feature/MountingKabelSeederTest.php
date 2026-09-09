@@ -26,6 +26,7 @@ class MountingKabelSeederTest extends TestCase
         'grounding-clip-antai-at-ec-01' => [1198.97, 2100, 50, 1.7],
         'cable-clip-antai-at-rc-01-4mm' => [1473.83, 2600, 450, 1.7],
         'tile-hook-antai-atl-fwny-05-l-feet' => [12482.06, 21300, 32, 1.7],
+        'aluminium-rail-antai-cg-010-2600mm' => [120000.00, 204000, 0, 1.7],
         'roof-hook-antai-pantile' => [44003.39, 74900, 42, 1.7],
         't-nut-antai-m8-25mm' => [2361.49, 4100, 100, 1.7],
     ];
@@ -111,7 +112,9 @@ class MountingKabelSeederTest extends TestCase
 
         $this->assertSame(15000.0, (float) $p->fresh()->price);
         $this->assertSame(313, (int) $p->fresh()->stock);
-        $this->assertSame(8, Product::whereIn('slug', array_keys(self::ROWS))->count());
+        $this->assertSame(9, Product::whereIn('slug', array_keys(self::ROWS))->count());
+        // Rel 2,6 m wajib jalur kargo.
+        $this->assertTrue((bool) Product::where('slug', 'aluminium-rail-antai-cg-010-2600mm')->value('requires_freight'));
         // Re-run tidak menggandakan produk/varian NYAF.
         $this->assertSame(1, Product::where('slug', 'like', 'kabel-nyaf-jembo-4mm%')->count());
         $this->assertCount(2, Product::where('slug', 'kabel-nyaf-jembo-4mm-per-meter')->first()->variants);
