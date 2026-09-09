@@ -136,7 +136,15 @@
                         @foreach ($totals->lines as $line)
                             <div class="flex gap-2 text-sm">
                                 <img src="{{ $line->item->product->primaryImageUrl() }}" alt="" class="h-10 w-10 rounded object-cover">
-                                <div class="flex-1"><p class="line-clamp-1 text-gray-700">{{ $line->item->product->name }}</p><p class="text-xs text-gray-400">{{ $line->quantity }} × {{ rupiah($line->unitPrice) }}</p></div>
+                                <div class="flex-1">
+                                    <p class="line-clamp-1 text-gray-700">{{ $line->item->product->name }}</p>
+                                    <p class="text-xs text-gray-400">{{ $line->quantity }} × {{ rupiah($line->unitPrice) }}</p>
+                                    {{-- Barang bekas/open-box: tampilkan kondisinya di sini supaya
+                                         centang "konfirmasi kondisi produk" benar-benar sadar-informasi. --}}
+                                    @if ($line->item->product->requiresConditionAck())
+                                        <p class="text-[11px] font-medium text-amber-600">Kondisi: {{ $line->item->product->conditionEnum()->label() }}</p>
+                                    @endif
+                                </div>
                                 <span class="font-medium">{{ rupiah($line->lineTotal) }}</span>
                             </div>
                         @endforeach

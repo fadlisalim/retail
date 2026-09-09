@@ -6,6 +6,7 @@ use App\Models\CustomerAddress;
 use App\Models\WarehouseStock;
 use App\Services\CartService;
 use App\Services\CheckoutService;
+use App\Services\SettingService;
 use App\Services\Shipping\ShippingQuote;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -36,7 +37,7 @@ class CheckoutTest extends TestCase
     public function test_checkout_recomputes_totals_on_the_server(): void
     {
         // PPN is off by default now; enable it explicitly to exercise the tax path.
-        $settings = app(\App\Services\SettingService::class);
+        $settings = app(SettingService::class);
         $settings->set('tax.enabled', true, 'boolean', 'tax');
         $settings->set('tax.ppn_percent', 11, 'integer', 'tax');
 
@@ -54,6 +55,28 @@ class CheckoutTest extends TestCase
         $this->assertEquals(2270000, $order->grand_total);        // subtotal + 50k shipping + tax
         $this->assertCount(1, $order->items);
         $this->assertEquals(1000000, $order->items->first()->unit_price); // taken from product, not client
+    }
+
+    /**
+     * Barang bekas/sisa proyek: checkbox wajib di checkout ("...dan konfirmasi
+     * kondisi produk") mengesahkan kondisi semua item — pembeli jalur
+     * mini-cart → Checkout tidak lagi tertolak "harus menyetujui kondisi".
+     */
+    public function test_the_checkout_agreement_acknowledges_used_item_conditions(): void
+    {
+        $customer = $this->customer();
+        $this->actingAs($customer);
+        $product = $this->stockedProduct(5, ['price' => 170000, 'condition' => 'used']);
+        $this->assertTrue($product->requiresConditionAck());
+
+        $cart = app(CartService::class)->current();
+        app(CartService::class)->addItem($product, null, 1);
+        $this->assertFalse((bool) $cart->fresh()->items->first()->condition_acknowledged);
+
+        $order = app(CheckoutService::class)->place($cart->fresh(), $this->checkoutData(), $this->quote());
+
+        $this->assertNotNull($order->id);
+        $this->assertTrue((bool) $order->items()->exists());
     }
 
     public function test_double_submit_is_idempotent(): void

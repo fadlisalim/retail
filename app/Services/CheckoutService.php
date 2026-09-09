@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Cart;
+use App\Models\Coupon;
 use App\Models\CouponUsage;
 use App\Models\Order;
 use App\Models\Payment;
@@ -29,8 +30,7 @@ class CheckoutService
         private readonly StockService $stock,
         private readonly InvoiceService $invoices,
         private readonly SettingService $settings,
-    ) {
-    }
+    ) {}
 
     public function place(Cart $cart, array $data, ShippingQuote $shipping): Order
     {
@@ -47,12 +47,14 @@ class CheckoutService
             throw ValidationException::withMessages(['cart' => 'Tidak ada produk yang dapat di-checkout.']);
         }
 
-        // Require condition acknowledgement for open-box / used items.
+        // Persetujuan kondisi barang bekas/open-box: checkbox wajib di form
+        // checkout berbunyi "...dan konfirmasi kondisi produk", jadi sampai di
+        // sini persetujuan sudah diberikan — catat pada tiap item. (Dulu flag
+        // ini hanya bisa diset lewat checkbox per-item di halaman keranjang,
+        // sehingga pembeli jalur mini-cart → Checkout selalu tertolak.)
         foreach ($buyable as $item) {
             if ($item->product->requiresConditionAck() && ! $item->condition_acknowledged) {
-                throw ValidationException::withMessages([
-                    'condition' => "Anda harus menyetujui kondisi produk: {$item->product->name}.",
-                ]);
+                $item->update(['condition_acknowledged' => true]);
             }
         }
 
@@ -145,7 +147,7 @@ class CheckoutService
 
             // Record coupon usage server-side.
             if ($totals->couponCode && $totals->couponDiscount > 0) {
-                $coupon = \App\Models\Coupon::whereRaw('LOWER(code) = ?', [mb_strtolower($totals->couponCode)])->first();
+                $coupon = Coupon::whereRaw('LOWER(code) = ?', [mb_strtolower($totals->couponCode)])->first();
                 if ($coupon) {
                     CouponUsage::create([
                         'coupon_id' => $coupon->id,
