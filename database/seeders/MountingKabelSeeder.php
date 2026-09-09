@@ -106,6 +106,22 @@ class MountingKabelSeeder extends Seeder
             ],
         ],
         [
+            'slug' => 'konektor-mc4-sepasang-male-female',
+            'sku' => 'MC4-PAIR',
+            'name' => 'Konektor MC4 Sepasang (Male + Female)',
+            'brand' => null, 'category' => 'kabel-konektor-proteksi-konektor-mc4',
+            'model' => 'MC4',
+            'price' => 20800, 'cost' => 16000, 'stock' => 0,
+            'unit' => 'pasang', 'weight' => 50, 'dims' => [6, 4, 3],
+            'short' => 'Konektor MC4 sepasang (1 male + 1 female) — sambungan standar kabel PV ke panel surya, SCC, atau inverter. Kedap air, tinggal crimping ke kabel PV 4/6mm².',
+            'specs' => [
+                'Jenis' => 'Konektor MC4 (standar sambungan PV)',
+                'Isi' => '1 pasang: 1 male + 1 female',
+                'Kompatibel' => 'Kabel PV 4mm² / 6mm²',
+                'Kegunaan' => 'Sambungan panel surya ↔ kabel PV ↔ SCC/inverter, kedap air',
+            ],
+        ],
+        [
             'slug' => 'aluminium-rail-antai-cg-010-2600mm',
             'sku' => 'ANTAI-CG-010',
             'name' => 'Aluminium Rail ANTAI CG-010 (2600mm)',
