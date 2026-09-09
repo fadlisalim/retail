@@ -138,6 +138,9 @@
                                 <img src="{{ $line->item->product->primaryImageUrl() }}" alt="" class="h-10 w-10 rounded object-cover">
                                 <div class="flex-1">
                                     <p class="line-clamp-1 text-gray-700">{{ $line->item->product->name }}</p>
+                                    @if ($line->item->variant)
+                                        <p class="text-xs font-medium text-gray-600">Varian: {{ $line->item->variant->name }}</p>
+                                    @endif
                                     <p class="text-xs text-gray-400">{{ $line->quantity }} × {{ rupiah($line->unitPrice) }}</p>
                                     {{-- Barang bekas/open-box: tampilkan kondisinya di sini supaya
                                          centang "konfirmasi kondisi produk" benar-benar sadar-informasi. --}}

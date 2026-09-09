@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Enums\StockMovementType;
 use App\Models\CustomerAddress;
 use App\Models\WarehouseStock;
 use App\Services\CartService;
 use App\Services\CheckoutService;
 use App\Services\SettingService;
 use App\Services\Shipping\ShippingQuote;
+use App\Services\StockService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -110,6 +112,25 @@ class CheckoutTest extends TestCase
             ->assertSee('Rekasurya Eco Building', false)
             ->assertSee('Lihat di Google Maps')
             ->assertSee('google.com/maps', false);
+    }
+
+    /** Varian yang dipilih (mis. 50 Wp) harus terlihat di Ringkasan Pesanan. */
+    public function test_the_summary_shows_the_chosen_variant(): void
+    {
+        $customer = $this->customer();
+        $this->actingAs($customer);
+
+        $product = $this->stockedProduct(0, ['name' => 'Panel Surya Bekas Sisa Proyek', 'product_type' => 'variable', 'price' => 170000]);
+        $variant = $product->variants()->create([
+            'sku' => 'PSB-50', 'name' => '50 Wp', 'option_values' => ['Daya' => '50 Wp'],
+            'price' => 170000, 'is_active' => true, 'sort_order' => 0, 'stock' => 5,
+        ]);
+        app(StockService::class)->adjust($product, $variant, 5, StockMovementType::Purchase);
+        app(CartService::class)->addItem($product, $variant, 1);
+
+        $this->get('/checkout')
+            ->assertOk()
+            ->assertSee('Varian: 50 Wp');
     }
 
     public function test_guest_cannot_access_checkout(): void
