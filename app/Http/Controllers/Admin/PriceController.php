@@ -2,28 +2,40 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\StockMovementType;
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
 use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Models\WarehouseStock;
+use App\Services\StockService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
  * Halaman "Harga & Margin": tabel ala spreadsheet untuk menyunting harga
- * modal, harga jual, harga coret, dan fee afiliator langsung di barisnya —
- * dengan persentase profit margin (dari revenue) terlihat per produk.
- * Margin dihitung dari harga jual efektif TANPA memperhitungkan PPN & ongkir.
+ * modal, harga jual, harga coret, fee afiliator, dan STOK langsung di
+ * barisnya — dengan persentase profit margin (dari revenue) per produk.
+ * Produk bervarian menampilkan baris variannya (harga & stok hidup di sana).
+ * Perubahan stok dijalankan lewat StockService (gudang default) sehingga
+ * kartu stok & riwayat pergerakan tetap konsisten.
  */
 class PriceController extends Controller
 {
+    public function __construct(private readonly StockService $stock) {}
+
     public function index(Request $request): View
     {
         $q = trim((string) $request->query('q', ''));
         $brandId = $request->query('brand');
         $only = $request->query('tampil'); // margin-tipis | tanpa-modal
 
-        $products = Product::with('brand:id,name')
+        $products = Product::with([
+            'brand:id,name',
+            'variants' => fn ($v) => $v->where('is_active', true)->orderBy('sort_order')->orderBy('id'),
+        ])
             ->when($q !== '', fn ($query) => $query->where(
                 fn ($sub) => $sub->where('name', 'like', "%{$q}%")->orWhere('sku', 'like', "%{$q}%"),
             ))
@@ -54,14 +66,50 @@ class PriceController extends Controller
     /** Simpan satu baris (dipanggil via fetch saat sel selesai disunting). */
     public function update(Request $request, Product $produk): JsonResponse
     {
-        $isVariable = $produk->product_type === 'variable';
+        // ---- Baris VARIAN: harga jual/coret + stok milik varian itu. ----
+        if ($request->filled('variant_id')) {
+            $data = $request->validate([
+                'variant_id' => ['required', 'integer'],
+                'price' => ['required', 'numeric', 'min:0'],
+                'compare_price' => ['nullable', 'numeric', 'min:0'],
+                'stock' => ['nullable', 'integer', 'min:0'],
+            ]);
+
+            $variant = ProductVariant::where('product_id', $produk->id)->findOrFail((int) $data['variant_id']);
+
+            // Pemetaan sama dengan form produk: coret > jual → price+sale_price.
+            $jual = (float) $data['price'];
+            $coret = $data['compare_price'] ?? null;
+            if ($coret !== null && $coret !== '' && (float) $coret > $jual) {
+                $variant->price = (float) $coret;
+                $variant->sale_price = $jual;
+            } else {
+                $variant->price = $jual;
+                $variant->sale_price = null;
+            }
+            $variant->save();
+
+            if (array_key_exists('stock', $data) && $data['stock'] !== null) {
+                $this->setStockTo($produk, $variant, (int) $data['stock']);
+            }
+
+            // Harga "mulai dari" di kartu katalog = varian termurah.
+            $produk->update(['price' => $produk->variants()->where('is_active', true)->get()
+                ->map(fn (ProductVariant $v) => $v->effectivePrice())->min() ?? $produk->price]);
+
+            return response()->json($this->variantRow($variant->fresh()));
+        }
+
+        // ---- Baris PRODUK. ----
+        $isVariable = $produk->product_type === 'variable' || $produk->variants()->where('is_active', true)->exists();
 
         $data = $request->validate([
             'cost_price' => ['nullable', 'numeric', 'min:0'],
             'affiliate_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            // Harga jual/coret produk varian diatur per varian di halaman Edit.
+            // Harga & stok produk bervarian diatur pada baris variannya.
             'price' => $isVariable ? ['prohibited'] : ['required', 'numeric', 'min:0'],
             'compare_price' => $isVariable ? ['prohibited'] : ['nullable', 'numeric', 'min:0'],
+            'stock' => $isVariable ? ['prohibited'] : ['nullable', 'integer', 'min:0'],
         ]);
 
         if (array_key_exists('cost_price', $data)) {
@@ -87,7 +135,33 @@ class PriceController extends Controller
 
         $produk->save();
 
+        if (! $isVariable && array_key_exists('stock', $data) && $data['stock'] !== null) {
+            $this->setStockTo($produk, null, (int) $data['stock']);
+        }
+
         return response()->json($this->row($produk->fresh()));
+    }
+
+    /**
+     * Set stok tersedia ke angka target lewat penyesuaian di gudang default —
+     * kartu stok & riwayat pergerakan tercatat, bukan menimpa kolom cache.
+     */
+    private function setStockTo(Product $product, ?ProductVariant $variant, int $target): void
+    {
+        $current = (int) WarehouseStock::where('product_id', $product->id)
+            ->where('product_variant_id', $variant?->id)
+            ->sum('quantity_available');
+
+        $delta = $target - $current;
+        if ($delta === 0) {
+            return;
+        }
+
+        try {
+            $this->stock->adjust($product, $variant, $delta, StockMovementType::Adjustment, note: 'Penyesuaian dari halaman Harga & Margin');
+        } catch (\RuntimeException $e) {
+            throw ValidationException::withMessages(['stock' => $e->getMessage()]);
+        }
     }
 
     /** Bentuk baris untuk respons JSON — dipakai front-end menyegarkan sel. */
@@ -102,10 +176,29 @@ class PriceController extends Controller
             'coret' => $product->isOnSale() ? (float) $product->price : null,
             'modal' => $product->cost_price !== null ? (float) $product->cost_price : null,
             'fee' => $product->affiliate_rate !== null ? (float) $product->affiliate_rate : null,
+            'stok' => (int) $product->stock,
             'diskon_pct' => $product->isOnSale() && (float) $product->price > 0
                 ? round((1 - $jual / (float) $product->price) * 100, 1)
                 : null,
             'margin_pct' => $modal > 0 && $jual > 0 ? round(($jual - $modal) / $jual * 100, 2) : null,
+        ];
+    }
+
+    private function variantRow(ProductVariant $variant): array
+    {
+        $jual = $variant->effectivePrice();
+
+        return [
+            'id' => $variant->id,
+            'jual' => $jual,
+            'coret' => $variant->sale_price !== null && (float) $variant->price > $jual ? (float) $variant->price : null,
+            'modal' => null,
+            'fee' => null,
+            'stok' => (int) $variant->stock,
+            'diskon_pct' => $variant->sale_price !== null && (float) $variant->price > 0 && (float) $variant->price > $jual
+                ? round((1 - $jual / (float) $variant->price) * 100, 1)
+                : null,
+            'margin_pct' => null,
         ];
     }
 }

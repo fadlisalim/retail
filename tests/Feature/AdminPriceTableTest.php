@@ -92,6 +92,64 @@ class AdminPriceTableTest extends TestCase
         $this->assertEquals(5_000_000, (float) $product->price);
     }
 
+    /** Baris varian: harga jual/coret & stok bisa disunting dari halaman ini. */
+    public function test_variant_rows_can_update_price_and_stock(): void
+    {
+        $this->defaultWarehouse();
+        $product = $this->stockedProduct(0, ['name' => 'MCB Bervarian', 'product_type' => 'variable', 'price' => 215_000]);
+        $v10 = $product->variants()->create(['sku' => 'SL7N-10A', 'name' => '10A', 'option_values' => ['Arus' => '10A'], 'price' => 215_000, 'is_active' => true, 'sort_order' => 0]);
+        $v63 = $product->variants()->create(['sku' => 'SL7N-63A', 'name' => '63A', 'option_values' => ['Arus' => '63A'], 'price' => 215_000, 'is_active' => true, 'sort_order' => 1]);
+
+        // Halaman menampilkan baris variannya.
+        $this->actingAs($this->katalog())
+            ->get(route('admin.prices.index'))
+            ->assertOk()->assertSee('10A')->assertSee('63A');
+
+        // Ubah harga varian 63A + isi stok 25 → tersimpan, stok lewat gudang.
+        $this->actingAs($this->katalog())
+            ->patchJson(route('admin.prices.update', $product), [
+                'variant_id' => $v63->id, 'price' => 250_000, 'compare_price' => 300_000, 'stock' => 25,
+            ])
+            ->assertOk()
+            ->assertJson(['jual' => 250_000, 'coret' => 300_000, 'stok' => 25]);
+
+        $v63->refresh();
+        $this->assertEquals(300_000, (float) $v63->price);
+        $this->assertEquals(250_000, (float) $v63->sale_price);
+        $this->assertSame(25, (int) $v63->stock);
+        $this->assertDatabaseHas('stock_movements', ['product_variant_id' => $v63->id, 'quantity' => 25]);
+
+        // Harga "mulai dari" produk mengikuti varian termurah.
+        $this->assertEquals(215_000, (float) $product->fresh()->price);
+        $this->patchJson(route('admin.prices.update', $product), ['variant_id' => $v10->id, 'price' => 199_000]);
+        $this->assertEquals(199_000, (float) $product->fresh()->price);
+    }
+
+    public function test_variant_of_another_product_is_rejected(): void
+    {
+        $a = $this->stockedProduct(0, ['product_type' => 'variable']);
+        $b = $this->stockedProduct(0, ['product_type' => 'variable']);
+        $foreign = $b->variants()->create(['sku' => 'FRX-1', 'name' => 'X', 'option_values' => ['U' => 'X'], 'price' => 100_000, 'is_active' => true, 'sort_order' => 0]);
+
+        $this->actingAs($this->katalog())
+            ->patchJson(route('admin.prices.update', $a), ['variant_id' => $foreign->id, 'price' => 1])
+            ->assertNotFound();
+    }
+
+    /** Stok produk simple bisa di-set langsung; tercatat sebagai penyesuaian gudang. */
+    public function test_simple_product_stock_can_be_set_inline(): void
+    {
+        $product = $this->stockedProduct(10, ['price' => 100_000]);
+
+        $this->actingAs($this->katalog())
+            ->patchJson(route('admin.prices.update', $product), ['price' => 100_000, 'stock' => 4])
+            ->assertOk()
+            ->assertJson(['stok' => 4]);
+
+        $this->assertSame(4, (int) $product->fresh()->stock);
+        $this->assertDatabaseHas('stock_movements', ['product_id' => $product->id, 'quantity' => -6]);
+    }
+
     public function test_the_thin_margin_filter_finds_only_thin_margins(): void
     {
         $this->stockedProduct(0, ['name' => 'Produk Margin Tipis', 'price' => 10_000_000, 'cost_price' => 9_500_000]);
