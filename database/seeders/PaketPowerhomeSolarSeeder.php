@@ -90,9 +90,16 @@ HTML;
 </tbody></table>
 HTML;
 
-        $product = Product::updateOrCreate(
-            ['slug' => 'paket-plts-hybrid-bezvolt-powerhome-6-05-solar-panel'],
+        // Cari berdasarkan SKU dulu: slug produk di produksi bisa sudah diedit
+        // admin, dan SKU unik — kalau dicari berdasarkan slug lama, seeder akan
+        // mencoba membuat produk baru dan gagal "Duplicate entry" di SKU.
+        $existing = Product::where('sku', 'PAKET-PH605-SOLAR')
+            ->orWhere('slug', 'paket-plts-hybrid-bezvolt-powerhome-6-05-solar-panel')
+            ->first();
+
+        $product = $existing ?? Product::create(
             [
+                'slug' => 'paket-plts-hybrid-bezvolt-powerhome-6-05-solar-panel',
                 'sku' => 'PAKET-PH605-SOLAR',
                 'name' => 'Paket PLTS Hybrid Bezvolt Power Home 6000W 1 Fasa',
                 'category_id' => $category?->id,
@@ -119,7 +126,15 @@ HTML;
             ],
         );
 
-        $product->categories()->sync(array_values(array_filter([$category?->id, $rumah?->id])));
+        if ($existing) {
+            // Produk sudah ada — nama/slug/deskripsi/harga editan admin tidak
+            // ditimpa; cukup pastikan jalur kargo untuk paket 80–555 kg.
+            if (! $product->requires_freight) {
+                $product->forceFill(['requires_freight' => true])->save();
+            }
+        } else {
+            $product->categories()->sync(array_values(array_filter([$category?->id, $rumah?->id])));
+        }
 
         // Harga: base 32,5jt (inverter + 1 baterai) + 6jt/kWp + 16jt/baterai tambahan.
         // Berat (estimasi kargo): inverter+1 baterai ±80kg, +50kg/baterai, +75kg/kWp.

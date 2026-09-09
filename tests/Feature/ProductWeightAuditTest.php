@@ -8,6 +8,7 @@ use App\Models\ProductVariant;
 use Database\Seeders\MountingKabelSeeder;
 use Database\Seeders\PaketApex300Seeder;
 use Database\Seeders\PaketEcho8Hybrid4kwpSeeder;
+use Database\Seeders\PaketPowerhomeSolarSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
@@ -76,6 +77,32 @@ class ProductWeightAuditTest extends TestCase
         foreach (['paket-plts-hybrid-aurora-echo-8-solar-4kwp', 'paket-plts-bluetti-apex-300-solar-1200wp'] as $slug) {
             $this->assertTrue((bool) Product::where('slug', $slug)->value('requires_freight'), $slug);
         }
+    }
+
+    /**
+     * Produksi: slug paket Bezvolt sudah diedit admin → seeder lama (cari slug)
+     * mencoba insert ulang dan gagal "Duplicate entry" di SKU. Sekarang dicari
+     * per SKU, data editan admin dibiarkan, hanya flag kargo yang dilengkapi.
+     */
+    public function test_bezvolt_bundle_seeder_finds_the_existing_product_by_sku(): void
+    {
+        $this->defaultWarehouse();
+        $this->seed(PaketPowerhomeSolarSeeder::class);
+
+        Product::where('sku', 'PAKET-PH605-SOLAR')->update([
+            'slug' => 'paket-bezvolt-power-home-6kw-edit-admin',
+            'name' => 'Paket Bezvolt Power Home 6 kW (Edit Admin)',
+            'requires_freight' => false,
+        ]);
+
+        $this->seed(PaketPowerhomeSolarSeeder::class);
+
+        $this->assertSame(1, Product::where('sku', 'PAKET-PH605-SOLAR')->count());
+        $product = Product::where('sku', 'PAKET-PH605-SOLAR')->firstOrFail();
+        $this->assertSame('paket-bezvolt-power-home-6kw-edit-admin', $product->slug);
+        $this->assertSame('Paket Bezvolt Power Home 6 kW (Edit Admin)', $product->name);
+        $this->assertTrue((bool) $product->requires_freight);
+        $this->assertCount(6, $product->variants()->where('is_active', true)->get());
     }
 
     public function test_audit_command_reports_suspicious_weights_and_dimensions(): void
