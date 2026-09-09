@@ -3,14 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AffiliateStatus;
+use App\Enums\PayoutStatus;
+use App\Mail\AffiliateBankChangedMail;
+use App\Mail\AffiliatePayoutConfirmMail;
 use App\Models\Affiliate;
+use App\Models\AffiliatePayout;
 use App\Models\Product;
 use App\Services\AffiliateService;
 use App\Services\NotificationService;
 use App\Services\WhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\View\View;
 
 class AffiliateController extends Controller
@@ -196,7 +203,7 @@ class AffiliateController extends Controller
         ]);
     }
 
-    /** Update payout (bank) details. */
+    /** Update payout (bank) details — pemiliknya diberi tahu lewat email. */
     public function updateBank(Request $request): RedirectResponse
     {
         $affiliate = $request->user()->affiliate;
@@ -208,10 +215,19 @@ class AffiliateController extends Controller
             'bank_account_holder' => ['required', 'string', 'max:255'],
         ]));
 
-        return back()->with('success', 'Data rekening diperbarui.');
+        // Sinyal keamanan: bila yang mengubah bukan pemilik akun, ia langsung
+        // tahu dari email ini. Gagal kirim tidak membatalkan perubahan.
+        try {
+            Mail::to($request->user()->email)
+                ->send(new AffiliateBankChangedMail($affiliate->fresh()));
+        } catch (\Throwable $e) {
+            Log::warning('Email notifikasi rekening afiliasi gagal: '.$e->getMessage());
+        }
+
+        return back()->with('success', 'Data rekening diperbarui. Pemberitahuan dikirim ke email Anda.');
     }
 
-    /** Request a withdrawal. */
+    /** Request a withdrawal — diproses setelah dikonfirmasi lewat email. */
     public function requestPayout(Request $request): RedirectResponse
     {
         $affiliate = $request->user()->affiliate;
@@ -221,8 +237,45 @@ class AffiliateController extends Controller
             'amount' => ['required', 'numeric', 'min:0'],
         ]);
 
-        $this->affiliates->requestPayout($affiliate, (float) $validated['amount']);
+        $payout = $this->affiliates->requestPayout($affiliate, (float) $validated['amount']);
 
-        return back()->with('success', 'Permintaan penarikan dana terkirim. Menunggu diproses admin.');
+        $confirmUrl = URL::temporarySignedRoute(
+            'account.affiliate.payout.confirm', now()->addHours(24), ['payout' => $payout->id],
+        );
+
+        try {
+            Mail::to($request->user()->email)
+                ->send(new AffiliatePayoutConfirmMail($payout, $confirmUrl));
+        } catch (\Throwable $e) {
+            // Tanpa email, penarikan tidak akan pernah bisa dikonfirmasi —
+            // batalkan supaya saldo tidak terkunci.
+            $payout->delete();
+            Log::warning('Email konfirmasi penarikan gagal: '.$e->getMessage());
+
+            return back()->withErrors(['amount' => 'Email konfirmasi gagal terkirim. Coba lagi sebentar, atau hubungi CS.']);
+        }
+
+        return back()->with('success', 'Cek email Anda ya — klik link konfirmasi (berlaku 24 jam) supaya penarikan diproses tim keuangan.');
+    }
+
+    /**
+     * Konfirmasi penarikan dari link email (signed URL, 24 jam). Sengaja tidak
+     * mewajibkan login: link hanya ada di inbox pemilik akun, dan tanda tangan
+     * URL tidak bisa dipalsukan.
+     */
+    public function confirmPayout(AffiliatePayout $payout): RedirectResponse
+    {
+        if ($payout->status !== PayoutStatus::AwaitingConfirmation) {
+            return redirect()->route('account.affiliate.dashboard')
+                ->with('success', 'Penarikan ini sudah dikonfirmasi sebelumnya.');
+        }
+
+        $payout->update([
+            'status' => PayoutStatus::Requested,
+            'confirmed_at' => now(),
+        ]);
+
+        return redirect()->route('account.affiliate.dashboard')
+            ->with('success', 'Penarikan dikonfirmasi! Tim keuangan akan segera memproses transfer Anda.');
     }
 }

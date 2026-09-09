@@ -11,13 +11,14 @@ class AffiliatePayout extends Model
     protected $fillable = [
         'affiliate_id', 'amount', 'status', 'method',
         'bank_name', 'bank_account_number', 'bank_account_holder',
-        'reference', 'note', 'processed_by', 'requested_at', 'processed_at',
+        'reference', 'note', 'processed_by', 'requested_at', 'confirmed_at', 'processed_at',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'status' => PayoutStatus::class,
         'requested_at' => 'datetime',
+        'confirmed_at' => 'datetime',
         'processed_at' => 'datetime',
     ];
 

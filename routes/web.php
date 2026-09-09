@@ -201,6 +201,11 @@ Route::middleware('guest')->group(function () {
 });
 Route::post('/keluar', [LoginController::class, 'destroy'])->middleware('auth')->name('logout');
 
+// Konfirmasi penarikan dana afiliator dari link email — signed URL 24 jam,
+// tanpa login (link hanya sampai ke inbox pemilik akun).
+Route::get('/akun/afiliasi/penarikan/{payout}/konfirmasi', [AffiliateController::class, 'confirmPayout'])
+    ->middleware('signed')->name('account.affiliate.payout.confirm');
+
 // Email verification — the link & resend must work WITHOUT being logged in,
 // because customers verify before they can log in.
 Route::get('/verifikasi-email/{id}/{hash}', [EmailVerificationController::class, 'verify'])

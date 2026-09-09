@@ -206,9 +206,11 @@ class AffiliateService
             ]);
         }
 
+        // Masuk antrean keuangan hanya setelah link konfirmasi email diklik —
+        // pembajak akun tanpa akses email tidak bisa mencairkan dana.
         return $affiliate->payouts()->create([
             'amount' => $amount,
-            'status' => PayoutStatus::Requested,
+            'status' => PayoutStatus::AwaitingConfirmation,
             'method' => 'bank_transfer',
             'bank_name' => $affiliate->bank_name,
             'bank_account_number' => $affiliate->bank_account_number,

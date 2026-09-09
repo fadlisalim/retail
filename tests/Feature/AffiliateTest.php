@@ -91,10 +91,14 @@ class AffiliateTest extends TestCase
         $this->assertEquals(150_000, $affiliate->approvedTotal());
         $this->assertEquals(150_000, $affiliate->availableBalance());
 
-        // Request payout (above the 100k minimum)
+        // Request payout (above the 100k minimum) — menunggu konfirmasi email,
+        // saldo langsung tercadangkan sejak diajukan.
         $payout = $svc->requestPayout($affiliate, 150_000);
-        $this->assertSame(PayoutStatus::Requested, $payout->status);
+        $this->assertSame(PayoutStatus::AwaitingConfirmation, $payout->status);
         $this->assertEquals(0, $affiliate->availableBalance()); // reserved
+
+        // Konfirmasi via link email (disimulasikan) → masuk antrean keuangan.
+        $payout->update(['status' => PayoutStatus::Requested, 'confirmed_at' => now()]);
 
         // Settle → commission becomes paid
         $svc->settlePayout($payout, null, 'TRX-1');

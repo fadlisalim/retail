@@ -88,6 +88,12 @@ class Affiliate extends Model
     {
         return (float) $this->payouts()
             ->where('status', '!=', PayoutStatus::Rejected->value)
+            // Penarikan yang tak kunjung dikonfirmasi lewat email tidak boleh
+            // mengunci saldo selamanya — lewat 24 jam dianggap kedaluwarsa.
+            ->where(function ($q) {
+                $q->where('status', '!=', PayoutStatus::AwaitingConfirmation->value)
+                    ->orWhere('created_at', '>=', now()->subDay());
+            })
             ->sum('amount');
     }
 

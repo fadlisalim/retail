@@ -87,7 +87,38 @@
                         <button type="submit" class="btn-primary whitespace-nowrap" @if ($stats['available'] < $minPayout) disabled @endif>Ajukan Penarikan</button>
                     </form>
                     @error('amount')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                    <p class="mt-2 text-xs text-gray-400">Transfer ke: {{ $affiliate->bank_name }} {{ $affiliate->bank_account_number }} a.n. {{ $affiliate->bank_account_holder }}</p>
+                    <p class="mt-2 text-xs text-gray-400">🔒 Demi keamanan, penarikan diproses setelah Anda mengklik <strong>link konfirmasi di email</strong> (berlaku 24 jam).</p>
+
+                    {{-- Rekening tujuan + ubah rekening (perubahan diberitahukan via email) --}}
+                    <div class="mt-3 border-t border-gray-100 pt-3" x-data="{ editBank: {{ $errors->has('bank_name') || $errors->has('bank_account_number') || $errors->has('bank_account_holder') ? 'true' : 'false' }} }">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <p class="text-xs text-gray-400">Transfer ke: {{ $affiliate->bank_name }} {{ $affiliate->bank_account_number }} a.n. {{ $affiliate->bank_account_holder }}</p>
+                            <button type="button" @click="editBank = !editBank"
+                                    class="text-xs font-semibold text-brand-700 hover:underline">
+                                <span x-show="!editBank">Ubah Rekening</span><span x-show="editBank" x-cloak>Batal</span>
+                            </button>
+                        </div>
+                        <form x-show="editBank" x-cloak action="{{ route('account.affiliate.bank') }}" method="POST" class="mt-2 grid gap-2 sm:grid-cols-3">
+                            @csrf
+                            @method('PUT')
+                            <div>
+                                <input type="text" name="bank_name" value="{{ old('bank_name', $affiliate->bank_name) }}" placeholder="Nama bank (mis. BCA)" class="form-input w-full text-sm" required>
+                                @error('bank_name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <input type="text" name="bank_account_number" value="{{ old('bank_account_number', $affiliate->bank_account_number) }}" placeholder="Nomor rekening" class="form-input w-full text-sm" required>
+                                @error('bank_account_number')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <input type="text" name="bank_account_holder" value="{{ old('bank_account_holder', $affiliate->bank_account_holder) }}" placeholder="Atas nama" class="form-input w-full text-sm" required>
+                                @error('bank_account_holder')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="sm:col-span-3">
+                                <button type="submit" class="btn-primary text-sm">Simpan Rekening</button>
+                                <p class="mt-1 text-xs text-gray-400">Rekening wajib atas nama sendiri. Setiap perubahan diberitahukan ke email Anda.</p>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             @endif
 
