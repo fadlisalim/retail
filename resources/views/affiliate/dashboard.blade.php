@@ -51,7 +51,7 @@
                            class="inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline">
                             Lihat Produk &amp; Komisi — fee per produk + link siap salin →
                         </a>
-                        <a href="{{ asset('panduan-afiliator.pdf').'?v='.@filemtime(public_path('panduan-afiliator.pdf')) }}" target="_blank" rel="noopener"
+                        <a href="{{ asset('panduan-afiliator.pdf') }}" target="_blank" rel="noopener"
                            class="inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline">
                             📄 Unduh Panduan Afiliator (PDF)
                         </a>

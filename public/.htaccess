@@ -1,3 +1,12 @@
+# Panduan Afiliator dibagikan lewat URL polos — jangan biarkan browser/CDN
+# menyimpan versi lama: wajib revalidasi ke server setiap kali diminta,
+# sehingga pembaruan PDF langsung terlihat tanpa purge cache manual.
+<IfModule mod_headers.c>
+    <Files "panduan-afiliator.pdf">
+        Header set Cache-Control "public, max-age=0, must-revalidate"
+    </Files>
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
