@@ -72,10 +72,16 @@ class PriceController extends Controller
                 'variant_id' => ['required', 'integer'],
                 'price' => ['required', 'numeric', 'min:0'],
                 'compare_price' => ['nullable', 'numeric', 'min:0'],
+                'cost_price' => ['nullable', 'numeric', 'min:0'],
                 'stock' => ['nullable', 'integer', 'min:0'],
             ]);
 
             $variant = ProductVariant::where('product_id', $produk->id)->findOrFail((int) $data['variant_id']);
+
+            // Modal per varian (kosong = memakai modal produk induk).
+            if (array_key_exists('cost_price', $data)) {
+                $variant->cost_price = $data['cost_price'] !== null && $data['cost_price'] !== '' ? (float) $data['cost_price'] : null;
+            }
 
             // Pemetaan sama dengan form produk: coret > jual → price+sale_price.
             $jual = (float) $data['price'];
@@ -97,7 +103,7 @@ class PriceController extends Controller
             $produk->update(['price' => $produk->variants()->where('is_active', true)->get()
                 ->map(fn (ProductVariant $v) => $v->effectivePrice())->min() ?? $produk->price]);
 
-            return response()->json($this->variantRow($variant->fresh()));
+            return response()->json($this->variantRow($variant->fresh(), $produk->fresh()));
         }
 
         // ---- Baris PRODUK. ----
@@ -184,21 +190,24 @@ class PriceController extends Controller
         ];
     }
 
-    private function variantRow(ProductVariant $variant): array
+    private function variantRow(ProductVariant $variant, Product $product): array
     {
         $jual = $variant->effectivePrice();
+        // Margin varian dari modal varian; bila kosong, pakai modal produk induk.
+        $modalEfektif = (float) ($variant->cost_price ?? $product->cost_price ?? 0);
 
         return [
             'id' => $variant->id,
             'jual' => $jual,
             'coret' => $variant->sale_price !== null && (float) $variant->price > $jual ? (float) $variant->price : null,
-            'modal' => null,
+            'modal' => $variant->cost_price !== null ? (float) $variant->cost_price : null,
+            'modal_induk' => $product->cost_price !== null ? (float) $product->cost_price : null,
             'fee' => null,
             'stok' => (int) $variant->stock,
             'diskon_pct' => $variant->sale_price !== null && (float) $variant->price > 0 && (float) $variant->price > $jual
                 ? round((1 - $jual / (float) $variant->price) * 100, 1)
                 : null,
-            'margin_pct' => null,
+            'margin_pct' => $modalEfektif > 0 && $jual > 0 ? round(($jual - $modalEfektif) / $jual * 100, 2) : null,
         ];
     }
 }

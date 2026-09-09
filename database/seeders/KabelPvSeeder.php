@@ -31,6 +31,7 @@ class KabelPvSeeder extends Seeder
             'name' => '1×4mm²',
             'size' => '4mm²',
             'price' => 18000,
+            'cost' => 14000,
             'weight_grams' => 60, // ± per meter (estimasi)
             'sort' => 0,
         ],
@@ -40,6 +41,7 @@ class KabelPvSeeder extends Seeder
             'name' => '1×6mm²',
             'size' => '6mm²',
             'price' => 24000,
+            'cost' => 19000,
             'weight_grams' => 85, // ± per meter (estimasi)
             'sort' => 1,
         ],
@@ -111,11 +113,17 @@ HTML;
                     'name' => $row['name'],
                     'option_values' => ['Penampang' => $row['size']],
                     'price' => $row['price'],
+                    'cost_price' => $row['cost'],
                     'weight_grams' => $row['weight_grams'],
                     'is_active' => true,
                     'sort_order' => $row['sort'],
                 ],
             );
+
+            // Modal per varian ditambahkan belakangan — isi bila masih kosong.
+            if (! $variant->wasRecentlyCreated && $variant->cost_price === null) {
+                $variant->forceFill(['cost_price' => $row['cost']])->save();
+            }
 
             // Konversi produk lama (2 produk terpisah dari versi awal seeder).
             if ($variant->wasRecentlyCreated) {

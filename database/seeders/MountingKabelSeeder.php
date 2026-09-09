@@ -333,6 +333,7 @@ HTML;
                     'name' => $warna,
                     'option_values' => ['Warna' => $warna],
                     'price' => self::NYAF_PRICE,
+                    'cost_price' => $cost,
                     'weight_grams' => 45,
                     'is_active' => true,
                     'sort_order' => $warna === 'Merah' ? 0 : 1,
@@ -340,6 +341,11 @@ HTML;
             );
 
             if (! $variant->wasRecentlyCreated) {
+                // Modal per varian ditambahkan belakangan — isi bila masih kosong.
+                if ($variant->cost_price === null) {
+                    $variant->forceFill(['cost_price' => $cost])->save();
+                }
+
                 continue;
             }
 

@@ -47,6 +47,8 @@ class KabelPvSeederTest extends TestCase
 
         foreach ($p->variants as $v) {
             $this->assertSame((float) self::PRICE[$v->sku], (float) $v->price, $v->sku);
+            // Modal per varian tercatat (dasar margin di halaman Harga & Margin).
+            $this->assertSame((float) self::COST[$v->sku], (float) $v->cost_price, $v->sku);
             // Margin dari revenue ≥ 20% → harga ≥ modal ÷ 0,8.
             $this->assertGreaterThanOrEqual(self::COST[$v->sku] / 0.8, (float) $v->price, $v->sku);
         }

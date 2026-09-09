@@ -125,6 +125,30 @@ class AdminPriceTableTest extends TestCase
         $this->assertEquals(199_000, (float) $product->fresh()->price);
     }
 
+    /** Modal per varian: margin varian dari modalnya sendiri, fallback modal induk. */
+    public function test_variant_cost_drives_its_margin_with_parent_fallback(): void
+    {
+        $product = $this->stockedProduct(0, ['product_type' => 'variable', 'price' => 18_000, 'cost_price' => 14_000]);
+        $v4 = $product->variants()->create(['sku' => 'PV-4', 'name' => '4mm²', 'option_values' => ['P' => '4'], 'price' => 18_000, 'is_active' => true, 'sort_order' => 0]);
+        $v6 = $product->variants()->create(['sku' => 'PV-6', 'name' => '6mm²', 'option_values' => ['P' => '6'], 'price' => 24_000, 'is_active' => true, 'sort_order' => 1]);
+
+        // Tanpa modal varian → margin memakai modal induk 14.000: (24.000-14.000)/24.000.
+        $this->actingAs($this->katalog())
+            ->patchJson(route('admin.prices.update', $product), ['variant_id' => $v6->id, 'price' => 24_000])
+            ->assertOk()
+            ->assertJson(['modal' => null, 'modal_induk' => 14_000, 'margin_pct' => 41.67]);
+
+        // Isi modal varian 19.000 → margin sesungguhnya 20,83%.
+        $this->patchJson(route('admin.prices.update', $product), ['variant_id' => $v6->id, 'price' => 24_000, 'cost_price' => 19_000])
+            ->assertOk()
+            ->assertJson(['modal' => 19_000, 'margin_pct' => 20.83]);
+        $this->assertEquals(19_000, (float) $v6->fresh()->cost_price);
+
+        // Varian 4mm² tetap fallback ke induk.
+        $this->patchJson(route('admin.prices.update', $product), ['variant_id' => $v4->id, 'price' => 18_000])
+            ->assertOk()->assertJson(['margin_pct' => 22.22]);
+    }
+
     public function test_variant_of_another_product_is_rejected(): void
     {
         $a = $this->stockedProduct(0, ['product_type' => 'variable']);

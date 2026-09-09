@@ -38,7 +38,7 @@
         Margin = (harga jual − modal) ÷ harga jual, dari harga jual efektif — <strong>belum</strong> memperhitungkan PPN &amp; ongkir.
         Harga modal &amp; fee tidak pernah tampil di toko. Baris <span class="rounded bg-red-50 px-1 text-red-600">merah</span> rugi,
         <span class="rounded bg-amber-50 px-1 text-amber-600">kuning</span> di bawah 20%.
-        Produk bervarian: harga jual &amp; stok disunting pada <span class="text-indigo-600">baris variannya</span> (↳); modal &amp; fee tetap di baris produk.
+        Produk bervarian: harga jual, modal &amp; stok disunting pada <span class="text-indigo-600">baris variannya</span> (↳) — modal varian kosong memakai modal produk induk; fee tetap di baris produk.
         Perubahan stok tercatat sebagai penyesuaian di gudang default.
     </p>
 
@@ -113,21 +113,29 @@
                             x-data="priceRow({
                                 url: '{{ route('admin.prices.update', $product) }}',
                                 variantId: @js($variant->id),
+                                modal: @js($variant->cost_price !== null ? (float) $variant->cost_price : null),
+                                modalInduk: @js($product->cost_price !== null ? (float) $product->cost_price : null),
                                 jual: @js($vJual),
                                 coret: @js($vCoret),
                                 stok: @js((int) $variant->stock),
-                            })">
+                            })"
+                            :class="{'bg-red-50/60': marginPct !== null && marginPct < 0, 'bg-amber-50/60': marginPct !== null && marginPct >= 0 && marginPct < 20}">
                             <td class="max-w-[320px] px-4 py-1.5 pl-8">
                                 <p class="truncate text-sm text-gray-700" title="{{ $variant->name }}">↳ {{ $variant->name }}</p>
                                 <p class="text-[11px] text-gray-400">{{ $variant->sku }}</p>
                             </td>
-                            <td class="px-3 py-1.5 text-right text-xs text-gray-300" title="Modal dicatat di baris produk">—</td>
+                            <td class="px-3 py-1.5"><input type="number" min="0" step="1000" x-model.number="modal" @change="save()" @keydown.enter="$event.target.blur()" class="form-input w-32 text-right" :placeholder="modalInduk ? '↑ ' + modalInduk : '—'" title="Modal varian ini — kosongkan untuk memakai modal produk induk"></td>
                             <td class="px-3 py-1.5"><input type="number" min="0" step="1000" x-model.number="jual" @change="save()" @keydown.enter="$event.target.blur()" class="form-input w-32 text-right"></td>
                             <td class="px-3 py-1.5"><input type="number" min="0" step="1000" x-model.number="coret" @change="save()" @keydown.enter="$event.target.blur()" class="form-input w-32 text-right" placeholder="—"></td>
                             <td class="px-3 py-1.5 text-center text-xs" x-text="diskonLabel()"></td>
                             <td class="px-3 py-1.5 text-center text-xs text-gray-300" title="Fee dicatat di baris produk">—</td>
                             <td class="px-3 py-1.5"><input type="number" min="0" step="1" x-model.number="stok" @change="save()" @keydown.enter="$event.target.blur()" class="form-input mx-auto w-20 text-center"></td>
-                            <td class="px-3 py-1.5 text-center text-xs text-gray-300">—</td>
+                            <td class="px-3 py-1.5 text-center">
+                                <span class="font-semibold"
+                                      :class="marginPct === null ? 'text-gray-300' : (marginPct < 0 ? 'text-red-600' : (marginPct < 20 ? 'text-amber-600' : 'text-green-600'))"
+                                      :title="modal ? '' : 'Dihitung dari modal produk induk'"
+                                      x-text="marginLabel()"></span>
+                            </td>
                             <td class="px-3 py-1.5 text-center text-xs">
                                 <span x-show="state === 'idle'" class="text-gray-300">—</span>
                                 <span x-show="state === 'saving'" x-cloak class="text-gray-400">menyimpan…</span>
@@ -152,6 +160,7 @@
                 variable: init.variable ?? false,
                 variantId: init.variantId ?? null,
                 modal: init.modal ?? null,
+                modalInduk: init.modalInduk ?? null,
                 jual: init.jual,
                 coret: init.coret,
                 fee: init.fee ?? null,
@@ -159,8 +168,9 @@
                 state: 'idle',
                 error: null,
                 get marginPct() {
-                    if (this.variantId) return null; // modal dicatat per produk
-                    const modal = Number(this.modal), jual = Number(this.jual);
+                    // Varian tanpa modal sendiri memakai modal produk induk.
+                    const modalRaw = (this.modal === '' || this.modal === null) && this.variantId ? this.modalInduk : this.modal;
+                    const modal = Number(modalRaw), jual = Number(this.jual);
                     if (! modal || ! jual || modal <= 0 || jual <= 0) return null;
                     return (jual - modal) / jual * 100;
                 },
@@ -176,6 +186,7 @@
                     if (this.variantId) {
                         return {
                             variant_id: this.variantId,
+                            cost_price: this.modal === '' ? null : this.modal,
                             price: this.jual,
                             compare_price: this.coret === '' ? null : this.coret,
                             stock: this.stok === '' || this.stok === null ? null : this.stok,
@@ -210,8 +221,8 @@
                         }
                         const row = await response.json();
                         // Server yang menentukan pemetaan jual/coret — segarkan dari sana.
-                        this.jual = row.jual; this.coret = row.coret; this.stok = row.stok;
-                        if (! this.variantId) { this.modal = row.modal; this.fee = row.fee; }
+                        this.jual = row.jual; this.coret = row.coret; this.stok = row.stok; this.modal = row.modal;
+                        if (this.variantId) { this.modalInduk = row.modal_induk; } else { this.fee = row.fee; }
                         this.state = 'saved';
                         setTimeout(() => { if (this.state === 'saved') this.state = 'idle'; }, 2500);
                     } catch (e) {
