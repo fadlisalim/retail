@@ -88,7 +88,10 @@
         variantImage: null,
         zoom: false,
         qty: {{ $product->min_purchase }},
-        variantId: {{ $product->variants->count() === 1 ? $product->variants->first()->id : 'null' }},
+        {{-- Auto-pilih varian pertama yang MASIH ADA STOK — mencegah pembeli
+             mengira sudah memilih (chip habis tidak bisa diklik) lalu item
+             masuk keranjang tanpa varian. --}}
+        variantId: {{ $product->variants->first(fn ($v) => $v->stock > 0)?->id ?? ($product->variants->count() === 1 ? $product->variants->first()->id : 'null') }},
         variants: {{ Illuminate\Support\Js::from($variantData) }},
         basePrice: {{ $product->effectivePrice() }},
         get current() { return this.variants.find(v => v.id === this.variantId) },
@@ -294,9 +297,11 @@
                                     <img src="{{ asset('storage/'.$variant->image_path) }}" alt="{{ $variant->name }}" class="h-9 w-9 shrink-0 rounded object-cover" loading="lazy">
                                 @endif
                                 <span class="font-medium">{{ $variant->name }}</span>
+                                @if ($variant->stock <= 0)<span class="text-xs text-red-400">(habis)</span>@endif
                             </button>
                         @endforeach
                     </div>
+                    <p x-show="!variantId" x-cloak class="mt-2 text-xs font-medium text-amber-600">Pilih varian dulu untuk menambah ke keranjang.</p>
                 </div>
             @endif
 
@@ -337,7 +342,8 @@
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
                         <input type="hidden" name="variant_id" :value="variantId">
                         <input type="hidden" name="quantity" :value="qty">
-                        <button type="submit" class="btn-primary w-full" :disabled="stock <= 0">Tambah ke Keranjang</button>
+                        <button type="submit" class="btn-primary w-full"
+                                :disabled="stock <= 0 || ({{ $product->variants->isNotEmpty() ? 'true' : 'false' }} && !variantId)">Tambah ke Keranjang</button>
                     </form>
                 @endif
                 @php

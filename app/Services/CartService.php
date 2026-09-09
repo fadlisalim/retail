@@ -77,6 +77,22 @@ class CartService
             ]);
         }
 
+        // Produk bervarian WAJIB memilih varian. Tanpa ini, item tanpa varian
+        // lolos ke keranjang (stok agregat produk > 0) lalu meledak saat
+        // reservasi stok di checkout — stok produk variabel hidup di varian.
+        if ($variant === null && $product->variants()->where('is_active', true)->exists()) {
+            throw ValidationException::withMessages([
+                'variant_id' => 'Pilih varian produk terlebih dahulu ya.',
+            ]);
+        }
+
+        // Varian harus benar-benar milik produk ini.
+        if ($variant && $variant->product_id !== $product->id) {
+            throw ValidationException::withMessages([
+                'variant_id' => 'Varian tidak sesuai dengan produk.',
+            ]);
+        }
+
         $quantity = max($product->min_purchase, $quantity);
         if ($product->max_purchase) {
             $quantity = min($product->max_purchase, $quantity);

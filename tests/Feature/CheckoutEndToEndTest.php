@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Enums\StockMovementType;
 use App\Models\CustomerAddress;
 use App\Models\IndahCargoRate;
 use App\Models\Order;
 use App\Services\CartService;
+use App\Services\StockService;
 use Database\Seeders\IndahCargoSeeder;
 use Database\Seeders\ShippingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -75,6 +77,62 @@ class CheckoutEndToEndTest extends TestCase
         $order = Order::latest('id')->first();
         $this->assertNotNull($order, 'Pesanan tidak terbentuk.');
         $this->assertSame(170000.0, (float) $order->items_subtotal);
+    }
+
+    /** Produk bervarian tanpa memilih varian → ditolak ramah, bukan masuk keranjang. */
+    public function test_variable_products_cannot_be_added_without_a_variant(): void
+    {
+        $this->actingAs($this->customer());
+        $product = $this->stockedProduct(0, ['name' => 'Panel Bekas Varian', 'product_type' => 'variable', 'price' => 170000]);
+        $product->variants()->create(['sku' => 'PBV-50', 'name' => '50 Wp', 'option_values' => ['Daya' => '50 Wp'], 'price' => 170000, 'is_active' => true, 'sort_order' => 0, 'stock' => 0]);
+        // Stok agregat produk > 0 (varian lain) — dulu bikin item tanpa varian lolos.
+        $product->forceFill(['stock' => 3])->save();
+
+        $this->postJson(route('cart.store'), ['product_id' => $product->id, 'quantity' => 1])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('variant_id');
+
+        $this->assertDatabaseCount('cart_items', 0);
+    }
+
+    /** Varian milik produk lain ditolak. */
+    public function test_a_foreign_variant_is_rejected(): void
+    {
+        $this->actingAs($this->customer());
+        $a = $this->stockedProduct(5, ['product_type' => 'variable']);
+        $b = $this->stockedProduct(5, ['product_type' => 'variable']);
+        $foreign = $b->variants()->create(['sku' => 'FRG-1', 'name' => 'X', 'option_values' => ['U' => 'X'], 'price' => 100000, 'is_active' => true, 'sort_order' => 0, 'stock' => 5]);
+
+        $this->postJson(route('cart.store'), ['product_id' => $a->id, 'variant_id' => $foreign->id, 'quantity' => 1])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('variant_id');
+    }
+
+    /** Stok habis saat submit checkout → pesan ramah, bukan 500. */
+    public function test_out_of_stock_at_submit_shows_a_friendly_error_not_a_500(): void
+    {
+        [$customer, $address] = $this->customerWithAddress();
+        $this->actingAs($customer);
+
+        $product = $this->stockedProduct(1, ['price' => 170000, 'weight_grams' => 8000]);
+        app(CartService::class)->addItem($product, null, 1);
+        // Stok keburu habis setelah masuk keranjang (dibeli orang lain / dikoreksi admin).
+        app(StockService::class)->adjust($product, null, -1, StockMovementType::Adjustment);
+
+        $options = $this->postJson(route('checkout.shipping'), ['province' => $address->province, 'city' => $address->city])->assertOk()->json();
+        $first = collect($options['options'] ?? $options)->first();
+
+        $this->post(route('checkout.store'), [
+            'customer_name' => 'Tester', 'customer_email' => $customer->email, 'customer_phone' => '62811',
+            'address_id' => $address->id,
+            'shipping_provider' => $first['provider'] ?? $first['provider_code'] ?? '',
+            'shipping_service' => $first['service'] ?? $first['service_code'] ?? '',
+            'payment_method' => 'manual_transfer',
+            'agree_terms' => '1',
+            'idempotency_key' => 'e2e-oos-'.uniqid(),
+        ])->assertRedirect()->assertSessionHas('error');
+
+        $this->assertSame(0, Order::count());
     }
 
     /** Jalur ambil di gudang (ongkir Rp 0) juga harus tembus. */

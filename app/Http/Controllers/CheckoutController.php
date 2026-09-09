@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CheckoutRequest;
+use App\Models\IndahCargoRate;
+use App\Services\AffiliateService;
 use App\Services\CartCalculator;
 use App\Services\CartService;
-use App\Services\AffiliateService;
 use App\Services\CheckoutService;
 use App\Services\NotificationService;
 use App\Services\PaymentManager;
 use App\Services\ShippingService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,8 +28,7 @@ class CheckoutController extends Controller
         private readonly PaymentManager $payments,
         private readonly AffiliateService $affiliates,
         private readonly NotificationService $notifications,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View|RedirectResponse
     {
@@ -51,7 +52,7 @@ class CheckoutController extends Controller
             // Fresh idempotency key prevents a double-clicked "Bayar" from duplicating.
             'idempotencyKey' => (string) Str::uuid(),
             // Province -> cities map from the Indah tariff table so shipping can be quoted.
-            'citiesByProvince' => \App\Models\IndahCargoRate::citiesByProvince(),
+            'citiesByProvince' => IndahCargoRate::citiesByProvince(),
         ]);
     }
 
@@ -106,7 +107,20 @@ class CheckoutController extends Controller
             'landmark' => $address->landmark,
         ];
 
-        $order = $this->checkout->place($cart, $data, $quote);
+        try {
+            $order = $this->checkout->place($cart, $data, $quote);
+        } catch (\RuntimeException $e) {
+            // QueryException/PDOException juga turunan RuntimeException — itu
+            // error sistem sungguhan, jangan ditelan (apalagi ditampilkan).
+            if ($e instanceof QueryException || $e instanceof \PDOException) {
+                throw $e;
+            }
+
+            // Stok keburu habis antara tambah-keranjang dan submit (StockService
+            // melempar RuntimeException) — sampaikan sebagai pesan ramah, bukan
+            // halaman 500.
+            return back()->withInput()->with('error', $e->getMessage().' Silakan sesuaikan jumlah atau hapus item tersebut dari keranjang.');
+        }
 
         // Attribute the sale to a referring affiliate (last-click cookie), if any.
         $this->affiliates->attributeOrder($order);
