@@ -29,7 +29,7 @@ class AssistantAnalytics
      * @param  array  $result  the AssistantService::ask() result
      *                         (['ok','reply','products',...])
      */
-    public function record(string $question, array $result, ?string $sessionId, ?string $ip): void
+    public function record(string $question, array $result, ?string $sessionId, ?string $ip, ?string $imagePath = null): void
     {
         if (! $this->enabled()) {
             return;
@@ -50,6 +50,7 @@ class AssistantAnalytics
             AssistantConversation::create([
                 'session_id' => $sessionId,
                 'message' => Str::limit($question, 2000),
+                'image_path' => $imagePath,
                 'reply' => Str::limit((string) ($result['reply'] ?? ''), 4000),
                 'answered' => $answered,
                 'product_slugs' => collect($products)->pluck('slug')->filter()->values()->all(),

@@ -296,6 +296,7 @@ Alpine.data('csChat', (config = {}) => ({
     historyEndpoint: config.history || '/api/asisten/riwayat',
     contactEndpoint: config.contact || '/api/asisten/kontak',
     clickEndpoint: config.click || '/api/asisten/klik',
+    uploadEndpoint: config.upload || '/api/asisten/unggah',
     welcomes: config.welcomes || [config.welcome || 'Halo Kak! 👋 Ada yang bisa aku bantu seputar produk kami?'],
     sessionId: '',
     // Pre-WhatsApp contact form state (name + WA number + need are required
@@ -330,6 +331,7 @@ Alpine.data('csChat', (config = {}) => ({
                     this.messages = data.messages.map((m) => ({
                         role: m.role,
                         content: m.content,
+                        image: m.image || '',
                         products: m.products || [],
                         whatsapp: '',
                     }));
@@ -373,6 +375,52 @@ Alpine.data('csChat', (config = {}) => ({
                 body: JSON.stringify({ type, slug: slug || null }),
             }).catch(() => {});
         } catch (e) { /* tracking must never break the UI */ }
+    },
+
+    // Lampiran foto (ala WhatsApp): unggah dulu, path-nya dikirim bersama pesan.
+    pendingImage: null, // { path, url, uploading }
+
+    async attachFile(event) {
+        const file = event.target.files && event.target.files[0];
+        event.target.value = ''; // reset supaya file sama bisa dipilih ulang
+        if (!file) return;
+        if (!/^image\/(jpe?g|png|webp)$/i.test(file.type)) {
+            this.messages.push({ role: 'assistant', content: 'Format foto harus JPG, PNG, atau WebP ya Kak 🙏', products: [], welcome: true });
+            this.scrollSoon();
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            this.messages.push({ role: 'assistant', content: 'Ukuran foto maksimal 5MB ya Kak 🙏', products: [], welcome: true });
+            this.scrollSoon();
+            return;
+        }
+
+        this.pendingImage = { path: '', url: URL.createObjectURL(file), uploading: true };
+        try {
+            const body = new FormData();
+            body.append('image', file);
+            const res = await fetch(this.uploadEndpoint, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': this.csrf(), Accept: 'application/json' },
+                body,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                this.pendingImage = { path: data.path, url: data.url, uploading: false };
+            } else {
+                this.pendingImage = null;
+                this.messages.push({ role: 'assistant', content: 'Fotonya gagal terunggah, coba lagi ya Kak 🙏', products: [], welcome: true });
+                this.scrollSoon();
+            }
+        } catch (err) {
+            this.pendingImage = null;
+            this.messages.push({ role: 'assistant', content: 'Koneksi bermasalah saat unggah foto. Coba lagi ya Kak 🙏', products: [], welcome: true });
+            this.scrollSoon();
+        }
+    },
+
+    removeAttachment() {
+        this.pendingImage = null;
     },
 
     toggle() {
@@ -474,11 +522,13 @@ Alpine.data('csChat', (config = {}) => ({
 
     async send() {
         const text = this.input.trim();
-        if (!text || this.loading) return;
+        const image = this.pendingImage && !this.pendingImage.uploading ? this.pendingImage : null;
+        if ((!text && !image) || this.loading) return;
 
         const history = this.history();
-        this.messages.push({ role: 'user', content: text, products: [] });
+        this.messages.push({ role: 'user', content: text, image: image ? image.url : '', products: [] });
         this.input = '';
+        this.pendingImage = null;
         this.loading = true;
         this.quickChips = []; // chips are a first-question helper only
         this.scrollSoon();
@@ -487,7 +537,7 @@ Alpine.data('csChat', (config = {}) => ({
             const res = await fetch(this.endpoint, {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': this.csrf(), 'Content-Type': 'application/json', Accept: 'application/json' },
-                body: JSON.stringify({ message: text, history, session_id: this.sessionId, product_slug: this.attached?.slug || null }),
+                body: JSON.stringify({ message: text, image: image ? image.path : null, history, session_id: this.sessionId, product_slug: this.attached?.slug || null }),
             });
             const data = await res.json().catch(() => ({}));
             if (res.ok && data.reply) {

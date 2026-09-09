@@ -100,16 +100,19 @@ class AssistantConsultantTest extends TestCase
         $this->postJson('/api/asisten/klik', ['type' => 'checkout'])->assertStatus(422);
     }
 
-    /** Halaman konsultasi publik tayang dengan hero + chat + contoh kebutuhan. */
+    /** Halaman konsultasi = chat full-screen ala WA: bar Kirana, chip, composer foto. */
     public function test_the_consultation_page_renders(): void
     {
         $this->get('/konsultasi')
             ->assertOk()
-            ->assertSee('Bingung Pilih Produk Energi yang Tepat?')
-            ->assertSee('Mulai Konsultasi dengan Kirana')
+            ->assertSee('Konsultan Energi')
             ->assertSee('Backup listrik saat mati lampu')
             ->assertSee('PJU tenaga surya')
-            ->assertSee('Konsultan Energi');
+            ->assertSee('Ketik pesan…')
+            ->assertSee('Lampirkan foto')
+            ->assertSee(route('assistant.upload'), false)
+            // Mode layar penuh: footer & nav bawah tidak dirender.
+            ->assertDontSee('Panduan Energi Surya');
     }
 
     /** Gap dari beberapa percakapan terakumulasi untuk dashboard admin. */

@@ -62,6 +62,8 @@ Route::post('/api/asisten/kontak', [AssistantController::class, 'contact'])
     ->middleware('throttle:10,1')->name('assistant.contact');
 Route::post('/api/asisten/klik', [AssistantController::class, 'click'])
     ->middleware('throttle:60,1')->name('assistant.click');
+Route::post('/api/asisten/unggah', [AssistantController::class, 'upload'])
+    ->middleware('throttle:10,1')->name('assistant.upload');
 
 // Chat Toko (customer ↔ admin, Tokopedia-style; NOT the AI assistant).
 Route::post('/api/chat-toko/kirim', [SiteChatController::class, 'send'])

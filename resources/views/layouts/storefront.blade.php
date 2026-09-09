@@ -32,25 +32,32 @@
     @stack('head')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body x-data data-cart-count="{{ $cartCount }}" class="min-h-screen bg-gray-50 text-gray-800">
+{{-- Mode chat_page (/konsultasi): layar penuh ala WhatsApp — body jadi kolom
+     setinggi viewport, main full-bleed tanpa padding, footer/nav bawah/widget
+     chat disembunyikan supaya composer bisa menempel di dasar layar. --}}
+<body x-data data-cart-count="{{ $cartCount }}" class="@hasSection('chat_page') flex h-dvh flex-col overflow-hidden @else min-h-screen @endif bg-gray-50 text-gray-800">
     <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-2 focus:rounded focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-white">Lewati ke konten</a>
 
     @include('partials.header')
 
-    <main id="main" class="mx-auto w-full max-w-7xl px-4 pb-24 pt-4 sm:px-6 lg:pb-10">
-        <x-flash />
+    <main id="main" class="@hasSection('chat_page') flex min-h-0 w-full flex-1 flex-col @else mx-auto w-full max-w-7xl px-4 pb-24 pt-4 sm:px-6 lg:pb-10 @endif">
+        @hasSection('chat_page') @else <x-flash /> @endif
         @yield('content')
     </main>
 
-    @include('partials.footer')
-    @include('partials.mobile-nav')
-    @include('partials.mini-cart')
-    {{-- Halaman /konsultasi punya chat Kirana full-page sendiri — widget
-         mengambang disembunyikan di sana supaya tidak dobel. --}}
-    @unless (View::hasSection('hide_cs_widget'))
-        @include('partials.cs-chat')
-    @endunless
-    @include('partials.site-chat')
+    @hasSection('chat_page')
+        @include('partials.mini-cart')
+    @else
+        @include('partials.footer')
+        @include('partials.mobile-nav')
+        @include('partials.mini-cart')
+        {{-- Halaman /konsultasi punya chat Kirana full-page sendiri — widget
+             mengambang disembunyikan di sana supaya tidak dobel. --}}
+        @unless (View::hasSection('hide_cs_widget'))
+            @include('partials.cs-chat')
+        @endunless
+        @include('partials.site-chat')
+    @endif
 
     @stack('scripts')
 </body>

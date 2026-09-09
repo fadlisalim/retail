@@ -13,7 +13,7 @@ class AssistantConversation extends Model
     public const UPDATED_AT = null;
 
     protected $fillable = [
-        'session_id', 'message', 'reply', 'answered', 'product_slugs', 'model', 'ip_hash', 'created_at',
+        'session_id', 'message', 'image_path', 'reply', 'answered', 'product_slugs', 'model', 'ip_hash', 'created_at',
     ];
 
     protected $casts = [

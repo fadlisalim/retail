@@ -7,6 +7,7 @@ use App\Models\Product;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -64,12 +65,12 @@ class AssistantService
      * Returns ['ok'=>bool,'reply'=>string,'products'=>array,'escalate'=>bool,
      *  'whatsapp'=>?string,'error'=>?string].
      */
-    public function ask(string $question, array $history = [], ?Product $focus = null): array
+    public function ask(string $question, array $history = [], ?Product $focus = null, ?string $imagePath = null): array
     {
         $this->lastResult = null;
         $question = trim($question);
 
-        if ($question === '') {
+        if ($question === '' && ! $imagePath) {
             return $this->fallback('Silakan tulis pertanyaanmu ya 🙂');
         }
 
@@ -103,7 +104,7 @@ class AssistantService
 
                     'thinking' => ['type' => 'disabled'], // snappy, low-cost CS replies
                     'system' => $this->systemPrompt($products, $focus?->name),
-                    'messages' => $this->buildMessages($question, $history),
+                    'messages' => $this->buildMessages($question, $history, $imagePath),
                 ]);
 
             $this->lastResult = ['ok' => false, 'status' => $response->status(), 'body' => $response->body()];
@@ -164,8 +165,12 @@ class AssistantService
         return trim($text);
     }
 
-    /** Build the messages array: sanitised history + the current question. */
-    private function buildMessages(string $question, array $history): array
+    /**
+     * Build the messages array: sanitised history + the current question. A
+     * photo the customer attached rides along as an image block on the CURRENT
+     * turn only (past photos stay out of history to bound cost).
+     */
+    private function buildMessages(string $question, array $history, ?string $imagePath = null): array
     {
         $messages = [];
         // Last 12 turns: enough consultation memory (budget, devices, rejected
@@ -184,9 +189,47 @@ class AssistantService
             array_shift($messages);
         }
 
-        $messages[] = ['role' => 'user', 'content' => Str::limit($question, 2000, '')];
+        $text = Str::limit($question, 2000, '');
+        $imageBlock = $imagePath ? $this->imageBlock($imagePath) : null;
+
+        if ($imageBlock) {
+            $content = [$imageBlock];
+            $content[] = ['type' => 'text', 'text' => $text !== '' ? $text : '(Pelanggan mengirim foto tanpa teks — tanggapi fotonya.)'];
+            $messages[] = ['role' => 'user', 'content' => $content];
+        } else {
+            $messages[] = ['role' => 'user', 'content' => $text];
+        }
 
         return $messages;
+    }
+
+    /** Base64 image block for a chat upload on the public disk, or null. */
+    private function imageBlock(string $path): ?array
+    {
+        try {
+            $disk = Storage::disk('public');
+            if (! $disk->exists($path) || $disk->size($path) > 4_000_000) {
+                return null; // batas aman API ±5MB; file lebih besar dilewati
+            }
+
+            $mediaType = match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+                'jpg', 'jpeg' => 'image/jpeg',
+                'png' => 'image/png',
+                'webp' => 'image/webp',
+                'gif' => 'image/gif',
+                default => null,
+            };
+            if (! $mediaType) {
+                return null;
+            }
+
+            return [
+                'type' => 'image',
+                'source' => ['type' => 'base64', 'media_type' => $mediaType, 'data' => base64_encode($disk->get($path))],
+            ];
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**
@@ -626,6 +669,10 @@ MERAKIT SISTEM DARI KOMPONEN SATUAN (fitur andalan):
 - Format jawaban rakitan (pengecualian aturan singkat — boleh pakai daftar): satu baris per komponen "Qty × Nama Produk — harga satuan = subtotal", tutup dengan baris "Perkiraan total: Rp …". HITUNG subtotal (qty × harga) dan totalnya dengan TELITI — cek ulang penjumlahanmu sebelum mengirim.
 - Sebut jujur bahwa ini estimasi konfigurasi awal: belum termasuk mounting, kabel/proteksi, dan jasa instalasi. Tawarkan finalisasi/survei lewat konsultasi (boleh tutup dengan token [[WA]] kalau pelanggan berminat lanjut).
 - Tetap akhiri dengan token [[PRODUK ...]] berisi komponen utama rakitan (maksimal 4, urut dari yang paling penting).
+
+FOTO DARI PELANGGAN:
+- Pelanggan bisa mengirim foto: label/nameplate perangkat, meteran atau tagihan PLN, atap rumah, instalasi terpasang, produk yang rusak, dsb. MANFAATKAN isinya: sebutkan singkat apa yang kamu lihat, baca angka yang terbaca (merk, model, daya, tegangan, kapasitas, daya PLN di meteran), lalu lanjutkan konsultasi dari informasi itu — mis. nameplate inverter 3000W 24V → rekomendasikan baterai 24V yang cocok dari katalog.
+- Kalau foto buram/tidak terbaca, minta foto ulang dengan sopan. JANGAN mengarang detail yang tidak jelas terlihat, dan jangan berpura-pura melihat foto yang tidak ada.
 
 DATA PELANGGAN (nama & nomor HP):
 - Perkenalan nama cukup diselipkan SEKALI di momen natural (bukan di setiap balasan, dan tidak perlu di pesan pertama). Kalau belum dijawab, jangan diulang-ulang.

@@ -11,6 +11,7 @@ use App\Services\SettingService;
 use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -23,7 +24,8 @@ class AssistantController extends Controller
     public function chat(Request $request, AssistantService $assistant, AssistantAnalytics $analytics): JsonResponse
     {
         $data = $request->validate([
-            'message' => ['required', 'string', 'max:1000'],
+            'message' => ['required_without:image', 'nullable', 'string', 'max:1000'],
+            'image' => ['sometimes', 'nullable', 'string', 'max:255', 'regex:#^chat-uploads/[A-Za-z0-9/_.\-]+$#'],
             'session_id' => ['sometimes', 'nullable', 'string', 'max:64'],
             'product_slug' => ['sometimes', 'nullable', 'string', 'max:255'],
             'history' => ['sometimes', 'array', 'max:30'],
@@ -31,15 +33,21 @@ class AssistantController extends Controller
             'history.*.content' => ['required_with:history', 'string', 'max:4000'],
         ]);
 
+        // Foto dari composer: hanya path hasil endpoint unggah yang diterima.
+        $imagePath = ($data['image'] ?? null) && Storage::disk('public')->exists($data['image'])
+            ? $data['image']
+            : null;
+
         // "Tanya Produk Ini": pin the product page the chat was opened from.
         $focus = ! empty($data['product_slug'])
             ? Product::published()->with(['brand', 'category'])->where('slug', $data['product_slug'])->first()
             : null;
 
-        $result = $assistant->ask($data['message'], $data['history'] ?? [], $focus);
+        $message = (string) ($data['message'] ?? '');
+        $result = $assistant->ask($message, $data['history'] ?? [], $focus, $imagePath);
 
         $analytics->captureLead($result['lead'] ?? null, $data['session_id'] ?? null);
-        $analytics->record($data['message'], $result, $data['session_id'] ?? null, $request->ip());
+        $analytics->record($message !== '' ? $message : '📷 (foto)', $result, $data['session_id'] ?? null, $request->ip(), $imagePath);
 
         // The CS WhatsApp number is only revealed after the customer leaves
         // name + WA number + what they need (the widget shows a small form).
@@ -62,6 +70,22 @@ class AssistantController extends Controller
             'whatsapp' => $whatsapp,
             'lead_form' => $leadForm,
         ]);
+    }
+
+    /**
+     * Unggah foto dari composer chat (nameplate, atap, meteran, dsb.). File
+     * disimpan dulu, lalu path-nya dikirim bersama pesan berikutnya supaya
+     * request chat tetap ringan dan bisa di-retry tanpa unggah ulang.
+     */
+    public function upload(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        $path = $data['image']->store('chat-uploads/'.now()->format('Y/m'), 'public');
+
+        return response()->json(['ok' => true, 'path' => $path, 'url' => asset('storage/'.$path)]);
     }
 
     /**
@@ -162,7 +186,12 @@ class AssistantController extends Controller
 
         $messages = [];
         foreach ($turns as $t) {
-            $messages[] = ['role' => 'user', 'content' => $t->message, 'products' => []];
+            $messages[] = [
+                'role' => 'user',
+                'content' => $t->message,
+                'image' => $t->image_path ? asset('storage/'.$t->image_path) : null,
+                'products' => [],
+            ];
             $cards = collect($t->product_slugs ?? [])
                 ->map(fn ($slug) => $products[$slug] ?? null)
                 ->filter()

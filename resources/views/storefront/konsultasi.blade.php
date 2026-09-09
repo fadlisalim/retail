@@ -1,7 +1,8 @@
 @extends('layouts.storefront')
 
 @section('title', 'Konsultasi Gratis dengan Kirana — '.brand())
-@section('meta_description', 'Bingung pilih panel surya, inverter, baterai, atau power station? Konsultasikan kebutuhan energi Anda dengan Kirana, konsultan energi cerdas '.brand().' — gratis, 24 jam.')
+@section('meta_description', 'Bingung pilih panel surya, inverter, baterai, atau power station? Chat langsung dengan Kirana, konsultan energi cerdas '.brand().' — gratis, 24 jam, bisa kirim foto.')
+@section('chat_page', '1')
 @section('hide_cs_widget', '1')
 
 @php
@@ -14,171 +15,151 @@
         'Inverter' => 'Saya butuh inverter',
         'Baterai' => 'Saya cari baterai lithium',
         'PJU tenaga surya' => 'Saya butuh lampu PJU tenaga surya',
-        'Sistem off-grid' => 'Saya mau bikin sistem off-grid',
-        'Kebutuhan usaha' => 'Saya butuh solusi listrik untuk usaha saya',
-        'Kebutuhan proyek' => 'Saya ada kebutuhan untuk proyek',
+        'Kebutuhan usaha/proyek' => 'Saya butuh solusi listrik untuk usaha/proyek saya',
     ];
-    $welcome = 'Halo 👋 Aku Kirana dari '.brand().'. Aku bantu carikan solusi energi yang paling cocok dengan kebutuhan dan budget Kakak — dari backup mati lampu, PLTS rumah, sampai power station buat perjalanan. Saat ini lagi cari untuk kebutuhan rumah, usaha, perjalanan, atau proyek?';
+    $welcome = 'Halo 👋 Aku Kirana dari '.brand().'. Aku bantu carikan solusi energi yang paling cocok dengan kebutuhan dan budget Kakak — dari backup mati lampu, PLTS rumah, sampai power station buat perjalanan. Boleh juga kirim foto (nameplate perangkat, meteran, atau atap rumah) biar rekomendasiku makin pas. Saat ini lagi cari untuk kebutuhan rumah, usaha, perjalanan, atau proyek?';
 @endphp
 
 @section('content')
-<div x-data="csChat({ endpoint: '{{ route('assistant.chat') }}', history: '{{ route('assistant.history') }}', contact: '{{ route('assistant.contact') }}', click: '{{ route('assistant.click') }}', welcomes: @js([$welcome]) })" class="mx-auto max-w-3xl">
+<div x-data="csChat({ endpoint: '{{ route('assistant.chat') }}', history: '{{ route('assistant.history') }}', contact: '{{ route('assistant.contact') }}', click: '{{ route('assistant.click') }}', upload: '{{ route('assistant.upload') }}', welcomes: @js([$welcome]) })"
+     class="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col">
 
-    {{-- Hero --}}
-    <section class="pb-6 pt-4 text-center sm:pt-8">
-        <span class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-600 text-2xl font-bold text-white shadow-lg">K</span>
-        <p class="text-xs font-semibold uppercase tracking-widest text-brand-600">Kirana — Konsultan Energi Cerdas</p>
-        <h1 class="mt-2 text-2xl font-extrabold text-gray-900 sm:text-3xl">Bingung Pilih Produk Energi yang Tepat?</h1>
-        <p class="mx-auto mt-3 max-w-xl text-sm text-gray-600 sm:text-base">
-            Konsultasikan dengan Kirana. Ia akan memahami kebutuhan Anda dulu — perangkat apa yang mau dinyalakan, berapa lama, berapa budget — baru merekomendasikan solusi yang paling sesuai. Gratis, langsung dijawab, 24 jam.
-        </p>
-
-        {{-- Contoh kebutuhan (klik = langsung mulai) --}}
-        <div class="mx-auto mt-5 flex max-w-2xl flex-wrap justify-center gap-2">
-            @foreach ($starters as $label => $message)
-                <button type="button"
-                        @click="sendChip(@js($message)); $refs.chatbox.scrollIntoView({ behavior: 'smooth' })"
-                        class="rounded-full border border-brand-200 bg-white px-3.5 py-1.5 text-xs font-medium text-brand-700 shadow-sm transition hover:border-brand-400 hover:bg-brand-50">
-                    {{ $label }}
-                </button>
-            @endforeach
+    {{-- Bar chat ala WhatsApp --}}
+    <div class="flex flex-none items-center gap-3 bg-brand-700 px-3 py-2.5 text-white shadow-md sm:rounded-b-none">
+        <span class="relative flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/20 text-base font-bold">
+            K
+            <span class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-brand-700 bg-green-400"></span>
+        </span>
+        <div class="min-w-0 flex-1 leading-tight">
+            <p class="truncate text-sm font-semibold">Kirana · Konsultan Energi {{ brand() }}</p>
+            <p class="truncate text-[11px] text-white/80">online — gratis 24 jam · bisa kirim foto 📷</p>
         </div>
+        <a href="{{ route('products.index') }}" class="flex-none rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold transition hover:bg-white/25">Katalog</a>
+    </div>
 
-        <button type="button"
-                @click="$refs.chatbox.scrollIntoView({ behavior: 'smooth' }); $refs.composer?.focus()"
-                class="btn-primary mt-6 inline-flex px-6 py-3 text-base shadow-lg">
-            Mulai Konsultasi dengan Kirana
-        </button>
-    </section>
+    {{-- Percakapan (latar bermotif ala WA) --}}
+    <div x-ref="log" class="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-4 sm:px-4"
+         style="background-color: #e9efec; background-image: radial-gradient(circle at 1px 1px, rgba(15, 118, 110, 0.07) 1px, transparent 0); background-size: 22px 22px;">
 
-    {{-- Full-page chat --}}
-    <section x-ref="chatbox" class="card overflow-hidden">
-        {{-- Header --}}
-        <div class="flex items-center gap-3 border-b border-gray-100 bg-brand-600 px-4 py-3 text-white">
-            <span class="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/20 text-base font-bold">K</span>
-            <div class="leading-tight">
-                <p class="text-sm font-semibold">Kirana · Konsultan Energi {{ brand() }}</p>
-                <p class="flex items-center gap-1.5 text-[11px] text-white/80">
-                    <span class="inline-block h-2 w-2 rounded-full bg-green-400"></span> Online — biasanya balas dalam hitungan detik
-                </p>
-            </div>
-        </div>
-
-        {{-- Messages --}}
-        <div x-ref="log" class="space-y-3 overflow-y-auto bg-gray-50 px-3 py-4 sm:px-5" style="height: min(58vh, 34rem)">
-            <template x-for="(m, i) in messages" :key="i">
-                <div :class="m.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
-                    <div class="max-w-[85%] space-y-2 sm:max-w-[75%]">
-                        <div class="rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed [&_strong]:font-semibold"
-                             :class="m.role === 'user' ? 'rounded-br-sm bg-brand-600 text-white' : 'rounded-bl-sm bg-white text-gray-800 shadow-sm'"
-                             x-html="render(m.content)"></div>
-
-                        {{-- Kartu produk yang direkomendasikan Kirana --}}
-                        <template x-if="m.role === 'assistant' && m.products && m.products.length">
-                            <div class="space-y-2">
-                                <template x-for="p in m.products" :key="p.url">
-                                    <a :href="p.url" @click="track('product', p.slug)"
-                                       class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-2.5 shadow-sm transition hover:border-brand-300 hover:shadow">
-                                        <img :src="p.image" :alt="p.name" class="h-14 w-14 flex-none rounded-lg object-cover" loading="lazy" />
-                                        <div class="min-w-0 flex-1">
-                                            <p class="truncate text-sm font-semibold text-gray-800" x-text="p.name"></p>
-                                            <p class="text-sm font-bold text-brand-700">
-                                                <span x-text="p.price"></span>
-                                                <span x-show="!p.in_stock" class="ml-1 text-xs font-normal text-red-500">(stok habis)</span>
-                                            </p>
-                                        </div>
-                                        <span class="flex-none rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">Lihat Produk</span>
-                                    </a>
-                                </template>
-                            </div>
-                        </template>
-
-                        {{-- Lanjut ke tim (WhatsApp) --}}
-                        <template x-if="m.whatsapp">
-                            <a :href="m.whatsapp" @click="track('whatsapp', null)" target="_blank" rel="noopener"
-                               class="inline-flex items-center gap-2 rounded-full bg-green-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-green-600">
-                                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.978-1.207z"/></svg>
-                                Lanjut Konsultasi via WhatsApp
+        <template x-for="(m, i) in messages" :key="i">
+            <div :class="m.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+                <div class="max-w-[85%] space-y-1.5 sm:max-w-[75%]">
+                    <div class="rounded-lg px-3 py-2 text-sm leading-relaxed shadow-sm [&_strong]:font-semibold"
+                         :class="m.role === 'user' ? 'rounded-tr-none bg-brand-600 text-white' : 'rounded-tl-none bg-white text-gray-800'">
+                        {{-- Foto yang dikirim pelanggan --}}
+                        <template x-if="m.image">
+                            <a :href="m.image" target="_blank" rel="noopener" class="mb-1.5 block">
+                                <img :src="m.image" alt="Foto terlampir" class="max-h-64 w-full rounded-lg object-cover" loading="lazy" />
                             </a>
                         </template>
-
-                        {{-- Form kontak sebelum nomor WA dibagikan (lead capture) --}}
-                        <template x-if="m.leadForm">
-                            <form @submit.prevent="submitLead(m)" class="space-y-2 rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-                                <p class="text-xs font-semibold text-gray-700">Isi data singkat dulu ya Kak, biar tim kami langsung siap bantu 👇</p>
-                                <input x-model="leadName" type="text" maxlength="120" placeholder="Nama Kakak"
-                                       class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500" />
-                                <input x-model="leadPhone" type="tel" maxlength="32" placeholder="Nomor WhatsApp (08…)"
-                                       class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500" />
-                                <textarea x-model="leadNeed" rows="2" maxlength="500" placeholder="Kebutuhan Kakak (mis. paket PLTS rumah 2200 VA, tanya stok, dll.)"
-                                          class="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"></textarea>
-                                <p x-show="leadError" x-cloak class="text-[11px] text-red-500" x-text="leadError"></p>
-                                <button type="submit" :disabled="leadSending"
-                                        class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-green-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60">
-                                    <span x-text="leadSending ? 'Menyimpan…' : 'Kirim & Lanjut ke WhatsApp'"></span>
-                                </button>
-                            </form>
-                        </template>
+                        <span x-show="m.content" x-html="render(m.content)"></span>
                     </div>
-                </div>
-            </template>
 
-            {{-- Typing indicator --}}
-            <div x-show="loading" class="flex justify-start">
-                <div class="rounded-2xl rounded-bl-sm bg-white px-3.5 py-2.5 shadow-sm">
-                    <span class="flex gap-1">
-                        <span class="h-2 w-2 animate-bounce rounded-full bg-gray-400" style="animation-delay: 0ms"></span>
-                        <span class="h-2 w-2 animate-bounce rounded-full bg-gray-400" style="animation-delay: 150ms"></span>
-                        <span class="h-2 w-2 animate-bounce rounded-full bg-gray-400" style="animation-delay: 300ms"></span>
-                    </span>
+                    {{-- Kartu produk yang direkomendasikan Kirana --}}
+                    <template x-if="m.role === 'assistant' && m.products && m.products.length">
+                        <div class="space-y-1.5">
+                            <template x-for="p in m.products" :key="p.url">
+                                <a :href="p.url" @click="track('product', p.slug)"
+                                   class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm transition hover:border-brand-300 hover:shadow">
+                                    <img :src="p.image" :alt="p.name" class="h-14 w-14 flex-none rounded-lg object-cover" loading="lazy" />
+                                    <div class="min-w-0 flex-1">
+                                        <p class="truncate text-sm font-semibold text-gray-800" x-text="p.name"></p>
+                                        <p class="text-sm font-bold text-brand-700">
+                                            <span x-text="p.price"></span>
+                                            <span x-show="!p.in_stock" class="ml-1 text-xs font-normal text-red-500">(stok habis)</span>
+                                        </p>
+                                    </div>
+                                    <span class="flex-none rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">Lihat</span>
+                                </a>
+                            </template>
+                        </div>
+                    </template>
+
+                    {{-- Lanjut ke tim (WhatsApp) --}}
+                    <template x-if="m.whatsapp">
+                        <a :href="m.whatsapp" @click="track('whatsapp', null)" target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-2 rounded-full bg-green-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-green-600">
+                            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.978-1.207z"/></svg>
+                            Lanjut Konsultasi via WhatsApp
+                        </a>
+                    </template>
+
+                    {{-- Form kontak sebelum nomor WA dibagikan (lead capture) --}}
+                    <template x-if="m.leadForm">
+                        <form @submit.prevent="submitLead(m)" class="space-y-2 rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                            <p class="text-xs font-semibold text-gray-700">Isi data singkat dulu ya Kak, biar tim kami langsung siap bantu 👇</p>
+                            <input x-model="leadName" type="text" maxlength="120" placeholder="Nama Kakak"
+                                   class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500" />
+                            <input x-model="leadPhone" type="tel" maxlength="32" placeholder="Nomor WhatsApp (08…)"
+                                   class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500" />
+                            <textarea x-model="leadNeed" rows="2" maxlength="500" placeholder="Kebutuhan Kakak (mis. paket PLTS rumah 2200 VA, tanya stok, dll.)"
+                                      class="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"></textarea>
+                            <p x-show="leadError" x-cloak class="text-[11px] text-red-500" x-text="leadError"></p>
+                            <button type="submit" :disabled="leadSending"
+                                    class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-green-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60">
+                                <span x-text="leadSending ? 'Menyimpan…' : 'Kirim & Lanjut ke WhatsApp'"></span>
+                            </button>
+                        </form>
+                    </template>
                 </div>
             </div>
-        </div>
+        </template>
 
-        {{-- Quick reply chips (muncul selama percakapan masih di awal) --}}
-        <div x-show="messages.length <= 1" x-cloak class="flex gap-1.5 overflow-x-auto border-t border-gray-100 bg-white px-3 pt-2">
-            @foreach (array_slice($starters, 0, 4) as $label => $message)
+        {{-- Chip kebutuhan — tampil selama percakapan masih di awal --}}
+        <div x-show="messages.length <= 1" x-cloak class="flex flex-wrap gap-1.5 pt-1">
+            @foreach ($starters as $label => $message)
                 <button type="button" @click="sendChip(@js($message))"
-                        class="flex-none rounded-full border border-brand-300 px-3 py-1.5 text-xs font-medium text-brand-700 transition hover:bg-brand-50">
+                        class="rounded-full border border-brand-300 bg-white px-3 py-1.5 text-xs font-medium text-brand-700 shadow-sm transition hover:bg-brand-50">
                     {{ $label }}
                 </button>
             @endforeach
         </div>
 
-        {{-- Composer --}}
-        <form @submit.prevent="send()" class="flex items-end gap-2 border-t border-gray-200 bg-white p-3">
+        {{-- Typing indicator --}}
+        <div x-show="loading" class="flex justify-start">
+            <div class="rounded-lg rounded-tl-none bg-white px-3.5 py-2.5 shadow-sm">
+                <span class="flex gap-1">
+                    <span class="h-2 w-2 animate-bounce rounded-full bg-gray-400" style="animation-delay: 0ms"></span>
+                    <span class="h-2 w-2 animate-bounce rounded-full bg-gray-400" style="animation-delay: 150ms"></span>
+                    <span class="h-2 w-2 animate-bounce rounded-full bg-gray-400" style="animation-delay: 300ms"></span>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    {{-- Composer ala WA: lampiran foto + teks + kirim --}}
+    <div class="flex-none border-t border-gray-200 bg-white">
+        {{-- Preview foto yang menunggu dikirim --}}
+        <div x-show="pendingImage" x-cloak class="flex items-center gap-3 border-b border-gray-100 px-3 py-2">
+            <img :src="pendingImage?.url" alt="Foto terpilih" class="h-14 w-14 rounded-lg object-cover" />
+            <p class="flex-1 text-xs text-gray-500" x-text="pendingImage?.uploading ? 'Mengunggah foto…' : 'Foto siap dikirim — tambahkan pesan atau langsung kirim.'"></p>
+            <button type="button" @click="removeAttachment()" class="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600" aria-label="Hapus foto">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m6 6 12 12M18 6 6 18" /></svg>
+            </button>
+        </div>
+
+        <form @submit.prevent="send()" class="flex items-end gap-1.5 p-2">
+            <label class="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-brand-600" aria-label="Lampirkan foto">
+                <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" class="hidden" @change="attachFile($event)">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" /></svg>
+            </label>
             <textarea
                 x-model="input"
                 x-ref="composer"
                 @keydown.enter.prevent="send()"
                 rows="1"
-                placeholder="Ceritakan kebutuhan Kakak… (mis. backup kulkas & lampu saat mati listrik)"
-                class="max-h-28 min-h-[2.75rem] flex-1 resize-none rounded-xl border border-gray-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                placeholder="Ketik pesan…"
+                class="max-h-28 min-h-[2.75rem] flex-1 resize-none rounded-3xl border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             ></textarea>
-            <button type="submit" :disabled="loading || !input.trim()"
-                    class="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-brand-600 text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+            <button type="submit" :disabled="loading || (!input.trim() && !(pendingImage && !pendingImage.uploading))"
+                    class="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-brand-600 text-white shadow transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label="Kirim">
                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.5 4.5a.5.5 0 0 1 .68-.62l16 7.66a.5.5 0 0 1 0 .9l-16 7.66a.5.5 0 0 1-.68-.62L6 12Zm0 0h6" /></svg>
             </button>
         </form>
-        <p class="border-t border-gray-100 bg-white px-4 pb-2.5 pt-1.5 text-center text-[10px] leading-snug text-gray-400">
-            🔒 Percakapan tersimpan untuk peningkatan layanan. Nama/No. HP yang Kakak bagikan hanya dipakai tim {{ brand() }} untuk follow-up — tidak disebarluaskan.
+        <p class="px-4 pb-1.5 text-center text-[10px] leading-snug text-gray-400">
+            🔒 Percakapan &amp; foto tersimpan untuk peningkatan layanan · Nama/No. HP hanya dipakai tim {{ brand() }} untuk follow-up
         </p>
-    </section>
-
-    {{-- Reassurance singkat --}}
-    <section class="grid gap-3 py-8 sm:grid-cols-3">
-        @foreach ([
-            ['🎯', 'Paham kebutuhan dulu', 'Kirana bertanya secukupnya, lalu merekomendasikan yang paling pas — bukan yang paling mahal.'],
-            ['🗄️', 'Data produk asli', 'Harga, stok, dan spesifikasi diambil langsung dari katalog '.brand().' — tidak mengarang.'],
-            ['🤝', 'Tim siap lanjutkan', 'Butuh penawaran proyek atau instalasi? Kirana mengarahkan ke tim kami via WhatsApp.'],
-        ] as [$icon, $title, $desc])
-            <div class="card p-4 text-center">
-                <p class="text-2xl">{{ $icon }}</p>
-                <p class="mt-1 text-sm font-semibold text-gray-900">{{ $title }}</p>
-                <p class="mt-1 text-xs text-gray-500">{{ $desc }}</p>
-            </div>
-        @endforeach
-    </section>
+    </div>
 </div>
 @endsection
