@@ -196,9 +196,15 @@ class MountingKabelSeeder extends Seeder
 
     private const NYAF_PRICE = 10600; // modal tertinggi × 1,3 → bulat atas Rp 100, semua warna sama
 
+    /** Varian arus MCB DC Suntree — semua harga sama (owner, Sep 2026). */
+    private const MCB_AMPERES = ['10A', '16A', '32A', '63A'];
+
+    private const MCB_PRICE = 215000;
+
     public function run(): void
     {
         $this->nyafVariableProduct();
+        $this->mcbVariableProduct();
 
         foreach (self::ROWS as $row) {
             $category = Category::where('slug', $row['category'])->first();
@@ -351,6 +357,81 @@ HTML;
                 $this->command?->info('Varian NYAF '.$warna.' dibuat dengan stok awal '.$stock.' meter.');
             }
         }
+    }
+
+    /**
+     * DC MCB Suntree 2 Pole 550VDC (seri SL7N) sebagai SATU produk dengan
+     * varian arus — pengaman string PV / jalur baterai. Semua varian satu
+     * harga; modal belum dicatat (diisi owner via Harga & Margin). Stok per
+     * varian diisi admin.
+     */
+    private function mcbVariableProduct(): void
+    {
+        $category = Category::where('slug', 'kabel-konektor-proteksi-mcb-mccb-dc')->first()
+            ?? Category::where('slug', 'kabel-konektor-proteksi')->first();
+        $brand = Brand::firstOrCreate(['slug' => 'suntree'], ['name' => 'Suntree', 'is_active' => true]);
+
+        $description = '<p><strong>DC MCB Suntree 2 Pole 550 VDC</strong><br>'
+            .'Pemutus arus (MCB) khusus DC dari Suntree, 2 pole, tegangan kerja hingga <strong>550 VDC</strong> — pengaman string panel surya dan jalur baterai/SCC/inverter. '
+            .'Pilih arus sesuai kebutuhan di pilihan varian: '.implode(', ', self::MCB_AMPERES).'. '
+            .'Pilih rating ±1,25× arus kerja string; kalau ragu, tanyakan ke Kirana atau tim kami.</p>';
+
+        $specifications = <<<'HTML'
+<table><tbody>
+<tr><th>Jenis</th><td>MCB DC (pemutus arus khusus DC)</td></tr>
+<tr><th>Merek / Seri</th><td>Suntree SL7N</td></tr>
+<tr><th>Pole</th><td>2 pole</td></tr>
+<tr><th>Tegangan Kerja</th><td>Hingga 550 VDC</td></tr>
+<tr><th>Pilihan Arus</th><td>10A · 16A · 32A · 63A (pilih varian)</td></tr>
+<tr><th>Berat Satuan</th><td>± 325 g</td></tr>
+<tr><th>Kegunaan</th><td>Proteksi string panel surya, jalur baterai / SCC / inverter DC</td></tr>
+</tbody></table>
+HTML;
+
+        $product = Product::firstOrCreate(
+            ['slug' => 'dc-mcb-suntree-2-pole-550vdc'],
+            [
+                'sku' => 'SUNTREE-SL7N',
+                'name' => 'DC MCB Suntree 2 Pole 550 VDC (10A–63A)',
+                'category_id' => $category?->id,
+                'brand_id' => $brand->id,
+                'model' => 'SL7N',
+                'product_type' => 'variable',
+                'condition' => 'new',
+                'short_description' => 'MCB khusus DC Suntree 2 pole 550 VDC untuk proteksi string panel surya & jalur baterai. Pilih arus: 10A, 16A, 32A, atau 63A — semua satu harga.',
+                'description' => $description,
+                'specifications' => $specifications,
+                'price' => self::MCB_PRICE,
+                'unit' => 'pcs',
+                'weight_grams' => 325,
+                'length_cm' => 9,
+                'width_cm' => 4,
+                'height_cm' => 8,
+                'requires_freight' => false,
+                'is_new' => true,
+                'status' => 'published',
+                'published_at' => now(),
+                'keywords' => 'mcb dc, dc mcb suntree, mcb 550vdc, mcb 2 pole, proteksi panel surya, breaker dc, sl7n, mcb plts',
+                'meta_title' => 'DC MCB Suntree 2 Pole 550 VDC — 10A / 16A / 32A / 63A',
+                'meta_description' => 'Jual DC MCB Suntree SL7N 2 pole 550 VDC, pilihan arus 10A–63A, Rp '.number_format(self::MCB_PRICE, 0, ',', '.').'/pcs. Proteksi string panel surya & jalur baterai.',
+            ],
+        );
+
+        foreach (self::MCB_AMPERES as $i => $ampere) {
+            $product->variants()->firstOrCreate(
+                ['sku' => 'SUNTREE-SL7N-'.$ampere],
+                [
+                    'name' => $ampere,
+                    'option_values' => ['Arus' => $ampere],
+                    'price' => self::MCB_PRICE,
+                    'weight_grams' => 325,
+                    'is_active' => true,
+                    'sort_order' => $i,
+                ],
+            );
+        }
+
+        $this->command?->info('DC MCB Suntree 2 Pole 550VDC (varian '.implode('/', self::MCB_AMPERES).') siap — Rp '.number_format(self::MCB_PRICE, 0, ',', '.').'.');
     }
 
     private function setStock(Product $product, int $target): void

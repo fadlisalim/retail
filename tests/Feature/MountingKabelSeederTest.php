@@ -76,6 +76,26 @@ class MountingKabelSeederTest extends TestCase
         $this->assertSame('pcs', Product::where('slug', 'mid-clamp-antai-gn-003')->value('unit'));
     }
 
+    /** MCB DC Suntree: satu produk variabel, 4 varian arus, semua satu harga. */
+    public function test_mcb_is_one_variable_product_with_ampere_variants(): void
+    {
+        $p = Product::where('slug', 'dc-mcb-suntree-2-pole-550vdc')->firstOrFail();
+
+        $this->assertSame('variable', $p->product_type);
+        $this->assertSame('Suntree', $p->brand?->name);
+        $this->assertCount(4, $p->variants);
+
+        foreach (['10A', '16A', '32A', '63A'] as $ampere) {
+            $v = $p->variants()->where('sku', 'SUNTREE-SL7N-'.$ampere)->first();
+            $this->assertNotNull($v, $ampere);
+            $this->assertSame(215000.0, (float) $v->price, $ampere);
+        }
+
+        // Re-run tidak menggandakan varian.
+        $this->seed(MountingKabelSeeder::class);
+        $this->assertCount(4, $p->fresh()->variants);
+    }
+
     /** Produksi terlanjur punya 2 produk NYAF terpisah — stoknya diserap varian. */
     public function test_legacy_nyaf_products_are_absorbed_with_their_stock(): void
     {
