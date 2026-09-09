@@ -8,6 +8,7 @@ use App\Models\ProductVariant;
 use App\Models\WarehouseStock;
 use App\Services\StockService;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Pembaruan batch Agustus 2026 untuk AIKO Comet 2U yang SUDAH tayang:
@@ -33,11 +34,30 @@ class AikoComet2uRestockSeeder extends Seeder
 
         $product->forceFill(['cost_price' => 1850000])->save();
 
+        // Hanya 640 Wp yang benar-benar ada (owner, Sep 2026): varian lain
+        // dari versi awal (645–670 Wp) dibersihkan — stoknya dinolkan dulu
+        // supaya agregat produk tidak menggelembung, lalu dihapus bila belum
+        // pernah dipesan (kalau pernah, cukup dinonaktifkan agar riwayat utuh).
+        foreach ($product->variants()->where('sku', '!=', 'AIKO-COMET2U-640')->get() as $other) {
+            $available = (int) WarehouseStock::where('product_variant_id', $other->id)->sum('quantity_available');
+            if ($available > 0) {
+                app(StockService::class)->adjust($product, $other, -$available, StockMovementType::Adjustment,
+                    note: 'Varian '.$other->name.' dihapus dari katalog (hanya 640 Wp yang dijual)');
+            }
+
+            if (DB::table('order_items')->where('product_variant_id', $other->id)->exists()) {
+                $other->forceFill(['is_active' => false])->save();
+                $this->command?->warn("Varian {$other->name} dinonaktifkan (punya riwayat pesanan).");
+            } else {
+                $other->delete();
+                $this->command?->info("Varian {$other->name} dihapus.");
+            }
+        }
+
         $variant = ProductVariant::where('sku', 'AIKO-COMET2U-640')->first();
         if ($variant) {
-            if (! $variant->is_active) {
-                $variant->forceFill(['is_active' => true])->save();
-            }
+            // Modal tercatat juga di varian (dasar margin halaman Harga & Margin).
+            $variant->forceFill(['is_active' => true, 'cost_price' => 1850000])->save();
 
             $current = (int) WarehouseStock::where('product_variant_id', $variant->id)->sum('quantity_available');
             $delta = 20 - $current;

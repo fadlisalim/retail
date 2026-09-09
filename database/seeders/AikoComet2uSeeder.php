@@ -45,7 +45,7 @@ HTML;
 <table><tbody>
 <tr><th>Model</th><td>AIKO-G-MCH72Mw (Comet 2U)</td></tr>
 <tr><th>Tipe Sel</th><td>N-Type ABC (All Back Contact)</td></tr>
-<tr><th>Daya Output (Pmax)</th><td>640 – 670 Wp</td></tr>
+<tr><th>Daya Output (Pmax)</th><td>640 Wp (varian yang dijual; seri Comet 2U tersedia 640–670 Wp)</td></tr>
 <tr><th>Efisiensi Modul</th><td>Hingga 24,8%</td></tr>
 <tr><th>Toleransi Daya</th><td>0 ~ +3%</td></tr>
 <tr><th>Jumlah Sel</th><td>144 (6×24)</td></tr>
@@ -69,15 +69,15 @@ HTML;
             ['slug' => 'panel-surya-aiko-comet-2u'],
             [
                 'sku' => 'AIKO-COMET2U',
-                'name' => 'Panel Surya AIKO Comet 2U N-Type ABC (640–670 Wp)',
+                'name' => 'Panel Surya AIKO Comet 2U N-Type ABC 640 Wp',
                 'category_id' => $category?->id,
                 'model' => 'AIKO-G-MCH72Mw',
                 'product_type' => 'variable',
                 'condition' => 'new',
-                'short_description' => 'Panel surya AIKO Comet 2U N-Type ABC, efisiensi hingga 24,8%. Daya 640–670 Wp, garansi produk 15 tahun & performa linear 30 tahun. Ready 650 Wp.',
+                'short_description' => 'Panel surya AIKO Comet 2U N-Type ABC, efisiensi hingga 24,8%. Daya 640 Wp (seri Comet 2U 640–670 Wp), garansi produk 15 tahun & performa linear 30 tahun. Ready stok.',
                 'description' => $description,
                 'specifications' => $specifications,
-                'price' => 2490000,   // per varian (650 Wp yang ready)
+                'price' => 2490000,   // varian 640 Wp
                 'sale_price' => null,
                 'unit' => 'pcs',
                 'weight_grams' => 27100,
@@ -90,22 +90,16 @@ HTML;
                 'is_new' => true,
                 'status' => 'published',
                 'published_at' => now(),
-                'meta_title' => 'Panel Surya AIKO Comet 2U 650 Wp — N-Type ABC 24,8%',
-                'meta_description' => 'Jual panel surya AIKO Comet 2U (AIKO-G-MCH72Mw) N-Type ABC 640–670 Wp, efisiensi 24,8%. Ready 650 Wp. Garansi produk 15 tahun, performa 30 tahun.',
+                'meta_title' => 'Panel Surya AIKO Comet 2U 640 Wp — N-Type ABC',
+                'meta_description' => 'Jual panel surya AIKO Comet 2U (AIKO-G-MCH72Mw) N-Type ABC 640 Wp, efisiensi hingga 24,8%. Ready stok. Garansi produk 15 tahun, performa 30 tahun.',
             ],
         );
 
-        // Wattage variants. Ready: 650 Wp (batch awal, 30 pcs) dan 640 Wp
-        // (batch Agustus 2026, 20 pcs); others start at 0.
-        // Efficiency figures per datasheet (STC).
+        // Hanya varian 640 Wp yang dijual (keputusan owner, Sep 2026) — varian
+        // 645–670 Wp dari versi awal dibersihkan oleh AikoComet2uRestockSeeder.
+        // Stok 20 pcs batch Agustus 2026, diisi hanya saat varian pertama dibuat.
         $variants = [
             ['wp' => 640, 'eff' => '23,7%', 'stock' => 20],
-            ['wp' => 645, 'eff' => '23,9%', 'stock' => 0],
-            ['wp' => 650, 'eff' => '24,1%', 'stock' => 30],
-            ['wp' => 655, 'eff' => '24,2%', 'stock' => 0],
-            ['wp' => 660, 'eff' => '24,4%', 'stock' => 0],
-            ['wp' => 665, 'eff' => '24,6%', 'stock' => 0],
-            ['wp' => 670, 'eff' => '24,8%', 'stock' => 0],
         ];
 
         foreach ($variants as $i => $v) {
@@ -128,8 +122,8 @@ HTML;
             }
         }
 
-        $this->command?->info('Produk AIKO Comet 2U (7 varian daya) berhasil ditambahkan/diperbarui (slug: '.$product->slug.').');
-        $this->command?->warn('Ready: 640 Wp = 20 pcs & 650 Wp = 30 pcs (hanya saat pertama dibuat). Varian lain stok 0 — aktifkan saat tersedia.');
+        $this->command?->info('Produk AIKO Comet 2U (varian 640 Wp) berhasil ditambahkan/diperbarui (slug: '.$product->slug.').');
+        $this->command?->warn('Stok 640 Wp = 20 pcs (hanya saat pertama dibuat).');
         $this->command?->warn('Ingat: upload gambar produk + PDF datasheet lewat Admin → Produk → Edit.');
     }
 
