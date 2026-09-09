@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\WarehouseStock;
 use App\Services\StockService;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -24,44 +25,6 @@ use Illuminate\Support\Str;
 class MountingKabelSeeder extends Seeder
 {
     private const ROWS = [
-        // --- Kabel NYAF Jembo (per meter, modal × 1,3) ---
-        [
-            'slug' => 'kabel-nyaf-jembo-4mm-merah-per-meter',
-            'sku' => 'NYAF-4MM-MERAH',
-            'name' => 'Kabel Listrik NYAF Jembo 4mm² Merah (Per Meter)',
-            'brand' => 'Jembo', 'category' => 'kabel-konektor-proteksi',
-            'model' => 'NYAF 1×4mm²',
-            'price' => 10600, 'cost' => 8078.89, 'stock' => 63,
-            'unit' => 'meter', 'weight' => 45, 'dims' => [15, 15, 2],
-            'short' => 'Kabel NYAF Jembo inti tunggal serabut 4mm² warna merah — fleksibel untuk instalasi panel listrik, wiring inverter & baterai. Dijual per meter (qty = jumlah meter).',
-            'specs' => [
-                'Jenis' => 'NYAF — tembaga serabut fleksibel, isolasi PVC',
-                'Penampang' => '1 × 4mm²',
-                'Merek' => 'Jembo',
-                'Warna' => 'Merah',
-                'Satuan Jual' => 'Per meter (qty = jumlah meter)',
-                'Kegunaan' => 'Wiring panel listrik, inverter, baterai (umum dipakai jalur positif)',
-            ],
-        ],
-        [
-            'slug' => 'kabel-nyaf-jembo-4mm-hitam-per-meter',
-            'sku' => 'NYAF-4MM-HITAM',
-            'name' => 'Kabel Listrik NYAF Jembo 4mm² Hitam (Per Meter)',
-            'brand' => 'Jembo', 'category' => 'kabel-konektor-proteksi',
-            'model' => 'NYAF 1×4mm²',
-            'price' => 10600, 'cost' => 8074, 'stock' => 61,
-            'unit' => 'meter', 'weight' => 45, 'dims' => [15, 15, 2],
-            'short' => 'Kabel NYAF Jembo inti tunggal serabut 4mm² warna hitam — fleksibel untuk instalasi panel listrik, wiring inverter & baterai. Dijual per meter (qty = jumlah meter).',
-            'specs' => [
-                'Jenis' => 'NYAF — tembaga serabut fleksibel, isolasi PVC',
-                'Penampang' => '1 × 4mm²',
-                'Merek' => 'Jembo',
-                'Warna' => 'Hitam',
-                'Satuan Jual' => 'Per meter (qty = jumlah meter)',
-                'Kegunaan' => 'Wiring panel listrik, inverter, baterai (umum dipakai jalur negatif)',
-            ],
-        ],
-
         // --- Support module / aksesoris mounting (modal × 1,7) ---
         [
             'slug' => 'cable-clip-rekasurya-mr-is-cc',
@@ -190,8 +153,18 @@ class MountingKabelSeeder extends Seeder
         ],
     ];
 
+    /** Varian warna NYAF: [sku varian, warna, modal, stok awal, slug produk lama]. */
+    private const NYAF_VARIANTS = [
+        ['NYAF-4MM-MERAH', 'Merah', 8078.89, 63, 'kabel-nyaf-jembo-4mm-merah-per-meter'],
+        ['NYAF-4MM-HITAM', 'Hitam', 8074.00, 61, 'kabel-nyaf-jembo-4mm-hitam-per-meter'],
+    ];
+
+    private const NYAF_PRICE = 10600; // modal tertinggi × 1,3 → bulat atas Rp 100, semua warna sama
+
     public function run(): void
     {
+        $this->nyafVariableProduct();
+
         foreach (self::ROWS as $row) {
             $category = Category::where('slug', $row['category'])->first();
             $brand = $row['brand']
@@ -247,6 +220,102 @@ class MountingKabelSeeder extends Seeder
         }
 
         $this->command?->warn('Upload foto produk via Admin → Produk → Edit. Berat/dimensi berupa estimasi — sesuaikan bila perlu.');
+    }
+
+    /**
+     * Kabel NYAF Jembo 4mm² sebagai SATU produk dengan varian warna
+     * (Merah/Hitam, harga sama). Versi awal seeder membuat 2 produk terpisah —
+     * di sini dikonversi: stok pindah ke varian, produk lama tanpa pesanan
+     * dihapus, yang pernah dipesan diarsipkan.
+     */
+    private function nyafVariableProduct(): void
+    {
+        $category = Category::where('slug', 'kabel-konektor-proteksi')->first();
+        $brand = Brand::firstOrCreate(['slug' => 'jembo'], ['name' => 'Jembo', 'is_active' => true]);
+
+        $description = '<p><strong>Kabel Listrik NYAF Jembo 4mm² (Per Meter)</strong><br>'
+            .'Kabel NYAF Jembo inti tunggal tembaga serabut 4mm², fleksibel untuk instalasi panel listrik, wiring inverter &amp; baterai. '
+            .'Pilih warna <strong>Merah</strong> (umum jalur positif) atau <strong>Hitam</strong> (umum jalur negatif) di pilihan varian. '
+            .'Dijual <strong>per meter</strong> — jumlah di keranjang = panjang kabel dalam meter.</p>';
+
+        $specifications = <<<'HTML'
+<table><tbody>
+<tr><th>Jenis</th><td>NYAF — tembaga serabut fleksibel, isolasi PVC</td></tr>
+<tr><th>Penampang</th><td>1 × 4mm²</td></tr>
+<tr><th>Merek</th><td>Jembo</td></tr>
+<tr><th>Warna</th><td>Merah atau Hitam (pilih varian)</td></tr>
+<tr><th>Satuan Jual</th><td>Per meter (qty = jumlah meter)</td></tr>
+<tr><th>Kegunaan</th><td>Wiring panel listrik, inverter, baterai</td></tr>
+</tbody></table>
+HTML;
+
+        $product = Product::firstOrCreate(
+            ['slug' => 'kabel-nyaf-jembo-4mm-per-meter'],
+            [
+                'sku' => 'NYAF-4MM',
+                'name' => 'Kabel Listrik NYAF Jembo 4mm² (Per Meter)',
+                'category_id' => $category?->id,
+                'brand_id' => $brand->id,
+                'model' => 'NYAF 1×4mm²',
+                'product_type' => 'variable',
+                'condition' => 'new',
+                'short_description' => 'Kabel NYAF Jembo inti tunggal serabut 4mm², pilih warna Merah atau Hitam. Fleksibel untuk wiring panel listrik, inverter & baterai. Dijual per meter (qty = jumlah meter).',
+                'description' => $description,
+                'specifications' => $specifications,
+                'price' => self::NYAF_PRICE,
+                'cost_price' => 8078.89, // modal tertinggi antar warna (Merah)
+                'unit' => 'meter',
+                'weight_grams' => 45, // ± per meter (estimasi)
+                'length_cm' => 15,
+                'width_cm' => 15,
+                'height_cm' => 2,
+                'requires_freight' => false,
+                'is_new' => true,
+                'status' => 'published',
+                'published_at' => now(),
+                'keywords' => 'kabel nyaf, kabel jembo 4mm, kabel listrik serabut, kabel inverter, kabel baterai, nyaf 4mm merah, nyaf 4mm hitam, kabel per meter',
+                'meta_title' => 'Kabel Listrik NYAF Jembo 4mm² Merah / Hitam — Per Meter',
+                'meta_description' => 'Jual kabel NYAF Jembo 4mm² warna merah & hitam, Rp '.number_format(self::NYAF_PRICE, 0, ',', '.').'/meter. Fleksibel untuk wiring inverter, baterai, panel listrik.',
+            ],
+        );
+
+        foreach (self::NYAF_VARIANTS as [$sku, $warna, $cost, $stock, $legacySlug]) {
+            $variant = $product->variants()->firstOrCreate(
+                ['sku' => $sku],
+                [
+                    'name' => $warna,
+                    'option_values' => ['Warna' => $warna],
+                    'price' => self::NYAF_PRICE,
+                    'weight_grams' => 45,
+                    'is_active' => true,
+                    'sort_order' => $warna === 'Merah' ? 0 : 1,
+                ],
+            );
+
+            if (! $variant->wasRecentlyCreated) {
+                continue;
+            }
+
+            // Konversi produk lama: stoknya diserap, kalau tidak ada produk
+            // lama (instalasi baru) pakai stok catatan gudang.
+            $legacy = Product::where('slug', $legacySlug)->first();
+            if ($legacy) {
+                $moved = (int) WarehouseStock::where('product_id', $legacy->id)->sum('quantity_available');
+                if ($moved > 0) {
+                    app(StockService::class)->adjust($product, $variant, $moved, StockMovementType::Purchase, note: 'Migrasi stok dari produk lama '.$legacySlug);
+                }
+                if (DB::table('order_items')->where('product_id', $legacy->id)->exists()) {
+                    $legacy->forceFill(['status' => 'archived'])->save();
+                    $this->command?->warn($legacySlug.' diarsipkan (punya riwayat pesanan); stok '.$moved.' m dipindah ke varian '.$warna.'.');
+                } else {
+                    $legacy->delete();
+                    $this->command?->info($legacySlug.' dihapus, stok '.$moved.' m dipindah ke varian '.$warna.'.');
+                }
+            } else {
+                app(StockService::class)->adjust($product, $variant, $stock, StockMovementType::Purchase, note: 'Stok awal (seeder, sesuai catatan gudang)');
+                $this->command?->info('Varian NYAF '.$warna.' dibuat dengan stok awal '.$stock.' meter.');
+            }
+        }
     }
 
     private function setStock(Product $product, int $target): void

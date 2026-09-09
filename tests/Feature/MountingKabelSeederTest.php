@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Enums\StockMovementType;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\StockService;
 use Database\Seeders\MountingKabelSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -18,8 +20,6 @@ class MountingKabelSeederTest extends TestCase
 
     /** slug => [modal, harga, stok, markup minimal]. */
     private const ROWS = [
-        'kabel-nyaf-jembo-4mm-merah-per-meter' => [8078.89, 10600, 63, 1.3],
-        'kabel-nyaf-jembo-4mm-hitam-per-meter' => [8074.00, 10600, 61, 1.3],
         'cable-clip-rekasurya-mr-is-cc' => [2315.58, 4000, 182, 1.7],
         'end-clamp-antai-cg-018-35-40' => [8237.38, 14100, 313, 1.7],
         'mid-clamp-antai-gn-003' => [7924.67, 13500, 1077, 1.7],
@@ -53,10 +53,45 @@ class MountingKabelSeederTest extends TestCase
         }
     }
 
-    public function test_nyaf_is_sold_per_meter_and_mounting_per_pcs(): void
+    public function test_nyaf_is_one_variable_product_with_color_variants(): void
     {
-        $this->assertSame('meter', Product::where('slug', 'kabel-nyaf-jembo-4mm-merah-per-meter')->value('unit'));
+        $p = Product::where('slug', 'kabel-nyaf-jembo-4mm-per-meter')->firstOrFail();
+
+        $this->assertSame('variable', $p->product_type);
+        $this->assertSame('meter', $p->unit);
+        $this->assertSame('Jembo', $p->brand?->name);
+        $this->assertCount(2, $p->variants);
+
+        // Harga semua warna sama & margin terkunci: modal tertinggi × 1,3.
+        foreach ([['NYAF-4MM-MERAH', 8078.89, 63], ['NYAF-4MM-HITAM', 8074.00, 61]] as [$sku, $cost, $stock]) {
+            $v = $p->variants()->where('sku', $sku)->first();
+            $this->assertSame(10600.0, (float) $v->price, $sku);
+            $this->assertGreaterThanOrEqual($cost * 1.3, (float) $v->price, $sku);
+            $this->assertSame($stock, (int) $v->fresh()->stock, $sku);
+        }
+
         $this->assertSame('pcs', Product::where('slug', 'mid-clamp-antai-gn-003')->value('unit'));
+    }
+
+    /** Produksi terlanjur punya 2 produk NYAF terpisah — stoknya diserap varian. */
+    public function test_legacy_nyaf_products_are_absorbed_with_their_stock(): void
+    {
+        // Bersihkan hasil setUp lalu mainkan skenario produksi: produk lama ada.
+        Product::where('slug', 'kabel-nyaf-jembo-4mm-per-meter')->forceDelete();
+        $legacy = Product::factory()->create([
+            'slug' => 'kabel-nyaf-jembo-4mm-merah-per-meter',
+            'sku' => 'NYAF-4MM-MERAH-LAMA',
+            'name' => 'Kabel Listrik NYAF Jembo 4mm² Merah (Per Meter)',
+            'status' => 'published', 'stock' => 0,
+        ]);
+        app(StockService::class)->adjust($legacy, null, 63, StockMovementType::Purchase);
+
+        $this->seed(MountingKabelSeeder::class);
+
+        $this->assertNull(Product::where('slug', 'kabel-nyaf-jembo-4mm-merah-per-meter')->first());
+        $variant = Product::where('slug', 'kabel-nyaf-jembo-4mm-per-meter')->firstOrFail()
+            ->variants()->where('sku', 'NYAF-4MM-MERAH')->first();
+        $this->assertSame(63, (int) $variant->fresh()->stock);
     }
 
     public function test_antai_brand_is_attached(): void
@@ -76,6 +111,9 @@ class MountingKabelSeederTest extends TestCase
 
         $this->assertSame(15000.0, (float) $p->fresh()->price);
         $this->assertSame(313, (int) $p->fresh()->stock);
-        $this->assertSame(10, Product::whereIn('slug', array_keys(self::ROWS))->count());
+        $this->assertSame(8, Product::whereIn('slug', array_keys(self::ROWS))->count());
+        // Re-run tidak menggandakan produk/varian NYAF.
+        $this->assertSame(1, Product::where('slug', 'like', 'kabel-nyaf-jembo-4mm%')->count());
+        $this->assertCount(2, Product::where('slug', 'kabel-nyaf-jembo-4mm-per-meter')->first()->variants);
     }
 }
