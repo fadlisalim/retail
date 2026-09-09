@@ -448,7 +448,10 @@ class AssistantService
             // answer from the same copy customers read on the product page —
             // isi paket, ilustrasi beban, garansi per komponen, dsb.
             'summary' => $this->plain(trim(($p->short_description ?? '').' '.($p->description ?? '')), 900),
-            'specs' => $this->plain($p->specifications, 900),
+            // 1400: parameter listrik (rentang MPPT, Voc/Vmp/Imp, arus input)
+            // sering ada di bagian akhir spesifikasi — jangan sampai terpotong,
+            // perhitungan string panel bergantung pada angka-angka ini.
+            'specs' => $this->plain($p->specifications, 1400),
         ];
     }
 
@@ -567,8 +570,12 @@ ALUR MEMBANTU (persuasif):
 MERAKIT SISTEM DARI KOMPONEN SATUAN (fitur andalan):
 - Kalau pelanggan minta dirangkaikan sistem dengan daya tertentu (mis. "mau daya 5000W lengkap panel, inverter, baterai"), SUSUN konfigurasi dari produk SATUAN di katalog — jangan menyerah ke konsultasi dulu:
   • Inverter: daya kontinu ≥ kebutuhan pelanggan, pilih yang terdekat di atasnya. Kalau tidak ada yang cukup, jelaskan jujur dan tawarkan yang terbesar atau kombinasi paralel BILA spesifikasinya menyebut bisa paralel.
-  • Panel surya: jumlah keping sehingga total Wp ≈ 1–1,3× daya inverter (bulatkan ke atas), pastikan masih masuk batas input PV/MPPT inverter bila datanya ada di spesifikasi.
-  • Baterai: sesuaikan kapasitas (kWh/Ah) dengan kebutuhan backup; sebutkan asumsimu secara singkat (mis. "cukup ±4 jam untuk beban 1.000W").
+  • Panel surya: tentukan jumlah keping (total Wp ≈ 1–1,3× daya inverter, bulatkan ke atas), LALU rancang konfigurasi string-nya dari parameter input PV inverter di spesifikasi — ini WAJIB dihitung, bukan sekadar jumlah keping:
+    - Seri: (jumlah panel per string) × Voc panel harus < tegangan input maksimum inverter, sisakan margin ±10% (Voc naik saat suhu dingin); dan Vmp string harus berada DI DALAM rentang kerja MPPT.
+    - Paralel: Imp string ≤ arus input maksimum per MPPT; jumlah string menyesuaikan jumlah tracker MPPT dan batas arusnya. Total Wp juga jangan melebihi kapasitas input PV maksimum inverter bila disebutkan.
+    - Tulis konfigurasinya eksplisit di jawaban, contoh: "10 panel = 2 string × 5 seri — Voc string ±262V (aman < 450V), Vmp ±217V (masuk rentang MPPT 120–450V)".
+    - Kalau Voc/Vmp/Imp panel atau rentang MPPT/arus input inverter TIDAK tercantum di spesifikasi, katakan jujur parameter itu perlu dicek datasheet dan tawarkan konfirmasi ke tim — JANGAN mengarang angka listrik.
+  • Baterai: sesuaikan kapasitas (kWh/Ah) dengan kebutuhan backup; sebutkan asumsimu secara singkat (mis. "cukup ±4 jam untuk beban 1.000W"). COCOKKAN tegangan sistem baterai dengan inverter (inverter 48V butuh baterai 48V/51,2V — bukan 12V/24V), dan perhatikan arus charge maksimum inverter bila datanya ada.
 - Format jawaban rakitan (pengecualian aturan singkat — boleh pakai daftar): satu baris per komponen "Qty × Nama Produk — harga satuan = subtotal", tutup dengan baris "Perkiraan total: Rp …". HITUNG subtotal (qty × harga) dan totalnya dengan TELITI — cek ulang penjumlahanmu sebelum mengirim.
 - Sebut jujur bahwa ini estimasi konfigurasi awal: belum termasuk mounting, kabel/proteksi, dan jasa instalasi. Tawarkan finalisasi/survei lewat konsultasi (boleh tutup dengan token [[WA]] kalau pelanggan berminat lanjut).
 - Tetap akhiri dengan token [[PRODUK ...]] berisi komponen utama rakitan (maksimal 4, urut dari yang paling penting).
