@@ -193,6 +193,26 @@ story.append(body('Keduanya sama-sama membawa kode unik Anda — bedanya di hala
                   'Tampilan di bawah meniru website (kode <b>KODEKU</b> hanya contoh; pakai kode Anda sendiri).'))
 story.append(Spacer(1, 6))
 
+# Highlight: wajib login dulu
+# Catatan: jangan pakai glyph emoji/simbol di Helvetica — jadi kotak hitam.
+warn = Table([[Paragraph('!', ParagraphStyle('wi', fontName='Helvetica-Bold', fontSize=17, leading=20,
+                                             textColor=HexColor('#b45309'), alignment=TA_CENTER)),
+               Paragraph('<b>PENTING — LOGIN DULU KE AKUN ANDA!</b><br/>'
+                         'Link referral, tombol &#8220;Salin Link Afiliator&#8221;, dan komisi per produk hanya muncul '
+                         'saat Anda <b>login di energi.click dengan akun afiliator Anda</b>. Belum login = tombolnya tidak tampil.',
+                         ParagraphStyle('wb', fontName='Helvetica', fontSize=10, leading=14.5, textColor=HexColor('#78350f')))]],
+             colWidths=[12*mm, None])
+warn.setStyle(TableStyle([
+    ('BACKGROUND', (0, 0), (-1, -1), HexColor('#fef3c7')),
+    ('BOX', (0, 0), (-1, -1), 1.1, HexColor('#f59e0b')),
+    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ('TOPPADDING', (0, 0), (-1, -1), 7), ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
+    ('LEFTPADDING', (0, 0), (-1, -1), 6), ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+    ('ROUNDEDCORNERS', [8, 8, 8, 8]),
+]))
+story.append(warn)
+story.append(Spacer(1, 8))
+
 # Cara 1: link umum dari dashboard
 link_row = Table([[ui_input('https://energi.click?ref=KODEKU', 108*mm), ui_button('Salin Link', 30*mm)]],
                  colWidths=[112*mm, 32*mm])
