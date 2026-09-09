@@ -26,6 +26,8 @@ class MountingKabelSeederTest extends TestCase
         'grounding-clip-antai-at-ec-01' => [1198.97, 2100, 50, 1.7],
         'cable-clip-antai-at-rc-01-4mm' => [1473.83, 2600, 450, 1.7],
         'tile-hook-antai-atl-fwny-05-l-feet' => [12482.06, 21300, 32, 1.7],
+        'roof-hook-antai-pantile' => [44003.39, 74900, 42, 1.7],
+        't-nut-antai-m8-25mm' => [2361.49, 4100, 100, 1.7],
     ];
 
     protected function setUp(): void
@@ -74,6 +76,6 @@ class MountingKabelSeederTest extends TestCase
 
         $this->assertSame(15000.0, (float) $p->fresh()->price);
         $this->assertSame(313, (int) $p->fresh()->stock);
-        $this->assertSame(8, Product::whereIn('slug', array_keys(self::ROWS))->count());
+        $this->assertSame(10, Product::whereIn('slug', array_keys(self::ROWS))->count());
     }
 }

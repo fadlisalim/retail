@@ -2,73 +2,97 @@
 
 namespace Tests\Feature;
 
+use App\Enums\StockMovementType;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\StockService;
 use Database\Seeders\KabelPvSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-/** Kabel PV per meter: harga & margin terkunci, hanya hitam, idempotent. */
+/**
+ * Kabel PV per meter: satu produk variabel (4mm² & 6mm²), harga & margin
+ * terkunci, hanya hitam, konversi dari 2 produk lama, idempotent.
+ */
 class KabelPvSeederTest extends TestCase
 {
     use RefreshDatabase;
 
     /** Modal per meter (referensi owner) — margin dari revenue wajib ≥ 20%. */
-    private const COST = [
-        'kabel-pv-dc-solar-1x4mm-hitam-per-meter' => 14000,
-        'kabel-pv-dc-solar-1x6mm-hitam-per-meter' => 19000,
-    ];
+    private const COST = ['KBL-PV-4MM-BLK' => 14000, 'KBL-PV-6MM-BLK' => 19000];
 
-    private const PRICE = [
-        'kabel-pv-dc-solar-1x4mm-hitam-per-meter' => 18000,
-        'kabel-pv-dc-solar-1x6mm-hitam-per-meter' => 24000,
-    ];
+    private const PRICE = ['KBL-PV-4MM-BLK' => 18000, 'KBL-PV-6MM-BLK' => 24000];
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->defaultWarehouse();
         Category::factory()->create(['name' => 'Kabel PV', 'slug' => 'kabel-konektor-proteksi-kabel-pv']);
-        $this->seed(KabelPvSeeder::class);
     }
 
-    public function test_both_sizes_exist_with_locked_prices_and_healthy_margin(): void
+    private function parent(): Product
     {
-        foreach (self::PRICE as $slug => $price) {
-            $p = Product::where('slug', $slug)->first();
-            $this->assertNotNull($p, $slug);
-            $this->assertSame((float) $price, (float) $p->price);
-            $this->assertSame((float) self::COST[$slug], (float) $p->cost_price);
+        return Product::where('slug', 'kabel-pv-dc-solar-hitam-per-meter')->firstOrFail();
+    }
+
+    public function test_one_variable_product_with_both_sizes_and_locked_margins(): void
+    {
+        $this->seed(KabelPvSeeder::class);
+
+        $p = $this->parent();
+        $this->assertSame('variable', $p->product_type);
+        $this->assertSame('meter', $p->unit);
+        $this->assertSame(18000.0, (float) $p->price); // "mulai dari" varian termurah
+        $this->assertCount(2, $p->variants);
+
+        foreach ($p->variants as $v) {
+            $this->assertSame((float) self::PRICE[$v->sku], (float) $v->price, $v->sku);
             // Margin dari revenue ≥ 20% → harga ≥ modal ÷ 0,8.
-            $this->assertGreaterThanOrEqual(self::COST[$slug] / 0.8, (float) $p->price);
-            $this->assertSame('meter', $p->unit);
-            $this->assertSame('published', $p->status);
+            $this->assertGreaterThanOrEqual(self::COST[$v->sku] / 0.8, (float) $v->price, $v->sku);
         }
     }
 
-    public function test_only_black_and_sold_per_meter_is_stated(): void
+    public function test_only_black_and_per_meter_is_stated(): void
     {
-        $p = Product::where('slug', 'kabel-pv-dc-solar-1x4mm-hitam-per-meter')->first();
+        $this->seed(KabelPvSeeder::class);
+        $p = $this->parent();
 
         $this->assertStringContainsString('hanya tersedia hitam', mb_strtolower($p->specifications));
         $this->assertStringContainsString('per meter', mb_strtolower($p->short_description));
         $this->assertStringContainsString('Hitam', $p->name);
     }
 
-    public function test_rerun_does_not_overwrite_admin_edits(): void
+    /** Produksi sudah terlanjur punya 2 produk terpisah — dikonversi ke varian. */
+    public function test_legacy_simple_products_are_absorbed_with_their_stock(): void
     {
-        $p = Product::where('slug', 'kabel-pv-dc-solar-1x6mm-hitam-per-meter')->first();
-        $p->forceFill(['price' => 25000])->save();
+        $legacy = Product::factory()->create([
+            'slug' => 'kabel-pv-dc-solar-1x4mm-hitam-per-meter',
+            'sku' => 'KBL-PV-4MM-BLK-LAMA',
+            'name' => 'Kabel PV DC Solar 1×4mm² Hitam (Per Meter)',
+            'status' => 'published',
+            'stock' => 0,
+        ]);
+        app(StockService::class)->adjust($legacy, null, 40, StockMovementType::Purchase);
 
         $this->seed(KabelPvSeeder::class);
 
-        $this->assertSame(25000.0, (float) $p->fresh()->price);
-        $this->assertSame(2, Product::where('slug', 'like', 'kabel-pv-dc-solar-%')->count());
+        // Produk lama hilang dari katalog, stoknya pindah ke varian 4mm².
+        $this->assertNull(Product::where('slug', 'kabel-pv-dc-solar-1x4mm-hitam-per-meter')->first());
+        $variant = $this->parent()->variants()->where('sku', 'KBL-PV-4MM-BLK')->first();
+        $this->assertSame(40, (int) $variant->fresh()->stock);
     }
 
-    public function test_cable_lands_in_the_pv_cable_category(): void
+    public function test_rerun_does_not_overwrite_admin_edits(): void
     {
-        $p = Product::where('slug', 'kabel-pv-dc-solar-1x4mm-hitam-per-meter')->first();
+        $this->seed(KabelPvSeeder::class);
 
-        $this->assertSame('kabel-konektor-proteksi-kabel-pv', $p->category?->slug);
+        $variant = $this->parent()->variants()->where('sku', 'KBL-PV-6MM-BLK')->first();
+        $variant->forceFill(['price' => 25000])->save();
+
+        $this->seed(KabelPvSeeder::class);
+
+        $this->assertSame(25000.0, (float) $variant->fresh()->price);
+        $this->assertSame(1, Product::where('slug', 'like', 'kabel-pv-dc-solar-%')->count());
+        $this->assertCount(2, $this->parent()->variants);
     }
 }
