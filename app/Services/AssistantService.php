@@ -2,11 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-
 
 /**
  * CS Assistant powered by Claude (Anthropic). Answers customer questions in
@@ -264,7 +265,165 @@ class AssistantService
             }
         }
 
+        // "Rakitkan sistem 5000W lengkap panel + inverter + baterai" — pelanggan
+        // minta dirangkaikan dari produk satuan. Retrieval kata kunci hanya
+        // menemukan produk yang kebetulan memuat kata "panel"/"inverter", belum
+        // tentu yang dayanya pas, jadi kandidat komponen dipilih deterministik
+        // per kategori (inverter berdaya ≥ permintaan, panel Wp terbesar,
+        // baterai terlaris) dan ditaruh paling atas supaya model merakit dari
+        // spesifikasi yang benar.
+        if ($this->asksForComponentBuild($question)) {
+            try {
+                $components = $this->componentCandidates($this->requestedWatts($question));
+                $results = $components
+                    ->concat(
+                        // Rakitan = beli langsung dengan total harga, jadi sisa
+                        // hasil kata kunci yang khusus-penawaran tidak relevan.
+                        $results->whereNotIn('id', $components->pluck('id'))
+                            ->where('requires_quotation', false),
+                    )
+                    ->take(9)
+                    ->values();
+            } catch (\Throwable $e) {
+                // keep whatever we already have
+            }
+        }
+
         return $results->map(fn (Product $p) => $this->productCard($p))->all();
+    }
+
+    /**
+     * Does the customer want a SYSTEM ASSEMBLED from individual components
+     * ("rakitkan 5000W lengkap panel, inverter, baterai")? Assembly verbs
+     * count, and so does naming two or more component kinds in one breath.
+     */
+    private function asksForComponentBuild(string $question): bool
+    {
+        $q = mb_strtolower($question);
+
+        if (preg_match('/\b(rakit\w*|merakit\w*|rangkai\w*|merangkai\w*|susun\w*|konfigurasi\w*|kombinasi\w*|set\s+lengkap|bundling)\b/u', $q)) {
+            return true;
+        }
+
+        $kinds = 0;
+        foreach (['/panel/u', '/inverter/u', '/(baterai|batere|battery|\baki\b)/u'] as $pattern) {
+            $kinds += preg_match($pattern, $q) ? 1 : 0;
+        }
+
+        return $kinds >= 2;
+    }
+
+    /** Requested system power in watts, parsed from "5000W" / "5 kW" / "daya 5000". */
+    private function requestedWatts(string $question): ?int
+    {
+        $q = mb_strtolower($question);
+
+        if (preg_match('/(\d+(?:[.,]\d+)?)\s*k(?:w|va)\b/u', $q, $m)) {
+            return (int) round(((float) str_replace(',', '.', $m[1])) * 1000);
+        }
+        // "5000W" / "5.000 watt" / "5000 VA" — \b setelah w menolak "580Wp".
+        if (preg_match('/(\d{1,3}(?:\.\d{3})+|\d{3,6})\s*(?:watt|w|va)\b/u', $q, $m)) {
+            return (int) str_replace('.', '', $m[1]);
+        }
+        if (preg_match('/daya\s+(?:sekitar\s+)?(\d{1,3}(?:\.\d{3})+|\d{3,6})\b/u', $q, $m)) {
+            return (int) str_replace('.', '', $m[1]);
+        }
+
+        return null;
+    }
+
+    /**
+     * Deterministic component candidates for a system build: up to 2 inverters
+     * sized to the requested watts, 2 highest-Wp panels, and 2 best-selling
+     * batteries — all published and directly purchasable.
+     *
+     * @return Collection<int, Product>
+     */
+    private function componentCandidates(?int $watts): Collection
+    {
+        $inverters = $this->categoryPool('inverter');
+        $picks = collect();
+
+        if ($watts !== null) {
+            // Inverter dengan daya kontinu ≥ permintaan, ambil yang terdekat di
+            // atasnya; kalau tidak ada yang cukup besar, dua terbesar (model
+            // yang menjelaskan keterbatasannya ke pelanggan).
+            $rated = $inverters
+                ->map(fn (Product $p) => ['product' => $p, 'watts' => $this->productWatts($p)])
+                ->filter(fn (array $r) => $r['watts'] !== null);
+            $above = $rated->filter(fn (array $r) => $r['watts'] >= $watts)->sortBy('watts');
+            $picks = $picks->concat(
+                ($above->isNotEmpty() ? $above : $rated->sortByDesc('watts'))->take(2)->pluck('product'),
+            );
+        } else {
+            $picks = $picks->concat($inverters->sortByDesc('sold_count')->take(2));
+        }
+
+        $picks = $picks->concat(
+            $this->categoryPool('panel-surya')
+                ->sortByDesc(fn (Product $p) => ($p->inStock() ? 1_000_000 : 0) + ($this->panelWp($p) ?? 0))
+                ->take(2),
+        );
+
+        return $picks
+            ->concat(
+                $this->categoryPool('baterai')
+                    ->sortByDesc(fn (Product $p) => ($p->inStock() ? 1_000_000_000 : 0) + (int) $p->sold_count)
+                    ->take(2),
+            )
+            ->unique('id')
+            ->values();
+    }
+
+    /** Published, directly-purchasable products under a root category (incl. children). */
+    private function categoryPool(string $rootSlug): Collection
+    {
+        $root = Category::where('slug', $rootSlug)->first();
+        if (! $root) {
+            return collect();
+        }
+
+        $ids = Category::where('id', $root->id)->orWhere('parent_id', $root->id)->pluck('id');
+
+        return Product::published()
+            ->with(['brand', 'category'])
+            ->where('requires_quotation', false)
+            ->where(function ($q) use ($ids) {
+                $q->whereIn('category_id', $ids)
+                    ->orWhereHas('categories', fn ($c) => $c->whereIn('categories.id', $ids));
+            })
+            ->get()
+            ->collect();
+    }
+
+    /** Highest continuous power (W) found in a product's name/specs, or null. */
+    private function productWatts(Product $p): ?int
+    {
+        $text = mb_strtolower($p->name.' '.strip_tags((string) $p->specifications));
+        $best = null;
+
+        if (preg_match_all('/(\d+(?:[.,]\d+)?)\s*k(?:w|va)\b/u', $text, $m)) {
+            foreach ($m[1] as $value) {
+                $best = max($best ?? 0, (int) round(((float) str_replace(',', '.', $value)) * 1000));
+            }
+        }
+        if (preg_match_all('/(\d{1,3}(?:\.\d{3})+|\d{3,6})\s*(?:watt|w|va)\b/u', $text, $m)) {
+            foreach ($m[1] as $value) {
+                $best = max($best ?? 0, (int) str_replace('.', '', $value));
+            }
+        }
+
+        return $best;
+    }
+
+    /** Panel rating in Wp from name/specs (e.g. "580Wp"), or null. */
+    private function panelWp(Product $p): ?int
+    {
+        $text = mb_strtolower($p->name.' '.strip_tags((string) $p->specifications));
+
+        return preg_match_all('/(\d{2,4})\s*wp\b/u', $text, $m)
+            ? max(array_map('intval', $m[1]))
+            : null;
     }
 
     /** Compact card/context payload for one product. */
@@ -404,6 +563,15 @@ ALUR MEMBANTU (persuasif):
    - "Cocok banget nih buat kebutuhanmu — tinggal tambahkan ke keranjang 😊"
    - "Mau aku bantu bandingin sama pilihan lain, atau bantu hitung kebutuhan dayanya?"
 5. Hadapi keraguan dengan solusi: kalau terasa mahal, tawarkan opsi lebih terjangkau dari katalog atau arahkan konsultasi; kalau butuh yakin, tawarkan bantu hitung kebutuhan.
+
+MERAKIT SISTEM DARI KOMPONEN SATUAN (fitur andalan):
+- Kalau pelanggan minta dirangkaikan sistem dengan daya tertentu (mis. "mau daya 5000W lengkap panel, inverter, baterai"), SUSUN konfigurasi dari produk SATUAN di katalog — jangan menyerah ke konsultasi dulu:
+  • Inverter: daya kontinu ≥ kebutuhan pelanggan, pilih yang terdekat di atasnya. Kalau tidak ada yang cukup, jelaskan jujur dan tawarkan yang terbesar atau kombinasi paralel BILA spesifikasinya menyebut bisa paralel.
+  • Panel surya: jumlah keping sehingga total Wp ≈ 1–1,3× daya inverter (bulatkan ke atas), pastikan masih masuk batas input PV/MPPT inverter bila datanya ada di spesifikasi.
+  • Baterai: sesuaikan kapasitas (kWh/Ah) dengan kebutuhan backup; sebutkan asumsimu secara singkat (mis. "cukup ±4 jam untuk beban 1.000W").
+- Format jawaban rakitan (pengecualian aturan singkat — boleh pakai daftar): satu baris per komponen "Qty × Nama Produk — harga satuan = subtotal", tutup dengan baris "Perkiraan total: Rp …". HITUNG subtotal (qty × harga) dan totalnya dengan TELITI — cek ulang penjumlahanmu sebelum mengirim.
+- Sebut jujur bahwa ini estimasi konfigurasi awal: belum termasuk mounting, kabel/proteksi, dan jasa instalasi. Tawarkan finalisasi/survei lewat konsultasi (boleh tutup dengan token [[WA]] kalau pelanggan berminat lanjut).
+- Tetap akhiri dengan token [[PRODUK ...]] berisi komponen utama rakitan (maksimal 4, urut dari yang paling penting).
 
 ATURAN PENTING (jangan dilanggar):
 - Info produk (harga, stok, spesifikasi, diskon, ketersediaan) HANYA dari "KATALOG TERKAIT" di bawah. Jika produk yang ditanya tidak ada di katalog: katakan jujur belum ketemu, tawarkan alternatif yang ADA di katalog, DAN sampaikan bahwa tim {$brand} bisa bantu CARIKAN produk yang Kakak butuhkan (request produk) — lalu akhiri dengan token `[[WA]]` supaya pelanggan bisa langsung request via WhatsApp. JANGAN menebak/mengarang produk.
