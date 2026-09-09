@@ -209,7 +209,8 @@ class ProductInlineBrandTest extends TestCase
 
         $this->get(route('admin.products.index'))
             ->assertOk()
-            ->assertSee('Belum ada: foto · dokumen · video', false);
+            ->assertSee('Belum ada:')
+            ->assertSee('foto · dokumen · video', false);
     }
 
     public function test_bulk_status_publishes_selected_products_only(): void

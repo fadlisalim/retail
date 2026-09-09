@@ -158,15 +158,28 @@
                             </div>
                         </td>
                         <td class="px-4 py-3">
-                            <div class="flex items-center gap-3">
-                                <img src="{{ $product->primaryImageUrl() }}" alt="{{ $product->name }}"
-                                     class="h-10 w-10 flex-none rounded object-cover">
+                            {{-- Thumbnail = tombol unggah: klik → pilih file → langsung
+                                 tersimpan (watermark + gambar utama diurus server). --}}
+                            <div class="flex items-center gap-3"
+                                 x-data="rowImageUpload({ url: '{{ route('admin.products.image.store', $product) }}', src: '{{ $product->primaryImageUrl() }}' })">
+                                <label class="group relative block h-10 w-10 flex-none cursor-pointer"
+                                       title="Klik untuk tambah gambar — langsung tersimpan tanpa buka detail">
+                                    <input type="file" class="hidden" accept="image/jpeg,image/png,image/webp" multiple @change="upload($event)">
+                                    <img :src="src" src="{{ $product->primaryImageUrl() }}" alt="{{ $product->name }}"
+                                         class="h-10 w-10 rounded object-cover ring-1 ring-transparent transition group-hover:opacity-75 group-hover:ring-brand-400">
+                                    <span x-show="!busy" class="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-brand-600 text-[10px] font-bold leading-none text-white shadow transition group-hover:bg-brand-700">+</span>
+                                    <span x-show="busy" x-cloak class="absolute inset-0 grid place-items-center rounded bg-white/70">
+                                        <span class="h-4 w-4 animate-spin rounded-full border-2 border-brand-600 border-t-transparent"></span>
+                                    </span>
+                                </label>
                                 <div class="min-w-0">
                                     <p class="truncate font-medium text-gray-800">{{ $product->name }}</p>
                                     <p class="text-xs text-gray-400">{{ $product->sku }} &middot; {{ $product->brand?->name ?? '—' }}</p>
                                     @if ($missingMedia)
-                                        <p class="mt-1 text-[11px] font-medium text-amber-600" title="Lengkapi lewat Edit → Media">
-                                            Belum ada: {{ implode(' · ', $missingMedia) }}
+                                        <p x-show="!(done && @js($missingMedia === ['foto']))"
+                                           class="mt-1 text-[11px] font-medium text-amber-600"
+                                           title="Foto: klik thumbnail di kiri. Dokumen/video: lewat Edit → Media">
+                                            Belum ada: <span x-show="!done">{{ implode(' · ', $missingMedia) }}</span><span x-show="done" x-cloak>{{ implode(' · ', array_values(array_diff($missingMedia, ['foto']))) }}</span>
                                         </p>
                                     @endif
                                 </div>

@@ -60,6 +60,26 @@ class ProductMediaTest extends TestCase
         $this->assertCount(0, $product->fresh()->videos);
     }
 
+    /** Upload cepat dari list produk (fetch/JSON): thumbnail baris diperbarui tanpa reload. */
+    public function test_quick_upload_from_the_product_list_returns_json(): void
+    {
+        Storage::fake('public');
+        $this->actingAs($this->staff());
+        $product = $this->stockedProduct(5);
+
+        $res = $this->postJson(route('admin.products.image.store', $product), [
+            'images' => [UploadedFile::fake()->image('panel.jpg', 800, 800)],
+        ])->assertOk()->assertJsonPath('ok', true)->assertJsonPath('images_count', 1);
+
+        $this->assertNotNull($product->fresh()->main_image_path);
+        $this->assertNotEmpty($res->json('url'));
+
+        // File selain gambar ditolak dengan 422 JSON (bukan redirect).
+        $this->postJson(route('admin.products.image.store', $product), [
+            'images' => [UploadedFile::fake()->create('brosur.pdf', 100, 'application/pdf')],
+        ])->assertStatus(422);
+    }
+
     public function test_admin_can_reorder_gallery_images(): void
     {
         Storage::fake('public');

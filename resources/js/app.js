@@ -282,6 +282,49 @@ Alpine.store('cart', {
 });
 
 /**
+ * Upload gambar langsung dari list produk admin: klik thumbnail baris →
+ * pilih file → POST ke endpoint media produk → thumbnail diganti tanpa
+ * reload. Watermark & penetapan gambar utama terjadi di server.
+ */
+Alpine.data('rowImageUpload', (config = {}) => ({
+    src: config.src || '',
+    busy: false,
+    done: false,
+
+    csrf() {
+        return document.querySelector('meta[name=csrf-token]')?.content || '';
+    },
+
+    async upload(event) {
+        const files = Array.from(event.target.files || []);
+        event.target.value = '';
+        if (!files.length || this.busy) return;
+
+        this.busy = true;
+        const body = new FormData();
+        files.slice(0, 12).forEach((f) => body.append('images[]', f));
+        try {
+            const res = await fetch(config.url, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': this.csrf(), Accept: 'application/json' },
+                body,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                this.src = data.url + (data.url.includes('?') ? '&' : '?') + 't=' + Date.now();
+                this.done = true;
+            } else {
+                alert(data.message || (data.errors ? Object.values(data.errors).flat()[0] : '') || 'Gagal mengunggah gambar.');
+            }
+        } catch (err) {
+            alert('Koneksi bermasalah saat unggah gambar.');
+        } finally {
+            this.busy = false;
+        }
+    },
+}));
+
+/**
  * CS chat assistant — floating widget. Sends the message + prior turns to the
  * Claude-backed endpoint, which grounds answers in the product catalogue and can
  * return related product cards. Config (endpoint, brand, welcome) is passed in

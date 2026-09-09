@@ -9,6 +9,7 @@ use App\Models\ProductImage;
 use App\Models\ProductVideo;
 use App\Services\VideoService;
 use App\Services\WatermarkService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -20,7 +21,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class ProductMediaController extends Controller
 {
-    public function storeImage(Request $request, Product $produk, WatermarkService $watermark): RedirectResponse
+    public function storeImage(Request $request, Product $produk, WatermarkService $watermark): RedirectResponse|JsonResponse
     {
         $request->validate([
             'images' => ['required', 'array', 'max:12'],
@@ -46,6 +47,16 @@ class ProductMediaController extends Controller
         // First (non-video) image uploaded becomes the main image if none is set.
         if (! $produk->main_image_path) {
             $produk->update(['main_image_path' => $produk->images()->whereNull('video_path')->orderBy('sort_order')->value('path')]);
+        }
+
+        // Upload cepat dari list produk (fetch) — balas JSON supaya thumbnail
+        // di baris bisa diperbarui tanpa reload halaman.
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'url' => $produk->fresh()->primaryImageUrl(),
+                'images_count' => $produk->images()->whereNull('video_path')->count(),
+            ]);
         }
 
         return back()->with('success', 'Gambar berhasil diunggah.');
