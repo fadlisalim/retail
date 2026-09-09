@@ -19,8 +19,7 @@ class OrderService
         private readonly StockService $stock,
         private readonly NotificationService $notifications,
         private readonly AffiliateService $affiliates,
-    ) {
-    }
+    ) {}
 
     /** Notify the buyer in-app + by email; guests (no account) get email only. */
     private function notifyCustomer(Order $order, string $title, string $message, string $type): void
@@ -34,8 +33,34 @@ class OrderService
         }
     }
 
+    /** Status pemenuhan yang mustahil dicapai tanpa pembayaran diterima. */
+    private const PAID_IMPLYING_STATUSES = [
+        OrderStatus::PaymentVerified,
+        OrderStatus::Processing,
+        OrderStatus::Packing,
+        OrderStatus::ReadyForPickup,
+        OrderStatus::Shipped,
+        OrderStatus::Completed,
+    ];
+
     public function changeStatus(Order $order, OrderStatus $status, ?User $actor = null, ?string $internalNote = null, ?string $customerNote = null): Order
     {
+        // Admin memilih "Pembayaran Diverifikasi" (atau status pemenuhan
+        // setelahnya) lewat dropdown status padahal pesanan belum lunas —
+        // maksudnya jelas: pembayaran sudah diterima. Jalankan markPaid dulu
+        // supaya status bayar, paid_at, stok terjual, dan komisi afiliator ikut
+        // tercatat — bukan cuma label statusnya. (Pesanan DP dikecualikan:
+        // pelunasannya diproses lewat panel Pembayaran.)
+        if (in_array($status, self::PAID_IMPLYING_STATUSES, true)
+            && in_array($order->payment_status, [PaymentStatus::Unpaid, PaymentStatus::AwaitingVerification], true)) {
+            $this->markPaid($order, $actor);
+            $order->refresh();
+
+            if ($status === OrderStatus::PaymentVerified) {
+                return $order; // markPaid sudah menulis status + riwayatnya
+            }
+        }
+
         return DB::transaction(function () use ($order, $status, $actor, $internalNote, $customerNote) {
             $order->update([
                 'status' => $status,
