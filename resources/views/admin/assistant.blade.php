@@ -5,14 +5,17 @@
 @section('content')
     <x-admin.page-header title="CS Assistant" subtitle="Log percakapan & statistik chatbot toko" />
 
-    {{-- Headline stats (30 hari terakhir) --}}
-    <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    {{-- Headline stats (30 hari terakhir) — urutan mengikuti funnel:
+         sesi → pesan → terjawab → klik produk → klik WA. --}}
+    <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-6">
         @php
             $cards = [
                 ['Total Pesan', number_format($summary['messages'], 0, ',', '.'), 'text-gray-900'],
                 ['Sesi (Pengunjung)', number_format($summary['sessions'], 0, ',', '.'), 'text-gray-900'],
                 ['Terjawab AI', $summary['answered_rate'].'%', 'text-brand-700'],
                 ['Fallback / Gagal', number_format($summary['fallbacks'], 0, ',', '.'), $summary['fallbacks'] > 0 ? 'text-amber-600' : 'text-gray-900'],
+                ['Klik Kartu Produk', number_format($summary['product_clicks'], 0, ',', '.'), 'text-brand-700'],
+                ['Klik WhatsApp', number_format($summary['wa_clicks'], 0, ',', '.'), 'text-green-600'],
             ];
         @endphp
         @foreach ($cards as [$label, $value, $color])
@@ -69,6 +72,33 @@
                 </div>
             @empty
                 <p class="py-4 text-center text-sm text-gray-400">Belum ada data.</p>
+            @endforelse
+        </div>
+    </div>
+
+    {{-- Funnel & knowledge gap --}}
+    <div class="mb-6 grid gap-4 lg:grid-cols-2">
+        <div class="card p-4">
+            <h3 class="mb-3 text-sm font-semibold text-gray-700">Produk Paling Sering Diklik dari Chat</h3>
+            @forelse ($topClicked as $p)
+                <div class="flex items-center justify-between gap-2 border-b border-gray-50 py-1.5 text-sm last:border-0">
+                    <span class="truncate text-gray-700">{{ $p->label ?? $p->term }}</span>
+                    <span class="badge bg-brand-50 text-brand-700">{{ $p->total }}×</span>
+                </div>
+            @empty
+                <p class="py-4 text-center text-sm text-gray-400">Belum ada klik kartu produk tercatat.</p>
+            @endforelse
+        </div>
+        <div class="card p-4">
+            <h3 class="mb-1 text-sm font-semibold text-gray-700">Knowledge Gap — Dicari tapi Belum Ada</h3>
+            <p class="mb-2 text-xs text-gray-400">Kebutuhan pelanggan yang tidak terlayani katalog (ditandai otomatis oleh Kirana) — bahan pertimbangan penambahan produk/konten.</p>
+            @forelse ($knowledgeGaps as $g)
+                <div class="flex items-center justify-between gap-2 border-b border-gray-50 py-1.5 text-sm last:border-0">
+                    <span class="truncate text-gray-700">{{ $g->label ?? $g->term }}</span>
+                    <span class="badge bg-amber-50 text-amber-700">{{ $g->total }}×</span>
+                </div>
+            @empty
+                <p class="py-4 text-center text-sm text-gray-400">Belum ada gap tercatat — katalog melayani semua permintaan sejauh ini 👍</p>
             @endforelse
         </div>
     </div>

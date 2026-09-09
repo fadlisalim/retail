@@ -27,6 +27,8 @@ class AssistantLogController extends Controller
             'answered' => (int) $recentStats->sum('answered'),
             'fallbacks' => (int) $recentStats->sum('fallbacks'),
             'sessions' => (int) $recentStats->sum('sessions'),
+            'product_clicks' => (int) $recentStats->sum('product_clicks'),
+            'wa_clicks' => (int) $recentStats->sum('wa_clicks'),
         ];
         $summary['answered_rate'] = $summary['messages'] > 0
             ? round($summary['answered'] / $summary['messages'] * 100)
@@ -47,6 +49,16 @@ class AssistantLogController extends Controller
             ->groupBy('term')->orderByDesc('total')->limit(15)->get();
 
         $topProducts = AssistantDailyTerm::where('type', 'product')
+            ->selectRaw('term, MAX(label) as label, SUM(count) as total')
+            ->groupBy('term')->orderByDesc('total')->limit(15)->get();
+
+        // Produk yang paling sering DIKLIK dari kartu chat (funnel step berikutnya).
+        $topClicked = AssistantDailyTerm::where('type', 'click')
+            ->selectRaw('term, MAX(label) as label, SUM(count) as total')
+            ->groupBy('term')->orderByDesc('total')->limit(10)->get();
+
+        // Knowledge gap: kebutuhan yang dicari pelanggan tapi tak terlayani katalog.
+        $knowledgeGaps = AssistantDailyTerm::where('type', 'gap')
             ->selectRaw('term, MAX(label) as label, SUM(count) as total')
             ->groupBy('term')->orderByDesc('total')->limit(15)->get();
 
@@ -92,6 +104,7 @@ class AssistantLogController extends Controller
 
         return view('admin.assistant', compact(
             'summary', 'trend', 'trendMax', 'topKeywords', 'topProducts',
+            'topClicked', 'knowledgeGaps',
             'mode', 'sessions', 'threads', 'conversations', 'leads', 'leadsTotal',
             'leadsBySession', 'logRetention', 'statsRetention',
         ));

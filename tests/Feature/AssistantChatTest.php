@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\AssistantLead;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class AssistantChatTest extends TestCase
@@ -27,7 +29,7 @@ class AssistantChatTest extends TestCase
         Http::fake([
             'api.anthropic.com/*' => Http::response([
                 'stop_reason' => 'end_turn',
-                'content' => [['type' => 'text', 'text' => 'Panel Surya 550Wp harganya Rp 1.000.000.']],
+                'content' => [['type' => 'text', 'text' => "Panel Surya 550Wp harganya Rp 1.000.000.\n[[PRODUK Panel Surya 550Wp Mono]]"]],
             ], 200),
         ]);
 
@@ -108,7 +110,7 @@ class AssistantChatTest extends TestCase
             'content' => [['type' => 'text', 'text' => "Silakan lanjut ke CS ya.\n[[WA]]"]],
         ], 200)]);
 
-        \App\Models\AssistantLead::create(['session_id' => 'sess-gate-2', 'name' => 'Budi', 'phone' => '628123456789']);
+        AssistantLead::create(['session_id' => 'sess-gate-2', 'name' => 'Budi', 'phone' => '628123456789']);
 
         $res = $this->postJson('/api/asisten/tanya', ['message' => 'mau konsultasi', 'session_id' => 'sess-gate-2'])->assertOk();
 
@@ -146,13 +148,17 @@ class AssistantChatTest extends TestCase
         Product::factory()->create(['name' => 'BLUETTI AC70P Portable Power Station', 'status' => 'published', 'price' => 8299000, 'stock' => 3]);
         Product::factory()->create(['name' => 'Paket PLTS Rumah Hemat', 'slug' => 'paket-plts-rumah-hemat-2', 'status' => 'published', 'price' => 25000000, 'stock' => 2]);
 
-        // No [[PRODUK]] token in the reply → fallback to retrieval candidates,
-        // which must NOT be padded with pakets for a camping question.
+        // Tanpa token [[PRODUK]] tidak ada kartu (timing link diputuskan model),
+        // dan KONTEKS retrieval untuk pertanyaan camping tidak boleh dipadati paket.
         $res = $this->postJson('/api/asisten/tanya', ['message' => 'power station buat camping yang bagus apa?'])->assertOk();
 
-        $names = collect($res->json('products'))->pluck('name');
-        $this->assertTrue($names->contains('BLUETTI AC70P Portable Power Station'));
-        $this->assertFalse($names->contains('Paket PLTS Rumah Hemat'));
+        $this->assertCount(0, $res->json('products'));
+        Http::assertSent(function ($request) {
+            $context = Str::before($request['system'], 'INDEKS KATALOG LENGKAP');
+
+            return str_contains($context, 'BLUETTI AC70P Portable Power Station')
+                && ! str_contains($context, 'Paket PLTS Rumah Hemat');
+        });
     }
 
     public function test_product_slug_pins_the_product_into_context(): void
@@ -167,9 +173,10 @@ class AssistantChatTest extends TestCase
 
         // "barang ini ready?" carries no product keyword at all — the slug from
         // the product page must keep the answer grounded on that product.
-        $res = $this->postJson('/api/asisten/tanya', ['message' => 'barang ini ready?', 'product_slug' => $p->slug])->assertOk();
+        $this->postJson('/api/asisten/tanya', ['message' => 'barang ini ready?', 'product_slug' => $p->slug])->assertOk();
 
-        $res->assertJsonPath('products.0.name', 'Inverter Hybrid XYZ 5000W');
+        // Kartu produknya sudah ditampilkan widget saat "Tanya Produk Ini" dibuka;
+        // yang penting konteks model tetap terkunci ke produk halaman itu.
         Http::assertSent(fn ($request) => str_contains($request['system'], 'KONTEKS HALAMAN')
             && str_contains($request['system'], 'Inverter Hybrid XYZ 5000W'));
     }

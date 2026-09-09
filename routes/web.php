@@ -45,6 +45,9 @@ Route::get('/barang-clearance', [CatalogController::class, 'clearance'])->name('
 // old URL alive by redirecting to Clearance.
 Route::redirect('/barang-sisa-proyek', '/barang-clearance', 301)->name('surplus');
 
+// Halaman konsultasi Kirana full-page — link yang bisa dibagikan ke pelanggan.
+Route::view('/konsultasi', 'storefront.konsultasi')->name('consultation');
+
 Route::get('/pencarian', [SearchController::class, 'index'])->name('search');
 Route::get('/api/pencarian/suggest', [SearchController::class, 'suggest'])
     ->middleware('throttle:60,1')->name('search.suggest');
@@ -57,6 +60,8 @@ Route::get('/api/asisten/riwayat', [AssistantController::class, 'history'])
     ->middleware('throttle:30,1')->name('assistant.history');
 Route::post('/api/asisten/kontak', [AssistantController::class, 'contact'])
     ->middleware('throttle:10,1')->name('assistant.contact');
+Route::post('/api/asisten/klik', [AssistantController::class, 'click'])
+    ->middleware('throttle:60,1')->name('assistant.click');
 
 // Chat Toko (customer ↔ admin, Tokopedia-style; NOT the AI assistant).
 Route::post('/api/chat-toko/kirim', [SiteChatController::class, 'send'])

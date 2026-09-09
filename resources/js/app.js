@@ -295,6 +295,7 @@ Alpine.data('csChat', (config = {}) => ({
     endpoint: config.endpoint || '/api/asisten/tanya',
     historyEndpoint: config.history || '/api/asisten/riwayat',
     contactEndpoint: config.contact || '/api/asisten/kontak',
+    clickEndpoint: config.click || '/api/asisten/klik',
     welcomes: config.welcomes || [config.welcome || 'Halo Kak! 👋 Ada yang bisa aku bantu seputar produk kami?'],
     sessionId: '',
     // Pre-WhatsApp contact form state (name + WA number + need are required
@@ -360,6 +361,18 @@ Alpine.data('csChat', (config = {}) => ({
 
     csrf() {
         return document.querySelector('meta[name=csrf-token]')?.content || '';
+    },
+
+    /** Funnel ping (klik kartu produk / tombol WA) — fire-and-forget, tak boleh mengganggu UI. */
+    track(type, slug) {
+        try {
+            fetch(this.clickEndpoint, {
+                method: 'POST',
+                keepalive: true,
+                headers: { 'X-CSRF-TOKEN': this.csrf(), 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify({ type, slug: slug || null }),
+            }).catch(() => {});
+        } catch (e) { /* tracking must never break the UI */ }
     },
 
     toggle() {

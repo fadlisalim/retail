@@ -58,7 +58,7 @@ class AssistantAnalytics
                 'created_at' => now(),
             ]);
 
-            $stat = AssistantDailyStat::firstOrCreate(['day' => $day]);
+            $stat = $this->dailyStat($day);
             $stat->increment('messages');
             $stat->increment($answered ? 'answered' : 'fallbacks');
             if ($newSession) {
@@ -75,6 +75,12 @@ class AssistantAnalytics
                 if (! empty($p['slug'])) {
                     $this->bumpTerm($day, 'product', $p['slug'], $p['name'] ?? null);
                 }
+            }
+
+            // Knowledge gap: kebutuhan yang tidak terlayani katalog (produk yang
+            // dicari tapi belum ada) — bahan perencanaan penambahan produk.
+            foreach (($result['gaps'] ?? []) as $gap) {
+                $this->bumpTerm($day, 'gap', mb_strtolower($gap), $gap);
             }
         } catch (\Throwable $e) {
             Log::warning('Assistant analytics failed: '.$e->getMessage());
@@ -114,12 +120,48 @@ class AssistantAnalytics
         }
     }
 
+    /**
+     * Funnel click from the chat UI: a product card or the WhatsApp hand-off
+     * button was tapped. Rolled up per day (+ per product for top-clicked).
+     */
+    public function recordClick(string $type, ?string $slug, ?string $label = null): void
+    {
+        if (! $this->enabled() || ! in_array($type, ['product', 'whatsapp'], true)) {
+            return;
+        }
+
+        try {
+            $this->dailyStat(now()->toDateString())
+                ->increment($type === 'product' ? 'product_clicks' : 'wa_clicks');
+
+            if ($type === 'product' && $slug) {
+                $this->bumpTerm(now()->toDateString(), 'click', Str::limit($slug, 191, ''), $label);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Assistant click tracking failed: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Baris rollup hari ini. Lookup pakai whereDate, BUKAN firstOrCreate biasa —
+     * cast `date` menyimpan nilai dengan komponen jam di beberapa driver,
+     * sehingga where('day', '2026-09-09') tidak menemukan baris yang ada dan
+     * insert kedua meledak di unique constraint (increment-nya hilang).
+     */
+    private function dailyStat(string $day): AssistantDailyStat
+    {
+        return AssistantDailyStat::whereDate('day', $day)->first()
+            ?? AssistantDailyStat::create(['day' => $day]);
+    }
+
     private function bumpTerm(string $day, string $type, string $term, ?string $label = null): void
     {
-        $row = AssistantDailyTerm::firstOrCreate(
-            ['day' => $day, 'type' => $type, 'term' => Str::limit($term, 191, '')],
-            ['label' => $label ? Str::limit($label, 255, '') : null],
-        );
+        $term = Str::limit($term, 191, '');
+        $row = AssistantDailyTerm::whereDate('day', $day)->where('type', $type)->where('term', $term)->first()
+            ?? AssistantDailyTerm::create([
+                'day' => $day, 'type' => $type, 'term' => $term,
+                'label' => $label ? Str::limit($label, 255, '') : null,
+            ]);
         $row->increment('count');
     }
 }

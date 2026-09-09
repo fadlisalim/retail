@@ -65,6 +65,27 @@ class AssistantController extends Controller
     }
 
     /**
+     * Funnel tracking: a product card / WhatsApp button inside the chat was
+     * clicked. Fire-and-forget from the widget; must never break the UI.
+     */
+    public function click(Request $request, AssistantAnalytics $analytics): JsonResponse
+    {
+        $data = $request->validate([
+            'type' => ['required', 'in:product,whatsapp'],
+            'slug' => ['sometimes', 'nullable', 'string', 'max:255'],
+        ]);
+
+        $slug = $data['slug'] ?? null;
+        $analytics->recordClick(
+            $data['type'],
+            $slug,
+            $slug ? Product::where('slug', $slug)->value('name') : null,
+        );
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
      * Pre-WhatsApp contact form: the customer must leave their name, WA number
      * and what they need; only then is the CS WhatsApp link handed out. The
      * data lands in the same AssistantLead row the chat's [[DATA]] token feeds.
@@ -148,6 +169,7 @@ class AssistantController extends Controller
                 ->take(6)
                 ->map(fn (Product $p) => [
                     'name' => $p->name,
+                    'slug' => $p->slug,
                     'url' => route('products.show', $p->slug),
                     'price' => rupiah($p->effectivePrice()),
                     'image' => $p->primaryImageUrl(),

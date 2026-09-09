@@ -22,7 +22,7 @@ class AssistantLogTest extends TestCase
         config(['services.anthropic.enabled' => true, 'services.anthropic.api_key' => 'sk-test', 'services.anthropic.model' => 'claude-sonnet-5']);
         Http::fake(['api.anthropic.com/*' => Http::response([
             'stop_reason' => 'end_turn',
-            'content' => [['type' => 'text', 'text' => 'Panel surya AIKO 650Wp Rp 2.490.000.']],
+            'content' => [['type' => 'text', 'text' => "Panel surya AIKO 650Wp Rp 2.490.000.\n[[PRODUK Panel Surya AIKO 650Wp]]"]],
         ], 200)]);
         Product::factory()->create(['name' => 'Panel Surya AIKO 650Wp', 'slug' => 'panel-surya-aiko-650wp', 'status' => 'published']);
 
