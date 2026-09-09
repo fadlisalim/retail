@@ -174,16 +174,20 @@ class MountingKabelSeeder extends Seeder
         [
             'slug' => 'tile-hook-antai-atl-fwny-05-l-feet',
             'sku' => 'ANTAI-ATL-FWNY-05',
-            'name' => 'Tile Hook ANTAI ATL-FWNY-05 (L Feet)',
+            'name' => 'L-Feet ANTAI ATL-FWNY-05',
+            // Koreksi penamaan (Sep 2026): ini L-Feet, bukan tile hook —
+            // kait genteng adalah produk terpisah (Roof Hook ANTAI Pantile).
+            'rename_from' => 'Tile Hook ANTAI ATL-FWNY-05 (L Feet)',
             'brand' => 'ANTAI', 'category' => 'mounting-rangka',
             'model' => 'ATL-FWNY-05',
             'price' => 21300, 'cost' => 12482.06, 'stock' => 32,
             'unit' => 'pcs', 'weight' => 250, 'dims' => [12, 6, 6],
-            'short' => 'Kaki dudukan (L feet / tile hook) ANTAI ATL-FWNY-05 — tumpuan rel mounting panel surya ke atap.',
+            'short' => 'Kaki dudukan (L-feet) ANTAI ATL-FWNY-05 — tumpuan rel mounting panel surya di atap logam/spandek atau permukaan datar, dibaut langsung ke rangka atap.',
             'specs' => [
-                'Jenis' => 'Tile hook / L feet (kaki dudukan rel)',
+                'Jenis' => 'L-Feet (kaki dudukan rel)',
                 'Model' => 'ATL-FWNY-05',
-                'Kegunaan' => 'Tumpuan rel mounting ke rangka/permukaan atap',
+                'Kegunaan' => 'Tumpuan rel mounting di atap logam/spandek/permukaan datar — untuk atap genteng gunakan Roof Hook Pantile',
+                'Pasangan' => 'Diikat ke slot rel dengan T-Nut M8×25mm',
             ],
         ],
     ];
@@ -251,6 +255,21 @@ class MountingKabelSeeder extends Seeder
                     'meta_description' => 'Jual '.$row['name'].' Rp '.number_format($row['price'], 0, ',', '.').($perMeter ? '/meter' : '').'. Aksesoris instalasi panel surya, kirim ke seluruh Indonesia.',
                 ],
             );
+
+            // Koreksi nama tertarget: hanya baris yang masih memakai nama lama
+            // dari seeder yang diperbarui — nama yang sudah diedit admin aman.
+            if (! $product->wasRecentlyCreated && isset($row['rename_from']) && $product->name === $row['rename_from']) {
+                $product->forceFill([
+                    'name' => $row['name'],
+                    'short_description' => $row['short'],
+                    'description' => $description,
+                    'specifications' => "<table><tbody>\n{$specRows}</tbody></table>",
+                    'keywords' => mb_strtolower($row['name']).', aksesoris mounting panel surya, support module plts, '.mb_strtolower($row['model']),
+                    'meta_title' => $row['name'].' — Aksesoris PLTS',
+                    'meta_description' => 'Jual '.$row['name'].' Rp '.number_format($row['price'], 0, ',', '.').($perMeter ? '/meter' : '').'. Aksesoris instalasi panel surya, kirim ke seluruh Indonesia.',
+                ])->save();
+                $this->command?->info('Nama dikoreksi: "'.$row['rename_from'].'" → "'.$row['name'].'".');
+            }
 
             // Stok awal sesuai catatan gudang — hanya saat produk baru dibuat.
             if ($product->wasRecentlyCreated) {

@@ -117,6 +117,23 @@ class MountingKabelSeederTest extends TestCase
         $this->assertSame(63, (int) $variant->fresh()->stock);
     }
 
+    /** ATL-FWNY-05 = L-Feet (bukan tile hook); nama lama dikoreksi, editan admin aman. */
+    public function test_atl_fwny_05_is_named_l_feet_and_the_old_name_is_corrected(): void
+    {
+        $p = Product::where('slug', 'tile-hook-antai-atl-fwny-05-l-feet')->first();
+        $this->assertSame('L-Feet ANTAI ATL-FWNY-05', $p->name);
+
+        // Produksi masih memakai nama lama → re-run seeder mengoreksinya.
+        $p->forceFill(['name' => 'Tile Hook ANTAI ATL-FWNY-05 (L Feet)'])->save();
+        $this->seed(MountingKabelSeeder::class);
+        $this->assertSame('L-Feet ANTAI ATL-FWNY-05', $p->fresh()->name);
+
+        // Nama hasil editan admin tidak disentuh.
+        $p->forceFill(['name' => 'L-Feet ANTAI Edisi Toko'])->save();
+        $this->seed(MountingKabelSeeder::class);
+        $this->assertSame('L-Feet ANTAI Edisi Toko', $p->fresh()->name);
+    }
+
     public function test_antai_brand_is_attached(): void
     {
         $p = Product::where('slug', 'mid-clamp-antai-gn-003')->first();
