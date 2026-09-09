@@ -15,6 +15,7 @@ use App\Services\OrderService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class OrderController extends Controller
@@ -256,13 +257,18 @@ class OrderController extends Controller
             'customer_note' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $this->orders->changeStatus(
-            $order,
-            OrderStatus::from($data['status']),
-            $request->user(),
-            $data['internal_note'] ?? null,
-            $data['customer_note'] ?? null,
-        );
+        try {
+            $this->orders->changeStatus(
+                $order,
+                OrderStatus::from($data['status']),
+                $request->user(),
+                $data['internal_note'] ?? null,
+                $data['customer_note'] ?? null,
+            );
+        } catch (ValidationException $e) {
+            // Mis. status pemenuhan dipilih saat pesanan belum dibayar.
+            return back()->with('error', collect($e->errors())->flatten()->first());
+        }
 
         return back()->with('success', 'Status pesanan diperbarui.');
     }

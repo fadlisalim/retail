@@ -45,7 +45,8 @@ class PurgeOrderTest extends TestCase
     public function test_a_completed_order_is_purged_with_stock_and_sold_count_restored(): void
     {
         $order = $this->placedOrder(2);
-        app(OrderService::class)->changeStatus($order, OrderStatus::Completed); // auto markPaid + commit stok
+        app(OrderService::class)->markPaid($order); // lunas + commit stok
+        app(OrderService::class)->changeStatus($order->fresh(), OrderStatus::Completed);
         $product = $order->items->first()->product;
 
         $this->assertSame(2, (int) $product->fresh()->sold_count);

@@ -10,6 +10,7 @@ use App\Services\CheckoutService;
 use App\Services\OrderService;
 use App\Services\Shipping\ShippingQuote;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 /**
@@ -56,16 +57,36 @@ class OrderStatusPaymentSyncTest extends TestCase
         $this->assertEquals($order->grand_total, $order->paid_amount);
     }
 
-    public function test_jumping_straight_to_shipped_also_settles_the_payment(): void
+    /** Barang tidak boleh jalan tanpa uang masuk: Dikirim/Siap Diambil ditolak. */
+    public function test_fulfillment_statuses_are_blocked_while_unpaid(): void
     {
         $order = $this->unpaidOrder();
 
-        app(OrderService::class)->changeStatus($order, OrderStatus::Shipped);
+        foreach ([OrderStatus::Shipped, OrderStatus::ReadyForPickup, OrderStatus::Processing, OrderStatus::Completed] as $target) {
+            try {
+                app(OrderService::class)->changeStatus($order->fresh(), $target);
+                $this->fail('Status '.$target->value.' seharusnya ditolak saat belum dibayar.');
+            } catch (ValidationException $e) {
+                $this->assertStringContainsString('belum dibayar', collect($e->errors())->flatten()->first());
+            }
+        }
+
+        $order->refresh();
+        $this->assertSame(PaymentStatus::Unpaid, $order->payment_status);
+        $this->assertSame(OrderStatus::AwaitingPayment, $order->status);
+    }
+
+    /** Setelah dilunaskan (via status Pembayaran Diverifikasi), pengiriman lancar. */
+    public function test_after_verification_the_order_can_be_shipped(): void
+    {
+        $order = $this->unpaidOrder();
+
+        app(OrderService::class)->changeStatus($order, OrderStatus::PaymentVerified);
+        app(OrderService::class)->changeStatus($order->fresh(), OrderStatus::Shipped);
 
         $order->refresh();
         $this->assertSame(PaymentStatus::Paid, $order->payment_status);
         $this->assertSame(OrderStatus::Shipped, $order->status);
-        $this->assertNotNull($order->paid_at);
     }
 
     /** Status non-pemenuhan tidak menyentuh pembayaran. */

@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Shipment;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Order lifecycle transitions. Each transition writes a status-history row (who,
@@ -33,9 +34,8 @@ class OrderService
         }
     }
 
-    /** Status pemenuhan yang mustahil dicapai tanpa pembayaran diterima. */
-    private const PAID_IMPLYING_STATUSES = [
-        OrderStatus::PaymentVerified,
+    /** Status pemenuhan yang terlarang selama pesanan belum dibayar. */
+    private const REQUIRES_PAYMENT_FIRST = [
         OrderStatus::Processing,
         OrderStatus::Packing,
         OrderStatus::ReadyForPickup,
@@ -45,20 +45,26 @@ class OrderService
 
     public function changeStatus(Order $order, OrderStatus $status, ?User $actor = null, ?string $internalNote = null, ?string $customerNote = null): Order
     {
-        // Admin memilih "Pembayaran Diverifikasi" (atau status pemenuhan
-        // setelahnya) lewat dropdown status padahal pesanan belum lunas —
-        // maksudnya jelas: pembayaran sudah diterima. Jalankan markPaid dulu
-        // supaya status bayar, paid_at, stok terjual, dan komisi afiliator ikut
-        // tercatat — bukan cuma label statusnya. (Pesanan DP dikecualikan:
-        // pelunasannya diproses lewat panel Pembayaran.)
-        if (in_array($status, self::PAID_IMPLYING_STATUSES, true)
-            && in_array($order->payment_status, [PaymentStatus::Unpaid, PaymentStatus::AwaitingVerification], true)) {
-            $this->markPaid($order, $actor);
-            $order->refresh();
+        $unpaid = in_array($order->payment_status, [PaymentStatus::Unpaid, PaymentStatus::AwaitingVerification], true);
 
-            if ($status === OrderStatus::PaymentVerified) {
-                return $order; // markPaid sudah menulis status + riwayatnya
-            }
+        // "Pembayaran Diverifikasi" pada pesanan belum lunas = maksud admin
+        // jelas: uang sudah diterima → jalankan pelunasan sungguhan (status
+        // bayar, paid_at, stok terjual, komisi afiliator ikut tercatat).
+        if ($unpaid && $status === OrderStatus::PaymentVerified) {
+            $this->markPaid($order, $actor);
+
+            return $order->refresh(); // markPaid sudah menulis status + riwayatnya
+        }
+
+        // Sebaliknya, status pemenuhan (Diproses s/d Selesai) DILARANG selama
+        // belum dibayar — barang tidak boleh jalan tanpa uang masuk, dan sistem
+        // tidak boleh diam-diam menganggapnya lunas. (Pesanan DP boleh lanjut;
+        // pelunasannya diproses lewat panel Pembayaran.)
+        if ($unpaid && in_array($status, self::REQUIRES_PAYMENT_FIRST, true)) {
+            throw ValidationException::withMessages([
+                'status' => 'Pesanan belum dibayar — tidak bisa dipindahkan ke "'.$status->label().'". '
+                    .'Verifikasi pembayarannya dulu, atau pilih status "Pembayaran Diverifikasi" bila uangnya sudah diterima.',
+            ]);
         }
 
         return DB::transaction(function () use ($order, $status, $actor, $internalNote, $customerNote) {
