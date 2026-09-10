@@ -115,9 +115,11 @@ Route::controller(CheckoutController::class)->middleware('auth')->group(function
     Route::post('/checkout', 'store')->middleware('throttle:20,1')->name('checkout.store');
 });
 
-/* Autocomplete kelurahan tujuan (RajaOngkir) untuk form alamat */
+/* Wilayah tujuan (RajaOngkir) untuk form alamat: autocomplete + dropdown bertingkat */
 Route::get('/api/ongkir/tujuan', [ShippingDestinationController::class, 'search'])
     ->middleware(['auth', 'throttle:30,1'])->name('shipping.destinations');
+Route::get('/api/ongkir/wilayah', [ShippingDestinationController::class, 'regions'])
+    ->middleware(['auth', 'throttle:60,1'])->name('shipping.regions');
 
 /* Orders + invoice (public via non-guessable token) */
 Route::get('/pesanan/{order:public_token}', [OrderController::class, 'track'])->name('orders.track');

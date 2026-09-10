@@ -213,6 +213,19 @@ class RajaOngkirClient
         return array_slice($kept, 0, self::MAX_TOTAL);
     }
 
+    /**
+     * Ambil daftar baris dari endpoint GET (mis. /destination/city/{id}) —
+     * dipakai sinkronisasi wilayah. Null bila gagal (lastError diisi).
+     *
+     * @return list<array<string,mixed>>|null
+     */
+    public function fetchRows(string $path, array $params = []): ?array
+    {
+        $response = $this->request('get', $path, $params);
+
+        return $response ? $this->dataRows($response) : null;
+    }
+
     /** Jumlah panggilan API hari ini (pantau kuota paket gratis). */
     public function callsToday(): int
     {

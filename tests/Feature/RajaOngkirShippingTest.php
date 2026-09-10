@@ -258,34 +258,24 @@ class RajaOngkirShippingTest extends TestCase
             ->assertUnprocessable();
     }
 
-    public function test_address_form_saves_the_picked_destination(): void
+    /** Integrasi nonaktif: form alamat lama (provinsi/kota Indah, teks bebas) tetap jalan tanpa API. */
+    public function test_address_form_falls_back_to_the_indah_lists_when_disabled(): void
     {
+        config(['services.rajaongkir.enabled' => false]);
         $this->seed(IndahCargoSeeder::class);
         $cities = IndahCargoRate::citiesByProvince();
         $province = array_key_first($cities);
         $customer = $this->customer();
 
         $this->actingAs($customer)->get(route('account.addresses.create'))
-            ->assertOk()->assertSee('Cari kecamatan / kelurahan');
+            ->assertOk()->assertSee('name="province"', false)->assertDontSee('name="province_id"', false);
 
         $this->actingAs($customer)->post(route('account.addresses.store'), [
             'label' => 'Rumah', 'recipient_name' => 'Tester', 'phone' => '0811', 'province' => $province, 'city' => $cities[$province][0],
-            'district' => 'COBLONG', 'subdistrict' => 'DAGO', 'postal_code' => '40135', 'address_line' => 'Jl. Uji 1',
-            'courier_destination_id' => self::DEST_ID, 'courier_destination_label' => 'DAGO, COBLONG, BANDUNG, JAWA BARAT, 40135',
+            'district' => 'Coblong', 'address_line' => 'Jl. Uji 1',
         ])->assertSessionHasNoErrors()->assertRedirect();
 
-        $this->assertDatabaseHas('customer_addresses', ['user_id' => $customer->id, 'courier_destination_id' => self::DEST_ID]);
-
-        // Kecamatan wajib saat integrasi aktif (tanpa itu tarif cuma tebakan sekota).
-        $this->actingAs($customer)->post(route('account.addresses.store'), [
-            'label' => 'Kantor', 'recipient_name' => 'Tester', 'phone' => '0811', 'province' => $province, 'city' => $cities[$province][0],
-            'address_line' => 'Jl. Uji 2',
-        ])->assertSessionHasErrors('district');
-
-        config(['services.rajaongkir.enabled' => false]);
-        $this->actingAs($customer)->post(route('account.addresses.store'), [
-            'label' => 'Kantor', 'recipient_name' => 'Tester', 'phone' => '0811', 'province' => $province, 'city' => $cities[$province][0],
-            'address_line' => 'Jl. Uji 2',
-        ])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('customer_addresses', ['user_id' => $customer->id, 'city' => $cities[$province][0], 'district' => 'Coblong']);
+        Http::assertNothingSent();
     }
 }
