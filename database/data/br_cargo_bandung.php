@@ -1,6 +1,6 @@
 <?php
 
-// Tarif BR Cargo dari Bandung (Daftar Harga BR BDG 2026, via darat / kapal cepat).
+// Tarif Buana Raya (BR) Cargo dari Bandung (Daftar Harga BR BDG 2026, via darat / kapal cepat).
 // Format: [tujuan, minimum kg, harga per kg, pembagi volumetrik (cm³ per kg)].
 // Volumetrik P×L×T ÷ 4000, kecuali Banjarmasin/Balikpapan/Samarinda ÷ 6000.
 return [

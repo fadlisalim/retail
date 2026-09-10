@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Tabel tarif kargo per tujuan yang generik (satu baris = satu tujuan untuk
  * satu ekspedisi): minimum kg, harga per kg, dan pembagi volumetriknya.
- * Dipakai driver 'cargo_table' (mis. BR Cargo untuk kiriman proyek ≥ 50 kg).
+ * Dipakai driver 'cargo_table' (mis. Buana Raya Cargo untuk kiriman proyek ≥ 50 kg).
  */
 return new class extends Migration
 {

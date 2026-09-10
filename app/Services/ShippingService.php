@@ -139,7 +139,7 @@ class ShippingService
         if ($service->provider->driver === 'indah') {
             return $this->indahQuote($service, $ctx, $config);
         }
-        // Ekspedisi kargo dengan daftar harga statis per tujuan (mis. BR Cargo).
+        // Ekspedisi kargo dengan daftar harga statis per tujuan (mis. Buana Raya Cargo).
         if ($service->provider->driver === 'cargo_table') {
             return $this->cargoTableQuote($service, $ctx, $config);
         }
@@ -241,7 +241,7 @@ class ShippingService
     }
 
     /**
-     * Tarif kargo dari tabel cargo_rates (driver 'cargo_table', mis. BR Cargo):
+     * Tarif kargo dari tabel cargo_rates (driver 'cargo_table', mis. Buana Raya Cargo):
      * per kg dengan minimum kg per tujuan, volumetrik per tujuan, biaya
      * forklift untuk kolli sangat berat, dan hanya ditawarkan untuk kiriman
      * di atas ambang berat (kebijakan toko: paket proyek ≥ 50 kg).

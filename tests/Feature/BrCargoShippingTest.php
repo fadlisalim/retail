@@ -14,7 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * BR Cargo (daftar harga BR BDG 2026): tarif per kg dengan minimum kg per
+ * Buana Raya (BR) Cargo (daftar harga BR BDG 2026): tarif per kg dengan minimum kg per
  * tujuan, volumetrik ÷ 4000 (÷ 6000 untuk Banjarmasin/Balikpapan/Samarinda),
  * forklift Rp 150.000 untuk kolli > 200 kg, hanya untuk kiriman ≥ 50 kg,
  * tujuan cocok lewat nama kota atau kecamatan.
@@ -70,7 +70,7 @@ class BrCargoShippingTest extends TestCase
         $this->assertEquals(360_000, $quote->cost);
         $this->assertSame(60_000, $quote->billableWeightGrams);
         $this->assertTrue($quote->confirmed);
-        $this->assertSame('BR Cargo — Darat / Kapal Cepat', $quote->label);
+        $this->assertSame('Buana Raya Cargo — Darat / Kapal Cepat', $quote->label);
         $this->assertStringContainsString('jadwal', strtolower((string) $quote->estimatedDays));
 
         // Takalar minimum 250 kg → 60 kg tetap ditagih 250 × 10.000.

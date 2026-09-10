@@ -8,7 +8,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * BR Cargo — ekspedisi darat / kapal cepat dari Bandung untuk kiriman BERAT
+ * Buana Raya (BR) Cargo — ekspedisi darat / kapal cepat dari Bandung untuk kiriman BERAT
  * (paket proyek: panel + baterai + inverter). Sumber: "Daftar Harga BR BDG
  * 2026". Aturan dari daftar harga:
  *  - tarif per kg dengan MINIMUM kg per tujuan (10–250 kg);
@@ -25,7 +25,7 @@ class BrCargoSeeder extends Seeder
     public function run(): void
     {
         $provider = ShippingProvider::updateOrCreate(['code' => self::PROVIDER_CODE], [
-            'name' => 'BR Cargo',
+            'name' => 'Buana Raya Cargo',
             'driver' => 'cargo_table',
             'is_active' => true,
             'sort_order' => 6,
@@ -62,6 +62,6 @@ class BrCargoSeeder extends Seeder
             DB::table('cargo_rates')->insert($chunk);
         }
 
-        $this->command?->info('BR Cargo: '.count($records).' tujuan diimpor (kiriman ≥ 50 kg).');
+        $this->command?->info('Buana Raya Cargo: '.count($records).' tujuan diimpor (kiriman ≥ 50 kg).');
     }
 }
