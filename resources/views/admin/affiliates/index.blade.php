@@ -5,6 +5,12 @@
 @section('content')
     <x-admin.page-header title="Afiliasi" subtitle="Kelola afiliator & verifikasi pendaftaran">
         <x-slot:actions>
+            @if (auth()->user()->isSuperAdmin())
+                <a href="{{ route('admin.affiliates.commissions.review') }}" class="btn-outline">
+                    Review Komisi
+                    @if ($counts['review'] > 0)<span class="ml-1 rounded-full bg-amber-500 px-1.5 text-xs text-white">{{ $counts['review'] }}</span>@endif
+                </a>
+            @endif
             <a href="{{ route('admin.affiliates.payouts') }}" class="btn-outline">Penarikan Dana</a>
         </x-slot:actions>
     </x-admin.page-header>

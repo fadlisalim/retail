@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\AffiliateStatus;
+use App\Enums\CommissionStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\StockMovementType;
 use App\Models\Affiliate;
@@ -91,7 +92,8 @@ class ManualOrderTest extends TestCase
         ]);
         $product = $this->stockedProduct(5, ['affiliate_rate' => 5, 'price' => 10_000_000]);
 
-        $this->actingAs($this->admin())->post(route('admin.orders.store'), [
+        $admin = $this->admin();
+        $this->actingAs($admin)->post(route('admin.orders.store'), [
             'channel' => 'whatsapp', 'customer_name' => 'Pembeli WA', 'customer_phone' => '08988877766',
             'affiliate_id' => $affiliate->id,
             'items' => [['product_id' => $product->id, 'quantity' => 1, 'unit_price' => '']],
@@ -100,10 +102,15 @@ class ManualOrderTest extends TestCase
 
         $order = Order::latest('id')->first();
         $this->assertSame($affiliate->id, $order->affiliate_id);
-        // 5% × 10jt = 500rb, status tertahan sampai pesanan Selesai.
+        // Atribusi manual oleh admin → tercatat siapa yang menginput, komisi
+        // 5% × 10jt = 500rb menunggu review super admin (bukan otomatis ditahan).
+        $this->assertSame('manual', $order->affiliate_source);
+        $this->assertSame($admin->id, $order->affiliate_attributed_by);
         $commission = $affiliate->commissions()->first();
         $this->assertNotNull($commission);
         $this->assertEquals(500_000, (float) $commission->amount);
+        $this->assertSame(CommissionStatus::AwaitingReview, $commission->status);
+        $this->assertSame($admin->id, $commission->attributed_by);
     }
 
     /** Guard self-referral tetap berlaku di jalur manual. */

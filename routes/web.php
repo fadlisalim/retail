@@ -340,6 +340,10 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/afiliasi/penarikan/{payout}/setujui', [Admin\AffiliatePayoutController::class, 'approve'])->name('affiliates.payouts.approve');
         Route::post('/afiliasi/penarikan/{payout}/lunas', [Admin\AffiliatePayoutController::class, 'markPaid'])->name('affiliates.payouts.paid');
         Route::post('/afiliasi/penarikan/{payout}/tolak', [Admin\AffiliatePayoutController::class, 'reject'])->name('affiliates.payouts.reject');
+        // Review komisi atribusi manual — hanya super admin (dicek di controller).
+        Route::get('/afiliasi/review-komisi', [Admin\AffiliateCommissionReviewController::class, 'index'])->name('affiliates.commissions.review');
+        Route::post('/afiliasi/komisi/{commission}/setujui', [Admin\AffiliateCommissionReviewController::class, 'approve'])->name('affiliates.commissions.approve');
+        Route::post('/afiliasi/komisi/{commission}/tolak', [Admin\AffiliateCommissionReviewController::class, 'reject'])->name('affiliates.commissions.reject');
         Route::get('/afiliasi/{affiliate}', [Admin\AffiliateController::class, 'show'])->name('affiliates.show');
         Route::get('/afiliasi/{affiliate}/dokumen/{type}', [Admin\AffiliateController::class, 'document'])->name('affiliates.document');
         Route::post('/afiliasi/{affiliate}/verifikasi', [Admin\AffiliateController::class, 'verify'])->name('affiliates.verify');

@@ -3,20 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AffiliateStatus;
+use App\Enums\CommissionStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Affiliate;
+use App\Models\AffiliateCommission;
 use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AffiliateController extends Controller
 {
-    public function __construct(private readonly NotificationService $notifications)
-    {
-    }
+    public function __construct(private readonly NotificationService $notifications) {}
 
     /** Stream a private KYC document (KTP / selfie). Admin-only via the route's permission gate. */
     public function document(Affiliate $affiliate, string $type): StreamedResponse
@@ -50,6 +50,7 @@ class AffiliateController extends Controller
             'counts' => [
                 'pending' => Affiliate::where('status', AffiliateStatus::Pending->value)->count(),
                 'active' => Affiliate::where('status', AffiliateStatus::Active->value)->count(),
+                'review' => AffiliateCommission::where('status', CommissionStatus::AwaitingReview->value)->count(),
             ],
         ]);
     }

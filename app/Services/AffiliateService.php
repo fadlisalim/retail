@@ -4,12 +4,14 @@ namespace App\Services;
 
 use App\Enums\AffiliateStatus;
 use App\Enums\CommissionStatus;
+use App\Enums\OrderStatus;
 use App\Enums\PayoutStatus;
 use App\Models\Affiliate;
 use App\Models\AffiliateCommission;
 use App\Models\AffiliatePayout;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
@@ -126,17 +128,24 @@ class AffiliateService
         $order->update(['affiliate_id' => $affiliate->id]);
     }
 
-    /** On payment: create held commission lines for each order item. Idempotent. */
-    public function recordCommissions(Order $order): void
+    /**
+     * On payment: create held commission lines for each order item. Idempotent.
+     * Atribusi MANUAL (admin memilih afiliator sendiri) masuk sebagai "menunggu
+     * review" — super admin yang meloloskannya, bukan otomatis.
+     *
+     * @param  float|null  $rateOverride  fee % khusus (mis. kesepakatan per pesanan) menggantikan fee produk/default
+     */
+    public function recordCommissions(Order $order, ?float $rateOverride = null): void
     {
         if (! $order->affiliate_id) {
             return;
         }
 
         $order->loadMissing('items.product');
+        $manual = $order->affiliate_source === 'manual';
 
         foreach ($order->items as $item) {
-            $rate = $this->rateForProduct($item->product);
+            $rate = $rateOverride ?? $this->rateForProduct($item->product);
             $base = (float) $item->line_total;
             $amount = round($base * $rate / 100, 2);
 
@@ -152,10 +161,33 @@ class AffiliateService
                     'base_amount' => $base,
                     'rate' => $rate,
                     'amount' => $amount,
-                    'status' => CommissionStatus::Pending,
+                    'status' => $manual ? CommissionStatus::AwaitingReview : CommissionStatus::Pending,
+                    'attributed_by' => $manual ? $order->affiliate_attributed_by : null,
                 ]
             );
         }
+    }
+
+    /** Super admin meloloskan komisi atribusi manual: langsung cair bila pesanan sudah Selesai, selain itu ditahan dulu. */
+    public function reviewApprove(AffiliateCommission $commission, User $reviewer): void
+    {
+        $commission->loadMissing('order');
+        $commission->update([
+            'status' => $commission->order?->status === OrderStatus::Completed ? CommissionStatus::Approved : CommissionStatus::Pending,
+            'reviewed_by' => $reviewer->id,
+            'reviewed_at' => now(),
+            'review_note' => null,
+        ]);
+    }
+
+    public function reviewReject(AffiliateCommission $commission, User $reviewer, string $note): void
+    {
+        $commission->update([
+            'status' => CommissionStatus::Cancelled,
+            'reviewed_by' => $reviewer->id,
+            'reviewed_at' => now(),
+            'review_note' => $note,
+        ]);
     }
 
     /** On completion: clear held commissions so they become withdrawable. */
@@ -170,7 +202,7 @@ class AffiliateService
     public function cancelCommissions(Order $order): void
     {
         $order->affiliateCommissions()
-            ->whereIn('status', [CommissionStatus::Pending->value, CommissionStatus::Approved->value])
+            ->whereIn('status', [CommissionStatus::AwaitingReview->value, CommissionStatus::Pending->value, CommissionStatus::Approved->value])
             ->update(['status' => CommissionStatus::Cancelled->value]);
     }
 

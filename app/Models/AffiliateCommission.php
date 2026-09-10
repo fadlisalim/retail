@@ -11,6 +11,7 @@ class AffiliateCommission extends Model
     protected $fillable = [
         'affiliate_id', 'order_id', 'order_item_id', 'product_id',
         'base_amount', 'rate', 'amount', 'status',
+        'attributed_by', 'reviewed_by', 'reviewed_at', 'review_note',
     ];
 
     protected $casts = [
@@ -18,11 +19,23 @@ class AffiliateCommission extends Model
         'rate' => 'decimal:2',
         'amount' => 'decimal:2',
         'status' => CommissionStatus::class,
+        'reviewed_at' => 'datetime',
     ];
 
     public function affiliate(): BelongsTo
     {
         return $this->belongsTo(Affiliate::class);
+    }
+
+    /** Admin yang mengaitkan afiliator secara manual (null = command/server). */
+    public function attributedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'attributed_by');
+    }
+
+    public function reviewedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 
     public function order(): BelongsTo

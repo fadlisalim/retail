@@ -3,13 +3,17 @@
 namespace App\View\Composers;
 
 use App\Enums\AffiliateStatus;
+use App\Enums\CommissionStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\QuotationStatus;
 use App\Models\Affiliate;
+use App\Models\AffiliateCommission;
 use App\Models\Order;
 use App\Models\Quotation;
 use App\Models\Review;
+use App\Models\SiteChatMessage;
+use App\Models\WaMessage;
 use Illuminate\View\View;
 
 /**
@@ -31,12 +35,13 @@ class AdminMenuComposer
             'quotations' => Quotation::where('status', QuotationStatus::New->value)->count(),
             // Reviews with an unresolved report to moderate.
             'reviews' => Review::whereHas('reports', fn ($q) => $q->where('resolved', false))->count(),
-            // Affiliate applications awaiting verification.
-            'affiliates' => Affiliate::where('status', AffiliateStatus::Pending->value)->count(),
+            // Affiliate applications awaiting verification + komisi atribusi manual yang menunggu review.
+            'affiliates' => Affiliate::where('status', AffiliateStatus::Pending->value)->count()
+                + AffiliateCommission::where('status', CommissionStatus::AwaitingReview->value)->count(),
             // Unread incoming WhatsApp messages in the inbox.
-            'wachat' => \App\Models\WaMessage::where('direction', 'in')->where('is_read', false)->count(),
+            'wachat' => WaMessage::where('direction', 'in')->where('is_read', false)->count(),
             // Unread on-site Chat Toko messages from customers.
-            'sitechat' => \App\Models\SiteChatMessage::where('direction', 'in')->where('is_read', false)->count(),
+            'sitechat' => SiteChatMessage::where('direction', 'in')->where('is_read', false)->count(),
         ]);
     }
 }

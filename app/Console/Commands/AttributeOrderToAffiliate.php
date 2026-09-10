@@ -12,16 +12,16 @@ use Illuminate\Console\Command;
 
 /**
  * Kaitkan pesanan yang sudah ada ke seorang afiliator secara manual (mis.
- * pembeli datang dari afiliator tapi cookie referral tidak terbaca), lalu
- * catat komisinya mengikuti status pesanan: sudah dibayar → komisi ditahan
- * (pending); sudah selesai → komisi disetujui (bisa ditarik). Idempotent —
- * komisi tidak digandakan bila dijalankan ulang.
+ * pembeli datang dari afiliator tapi cookie referral tidak terbaca). Ini
+ * atribusi MANUAL: komisinya masuk sebagai "menunggu review" dan hanya cair
+ * setelah disetujui Super Admin di Admin → Afiliasi → Review Komisi.
+ * Idempotent — komisi tidak digandakan bila dijalankan ulang.
  */
 class AttributeOrderToAffiliate extends Command
 {
-    protected $signature = 'affiliate:attribute {order_number : Nomor pesanan, mis. ORD-260827-PLG8Y} {code : Kode afiliator, mis. eU5ACZ} {--force : Tanpa konfirmasi; juga memindahkan dari afiliator lain}';
+    protected $signature = 'affiliate:attribute {order_number : Nomor pesanan, mis. ORD-260827-PLG8Y} {code : Kode afiliator, mis. eU5ACZ} {--fee= : Fee % khusus pesanan ini (mis. 5), menggantikan fee produk/default} {--force : Tanpa konfirmasi; juga memindahkan dari afiliator lain}';
 
-    protected $description = 'Kaitkan pesanan ke afiliator dan catat komisinya sesuai status pesanan';
+    protected $description = 'Kaitkan pesanan ke afiliator (atribusi manual) — komisi menunggu review super admin';
 
     public function handle(AffiliateService $affiliates): int
     {
@@ -49,6 +49,14 @@ class AttributeOrderToAffiliate extends Command
             return self::FAILURE;
         }
 
+        $fee = $this->option('fee');
+        if ($fee !== null && (! is_numeric($fee) || (float) $fee < 0 || (float) $fee > 100)) {
+            $this->error('--fee harus angka persen 0–100.');
+
+            return self::FAILURE;
+        }
+        $fee = $fee !== null ? (float) $fee : null;
+
         if ($order->affiliate_id && $order->affiliate_id !== $affiliate->id) {
             $this->warn('Pesanan sudah terkait ke afiliator lain: '.($order->affiliate?->user?->name ?? '#'.$order->affiliate_id).' (kode '.$order->affiliate?->code.').');
             if (! $this->option('force')) {
@@ -67,7 +75,7 @@ class AttributeOrderToAffiliate extends Command
             'Pesanan %s — %s — status %s / %s — total %s',
             $order->order_number, $order->customer_name, $order->status->label(), $order->payment_status->label(), rupiah($order->grand_total),
         ));
-        $this->line('Afiliator: '.$affiliate->user?->name.' (kode '.$affiliate->code.', default fee '.$affiliates->defaultRate().'%).');
+        $this->line('Afiliator: '.$affiliate->user?->name.' (kode '.$affiliate->code.'), fee '.($fee !== null ? $fee.'% (khusus)' : 'per produk / default '.$affiliates->defaultRate().'%').'.');
 
         if (! $this->option('force') && ! $this->confirm('Kaitkan pesanan ini ke afiliator tersebut?', true)) {
             $this->line('Dibatalkan.');
@@ -78,7 +86,7 @@ class AttributeOrderToAffiliate extends Command
         if ($order->affiliate_id && $order->affiliate_id !== $affiliate->id) {
             $order->affiliateCommissions()->delete(); // belum ada yang dibayar (dicek di atas)
         }
-        $order->update(['affiliate_id' => $affiliate->id]);
+        $order->update(['affiliate_id' => $affiliate->id, 'affiliate_source' => 'manual', 'affiliate_attributed_by' => null]);
 
         $paid = in_array($order->payment_status, [PaymentStatus::Paid, PaymentStatus::PartiallyRefunded], true);
         $closed = in_array($order->status, [OrderStatus::Cancelled, OrderStatus::Returned], true);
@@ -89,24 +97,21 @@ class AttributeOrderToAffiliate extends Command
             return self::SUCCESS;
         }
         if (! $paid) {
-            $this->warn('Pesanan belum dibayar — komisi akan tercatat otomatis saat pembayaran diverifikasi.');
+            $this->warn('Pesanan belum dibayar — komisi akan tercatat (menunggu review) saat pembayaran diverifikasi.'
+                .($fee !== null ? ' Catatan: fee khusus hanya berlaku bila dicatat sekarang; jalankan ulang setelah dibayar.' : ''));
 
             return self::SUCCESS;
         }
 
-        $affiliates->recordCommissions($order);
-        if ($order->status === OrderStatus::Completed) {
-            $affiliates->approveCommissions($order);
-        }
+        $affiliates->recordCommissions($order, $fee);
 
         $rows = $order->affiliateCommissions()->with('product')->get();
         $this->table(['Produk', 'Dasar', 'Fee %', 'Komisi', 'Status'], $rows->map(fn ($c) => [
             mb_strimwidth($c->product?->name ?? '#'.$c->product_id, 0, 50, '…'),
-            rupiah($c->base_amount), (float) $c->rate.'%', rupiah($c->amount), $c->status->value,
+            rupiah($c->base_amount), (float) $c->rate.'%', rupiah($c->amount), $c->status->label(),
         ])->all());
-        $this->info('Total komisi '.rupiah($rows->sum('amount')).' — '.($order->status === OrderStatus::Completed
-            ? 'DISETUJUI (bisa ditarik afiliator).'
-            : 'ditahan (pending) sampai pesanan Selesai.'));
+        $this->info('Total komisi '.rupiah($rows->sum('amount')).' — MENUNGGU REVIEW. Setujui di Admin → Afiliasi → Review Komisi'
+            .($order->status === OrderStatus::Completed ? ' (langsung cair karena pesanan sudah Selesai).' : ' (ditahan sampai pesanan Selesai).'));
 
         return self::SUCCESS;
     }

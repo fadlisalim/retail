@@ -60,6 +60,9 @@ class ManualOrderService
                 'channel' => $data['channel'],
                 'external_reference' => $data['external_reference'] ?? null,
                 'affiliate_id' => $affiliate?->id,
+                // Atribusi manual: komisinya menunggu review super admin (bukan otomatis).
+                'affiliate_source' => $affiliate ? 'manual' : null,
+                'affiliate_attributed_by' => $affiliate ? $actor?->id : null,
                 'user_id' => $customer?->id,
                 'created_by' => $actor?->id,
                 'customer_name' => $data['customer_name'],
