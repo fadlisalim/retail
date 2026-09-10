@@ -10,9 +10,11 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Role;
 use App\Models\User;
+use App\Notifications\SystemNotification;
 use App\Services\AffiliateService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -116,6 +118,28 @@ class CommissionReviewTest extends TestCase
         $this->actingAs($super)->post(route('admin.affiliates.commissions.approve', $commission))->assertSessionHas('error');
         $this->assertSame(CommissionStatus::Cancelled, $commission->fresh()->status);
         $this->assertEquals(0, $affiliate->availableBalance());
+    }
+
+    public function test_super_admin_approval_notifies_the_affiliate_and_can_be_resent(): void
+    {
+        Notification::fake();
+        $affiliate = $this->affiliate();
+        $order = $this->paidOrder($affiliate, 'manual', status: 'completed');
+        app(AffiliateService::class)->recordCommissions($order);
+        $commission = $order->affiliateCommissions()->firstOrFail();
+
+        // Menunggu review → afiliator belum dikabari apa pun.
+        Notification::assertNothingSentTo($affiliate->user);
+
+        $this->actingAs($this->staff('super-admin'))->post(route('admin.affiliates.commissions.approve', $commission));
+
+        Notification::assertSentTo($affiliate->user, SystemNotification::class, fn ($n) => str_contains($n->title, 'disetujui')
+            && str_contains($n->message, $order->order_number) && str_contains($n->message, 'Rp 50.000') && str_contains($n->message, 'bisa ditarik'));
+
+        // Kirim ulang manual (mis. komisi lama yang disetujui sebelum fitur notifikasi ada).
+        $this->artisan('affiliate:notify', ['order_number' => $order->order_number])->assertSuccessful();
+        Notification::assertSentTo($affiliate->user, SystemNotification::class, fn ($n) => str_contains($n->title, 'siap ditarik'));
+        Notification::assertSentToTimes($affiliate->user, SystemNotification::class, 2);
     }
 
     public function test_cancelling_the_order_voids_commissions_still_under_review(): void

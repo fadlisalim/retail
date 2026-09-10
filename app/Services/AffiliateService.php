@@ -30,7 +30,10 @@ class AffiliateService
 {
     public const COOKIE = 'ref';
 
-    public function __construct(private readonly SettingService $settings) {}
+    public function __construct(
+        private readonly SettingService $settings,
+        private readonly NotificationService $notifications,
+    ) {}
 
     public function windowDays(): int
     {
@@ -143,6 +146,7 @@ class AffiliateService
 
         $order->loadMissing('items.product');
         $manual = $order->affiliate_source === 'manual';
+        $created = false;
 
         foreach ($order->items as $item) {
             $rate = $rateOverride ?? $this->rateForProduct($item->product);
@@ -153,7 +157,7 @@ class AffiliateService
                 continue;
             }
 
-            AffiliateCommission::firstOrCreate(
+            $commission = AffiliateCommission::firstOrCreate(
                 ['order_id' => $order->id, 'order_item_id' => $item->id],
                 [
                     'affiliate_id' => $order->affiliate_id,
@@ -165,6 +169,13 @@ class AffiliateService
                     'attributed_by' => $manual ? $order->affiliate_attributed_by : null,
                 ]
             );
+            $created = $created || $commission->wasRecentlyCreated;
+        }
+
+        // Kabari afiliator begitu transaksi dari link-nya dibayar (sekali, saat
+        // komisi pertama tercatat). Atribusi manual dikabari setelah lolos review.
+        if ($created && ! $manual) {
+            $this->notifyCommission($order, 'recorded');
         }
     }
 
@@ -178,6 +189,54 @@ class AffiliateService
             'reviewed_at' => now(),
             'review_note' => null,
         ]);
+
+        // Satu kabar per pesanan: setelah tidak ada lagi baris yang menunggu review.
+        if ($commission->order && ! $commission->order->affiliateCommissions()->where('status', CommissionStatus::AwaitingReview->value)->exists()) {
+            $this->notifyCommission($commission->order, 'reviewed');
+        }
+    }
+
+    /**
+     * Notifikasi ke afiliator (in-app + email + WhatsApp bila aktif) tentang
+     * komisi sebuah pesanan. $kind: recorded (dibayar, ditahan) | approved
+     * (pesanan selesai, siap ditarik) | reviewed (disetujui super admin).
+     * Dipakai juga oleh `affiliate:notify` untuk mengirim ulang.
+     */
+    public function notifyCommission(Order $order, string $kind): bool
+    {
+        $order->loadMissing('affiliate.user');
+        $affiliate = $order->affiliate;
+        $commissions = $order->affiliateCommissions()->whereIn('status', [
+            CommissionStatus::Pending->value, CommissionStatus::Approved->value, CommissionStatus::Paid->value,
+        ])->get();
+        if (! $affiliate?->user || $commissions->isEmpty()) {
+            return false;
+        }
+
+        $amount = rupiah($commissions->sum('amount'));
+        $withdrawable = $commissions->every(fn ($c) => $c->status !== CommissionStatus::Pending);
+        $dashboard = route('account.affiliate.dashboard');
+
+        [$title, $message] = match ($kind) {
+            'recorded' => [
+                'Transaksi dari link Anda berhasil 🎉',
+                "Pesanan {$order->order_number} senilai ".rupiah($order->grand_total)." dari link afiliasi Anda sudah dibayar. Komisi Anda {$amount} ditahan dulu dan otomatis bisa ditarik setelah pesanan Selesai.",
+            ],
+            'approved' => [
+                "Komisi {$amount} siap ditarik 💰",
+                "Pesanan {$order->order_number} sudah Selesai. Komisi {$amount} kini masuk saldo yang bisa ditarik. Saldo tersedia sekarang: ".rupiah($affiliate->availableBalance()).'. Ajukan penarikan lewat dashboard afiliasi.',
+            ],
+            default => [
+                'Komisi afiliasi Anda disetujui ✅',
+                "Komisi {$amount} untuk pesanan {$order->order_number} telah disetujui admin. ".($withdrawable
+                    ? 'Saldo tersedia sekarang: '.rupiah($affiliate->availableBalance()).' — bisa ditarik lewat dashboard afiliasi.'
+                    : 'Komisi ditahan dulu dan otomatis bisa ditarik setelah pesanan Selesai.'),
+            ],
+        };
+
+        $this->notifications->toUser($affiliate->user, $title, $message, $dashboard, 'info', true, 'Buka Dashboard Afiliasi');
+
+        return true;
     }
 
     public function reviewReject(AffiliateCommission $commission, User $reviewer, string $note): void
@@ -193,9 +252,13 @@ class AffiliateService
     /** On completion: clear held commissions so they become withdrawable. */
     public function approveCommissions(Order $order): void
     {
-        $order->affiliateCommissions()
+        $updated = $order->affiliateCommissions()
             ->where('status', CommissionStatus::Pending->value)
             ->update(['status' => CommissionStatus::Approved->value]);
+
+        if ($updated > 0) {
+            $this->notifyCommission($order, 'approved');
+        }
     }
 
     /** On cancel/return: void commissions that haven't been paid out yet. */

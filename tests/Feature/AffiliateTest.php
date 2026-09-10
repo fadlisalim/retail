@@ -69,6 +69,7 @@ class AffiliateTest extends TestCase
 
     public function test_commission_lifecycle_and_payout(): void
     {
+        Notification::fake();
         $svc = app(AffiliateService::class);
         $affiliate = $this->activeAffiliate();
         $order = $this->orderWithItem($affiliate, 2_000_000, 7.5);
@@ -82,14 +83,24 @@ class AffiliateTest extends TestCase
         $this->assertEquals(150_000, $affiliate->pendingTotal());
         $this->assertEquals(0, $affiliate->availableBalance());
 
-        // Idempotent: recording again does not duplicate
+        // Afiliator dikabari (in-app/email/WA): transaksi dari link-nya dibayar, komisi ditahan.
+        Notification::assertSentTo($affiliate->user, SystemNotification::class, fn ($n) => str_contains($n->message, $order->order_number)
+            && str_contains($n->message, 'Rp 150.000') && str_contains($n->message, 'ditahan'));
+
+        // Idempotent: recording again does not duplicate (dan tidak mengirim kabar dua kali)
         $svc->recordCommissions($order);
         $this->assertEquals(1, $affiliate->commissions()->count());
+        Notification::assertSentToTimes($affiliate->user, SystemNotification::class, 1);
 
-        // Complete → approved → withdrawable
+        // Complete → approved → withdrawable (+ kabar "siap ditarik")
         $svc->approveCommissions($order);
         $this->assertEquals(150_000, $affiliate->approvedTotal());
         $this->assertEquals(150_000, $affiliate->availableBalance());
+        Notification::assertSentTo($affiliate->user, SystemNotification::class, fn ($n) => str_contains($n->title, 'siap ditarik')
+            && str_contains($n->message, 'Rp 150.000'));
+        Notification::assertSentToTimes($affiliate->user, SystemNotification::class, 2);
+        $svc->approveCommissions($order); // tidak ada yang berubah → tidak ada kabar baru
+        Notification::assertSentToTimes($affiliate->user, SystemNotification::class, 2);
 
         // Request payout (above the 100k minimum) — menunggu konfirmasi email,
         // saldo langsung tercadangkan sejak diajukan.
