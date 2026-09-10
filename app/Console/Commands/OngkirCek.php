@@ -37,10 +37,14 @@ class OngkirCek extends Command
         }
 
         $this->info('Asal ID '.$client->originId().' → tujuan ID '.$this->argument('tujuan_id').', berat '.$this->option('berat').' g, kurir '.($this->option('kurir') ?: $client->couriers()));
-        $this->table(['Kurir', 'Layanan', 'Keterangan', 'Tarif', 'Estimasi'], array_map(
-            fn ($r) => [$r['courier_name'], $r['service'], $r['description'], 'Rp '.number_format($r['cost'], 0, ',', '.'), $r['etd']],
+
+        // Kolom "Tampil" = lolos kurasi (layanan non-paket & kargo <10 kg dibuang, maks. 2 per kurir).
+        $shown = collect($client->curate($rows, (int) $this->option('berat')))->map(fn ($r) => $r['courier'].'|'.$r['service'])->all();
+        $this->table(['Tampil', 'Kurir', 'Layanan', 'Keterangan', 'Tarif', 'Estimasi'], array_map(
+            fn ($r) => [in_array($r['courier'].'|'.$r['service'], $shown, true) ? '✓' : '', $r['courier_name'], $r['service'], $r['description'], 'Rp '.number_format($r['cost'], 0, ',', '.'), $r['etd']],
             $rows,
         ));
+        $this->line(count($shown).' dari '.count($rows).' layanan akan ditawarkan di checkout.');
         $this->line('Panggilan API hari ini: '.$client->callsToday().' (hasil ini di-cache '.(int) config('services.rajaongkir.cache_minutes').' menit).');
 
         return self::SUCCESS;

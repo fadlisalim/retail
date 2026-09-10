@@ -30,6 +30,24 @@ class RajaOngkirClient
         'rpx' => 'RPX', 'ncs' => 'NCS', 'sentral' => 'Sentral Cargo', 'star' => 'Star Cargo', 'dse' => 'DSE',
     ];
 
+    /**
+     * Layanan yang tidak relevan untuk paket toko: dokumen, barang berbahaya/
+     * berharga, super speed (ratusan ribu), dan tier trucking "JTR<130" dsb.
+     */
+    private const EXCLUDED_SERVICE_PATTERNS = [
+        '/\bDOK\b/i', '/DOCUMENT/i', '/DOKUMEN/i', '/DANGEROUS/i', '/VALUABLE/i',
+        '/^SPS$/i', '/SUPER SPEED/i', '/[<>]/',
+    ];
+
+    /** Layanan kargo per kg dengan minimum 10 kg — hanya masuk akal untuk paket berat. */
+    private const CARGO_SERVICE_CODES = ['JTR', 'GOKIL'];
+
+    private const CARGO_MIN_GRAMS = 10000;
+
+    private const MAX_PER_COURIER = 2;
+
+    private const MAX_TOTAL = 8;
+
     public ?string $lastError = null;
 
     public function enabled(): bool
@@ -154,6 +172,45 @@ class RajaOngkirClient
         Cache::put($key, $rows, $ttl);
 
         return $rows;
+    }
+
+    /**
+     * Saring daftar tarif mentah jadi pilihan yang layak tampil di checkout:
+     * buang layanan non-paket, layanan kargo hanya untuk ≥ 10 kg, maksimal
+     * 2 layanan termurah per kurir, total dibatasi, tetap urut termurah.
+     *
+     * @param  list<array{courier:string,courier_name:string,service:string,description:string,cost:float,etd:string}>  $rows
+     * @return list<array{courier:string,courier_name:string,service:string,description:string,cost:float,etd:string}>
+     */
+    public function curate(array $rows, int $weightGrams): array
+    {
+        $perCourier = [];
+        $kept = [];
+
+        foreach ($rows as $row) {
+            $haystack = $row['service'].' '.$row['description'];
+            foreach (self::EXCLUDED_SERVICE_PATTERNS as $pattern) {
+                if (preg_match($pattern, $haystack)) {
+                    continue 2;
+                }
+            }
+            if (in_array($row['service'], self::CARGO_SERVICE_CODES, true) && $weightGrams < self::CARGO_MIN_GRAMS) {
+                continue;
+            }
+            if (($perCourier[$row['courier']] ?? 0) >= self::MAX_PER_COURIER) {
+                continue;
+            }
+
+            // Keterangan yang cuma angka/kode internal (POS "240") tidak informatif.
+            if (preg_match('/^[\d\s.-]*$/', $row['description']) || strcasecmp($row['description'], $row['service']) === 0) {
+                $row['description'] = '';
+            }
+
+            $perCourier[$row['courier']] = ($perCourier[$row['courier']] ?? 0) + 1;
+            $kept[] = $row;
+        }
+
+        return array_slice($kept, 0, self::MAX_TOTAL);
     }
 
     /** Jumlah panggilan API hari ini (pantau kuota paket gratis). */

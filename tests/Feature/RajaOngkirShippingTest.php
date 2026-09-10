@@ -47,9 +47,19 @@ class RajaOngkirShippingTest extends TestCase
         Http::fake([
             'rajaongkir.komerce.id/api/v1/calculate/domestic-cost' => Http::response([
                 'meta' => ['message' => 'Success', 'code' => 200, 'status' => 'success'],
+                // Campuran seperti respons asli: layanan paket + noise (dokumen, DG, SPS,
+                // tier trucking, kargo min 10 kg, keterangan POS berupa angka).
                 'data' => [
                     ['name' => 'Jalur Nugraha Ekakurir (JNE)', 'code' => 'jne', 'service' => 'REG', 'description' => 'Layanan Reguler', 'cost' => 12000, 'etd' => '1-2 day'],
                     ['name' => 'J&T Express', 'code' => 'jnt', 'service' => 'EZ', 'description' => 'Regular Service', 'cost' => 11000, 'etd' => '2 day'],
+                    ['name' => 'AnterAja', 'code' => 'anteraja', 'service' => 'DOK', 'description' => 'Anteraja Document', 'cost' => 5000, 'etd' => '2-4 day'],
+                    ['name' => 'POS Indonesia', 'code' => 'pos', 'service' => 'PAKETPOS DANGEROUS GOODS', 'description' => 'Pdg', 'cost' => 9000, 'etd' => '3 day'],
+                    ['name' => 'POS Indonesia', 'code' => 'pos', 'service' => 'POS REGULER', 'description' => '240', 'cost' => 15000, 'etd' => '2 day'],
+                    ['name' => 'Jalur Nugraha Ekakurir (JNE)', 'code' => 'jne', 'service' => 'YES', 'description' => 'Yakin Esok Sampai', 'cost' => 25000, 'etd' => '1 day'],
+                    ['name' => 'Jalur Nugraha Ekakurir (JNE)', 'code' => 'jne', 'service' => 'OKE', 'description' => 'Ongkos Kirim Ekonomis', 'cost' => 27000, 'etd' => '3 day'],
+                    ['name' => 'SiCepat', 'code' => 'sicepat', 'service' => 'GOKIL', 'description' => 'Cargo Per Kg (Minimal 10kg)', 'cost' => 55000, 'etd' => '2-4 day'],
+                    ['name' => 'Jalur Nugraha Ekakurir (JNE)', 'code' => 'jne', 'service' => 'SPS', 'description' => 'Super Speed', 'cost' => 509000, 'etd' => '0 day'],
+                    ['name' => 'Jalur Nugraha Ekakurir (JNE)', 'code' => 'jne', 'service' => 'JTR>200', 'description' => 'JNE Trucking', 'cost' => 1500000, 'etd' => '3 day'],
                 ],
             ]),
             'rajaongkir.komerce.id/api/v1/destination/domestic-destination*' => Http::response([
@@ -102,6 +112,14 @@ class RajaOngkirShippingTest extends TestCase
         $this->assertTrue($jne->confirmed);
         // Termurah lebih dulu.
         $this->assertTrue($quotes->search(fn ($q) => $q === $jnt) < $quotes->search(fn ($q) => $q === $jne));
+
+        // Kurasi: dokumen, dangerous goods, super speed, tier trucking, kargo min 10 kg
+        // tidak ditawarkan; JNE maksimal 2 layanan termurah (REG & YES, bukan OKE);
+        // keterangan POS "240" dibuang dari label.
+        $courier = $quotes->filter(fn ($q) => in_array($q->providerCode, ['JNE', 'JNT', 'POS', 'ANTERAJA', 'SICEPAT'], true));
+        $codes = $courier->map(fn ($q) => $q->providerCode.'|'.$q->serviceCode)->values()->all();
+        $this->assertSame(['JNT|EZ', 'JNE|REG', 'POS|POS REGULER', 'JNE|YES'], $codes);
+        $this->assertSame('POS Indonesia — POS REGULER', $courier->first(fn ($q) => $q->providerCode === 'POS')->label);
 
         Http::assertSent(fn (ClientRequest $r) => str_contains($r->url(), '/calculate/domestic-cost')
             && $r->hasHeader('key', 'test-key')

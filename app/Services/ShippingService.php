@@ -297,7 +297,8 @@ class ShippingService
         $freeShipping = $config->free_shipping_min_subtotal !== null && $ctx->subtotal >= (float) $config->free_shipping_min_subtotal;
 
         $quotes = [];
-        foreach ($this->rajaOngkir->domesticCost($destinationId, $billable) as $row) {
+        $rows = $this->rajaOngkir->curate($this->rajaOngkir->domesticCost($destinationId, $billable), $billable);
+        foreach ($rows as $row) {
             $quotes[] = new ShippingQuote(
                 providerCode: strtoupper($row['courier']),
                 serviceCode: $row['service'],
@@ -350,12 +351,15 @@ class ShippingService
         return (int) $match['id'];
     }
 
-    /** "1-2 day" / "2 days" / "3" → "1-2 hari". */
+    /** "1-2 day" / "2 days" / "3" → "1-2 hari"; "0 day" → "hari ini". */
     private function etdLabel(string $etd): ?string
     {
         $etd = trim((string) preg_replace('/\b(days?|hari)\b/i', '', $etd));
+        if ($etd === '') {
+            return null;
+        }
 
-        return $etd !== '' ? $etd.' hari' : null;
+        return preg_match('/^0(-0)?$/', $etd) ? 'hari ini' : $etd.' hari';
     }
 
     private function config(): ShippingSetting
