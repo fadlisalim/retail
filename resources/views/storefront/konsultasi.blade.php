@@ -22,24 +22,34 @@
 
 @section('content')
 <div x-data="csChat({ endpoint: '{{ route('assistant.chat') }}', history: '{{ route('assistant.history') }}', contact: '{{ route('assistant.contact') }}', click: '{{ route('assistant.click') }}', upload: '{{ route('assistant.upload') }}', welcomes: @js([$welcome]) })"
-     class="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col">
+     class="flex min-h-0 w-full flex-1 flex-col">
 
-    {{-- Bar chat ala WhatsApp --}}
-    <div class="flex flex-none items-center gap-3 bg-brand-700 px-3 py-2.5 text-white shadow-md sm:rounded-b-none">
-        <span class="relative flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/20 text-base font-bold">
-            K
-            <span class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-brand-700 bg-green-400"></span>
-        </span>
-        <div class="min-w-0 flex-1 leading-tight">
-            <p class="truncate text-sm font-semibold">Kirana · Konsultan Energi {{ brand() }}</p>
-            <p class="truncate text-[11px] text-white/80">online — gratis 24 jam · bisa kirim foto 📷</p>
+    {{-- Bar atas ala WhatsApp Web: layar penuh, tanpa header situs; tombol kembali ke website. --}}
+    <div class="flex-none bg-brand-700 text-white shadow-md">
+        <div class="mx-auto flex w-full max-w-4xl items-center gap-3 px-3 py-2.5">
+            <a href="{{ route('home') }}" class="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-white text-brand-700" title="Beranda {{ brand() }}" aria-label="Beranda">
+                <x-logo class="h-6 w-6" />
+            </a>
+            <span class="relative flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/20 text-base font-bold">
+                K
+                <span class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-brand-700 bg-green-400"></span>
+            </span>
+            <div class="min-w-0 flex-1 leading-tight">
+                <p class="truncate text-sm font-semibold">Kirana · Konsultan Energi {{ brand() }}</p>
+                <p class="truncate text-[11px] text-white/80">online — gratis 24 jam · bisa kirim foto 📷</p>
+            </div>
+            <a href="{{ route('products.index') }}" class="flex-none rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold transition hover:bg-white/25">Katalog</a>
+            <a href="{{ route('home') }}" class="flex-none rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-50">
+                <span class="hidden sm:inline">Ke Website</span><span class="sm:hidden">Website</span> ↗
+            </a>
         </div>
-        <a href="{{ route('products.index') }}" class="flex-none rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold transition hover:bg-white/25">Katalog</a>
     </div>
 
     {{-- Percakapan (latar bermotif ala WA) --}}
-    <div x-ref="log" class="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-4 sm:px-4"
-         style="background-color: #e9efec; background-image: radial-gradient(circle at 1px 1px, rgba(15, 118, 110, 0.07) 1px, transparent 0); background-size: 22px 22px;">
+    {{-- Padding samping mengunci kolom percakapan ±56rem di layar lebar (ala WA Web),
+         tetap 0.75rem di ponsel — inline supaya tidak bergantung kelas Tailwind baru. --}}
+    <div x-ref="log" class="min-h-0 flex-1 space-y-2 overflow-y-auto py-4"
+         style="padding-left: max(0.75rem, calc((100% - 56rem) / 2)); padding-right: max(0.75rem, calc((100% - 56rem) / 2)); background-color: #e9efec; background-image: radial-gradient(circle at 1px 1px, rgba(15, 118, 110, 0.07) 1px, transparent 0); background-size: 22px 22px;">
 
         <template x-for="(m, i) in messages" :key="i">
             <div :class="m.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
@@ -128,7 +138,7 @@
     </div>
 
     {{-- Composer ala WA: lampiran foto + teks + kirim --}}
-    <div class="flex-none border-t border-gray-200 bg-white">
+    <div class="flex-none border-t border-gray-200 bg-white" style="padding-left: max(0rem, calc((100% - 56rem) / 2)); padding-right: max(0rem, calc((100% - 56rem) / 2));">
         {{-- Preview foto yang menunggu dikirim --}}
         <div x-show="pendingImage" x-cloak class="flex items-center gap-3 border-b border-gray-100 px-3 py-2">
             <img :src="pendingImage?.url" alt="Foto terpilih" class="h-14 w-14 rounded-lg object-cover" />

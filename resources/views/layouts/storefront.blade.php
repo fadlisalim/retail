@@ -38,7 +38,11 @@
 <body x-data data-cart-count="{{ $cartCount }}" class="@hasSection('chat_page') flex h-dvh flex-col overflow-hidden @else min-h-screen @endif bg-gray-50 text-gray-800">
     <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-2 focus:rounded focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-white">Lewati ke konten</a>
 
-    @include('partials.header')
+    {{-- Mode chat_page: tanpa header situs — halaman chat punya bar sendiri
+         (ala WhatsApp Web) dengan tombol kembali ke website. --}}
+    @hasSection('chat_page') @else
+        @include('partials.header')
+    @endif
 
     <main id="main" class="@hasSection('chat_page') flex min-h-0 w-full flex-1 flex-col @else mx-auto w-full max-w-7xl px-4 pb-24 pt-4 sm:px-6 lg:pb-10 @endif">
         @hasSection('chat_page') @else <x-flash /> @endif
@@ -46,7 +50,7 @@
     </main>
 
     @hasSection('chat_page')
-        @include('partials.mini-cart')
+        {{-- tanpa footer, nav bawah, mini-cart, dan widget chat --}}
     @else
         @include('partials.footer')
         @include('partials.mobile-nav')

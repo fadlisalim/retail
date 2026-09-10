@@ -111,7 +111,10 @@ class AssistantConsultantTest extends TestCase
             ->assertSee('Ketik pesan…')
             ->assertSee('Lampirkan foto')
             ->assertSee(route('assistant.upload'), false)
-            // Mode layar penuh: footer & nav bawah tidak dirender.
+            // Layar penuh ala WhatsApp Web: tanpa header/footer/nav situs, ada tombol kembali ke website.
+            ->assertSee('Ke Website')
+            ->assertSee('href="'.route('home').'"', false)
+            ->assertDontSee('Semua Kategori')
             ->assertDontSee('Panduan Energi Surya');
     }
 
