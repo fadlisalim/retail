@@ -65,6 +65,10 @@ class AddressController extends Controller
 
     private function persist(Request $request, CustomerAddress $address): void
     {
+        // Ongkir kurir reguler dihitung per kecamatan/kelurahan — tanpa kecamatan
+        // tarifnya cuma tebakan sekota, jadi wajib saat integrasi aktif.
+        $courierEnabled = app(RajaOngkirClient::class)->enabled();
+
         $data = $request->validate([
             'label' => ['required', 'string', 'max:30'],
             'recipient_name' => ['required', 'string', 'max:150'],
@@ -78,7 +82,7 @@ class AddressController extends Controller
                     $fail('Kota/kabupaten harus dipilih dari daftar (sesuai jangkauan Indah Cargo).');
                 }
             }],
-            'district' => ['nullable', 'string', 'max:100'],
+            'district' => [$courierEnabled ? 'required' : 'nullable', 'string', 'max:100'],
             'subdistrict' => ['nullable', 'string', 'max:100'],
             'postal_code' => ['nullable', 'string', 'max:10'],
             // ID kelurahan RajaOngkir dari kotak pencarian (dasar ongkir kurir reguler).
@@ -87,6 +91,8 @@ class AddressController extends Controller
             'address_line' => ['required', 'string', 'max:500'],
             'landmark' => ['nullable', 'string', 'max:255'],
             'is_default' => ['nullable', 'boolean'],
+        ], [
+            'district.required' => 'Kecamatan wajib diisi — paling mudah lewat kotak "Cari kecamatan / kelurahan" di atas.',
         ]);
 
         DB::transaction(function () use ($data, $address, $request) {

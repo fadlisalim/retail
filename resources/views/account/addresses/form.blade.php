@@ -114,7 +114,8 @@
                         @error('city')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                     </div>
 
-                    <x-form.input name="district" label="Kecamatan" :value="$address->district" />
+                    <x-form.input name="district" label="Kecamatan" :value="$address->district" :required="$courierSearchEnabled"
+                        :hint="$courierSearchEnabled ? 'Terisi otomatis dari kotak pencarian di atas.' : null" />
                     <x-form.input name="subdistrict" label="Kelurahan / Desa" :value="$address->subdistrict" />
                     <x-form.input name="postal_code" label="Kode Pos" :value="$address->postal_code" />
 

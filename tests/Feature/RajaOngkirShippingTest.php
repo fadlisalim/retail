@@ -275,5 +275,17 @@ class RajaOngkirShippingTest extends TestCase
         ])->assertSessionHasNoErrors()->assertRedirect();
 
         $this->assertDatabaseHas('customer_addresses', ['user_id' => $customer->id, 'courier_destination_id' => self::DEST_ID]);
+
+        // Kecamatan wajib saat integrasi aktif (tanpa itu tarif cuma tebakan sekota).
+        $this->actingAs($customer)->post(route('account.addresses.store'), [
+            'label' => 'Kantor', 'recipient_name' => 'Tester', 'phone' => '0811', 'province' => $province, 'city' => $cities[$province][0],
+            'address_line' => 'Jl. Uji 2',
+        ])->assertSessionHasErrors('district');
+
+        config(['services.rajaongkir.enabled' => false]);
+        $this->actingAs($customer)->post(route('account.addresses.store'), [
+            'label' => 'Kantor', 'recipient_name' => 'Tester', 'phone' => '0811', 'province' => $province, 'city' => $cities[$province][0],
+            'address_line' => 'Jl. Uji 2',
+        ])->assertSessionHasNoErrors();
     }
 }
