@@ -91,7 +91,8 @@ class CourierRegionTest extends TestCase
 
     public function test_regions_endpoint_serves_cascading_dropdowns(): void
     {
-        $this->getJson(route('shipping.regions'))->assertUnauthorized();
+        // Publik (dipakai estimasi ongkir di halaman produk oleh tamu).
+        $this->getJson(route('shipping.regions'))->assertOk();
 
         $customer = $this->customer();
         $provinces = $this->actingAs($customer)->getJson(route('shipping.regions'))->assertOk()->json();

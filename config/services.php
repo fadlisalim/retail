@@ -78,6 +78,13 @@ return [
     // `php artisan ongkir:cari "nama kelurahan"`). Paket gratis ±100 request/
     // hari — hasil di-cache `cache_minutes`. Barang di atas max_weight_grams
     // tidak ditawarkan kurir reguler (tetap kargo).
+    // Reverse geocoding GPS → kelurahan untuk tombol "ongkir ke lokasi saya"
+    // (OpenStreetMap Nominatim; wajib User-Agent yang mengidentifikasi situs).
+    'nominatim' => [
+        'base_url' => env('NOMINATIM_BASE_URL', 'https://nominatim.openstreetmap.org'),
+        'user_agent' => env('NOMINATIM_USER_AGENT', 'EnergiClick/1.0 (+https://energi.click)'),
+    ],
+
     'rajaongkir' => [
         'enabled' => (bool) env('RAJAONGKIR_ENABLED', false),
         'api_key' => env('RAJAONGKIR_API_KEY'),

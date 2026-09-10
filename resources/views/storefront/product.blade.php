@@ -323,6 +323,10 @@
                 </div>
             @endunless
 
+            @if (! $product->requires_quotation && ! $product->pickup_only)
+                @include('partials.shipping-estimate')
+            @endif
+
             {{-- Condition acknowledgement note --}}
             @if ($product->requiresConditionAck() && $product->conditionDetail)
                 <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">

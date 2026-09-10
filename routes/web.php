@@ -25,6 +25,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SeoController;
 use App\Http\Controllers\ShippingDestinationController;
+use App\Http\Controllers\ShippingEstimateController;
 use App\Http\Controllers\ShortLinkController;
 use App\Http\Controllers\SiteChatController;
 use App\Http\Controllers\WablasWebhookController;
@@ -119,7 +120,13 @@ Route::controller(CheckoutController::class)->middleware('auth')->group(function
 Route::get('/api/ongkir/tujuan', [ShippingDestinationController::class, 'search'])
     ->middleware(['auth', 'throttle:30,1'])->name('shipping.destinations');
 Route::get('/api/ongkir/wilayah', [ShippingDestinationController::class, 'regions'])
-    ->middleware(['auth', 'throttle:60,1'])->name('shipping.regions');
+    ->middleware('throttle:60,1')->name('shipping.regions'); // publik: dipakai estimasi ongkir di halaman produk
+
+/* Estimasi ongkir di halaman produk ("Berapa ongkir ke lokasi saya?") — tamu boleh */
+Route::post('/api/ongkir/estimasi', [ShippingEstimateController::class, 'estimate'])
+    ->middleware('throttle:20,1')->name('shipping.estimate');
+Route::get('/api/ongkir/kota-indah', [ShippingEstimateController::class, 'indahCities'])
+    ->middleware('throttle:30,1')->name('shipping.indah-cities');
 
 /* Orders + invoice (public via non-guessable token) */
 Route::get('/pesanan/{order:public_token}', [OrderController::class, 'track'])->name('orders.track');

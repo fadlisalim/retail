@@ -4,8 +4,11 @@ namespace App\Services;
 
 use App\Models\CargoRate;
 use App\Models\Cart;
+use App\Models\CartItem;
 use App\Models\CustomerAddress;
 use App\Models\IndahCargoRate;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\ShippingService as ShippingServiceModel;
 use App\Models\ShippingSetting;
 use App\Services\Shipping\RajaOngkirClient;
@@ -13,6 +16,7 @@ use App\Services\Shipping\ShippingContext;
 use App\Services\Shipping\ShippingDestination;
 use App\Services\Shipping\ShippingQuote;
 use App\Services\Shipping\WeightCalculator;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Produces shipping quotes for a cart + destination. The architecture is modular:
@@ -75,6 +79,25 @@ class ShippingService
         }
 
         return $quotes;
+    }
+
+    /**
+     * Estimasi ongkir untuk SATU produk (halaman detail) tanpa keranjang:
+     * keranjang sementara di memori dengan satu baris item.
+     *
+     * @return ShippingQuote[]
+     */
+    public function quotesForProduct(Product $product, ?ProductVariant $variant, int $quantity, string $destinationProvince, ?string $destinationCity = null, ?ShippingDestination $destination = null): array
+    {
+        $item = new CartItem;
+        $item->quantity = max(1, $quantity);
+        $item->setRelation('product', $product);
+        $item->setRelation('variant', $variant);
+
+        $cart = new Cart;
+        $cart->setRelation('items', new Collection([$item]));
+
+        return $this->quotesFor($cart, $destinationProvince, $destinationCity, $destination);
     }
 
     public function contextFor(Cart $cart, string $destinationProvince, ?string $destinationCity = null, ?string $destinationDistrict = null): ShippingContext
