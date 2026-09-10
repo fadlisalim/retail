@@ -218,7 +218,8 @@ function checkout(baseSubtotal, tax) {
                 const res = await fetch('{{ route('checkout.shipping') }}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
-                    body: JSON.stringify({ province: this.addr.province, city: this.addr.city }),
+                    // address_id → server memakai kecamatan/kelurahan alamat untuk tarif kurir reguler.
+                    body: JSON.stringify({ address_id: this.addressId || null, province: this.addr.province, city: this.addr.city }),
                 });
                 if (!res.ok) throw new Error('shipping');
                 this.shippingOptions = await res.json();

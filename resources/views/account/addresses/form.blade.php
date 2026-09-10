@@ -25,10 +25,64 @@
                           get provinceList() { return Object.keys(this.citiesByProvince) },
                           get availableCities() { return this.citiesByProvince[this.province] || [] },
                           onProvinceChange() { if (!this.availableCities.includes(this.city)) this.city = '' },
+
+                          // Pencarian kelurahan (RajaOngkir) — mengisi kecamatan/kelurahan/kode pos
+                          // + ID tujuan untuk ongkir kurir reguler; provinsi & kota ikut dicocokkan.
+                          searchUrl: @js(route('shipping.destinations')),
+                          q: '', results: [], searching: false,
+                          destinationId: @js(old('courier_destination_id', $address->courier_destination_id)),
+                          picked: @js(old('courier_destination_label', $address->courier_destination_label)),
+                          normalize(s) { return String(s || '').toUpperCase().replace(/^(KOTA|KAB\.?|KABUPATEN)\s+/, '').trim() },
+                          async search() {
+                              if (this.q.trim().length < 3) { this.results = []; return; }
+                              this.searching = true;
+                              try {
+                                  const res = await fetch(this.searchUrl + '?q=' + encodeURIComponent(this.q.trim()), { headers: { 'Accept': 'application/json' } });
+                                  this.results = res.ok ? await res.json() : [];
+                              } catch (e) { this.results = []; } finally { this.searching = false; }
+                          },
+                          pick(r) {
+                              this.destinationId = r.id; this.picked = r.label; this.results = []; this.q = '';
+                              const prov = this.provinceList.find(p => p.toUpperCase() === this.normalize(r.province));
+                              if (prov) {
+                                  this.province = prov;
+                                  const want = this.normalize(r.city);
+                                  const found = this.availableCities.find(c => this.normalize(c) === want)
+                                      || this.availableCities.find(c => want.includes(this.normalize(c)) || this.normalize(c).includes(want));
+                                  if (found) this.city = found;
+                              }
+                              for (const [name, val] of [['district', r.district], ['subdistrict', r.subdistrict], ['postal_code', r.postal_code]]) {
+                                  const el = this.$root.querySelector('[name=' + name + ']');
+                                  if (el && val) el.value = val;
+                              }
+                          },
+                          clearPick() { this.destinationId = ''; this.picked = ''; },
                       }">
                     @csrf
                     @if ($address->exists)
                         @method('PUT')
+                    @endif
+
+                    @if ($courierSearchEnabled)
+                        <div class="relative sm:col-span-2 rounded-lg border border-brand-100 bg-brand-50/40 p-3">
+                            <label class="input-label" for="destination_search">Cari kecamatan / kelurahan <span class="font-normal text-gray-400">(untuk ongkir JNE, J&amp;T, SiCepat, dll.)</span></label>
+                            <input type="search" id="destination_search" x-model="q" @input.debounce.400ms="search()" @keydown.enter.prevent="search()"
+                                   placeholder="Ketik nama kecamatan atau kelurahan, mis. Coblong" class="form-input" autocomplete="off">
+                            <p class="mt-1 text-xs text-gray-500" x-show="!picked">Pilih dari hasil pencarian — kecamatan, kelurahan, kode pos, provinsi &amp; kota terisi otomatis.</p>
+                            <p class="mt-1 text-xs text-gray-400" x-show="searching" x-cloak>Mencari…</p>
+                            <ul x-show="results.length" x-cloak @click.outside="results = []"
+                                class="absolute left-3 right-3 z-20 mt-1 max-h-64 overflow-auto rounded-lg border border-gray-200 bg-white text-sm shadow-lg">
+                                <template x-for="r in results" :key="r.id">
+                                    <li><button type="button" @click="pick(r)" class="block w-full px-3 py-2 text-left hover:bg-brand-50" x-text="r.label"></button></li>
+                                </template>
+                            </ul>
+                            <p x-show="picked" x-cloak class="mt-2 flex flex-wrap items-center gap-2 text-xs text-green-700">
+                                <span>✓ Tujuan kurir: <strong x-text="picked"></strong></span>
+                                <button type="button" @click="clearPick()" class="text-gray-400 underline hover:text-red-600">hapus</button>
+                            </p>
+                            <input type="hidden" name="courier_destination_id" :value="destinationId || ''">
+                            <input type="hidden" name="courier_destination_label" :value="picked || ''">
+                        </div>
                     @endif
 
                     <x-form.select name="label" label="Jenis Alamat" required

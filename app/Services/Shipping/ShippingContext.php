@@ -20,6 +20,5 @@ final class ShippingContext
         // Weight of only the items heavy enough to need wooden-crate packing.
         public readonly int $packableActualGrams = 0,
         public readonly float $packableVolumeCm3 = 0.0,
-    ) {
-    }
+    ) {}
 }

@@ -73,4 +73,19 @@ return [
         'stats_retention_days' => (int) env('ANTHROPIC_STATS_DAYS', 180),
     ],
 
+    // Ongkir kurir reguler (JNE, J&T, SiCepat, …) via RajaOngkir/Komerce.
+    // API key hanya dari .env. origin_id = ID kelurahan gudang (cari dengan
+    // `php artisan ongkir:cari "nama kelurahan"`). Paket gratis ±100 request/
+    // hari — hasil di-cache `cache_minutes`. Barang di atas max_weight_grams
+    // tidak ditawarkan kurir reguler (tetap kargo).
+    'rajaongkir' => [
+        'enabled' => (bool) env('RAJAONGKIR_ENABLED', false),
+        'api_key' => env('RAJAONGKIR_API_KEY'),
+        'base_url' => env('RAJAONGKIR_BASE_URL', 'https://rajaongkir.komerce.id/api/v1'),
+        'origin_id' => env('RAJAONGKIR_ORIGIN_ID'),
+        'couriers' => env('RAJAONGKIR_COURIERS', 'jne:jnt:sicepat:pos:tiki:anteraja'),
+        'max_weight_grams' => (int) env('RAJAONGKIR_MAX_WEIGHT_GRAMS', 50000),
+        'cache_minutes' => (int) env('RAJAONGKIR_CACHE_MINUTES', 720),
+    ],
+
 ];

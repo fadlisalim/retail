@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Account;
 use App\Http\Controllers\Controller;
 use App\Models\CustomerAddress;
 use App\Models\IndahCargoRate;
+use App\Services\Shipping\RajaOngkirClient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,8 +23,9 @@ class AddressController extends Controller
     public function create(): View
     {
         return view('account.addresses.form', [
-            'address' => new CustomerAddress(),
+            'address' => new CustomerAddress,
             'citiesByProvince' => IndahCargoRate::citiesByProvince(),
+            'courierSearchEnabled' => app(RajaOngkirClient::class)->enabled(),
         ]);
     }
 
@@ -41,6 +43,7 @@ class AddressController extends Controller
         return view('account.addresses.form', [
             'address' => $alamat,
             'citiesByProvince' => IndahCargoRate::citiesByProvince(),
+            'courierSearchEnabled' => app(RajaOngkirClient::class)->enabled(),
         ]);
     }
 
@@ -78,6 +81,9 @@ class AddressController extends Controller
             'district' => ['nullable', 'string', 'max:100'],
             'subdistrict' => ['nullable', 'string', 'max:100'],
             'postal_code' => ['nullable', 'string', 'max:10'],
+            // ID kelurahan RajaOngkir dari kotak pencarian (dasar ongkir kurir reguler).
+            'courier_destination_id' => ['nullable', 'integer', 'min:1'],
+            'courier_destination_label' => ['nullable', 'string', 'max:255'],
             'address_line' => ['required', 'string', 'max:500'],
             'landmark' => ['nullable', 'string', 'max:255'],
             'is_default' => ['nullable', 'boolean'],

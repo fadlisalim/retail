@@ -10,6 +10,7 @@ use App\Services\CartService;
 use App\Services\CheckoutService;
 use App\Services\NotificationService;
 use App\Services\PaymentManager;
+use App\Services\Shipping\ShippingDestination;
 use App\Services\ShippingService;
 use App\Services\WhatsAppService;
 use Illuminate\Database\QueryException;
@@ -61,12 +62,26 @@ class CheckoutController extends Controller
     public function shippingOptions(Request $request): JsonResponse
     {
         $request->validate([
-            'province' => ['required', 'string', 'max:100'],
+            'address_id' => ['nullable', 'integer'],
+            'province' => ['required_without:address_id', 'nullable', 'string', 'max:100'],
             'city' => ['nullable', 'string', 'max:100'],
         ]);
 
         $cart = $this->cart->current()->load(['items.product', 'items.variant']);
-        $quotes = $this->shipping->quotesFor($cart, $request->get('province'), $request->get('city'));
+
+        // Alamat tersimpan (milik user) memberi kecamatan/ID kelurahan untuk tarif
+        // kurir reguler; tanpa itu hanya provinsi/kota (Indah Cargo) yang dihitung.
+        $address = $request->filled('address_id')
+            ? $request->user()->addresses()->find($request->integer('address_id'))
+            : null;
+        $destination = $address ? ShippingDestination::fromAddress($address) : null;
+
+        $quotes = $this->shipping->quotesFor(
+            $cart,
+            $address?->province ?? (string) $request->get('province'),
+            $address?->city ?? $request->get('city'),
+            $destination,
+        );
 
         return response()->json(array_map(fn ($q) => $q->toArray() + [
             'rupiah' => rupiah($q->totalShipping()),
@@ -87,6 +102,7 @@ class CheckoutController extends Controller
             $request->shipping_provider,
             $request->shipping_service,
             $address->city,
+            ShippingDestination::fromAddress($address),
         );
 
         if (! $quote) {

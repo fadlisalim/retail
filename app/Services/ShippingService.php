@@ -3,10 +3,13 @@
 namespace App\Services;
 
 use App\Models\Cart;
+use App\Models\CustomerAddress;
 use App\Models\IndahCargoRate;
 use App\Models\ShippingService as ShippingServiceModel;
 use App\Models\ShippingSetting;
+use App\Services\Shipping\RajaOngkirClient;
 use App\Services\Shipping\ShippingContext;
+use App\Services\Shipping\ShippingDestination;
 use App\Services\Shipping\ShippingQuote;
 use App\Services\Shipping\WeightCalculator;
 
@@ -23,13 +26,15 @@ class ShippingService
     public function __construct(
         private readonly WeightCalculator $weights,
         private readonly SettingService $settings,
-    ) {
-    }
+        private readonly RajaOngkirClient $rajaOngkir,
+    ) {}
 
     /**
+     * @param  ShippingDestination|null  $destination  alamat lengkap (kecamatan/ID kelurahan)
+     *                                                 untuk tarif kurir reguler via API
      * @return ShippingQuote[]
      */
-    public function quotesFor(Cart $cart, string $destinationProvince, ?string $destinationCity = null): array
+    public function quotesFor(Cart $cart, string $destinationProvince, ?string $destinationCity = null, ?ShippingDestination $destination = null): array
     {
         $context = $this->contextFor($cart, $destinationProvince, $destinationCity);
         $config = $this->config();
@@ -50,6 +55,12 @@ class ShippingService
             if ($quote) {
                 $quotes[] = $quote;
             }
+        }
+
+        // Kurir reguler (JNE, J&T, …) via API — hanya paket yang memang bisa
+        // dibawa kurir: bukan barang kargo (panel/baterai) dan di bawah batas berat.
+        if ($destination && ! $context->hasFreightItem && $this->rajaOngkir->enabled()) {
+            array_push($quotes, ...$this->courierQuotes($context, $config, $destination));
         }
 
         // Oversized/freight items always offer a to-be-confirmed cargo + pickup path.
@@ -262,6 +273,91 @@ class ShippingService
         );
     }
 
+    /**
+     * Tarif kurir reguler dari RajaOngkir/Komerce untuk tujuan ini. Packing kayu
+     * mengikuti aturan Indah (hanya item berat), gratis ongkir mengikuti ambang.
+     *
+     * @return ShippingQuote[]
+     */
+    private function courierQuotes(ShippingContext $ctx, ShippingSetting $config, ShippingDestination $destination): array
+    {
+        $divisor = (int) ($config->default_volumetric_divisor ?: 6000);
+        $billable = max(1000, $this->weights->billableGrams($ctx->totalActualGrams, $ctx->totalVolumeCm3, $divisor, 1000));
+        if ($billable > $this->rajaOngkir->maxWeightGrams()) {
+            return [];
+        }
+
+        $destinationId = $this->resolveCourierDestination($destination);
+        if (! $destinationId) {
+            return [];
+        }
+
+        $packableGrams = $this->weights->billableGrams($ctx->packableActualGrams, $ctx->packableVolumeCm3, $divisor, 1000);
+        $packing = round((float) $config->packing_fee * $this->weights->toBillableKg($packableGrams), 2);
+        $freeShipping = $config->free_shipping_min_subtotal !== null && $ctx->subtotal >= (float) $config->free_shipping_min_subtotal;
+
+        $quotes = [];
+        foreach ($this->rajaOngkir->domesticCost($destinationId, $billable) as $row) {
+            $quotes[] = new ShippingQuote(
+                providerCode: strtoupper($row['courier']),
+                serviceCode: $row['service'],
+                label: $row['courier_name'].' — '.$row['service'].($row['description'] !== '' ? ' ('.$row['description'].')' : ''),
+                type: 'regular',
+                cost: $freeShipping ? 0.0 : round($row['cost'], 2),
+                packingFee: $packing,
+                handlingFee: (float) $config->handling_fee,
+                insuranceFee: round($ctx->subtotal * (float) $config->insurance_percent / 100, 2),
+                billableWeightGrams: $billable,
+                confirmed: true,
+                estimatedDays: $this->etdLabel($row['etd']),
+            );
+        }
+
+        return $quotes;
+    }
+
+    /**
+     * ID kelurahan tujuan: dari alamat bila sudah tersimpan; alamat lama dicari
+     * lewat "kecamatan kota" lalu hasilnya disimpan ke alamat supaya sekali saja.
+     */
+    private function resolveCourierDestination(ShippingDestination $destination): ?int
+    {
+        if ($destination->courierDestinationId) {
+            return $destination->courierDestinationId;
+        }
+
+        $keyword = $destination->searchKeyword();
+        if (! $keyword) {
+            return null;
+        }
+
+        $results = $this->rajaOngkir->searchDestination($keyword, 10);
+        if (! $results) {
+            return null;
+        }
+
+        $normalize = fn (?string $s) => trim((string) preg_replace('/^(KOTA|KAB\.?|KABUPATEN)\s+/i', '', strtoupper(trim((string) $s))));
+        $city = $normalize($destination->city);
+        $match = collect($results)->first(fn ($r) => $city !== '' && $normalize($r['city']) === $city) ?? $results[0];
+
+        if ($destination->addressId) {
+            CustomerAddress::whereKey($destination->addressId)->update([
+                'courier_destination_id' => $match['id'],
+                'courier_destination_label' => $match['label'],
+            ]);
+        }
+
+        return (int) $match['id'];
+    }
+
+    /** "1-2 day" / "2 days" / "3" → "1-2 hari". */
+    private function etdLabel(string $etd): ?string
+    {
+        $etd = trim((string) preg_replace('/\b(days?|hari)\b/i', '', $etd));
+
+        return $etd !== '' ? $etd.' hari' : null;
+    }
+
     private function config(): ShippingSetting
     {
         return ShippingSetting::first() ?? new ShippingSetting([
@@ -272,9 +368,9 @@ class ShippingService
     }
 
     /** Rebuild a quote object from a persisted selection (used at checkout confirm). */
-    public function findQuote(Cart $cart, string $province, string $providerCode, string $serviceCode, ?string $city = null): ?ShippingQuote
+    public function findQuote(Cart $cart, string $province, string $providerCode, string $serviceCode, ?string $city = null, ?ShippingDestination $destination = null): ?ShippingQuote
     {
-        foreach ($this->quotesFor($cart, $province, $city) as $quote) {
+        foreach ($this->quotesFor($cart, $province, $city, $destination) as $quote) {
             if ($quote->providerCode === $providerCode && $quote->serviceCode === $serviceCode) {
                 return $quote;
             }

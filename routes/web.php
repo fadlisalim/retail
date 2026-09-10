@@ -24,6 +24,7 @@ use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SeoController;
+use App\Http\Controllers\ShippingDestinationController;
 use App\Http\Controllers\ShortLinkController;
 use App\Http\Controllers\SiteChatController;
 use App\Http\Controllers\WablasWebhookController;
@@ -113,6 +114,10 @@ Route::controller(CheckoutController::class)->middleware('auth')->group(function
     Route::post('/checkout/ongkir', 'shippingOptions')->name('checkout.shipping');
     Route::post('/checkout', 'store')->middleware('throttle:20,1')->name('checkout.store');
 });
+
+/* Autocomplete kelurahan tujuan (RajaOngkir) untuk form alamat */
+Route::get('/api/ongkir/tujuan', [ShippingDestinationController::class, 'search'])
+    ->middleware(['auth', 'throttle:30,1'])->name('shipping.destinations');
 
 /* Orders + invoice (public via non-guessable token) */
 Route::get('/pesanan/{order:public_token}', [OrderController::class, 'track'])->name('orders.track');

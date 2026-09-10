@@ -10,6 +10,7 @@ class CustomerAddress extends Model
     protected $fillable = [
         'user_id', 'label', 'recipient_name', 'phone', 'company_name', 'npwp',
         'province', 'city', 'district', 'subdistrict', 'postal_code', 'region_id',
+        'courier_destination_id', 'courier_destination_label',
         'address_line', 'landmark', 'latitude', 'longitude', 'is_default',
     ];
 

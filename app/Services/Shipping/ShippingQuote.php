@@ -22,8 +22,7 @@ final class ShippingQuote
         public readonly bool $confirmed = true,
         public readonly ?string $estimatedDays = null,
         public readonly ?string $note = null,
-    ) {
-    }
+    ) {}
 
     public function totalShipping(): float
     {
