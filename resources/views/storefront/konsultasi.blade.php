@@ -40,7 +40,7 @@
             </div>
             <a href="{{ route('products.index') }}" class="flex-none rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold transition hover:bg-white/25">Katalog</a>
             <a href="{{ route('home') }}" class="flex-none rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-50">
-                <span class="hidden sm:inline">Ke Website</span><span class="sm:hidden">Website</span> ↗
+                Ke Website ↗
             </a>
         </div>
     </div>
