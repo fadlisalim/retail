@@ -25,10 +25,10 @@
                 ['admin.categories.index', 'Kategori', 'catalog.manage'],
                 ['admin.brands.index', 'Brand', 'catalog.manage'],
                 ['admin.attributes.index', 'Atribut', 'catalog.manage'],
-                ['admin.stock.index', 'Stok', 'inventory.manage'],
+                // Harga, margin, stok, berat & dimensi dalam satu tabel (menggantikan halaman Stok).
+                ['admin.prices.index', 'Edit Cepat Produk', 'price.manage|inventory.manage', 'prices'],
                 ['admin.warehouses.index', 'Gudang', 'inventory.manage'],
                 ['admin.coupons.index', 'Voucher', 'price.manage'],
-                ['admin.prices.index', 'Harga & Margin', 'price.manage', 'prices'],
                 ['admin.orders.index', 'Pesanan', 'order.view', 'orders'],
                 ['admin.quotations.index', 'Quotation', 'quotation.manage', 'quotations'],
                 ['admin.reviews.index', 'Review', 'review.moderate', 'reviews'],
@@ -55,7 +55,11 @@
                     $badgeKey = $item[3] ?? null;
                     $badgeCount = $badgeKey ? (int) ($menuBadges[$badgeKey] ?? 0) : 0;
                 @endphp
-                @if (! $permission || auth()->user()->can($permission))
+                @php
+                    // Izin dipisah "|" = salah satu cukup (mis. Edit Cepat Produk untuk katalog & gudang).
+                    $allowed = ! $permission || collect(explode('|', $permission))->contains(fn ($p) => auth()->user()->can($p));
+                @endphp
+                @if ($allowed)
                     <a href="{{ route($route) }}"
                        class="flex items-center justify-between gap-2 rounded-lg px-3 py-2 {{ request()->routeIs(str_replace('.index', '', $route).'*') || request()->routeIs($route) ? 'bg-brand-600 font-semibold text-white' : 'text-brand-100 hover:bg-brand-700' }}">
                         <span>{{ $label }}</span>

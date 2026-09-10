@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\StockMovementType;
 use App\Models\Role;
+use App\Models\StockMovement;
 use App\Models\User;
 use App\Models\WarehouseStock;
 use App\Services\CartService;
@@ -57,31 +58,33 @@ class StockTest extends TestCase
         return $user;
     }
 
-    public function test_admin_can_add_subtract_and_set_stock(): void
+    /** Halaman Stok lama dihapus — admin gudang mengatur stok dari Edit Cepat Produk. */
+    public function test_warehouse_staff_sets_stock_from_the_quick_edit_page(): void
     {
         $this->actingAs($this->stockStaff());
         $product = $this->stockedProduct(10);
 
-        // Add
-        $this->post(route('admin.stock.adjust', $product), ['mode' => 'add', 'amount' => 5, 'type' => 'purchase'])->assertRedirect();
-        $this->assertEquals(15, $product->fresh()->stock);
+        $this->get(route('admin.prices.index'))->assertOk()->assertSee('Edit Cepat Produk');
 
-        // Subtract
-        $this->post(route('admin.stock.adjust', $product), ['mode' => 'subtract', 'amount' => 3, 'type' => 'adjustment'])->assertRedirect();
-        $this->assertEquals(12, $product->fresh()->stock);
-
-        // Set to total
-        $this->post(route('admin.stock.adjust', $product), ['mode' => 'set', 'amount' => 50, 'type' => 'adjustment'])->assertRedirect();
+        $this->patchJson(route('admin.prices.update', $product), ['stock' => 50])
+            ->assertOk()->assertJson(['stok' => 50]);
         $this->assertEquals(50, $product->fresh()->stock);
+        $this->assertDatabaseHas('stock_movements', ['product_id' => $product->id, 'quantity' => 40]);
+
+        $this->patchJson(route('admin.prices.update', $product), ['stock' => 12])
+            ->assertOk()->assertJson(['stok' => 12]);
+        $this->assertEquals(12, $product->fresh()->stock);
     }
 
-    public function test_no_change_is_reported_not_errored_out(): void
+    public function test_setting_the_same_stock_records_no_movement(): void
     {
         $this->actingAs($this->stockStaff());
         $product = $this->stockedProduct(10);
+        $movements = StockMovement::where('product_id', $product->id)->count();
 
-        $this->post(route('admin.stock.adjust', $product), ['mode' => 'set', 'amount' => 10, 'type' => 'adjustment'])
-            ->assertSessionHas('error');
+        $this->patchJson(route('admin.prices.update', $product), ['stock' => 10])->assertOk();
+
         $this->assertEquals(10, $product->fresh()->stock);
+        $this->assertSame($movements, StockMovement::where('product_id', $product->id)->count());
     }
 }

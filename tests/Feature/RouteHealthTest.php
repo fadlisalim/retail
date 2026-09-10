@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Quotation;
-use App\Models\Review;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,7 +34,7 @@ class RouteHealthTest extends TestCase
             'admin.categories.index', 'admin.categories.create',
             'admin.brands.index', 'admin.brands.create',
             'admin.attributes.index', 'admin.attributes.create',
-            'admin.stock.index', 'admin.warehouses.index', 'admin.warehouses.create',
+            'admin.prices.index', 'admin.warehouses.index', 'admin.warehouses.create',
             'admin.coupons.index', 'admin.coupons.create',
             'admin.orders.index', 'admin.quotations.index', 'admin.reviews.index',
             'admin.customers.index', 'admin.banners.index', 'admin.banners.create',

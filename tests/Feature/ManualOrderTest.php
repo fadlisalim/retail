@@ -313,9 +313,10 @@ class ManualOrderTest extends TestCase
             'product_id' => $product->id, 'sku' => 'VAR-1', 'name' => '50 Wp', 'price' => 100000, 'is_active' => true,
         ]);
 
-        $this->actingAs($admin)->post(route('admin.stock.adjust', $product), [
-            'variant_id' => $variant->id, 'mode' => 'set', 'amount' => 20, 'type' => 'adjustment',
-        ])->assertRedirect();
+        // Stok varian diset dari halaman Edit Cepat Produk (pengganti halaman Stok).
+        $this->actingAs($admin)->patchJson(route('admin.prices.update', $product), [
+            'variant_id' => $variant->id, 'price' => 100000, 'stock' => 20,
+        ])->assertOk();
 
         $this->assertSame(20, $variant->fresh()->stock);
     }

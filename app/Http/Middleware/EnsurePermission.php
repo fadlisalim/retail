@@ -7,8 +7,9 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Route middleware: `permission:catalog.manage`. Super-admins pass everything
- * (handled inside hasPermission()).
+ * Route middleware: `permission:catalog.manage`. Beberapa izin dipisah `|`
+ * berarti SALAH SATU cukup (`permission:price.manage|inventory.manage`).
+ * Super-admins pass everything (handled inside hasPermission()).
  */
 class EnsurePermission
 {
@@ -16,7 +17,10 @@ class EnsurePermission
     {
         $user = $request->user();
 
-        if (! $user || ! $user->hasPermission($permission)) {
+        $allowed = $user && collect(explode('|', $permission))
+            ->contains(fn (string $slug) => $user->hasPermission(trim($slug)));
+
+        if (! $allowed) {
             abort(403, 'Anda tidak memiliki izin untuk tindakan ini.');
         }
 

@@ -282,15 +282,17 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     });
 
     Route::middleware('permission:inventory.manage')->group(function () {
-        Route::get('/stok', [Admin\StockController::class, 'index'])->name('stock.index');
-        Route::post('/stok/{product}/sesuaikan', [Admin\StockController::class, 'adjust'])->name('stock.adjust');
         Route::resource('gudang', Admin\WarehouseController::class)->names('warehouses')->except('show');
     });
 
     Route::middleware('permission:price.manage')->group(function () {
         Route::resource('kupon', Admin\CouponController::class)->names('coupons')->except('show');
+    });
 
-        // Tabel harga & margin ala spreadsheet (inline edit per baris).
+    // Edit Cepat Produk: tabel ala spreadsheet (inline edit per baris) —
+    // harga & margin untuk price.manage; stok, berat & dimensi juga untuk
+    // inventory.manage (menggantikan halaman Stok lama).
+    Route::middleware('permission:price.manage|inventory.manage')->group(function () {
         Route::get('/harga', [Admin\PriceController::class, 'index'])->name('prices.index');
         Route::patch('/harga/{produk}', [Admin\PriceController::class, 'update'])->name('prices.update');
     });

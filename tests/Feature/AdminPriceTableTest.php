@@ -29,8 +29,94 @@ class AdminPriceTableTest extends TestCase
         $this->actingAs($this->katalog())
             ->get(route('admin.prices.index'))
             ->assertOk()
-            ->assertSee('Harga & Margin')
+            ->assertSee('Edit Cepat Produk')
             ->assertSee('Inverter Margin Sehat');
+    }
+
+    public function test_weight_and_dimensions_can_be_edited_inline_with_volumetric_weight(): void
+    {
+        $product = $this->stockedProduct(0, ['price' => 21_300, 'weight_grams' => 250, 'length_cm' => 12, 'width_cm' => 6, 'height_cm' => 6]);
+
+        $this->actingAs($this->katalog())
+            ->patchJson(route('admin.prices.update', $product), [
+                'price' => 21_300, 'weight_grams' => 100, 'length_cm' => 6, 'width_cm' => 5, 'height_cm' => 4,
+            ])
+            ->assertOk()
+            ->assertJson(['berat' => 100, 'p' => 6, 'l' => 5, 't' => 4, 'volumetrik' => 20]); // 6×5×4 ÷ 6000 = 0,02 kg
+
+        $product->refresh();
+        $this->assertSame(100, (int) $product->weight_grams);
+        $this->assertEquals(6, (float) $product->length_cm);
+        $this->assertEquals(4, (float) $product->height_cm);
+
+        // Sel dikosongkan → 0 (kolom produk tidak nullable), bukan error.
+        $this->patchJson(route('admin.prices.update', $product), ['price' => 21_300, 'weight_grams' => null, 'length_cm' => null])
+            ->assertOk()->assertJson(['berat' => 0, 'p' => 0, 'volumetrik' => 0]);
+    }
+
+    /** Berat/dimensi varian kosong = mengikuti induk; terisi = milik varian. */
+    public function test_variant_weight_falls_back_to_the_parent_until_set(): void
+    {
+        $product = $this->stockedProduct(0, ['product_type' => 'variable', 'price' => 2_490_000, 'weight_grams' => 27_100, 'length_cm' => 238, 'width_cm' => 113, 'height_cm' => 3]);
+        $variant = $product->variants()->create(['sku' => 'AIKO-640', 'name' => '640 Wp', 'option_values' => ['Daya' => '640 Wp'], 'price' => 2_490_000, 'is_active' => true, 'sort_order' => 0]);
+
+        $this->actingAs($this->katalog())
+            ->patchJson(route('admin.prices.update', $product), ['variant_id' => $variant->id, 'price' => 2_490_000])
+            ->assertOk()
+            ->assertJson(['berat' => null, 'berat_induk' => 27_100, 'berat_efektif' => 27_100, 'p_induk' => 238, 'volumetrik' => 13_447]); // 238×113×3 ÷ 6000 = 13,447 kg
+
+        $this->patchJson(route('admin.prices.update', $product), ['variant_id' => $variant->id, 'price' => 2_490_000, 'weight_grams' => 30_000, 'height_cm' => 4])
+            ->assertOk()
+            ->assertJson(['berat' => 30_000, 'berat_efektif' => 30_000, 't' => 4, 'p' => null]);
+
+        $variant->refresh();
+        $this->assertSame(30_000, (int) $variant->weight_grams);
+        $this->assertNull($variant->length_cm);
+        $this->assertEquals(4, (float) $variant->height_cm);
+    }
+
+    /** Admin gudang (inventory.manage): boleh stok, berat & dimensi; kolom harga ditolak. */
+    public function test_warehouse_staff_can_edit_stock_and_weight_but_not_prices(): void
+    {
+        $this->seed(RoleSeeder::class);
+        $gudang = User::factory()->create(['is_staff' => true, 'is_active' => true]);
+        $gudang->roles()->attach(Role::where('slug', 'admin-gudang')->first());
+        $product = $this->stockedProduct(10, ['name' => 'Rail Gudang', 'price' => 204_000, 'weight_grams' => 2_800]);
+
+        $this->actingAs($gudang)->get(route('admin.prices.index'))
+            ->assertOk()->assertSee('Rail Gudang')->assertSee('hanya memiliki izin stok');
+
+        $this->actingAs($gudang)
+            ->patchJson(route('admin.prices.update', $product), ['stock' => 4, 'weight_grams' => 2_900])
+            ->assertOk()->assertJson(['stok' => 4, 'berat' => 2_900]);
+
+        $this->actingAs($gudang)
+            ->patchJson(route('admin.prices.update', $product), ['price' => 1])
+            ->assertUnprocessable()->assertJsonValidationErrors('price');
+        $this->actingAs($gudang)
+            ->patchJson(route('admin.prices.update', $product), ['cost_price' => 1])
+            ->assertUnprocessable()->assertJsonValidationErrors('cost_price');
+
+        $this->assertEquals(204_000, (float) $product->fresh()->price);
+    }
+
+    public function test_stock_and_shipping_filters_find_the_right_products(): void
+    {
+        $this->stockedProduct(0, ['name' => 'Produk Habis', 'price' => 100_000, 'stock' => 0]);
+        $this->stockedProduct(2, ['name' => 'Produk Menipis', 'price' => 100_000, 'min_stock' => 5]);
+        $this->stockedProduct(50, ['name' => 'Produk Aman', 'price' => 100_000, 'min_stock' => 5, 'length_cm' => 0]);
+
+        $this->actingAs($this->katalog())
+            ->get(route('admin.prices.index', ['tampil' => 'stok-habis']))
+            ->assertOk()->assertSee('Produk Habis')->assertDontSee('Produk Menipis')->assertDontSee('Produk Aman');
+
+        $this->actingAs($this->katalog())
+            ->get(route('admin.prices.index', ['tampil' => 'stok-menipis']))
+            ->assertOk()->assertSee('Produk Menipis')->assertDontSee('Produk Habis')->assertDontSee('Produk Aman');
+
+        $this->actingAs($this->katalog())
+            ->get(route('admin.prices.index', ['tampil' => 'tanpa-berat']))
+            ->assertOk()->assertSee('Produk Aman');
     }
 
     public function test_inline_update_saves_all_four_fields_and_returns_the_margin(): void
