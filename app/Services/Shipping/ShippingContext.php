@@ -20,5 +20,9 @@ final class ShippingContext
         // Weight of only the items heavy enough to need wooden-crate packing.
         public readonly int $packableActualGrams = 0,
         public readonly float $packableVolumeCm3 = 0.0,
+        // Kecamatan tujuan — sebagian tarif kargo setingkat kecamatan.
+        public readonly ?string $destinationDistrict = null,
+        // Unit terberat di keranjang (≈ kolli terberat) — dasar biaya forklift.
+        public readonly int $maxUnitGrams = 0,
     ) {}
 }

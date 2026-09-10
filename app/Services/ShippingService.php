@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CargoRate;
 use App\Models\Cart;
 use App\Models\CustomerAddress;
 use App\Models\IndahCargoRate;
@@ -36,7 +37,7 @@ class ShippingService
      */
     public function quotesFor(Cart $cart, string $destinationProvince, ?string $destinationCity = null, ?ShippingDestination $destination = null): array
     {
-        $context = $this->contextFor($cart, $destinationProvince, $destinationCity);
+        $context = $this->contextFor($cart, $destinationProvince, $destinationCity, $destination?->district);
         $config = $this->config();
 
         // Pickup-only carts (e.g. project surplus that must be collected) skip courier.
@@ -76,7 +77,7 @@ class ShippingService
         return $quotes;
     }
 
-    public function contextFor(Cart $cart, string $destinationProvince, ?string $destinationCity = null): ShippingContext
+    public function contextFor(Cart $cart, string $destinationProvince, ?string $destinationCity = null, ?string $destinationDistrict = null): ShippingContext
     {
         $actual = 0;
         $volume = 0.0;
@@ -85,6 +86,7 @@ class ShippingService
         $hasFreight = false;
         $hasPickup = false;
         $packages = 0;
+        $maxUnit = 0;
 
         // Items at/above this per-unit weight need wooden-crate packing (0 = all items).
         $packingThreshold = (int) $this->config()->packing_min_item_grams;
@@ -103,6 +105,7 @@ class ShippingService
             $actual += $unitWeight * $qty;
             $volume += $unitVolume * $qty;
             $packages += (int) $product->package_count * $qty;
+            $maxUnit = max($maxUnit, $unitWeight);
 
             // Only heavy-enough units contribute to the packing charge.
             if ($packingThreshold <= 0 || $unitWeight >= $packingThreshold) {
@@ -125,6 +128,8 @@ class ShippingService
             destinationCity: $destinationCity,
             packableActualGrams: $packableActual,
             packableVolumeCm3: $packableVolume,
+            destinationDistrict: $destinationDistrict,
+            maxUnitGrams: $maxUnit,
         );
     }
 
@@ -133,6 +138,10 @@ class ShippingService
         // Indah Cargo prices per destination CITY (not by zone), so it has its own path.
         if ($service->provider->driver === 'indah') {
             return $this->indahQuote($service, $ctx, $config);
+        }
+        // Ekspedisi kargo dengan daftar harga statis per tujuan (mis. BR Cargo).
+        if ($service->provider->driver === 'cargo_table') {
+            return $this->cargoTableQuote($service, $ctx, $config);
         }
 
         $divisor = $service->volumetric_divisor ?: $config->default_volumetric_divisor;
@@ -228,6 +237,59 @@ class ShippingService
             billableWeightGrams: $billableKg * 1000,
             confirmed: true,
             estimatedDays: $service->estimated_days,
+        );
+    }
+
+    /**
+     * Tarif kargo dari tabel cargo_rates (driver 'cargo_table', mis. BR Cargo):
+     * per kg dengan minimum kg per tujuan, volumetrik per tujuan, biaya
+     * forklift untuk kolli sangat berat, dan hanya ditawarkan untuk kiriman
+     * di atas ambang berat (kebijakan toko: paket proyek ≥ 50 kg).
+     */
+    private function cargoTableQuote(ShippingServiceModel $service, ShippingContext $ctx, ShippingSetting $config): ?ShippingQuote
+    {
+        $provider = $service->provider;
+        $options = is_array($provider->config) ? $provider->config : (json_decode((string) $provider->config, true) ?: []);
+
+        $rate = CargoRate::lookup($provider->code, $ctx->destinationCity, $ctx->destinationDistrict);
+        if (! $rate) {
+            return null;
+        }
+
+        $divisor = (int) ($rate->volumetric_divisor ?: $service->volumetric_divisor ?: 4000);
+        $billable = $this->weights->billableGrams($ctx->totalActualGrams, $ctx->totalVolumeCm3, $divisor, 1000);
+
+        $minShipment = (int) ($options['min_shipment_grams'] ?? $service->min_weight_grams ?? 0);
+        if ($billable < $minShipment) {
+            return null; // kiriman ringan: pakai kurir reguler / Indah
+        }
+
+        $billableKg = max((int) $rate->min_kg, $this->weights->toBillableKg($billable));
+        $cost = round($billableKg * (float) $rate->price_per_kg, 2);
+
+        // Kolli di atas ambang (200 kg) kena biaya forklift sekali.
+        $forkliftOver = (int) ($options['forklift_over_grams'] ?? 0);
+        if ($forkliftOver > 0 && $ctx->maxUnitGrams > $forkliftOver) {
+            $cost += (float) ($options['forklift_fee'] ?? 0);
+        }
+
+        // Packing kayu per kg hanya untuk item berat — aturan yang sama dengan Indah.
+        $packableGrams = $this->weights->billableGrams($ctx->packableActualGrams, $ctx->packableVolumeCm3, $divisor, 1000);
+        $packing = round((float) $config->packing_fee * $this->weights->toBillableKg($packableGrams), 2);
+
+        return new ShippingQuote(
+            providerCode: $provider->code,
+            serviceCode: $service->code,
+            label: $provider->name.' — '.$service->name,
+            type: $service->type,
+            cost: $cost,
+            packingFee: $packing,
+            handlingFee: (float) $config->handling_fee,
+            insuranceFee: round($ctx->subtotal * (float) $config->insurance_percent / 100, 2),
+            billableWeightGrams: $billableKg * 1000,
+            confirmed: true,
+            estimatedDays: $service->estimated_days,
+            note: $options['note'] ?? null,
         );
     }
 
