@@ -31,6 +31,11 @@
     @include('partials.meta-pixel')
     @stack('head')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    {{-- Analitik kunjungan halaman (tracker eksternal milik toko). Kosongkan
+         ANALYTICS_TRACKER_URL di .env untuk mematikan. --}}
+    @if (config('services.analytics.tracker_url'))
+        <script src="{{ config('services.analytics.tracker_url') }}" defer></script>
+    @endif
 </head>
 {{-- Mode chat_page (/konsultasi): layar penuh ala WhatsApp — body jadi kolom
      setinggi viewport, main full-bleed tanpa padding, footer/nav bawah/widget

@@ -80,6 +80,12 @@ return [
     // tidak ditawarkan kurir reguler (tetap kargo).
     // Reverse geocoding GPS → kelurahan untuk tombol "ongkir ke lokasi saya"
     // (OpenStreetMap Nominatim; wajib User-Agent yang mengidentifikasi situs).
+    // Tracker analitik kunjungan halaman toko (dipasang di semua halaman
+    // storefront, termasuk /konsultasi). Kosongkan env untuk mematikan.
+    'analytics' => [
+        'tracker_url' => env('ANALYTICS_TRACKER_URL', 'https://ridlabs.id/reka/analytics/tracker.js'),
+    ],
+
     'nominatim' => [
         'base_url' => env('NOMINATIM_BASE_URL', 'https://nominatim.openstreetmap.org'),
         'user_agent' => env('NOMINATIM_USER_AGENT', 'EnergiClick/1.0 (+https://energi.click)'),
