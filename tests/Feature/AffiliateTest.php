@@ -248,12 +248,22 @@ class AffiliateTest extends TestCase
         $admin->roles()->attach(Role::where('slug', 'admin-keuangan')->first());
 
         $affiliate = $this->activeAffiliate(['status' => AffiliateStatus::Pending, 'verified_at' => null]);
+        Notification::fake();
 
         $this->actingAs($admin)
             ->post(route('admin.affiliates.verify', $affiliate))
             ->assertRedirect();
 
         $this->assertSame(AffiliateStatus::Active, $affiliate->fresh()->status);
+
+        // Notifikasi persetujuan menyertakan link PDF panduan — di email sebagai tautan yang bisa diklik.
+        Notification::assertSentTo($affiliate->user, SystemNotification::class, function ($notification) use ($affiliate) {
+            $html = (string) $notification->toMail($affiliate->user)->render();
+
+            return str_contains($notification->message, asset('panduan-afiliator.pdf'))
+                && str_contains($notification->message, $affiliate->code)
+                && str_contains($html, 'href="'.asset('panduan-afiliator.pdf').'"');
+        });
     }
 
     public function test_admin_reject_requires_reason_and_notifies_applicant(): void

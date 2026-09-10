@@ -81,10 +81,14 @@ class AffiliateController extends Controller
             'verified_by' => auth()->id(),
         ]);
 
+        // Sekalian kirim panduan PDF (cara share link, komisi, tarik dana) supaya
+        // afiliator baru langsung tahu langkah pertamanya.
         $this->notifications->toUser(
             $affiliate->user,
             'Akun afiliasi disetujui 🎉',
-            "Selamat! Akun afiliasi Anda sudah aktif. Kode referral Anda: {$affiliate->code}. Mulai bagikan link Anda sekarang.",
+            "Selamat! Akun afiliasi Anda sudah aktif. Kode referral Anda: {$affiliate->code}. Mulai bagikan link Anda sekarang."
+            ."\n\nBaca dulu Panduan Afiliator (PDF): ".asset('panduan-afiliator.pdf')
+            ."\nIsinya: dua cara membagikan link, cara komisi dihitung, dan cara menarik dana. Ingat: selalu login ke akun Anda sebelum menyalin link.",
             route('account.affiliate.dashboard'),
             'info',
             true,

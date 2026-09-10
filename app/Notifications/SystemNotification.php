@@ -25,8 +25,7 @@ class SystemNotification extends Notification
         public string $type = 'info',
         public bool $email = false,
         public ?string $actionText = null,
-    ) {
-    }
+    ) {}
 
     public function via(object $notifiable): array
     {
@@ -59,8 +58,15 @@ class SystemNotification extends Notification
     {
         $mail = (new MailMessage)
             ->subject($this->title)
-            ->greeting($this->title)
-            ->line($this->message);
+            ->greeting($this->title);
+
+        // Setiap baris pesan jadi paragraf sendiri (bukan satu gumpalan), dan
+        // URL telanjang dijadikan tautan yang bisa diklik di email.
+        foreach (preg_split('/\n+/', $this->message) as $line) {
+            if (trim($line) !== '') {
+                $mail->line(preg_replace('~(?<![(\[])(https?://[^\s<]+)~', '[$1]($1)', $line));
+            }
+        }
 
         if ($this->url) {
             $mail->action($this->actionText ?? 'Lihat Detail', str_starts_with($this->url, 'http') ? $this->url : url($this->url));
