@@ -114,6 +114,29 @@ class CheckoutTest extends TestCase
             ->assertSee('google.com/maps', false);
     }
 
+    /** Alamat ala marketplace: alamat utama tampil ringkas, alamat lain dipilih lewat jendela "Ganti Alamat". */
+    public function test_checkout_shows_the_default_address_with_a_picker_for_the_others(): void
+    {
+        $customer = $this->customer();
+        $this->actingAs($customer);
+        CustomerAddress::create(['user_id' => $customer->id, 'label' => 'Rumah', 'recipient_name' => 'Fadli', 'phone' => '0811', 'province' => 'Sulawesi Selatan', 'city' => 'Makassar', 'address_line' => 'Kompleks Jongaya Indah B/5', 'is_default' => true]);
+        CustomerAddress::create(['user_id' => $customer->id, 'label' => 'Kantor', 'recipient_name' => 'Rekasurya', 'phone' => '0812', 'province' => 'Jawa Barat', 'city' => 'Bandung', 'address_line' => 'Jl Senam X no 10', 'is_default' => false]);
+        app(CartService::class)->addItem($this->stockedProduct(10, ['price' => 1000000]), null, 1);
+
+        $this->get('/checkout')
+            ->assertOk()
+            ->assertSee('Ganti Alamat')
+            ->assertSee('Pilih Alamat Pengiriman')
+            ->assertSee('Kompleks Jongaya Indah B/5')
+            ->assertSee('Jl Senam X no 10')
+            ->assertSee('Tambah Alamat Baru')
+            ->assertSee(route('account.addresses.create', ['kembali' => 'checkout']), false);
+
+        // Tambah alamat dari checkout → form tahu harus kembali ke checkout.
+        $this->get(route('account.addresses.create', ['kembali' => 'checkout']))
+            ->assertOk()->assertSee('name="kembali" value="checkout"', false)->assertSee('kembali ke halaman checkout');
+    }
+
     /** Varian yang dipilih (mis. 50 Wp) harus terlihat di Ringkasan Pesanan. */
     public function test_the_summary_shows_the_chosen_variant(): void
     {

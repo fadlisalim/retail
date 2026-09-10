@@ -28,14 +28,21 @@ class AddressController extends Controller
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('account.addresses.form', $this->formData(new CustomerAddress));
+        // Datang dari checkout (?kembali=checkout) → setelah simpan balik ke checkout.
+        return view('account.addresses.form', array_merge($this->formData(new CustomerAddress), [
+            'returnTo' => $request->query('kembali') === 'checkout' ? route('checkout.index') : null,
+        ]));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $this->persist($request, new CustomerAddress(['user_id' => $request->user()->id]));
+
+        if ($request->input('kembali') === 'checkout') {
+            return redirect()->route('checkout.index')->with('success', 'Alamat ditambahkan — silakan lanjutkan checkout.');
+        }
 
         return redirect()->route('account.addresses.index')->with('success', 'Alamat ditambahkan.');
     }
@@ -81,6 +88,7 @@ class AddressController extends Controller
 
         return [
             'address' => $address,
+            'returnTo' => null,
             'citiesByProvince' => $enabled ? [] : IndahCargoRate::citiesByProvince(),
             'courierSearchEnabled' => $enabled,
             'provinces' => $enabled ? $this->regions->provinces()->map(fn (Region $r) => ['id' => $r->id, 'name' => $r->name])->values()->all() : [],

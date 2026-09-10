@@ -38,6 +38,10 @@
                     @if ($address->exists)
                         @method('PUT')
                     @endif
+                    @if ($returnTo)
+                        <input type="hidden" name="kembali" value="checkout">
+                        <p class="sm:col-span-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">Setelah alamat disimpan, Anda akan kembali ke halaman checkout.</p>
+                    @endif
 
                     <x-form.select name="label" label="Jenis Alamat" required
                         :options="['Rumah' => 'Rumah', 'Kantor' => 'Kantor', 'Gudang' => 'Gudang', 'Proyek' => 'Proyek']"
@@ -140,7 +144,7 @@
 
                     <div class="flex items-center gap-3 sm:col-span-2">
                         <button type="submit" class="btn-primary">{{ $address->exists ? 'Simpan Perubahan' : 'Simpan Alamat' }}</button>
-                        <a href="{{ route('account.addresses.index') }}" class="btn-outline">Batal</a>
+                        <a href="{{ $returnTo ?? route('account.addresses.index') }}" class="btn-outline">Batal</a>
                     </div>
                 </form>
             </section>

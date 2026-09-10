@@ -12,7 +12,7 @@
         $taxAdded = round($totals->grandTotal - ($totals->itemsSubtotal - $totals->couponDiscount), 2);
         $taxEmbedded = round(max(0, $totals->taxAmount - $taxAdded), 2);
         // Keep the chosen address selected after a server validation error.
-        $selectedAddr = $addresses->firstWhere('id', (int) old('address_choice')) ?? $defaultAddress;
+        $selectedAddr = $addresses->firstWhere('id', (int) old('address_id')) ?? $defaultAddress;
     @endphp
     <form action="{{ route('checkout.store') }}" method="POST" x-on:submit="submitting = true"
           x-data="checkout({{ $totals->itemsSubtotal - $totals->couponDiscount }}, {{ $taxAdded }})">
@@ -33,34 +33,68 @@
                     </div>
                 </section>
 
-                {{-- Address: only a saved shipping address may be used (Indah-valid). --}}
+                {{-- Address ala marketplace: alamat terpilih tampil ringkas; ganti lewat jendela pilihan. --}}
                 <section class="card p-4">
                     <div class="mb-3 flex items-center justify-between">
                         <h2 class="font-semibold text-gray-800">2. Alamat Pengiriman</h2>
-                        <a href="{{ route('account.addresses.create') }}" class="text-sm font-medium text-brand-600 hover:underline">+ Tambah Alamat</a>
+                        @if ($addresses->isNotEmpty())
+                            <button type="button" @click="addrModal = true" class="text-sm font-medium text-brand-600 hover:underline">Ganti Alamat</button>
+                        @else
+                            <a href="{{ route('account.addresses.create', ['kembali' => 'checkout']) }}" class="text-sm font-medium text-brand-600 hover:underline">+ Tambah Alamat</a>
+                        @endif
                     </div>
                     <input type="hidden" name="address_id" x-model="addressId">
                     @if ($addresses->isNotEmpty())
-                        <div class="space-y-2">
-                            @foreach ($addresses as $addr)
-                                <label class="flex cursor-pointer items-start gap-2 rounded-lg border p-3 text-sm"
-                                       :class="addressId == {{ $addr->id }} ? 'border-brand-500 bg-brand-50' : 'border-gray-200 hover:border-brand-400'">
-                                    <input type="radio" name="address_choice" class="mt-1" value="{{ $addr->id }}" @checked($selectedAddr?->id === $addr->id)
-                                           @change="selectAddress({{ $addr->id }}, {{ Illuminate\Support\Js::from($addr->province) }}, {{ Illuminate\Support\Js::from($addr->city) }})">
-                                    <span>
-                                        <strong>{{ $addr->label }}</strong> — {{ $addr->recipient_name }}
-                                        @if ($addr->phone)<span class="text-gray-400">• {{ $addr->phone }}</span>@endif
-                                        <br><span class="text-gray-500">{{ $addr->fullAddress() }}</span>
-                                    </span>
-                                </label>
-                            @endforeach
+                        <template x-if="selectedAddress">
+                            <div class="rounded-lg border border-brand-200 bg-brand-50/60 p-3 text-sm">
+                                <p class="font-medium text-gray-800">
+                                    <span x-text="selectedAddress.label"></span> — <span x-text="selectedAddress.recipient"></span>
+                                    <span class="font-normal text-gray-400" x-show="selectedAddress.phone" x-text="'• ' + selectedAddress.phone"></span>
+                                </p>
+                                <p class="mt-0.5 text-gray-600" x-text="selectedAddress.full"></p>
+                            </div>
+                        </template>
+                        <p class="mt-2 text-xs text-gray-400">
+                            Alamat diambil dari akun Anda.
+                            <a href="{{ route('account.addresses.create', ['kembali' => 'checkout']) }}" class="text-brand-600 hover:underline">Tambah alamat baru</a>
+                            · <a href="{{ route('account.addresses.index') }}" class="text-brand-600 hover:underline">Kelola alamat</a>
+                        </p>
+
+                        {{-- Jendela pilih alamat --}}
+                        <div x-show="addrModal" x-cloak x-transition.opacity
+                             class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4"
+                             @keydown.escape.window="addrModal = false">
+                            <div class="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:rounded-2xl" @click.outside="addrModal = false">
+                                <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+                                    <h3 class="font-semibold text-gray-900">Pilih Alamat Pengiriman</h3>
+                                    <button type="button" @click="addrModal = false" aria-label="Tutup" class="rounded p-1 text-gray-400 hover:text-gray-700">✕</button>
+                                </div>
+                                <div class="space-y-2 overflow-y-auto p-4">
+                                    @foreach ($addresses as $addr)
+                                        <button type="button" @click="selectAddress({{ $addr->id }}); addrModal = false"
+                                                class="block w-full rounded-lg border p-3 text-left text-sm transition"
+                                                :class="addressId == {{ $addr->id }} ? 'border-brand-500 bg-brand-50' : 'border-gray-200 hover:border-brand-400'">
+                                            <p class="font-medium text-gray-800">
+                                                {{ $addr->label }} — {{ $addr->recipient_name }}
+                                                @if ($addr->phone)<span class="font-normal text-gray-400">• {{ $addr->phone }}</span>@endif
+                                                @if ($addr->is_default)<span class="ml-1 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-gray-600">Utama</span>@endif
+                                                <span x-show="addressId == {{ $addr->id }}" class="ml-1 text-xs font-semibold text-brand-700">✓ Dipilih</span>
+                                            </p>
+                                            <p class="mt-0.5 text-gray-600">{{ $addr->fullAddress() }}</p>
+                                        </button>
+                                    @endforeach
+                                </div>
+                                <div class="flex items-center justify-between border-t border-gray-100 px-4 py-3 text-sm">
+                                    <a href="{{ route('account.addresses.create', ['kembali' => 'checkout']) }}" class="font-medium text-brand-600 hover:underline">+ Tambah Alamat Baru</a>
+                                    <button type="button" @click="addrModal = false" class="btn-outline">Tutup</button>
+                                </div>
+                            </div>
                         </div>
-                        <p class="mt-2 text-xs text-gray-400">Alamat diambil dari akun Anda. <a href="{{ route('account.addresses.index') }}" class="text-brand-600 hover:underline">Kelola alamat</a>.</p>
                     @else
                         <div class="rounded-lg border border-dashed border-gray-300 p-6 text-center">
                             <p class="text-sm text-gray-500">Anda belum punya alamat pengiriman tersimpan.</p>
-                            <p class="mt-1 text-xs text-gray-400">Tambah alamat dulu (provinsi &amp; kota mengikuti jangkauan Indah Cargo) agar ongkir bisa dihitung.</p>
-                            <a href="{{ route('account.addresses.create') }}" class="btn-primary mt-3">Tambah Alamat</a>
+                            <p class="mt-1 text-xs text-gray-400">Tambah alamat dulu agar ongkir bisa dihitung — setelah disimpan Anda kembali ke halaman ini.</p>
+                            <a href="{{ route('account.addresses.create', ['kembali' => 'checkout']) }}" class="btn-primary mt-3">Tambah Alamat</a>
                         </div>
                     @endif
                 </section>
@@ -194,6 +228,12 @@
 function checkout(baseSubtotal, tax) {
     return {
         addressId: @js($selectedAddr?->id ?? ''),
+        addresses: @js($addresses->map(fn ($a) => [
+            'id' => $a->id, 'label' => $a->label, 'recipient' => $a->recipient_name, 'phone' => $a->phone,
+            'full' => $a->fullAddress(), 'province' => $a->province, 'city' => $a->city,
+        ])->values()),
+        addrModal: false,
+        get selectedAddress() { return this.addresses.find((a) => String(a.id) === String(this.addressId)) || null },
         addr: { province: @js($selectedAddr?->province ?? ''), city: @js($selectedAddr?->city ?? '') },
         shippingOptions: [], loadingShipping: false, shippingError: false,
         shippingProvider: '', shippingService: '', shippingCost: 0, shippingPacking: 0, shippingExtra: 0, shippingConfirmed: true, shippingWeight: 0,
@@ -203,10 +243,12 @@ function checkout(baseSubtotal, tax) {
         get shippingTotal() { return this.shippingCost + this.shippingPacking + this.shippingExtra },
         get grandTotal() { return this.baseSubtotal + this.tax + (this.shippingConfirmed ? this.shippingTotal : 0) },
         rupiah(n) { return 'Rp ' + Math.round(n).toLocaleString('id-ID') },
-        selectAddress(id, province, city) {
-            this.addressId = id;
-            this.addr.province = province;
-            this.addr.city = city;
+        selectAddress(id) {
+            const a = this.addresses.find((x) => String(x.id) === String(id));
+            if (!a) return;
+            this.addressId = a.id;
+            this.addr.province = a.province;
+            this.addr.city = a.city;
             this.shippingProvider = ''; this.shippingService = ''; this.shippingCost = 0; this.shippingPacking = 0; this.shippingExtra = 0;
             this.loadShipping();
         },
