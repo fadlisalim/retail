@@ -26,7 +26,8 @@
                     <template x-if="!cheapest"><span class="font-normal text-amber-700">Ongkir dikonfirmasi admin saat checkout</span></template>
                 </p>
             </div>
-            <button type="button" @click="openModal()" class="btn-outline text-sm">Lihat semua &amp; ubah lokasi</button>
+            {{-- Tombol tetap hijau & sama di semua produk — pelanggan pindah-pindah produk, tetap satu tombol yang dikenali. --}}
+            <button type="button" @click="openModal()" class="btn-primary text-sm">📍 Cek ongkir</button>
         </div>
     </template>
 
