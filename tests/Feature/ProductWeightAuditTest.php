@@ -322,6 +322,27 @@ class ProductWeightAuditTest extends TestCase
         $this->assertSame(6, $ctx->packageCount);
     }
 
+    public function test_variant_listing_marks_admin_made_variants_and_inherited_values(): void
+    {
+        $this->defaultWarehouse();
+        $this->seed(PaketAmalSeeder::class);
+        $product = Product::where('sku', 'PAKET-AMAL')->firstOrFail();
+        ProductVariant::create([
+            'product_id' => $product->id, 'sku' => 'AMAL-CUSTOM-X', 'name' => 'AMAL Custom', 'option_values' => ['Paket' => 'Custom'],
+            'price' => 60000000, 'is_active' => true, 'sort_order' => 9,
+        ]);
+
+        $this->assertSame(0, Artisan::call('product:audit-weight', ['--varian' => true]));
+        $output = Artisan::output();
+
+        $this->assertStringContainsString('AMAL 8000 (PAKET-AMAL-8000)', $output);
+        $this->assertStringContainsString('290,00 kg', $output);
+        $this->assertStringContainsString('AMAL Custom (AMAL-CUSTOM-X)', $output);
+        $this->assertStringContainsString('ADMIN', $output);
+        $this->assertStringContainsString('100,00 kg (induk)', $output); // varian admin tanpa berat → warisan induk
+        $this->assertStringContainsString('4 varian; 1 dibuat lewat admin', $output);
+    }
+
     private function dimsOf(string $sku): string
     {
         $v = ProductVariant::where('sku', $sku)->firstOrFail();

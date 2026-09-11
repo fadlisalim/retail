@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 
 /**
  * Audit berat & dimensi katalog — mencari angka yang bakal bikin ongkir
@@ -17,7 +18,9 @@ use Illuminate\Console\Command;
  */
 class AuditProductWeights extends Command
 {
-    protected $signature = 'product:audit-weight {--all : Sertakan produk draft/arsip}';
+    protected $signature = 'product:audit-weight
+        {--all : Sertakan produk draft/arsip}
+        {--varian : Daftar semua varian beserta asalnya (seeder / dibuat admin) dan berat-dimensinya}';
 
     protected $description = 'Cari berat/dimensi produk yang janggal untuk perhitungan ongkir';
 
@@ -25,11 +28,22 @@ class AuditProductWeights extends Command
 
     private const HEAVY_GRAMS = 50000;
 
+    /** Pola SKU varian yang berasal dari seeder — sisanya dibuat admin lewat panel. */
+    private const SEEDED_VARIANT_SKUS = [
+        '/^PAKET-AMAL-\d+$/', '/^PH605-\d+KWP-\d+KWH$/', '/^PAKET-APEX300-B\d$/', '/^AURORA-ECHO-\d+$/',
+        '/^AIKO-COMET2U-\d+$/', '/^KBL-PV-\dMM-BLK$/', '/^NYAF-4MM-(MERAH|HITAM)$/', '/^SUNTREE-SL7N-\d+A$/',
+        '/^PANEL-BEKAS-\d+$/', '/^PNL-MONO-550-\d+wp$/', '/^BAT-LFP-5K-\d+kwh$/',
+    ];
+
     public function handle(): int
     {
         $query = Product::with(['variants', 'bundleItems.component'])->orderBy('id');
         if (! $this->option('all')) {
             $query->where('status', 'published');
+        }
+
+        if ($this->option('varian')) {
+            return $this->listVariants($query->where('product_type', 'variable')->get());
         }
 
         $rows = [];
@@ -61,6 +75,43 @@ class AuditProductWeights extends Command
 
         $this->table(['ID', 'Produk', 'Berat', 'Dimensi (cm)', 'Masalah'], $rows);
         $this->warn(count($rows).' baris perlu dicek — perbaiki lewat Admin → Produk → Edit (Berat & Dimensi / Kargo).');
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Daftar varian per produk: asal (seeder / admin), berat & dimensi efektif,
+     * dan tanda bila angkanya cuma warisan induk (kolom varian kosong).
+     *
+     * @param  Collection<int, Product>  $products
+     */
+    private function listVariants($products): int
+    {
+        $rows = [];
+        $admin = 0;
+        foreach ($products as $product) {
+            foreach ($product->variants->sortBy('sort_order') as $variant) {
+                $seeded = collect(self::SEEDED_VARIANT_SKUS)->contains(fn ($re) => preg_match($re, (string) $variant->sku));
+                $admin += $seeded ? 0 : 1;
+                $rows[] = [
+                    $product->id.'/'.$variant->id,
+                    mb_strimwidth($product->name, 0, 40, '…'),
+                    mb_strimwidth($variant->name.' ('.$variant->sku.')', 0, 42, '…'),
+                    $seeded ? 'seeder' : 'ADMIN',
+                    ($variant->is_active ? '' : '[nonaktif] ').number_format($variant->weightGrams() / 1000, 2, ',', '.').' kg'.($variant->weight_grams === null ? ' (induk)' : ''),
+                    $this->dims($variant).($variant->length_cm === null && $variant->volumeCm3() > 0 ? ' (induk)' : ''),
+                ];
+            }
+        }
+
+        if (! $rows) {
+            $this->info('Tidak ada produk bervarian.');
+
+            return self::SUCCESS;
+        }
+
+        $this->table(['ID', 'Produk', 'Varian (SKU)', 'Asal', 'Berat', 'Dimensi (cm)'], $rows);
+        $this->line(count($rows).' varian; '.$admin.' dibuat lewat admin (bukan seeder). "(induk)" = kolom varian kosong, memakai angka produk induk.');
 
         return self::SUCCESS;
     }
