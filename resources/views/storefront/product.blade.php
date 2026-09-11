@@ -108,6 +108,8 @@
             this.$watch('variantId', (id) => {
                 const v = this.variants.find(x => x.id === id);
                 this.variantImage = (v && v.image) ? v.image : null;
+                // Bagian lain halaman (tab Pengiriman: berat) ikut varian yang dipilih.
+                window.dispatchEvent(new CustomEvent('variant-changed', { detail: { id } }));
             });
         },
     }" class="grid gap-8 lg:grid-cols-2">
@@ -540,7 +542,17 @@
                         @if ($product->warranty)<div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Garansi</dt><dd class="font-medium text-gray-700">{{ $product->warranty }}</dd></div>@endif
                         <div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Estimasi</dt><dd class="font-medium text-gray-700">{{ $product->estimated_processing ?: '1–3 hari kerja' }}</dd></div>
                         <div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Pengiriman</dt><dd class="font-medium text-gray-700">{{ $product->requires_freight ? 'Kargo (ongkir dikonfirmasi)' : 'Reguler & kargo' }}{{ $product->pickup_only ? ' • Ambil di lokasi' : '' }}</dd></div>
-                        <div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Berat</dt><dd class="font-medium text-gray-700">{{ number_format($product->weight_grams / 1000, 2) }} kg</dd></div>
+                        @php
+                            // Berat mengikuti varian yang dipilih (varian paket beda jauh: AMAL 2000 100 kg vs AMAL 8000 290 kg).
+                            $defaultVariant = $product->variants->first(fn ($v) => $v->stock > 0) ?? ($product->variants->count() === 1 ? $product->variants->first() : null);
+                            $variantWeights = $product->variants->mapWithKeys(fn ($v) => [$v->id => $v->weightGrams()]);
+                        @endphp
+                        <div class="flex gap-2"><dt class="w-28 shrink-0 text-gray-500">Berat</dt>
+                            <dd class="font-medium text-gray-700"
+                                x-data="{ w: {{ (int) ($defaultVariant?->weightGrams() ?? $product->weight_grams) }}, map: {{ Illuminate\Support\Js::from($variantWeights) }} }"
+                                @variant-changed.window="w = map[$event.detail.id] ?? {{ (int) $product->weight_grams }}"
+                                x-text="(w / 1000).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' kg'">{{ number_format(($defaultVariant?->weightGrams() ?? $product->weight_grams) / 1000, 2) }} kg</dd>
+                        </div>
                     </dl>
                     <p class="mt-3 text-xs text-gray-400">Kebijakan retur: lihat <a href="{{ route('pages.show', 'kebijakan-retur') }}" class="text-brand-600 hover:underline">halaman kebijakan retur</a>.</p>
                 </div>

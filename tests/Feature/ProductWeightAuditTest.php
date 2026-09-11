@@ -185,9 +185,21 @@ class ProductWeightAuditTest extends TestCase
             ]);
         }
 
+        // Bundle 150 kg padahal komponennya 6×27,5 + 48 = 213 kg.
+        $bundle = Product::factory()->create(['name' => 'Bundle Demo', 'unit' => 'paket', 'product_type' => 'bundle', 'price' => 60000000, 'weight_grams' => 150000, 'length_cm' => 120, 'width_cm' => 100, 'height_cm' => 60, 'requires_freight' => true]);
+        $bundle->bundleItems()->create(['component_product_id' => $panel->id, 'quantity' => 6, 'component_label' => 'Panel', 'sort_order' => 0]);
+        $bundle->bundleItems()->create(['component_product_id' => $batt->id, 'quantity' => 1, 'component_label' => 'Baterai', 'sort_order' => 1]);
+        // Bundle yang beratnya sudah sesuai komponen → tidak dilaporkan.
+        $ok = Product::factory()->create(['name' => 'Bundle Pas', 'unit' => 'paket', 'product_type' => 'bundle', 'price' => 60000000, 'weight_grams' => 210000, 'length_cm' => 120, 'width_cm' => 100, 'height_cm' => 60, 'requires_freight' => true]);
+        $ok->bundleItems()->create(['component_product_id' => $panel->id, 'quantity' => 6, 'component_label' => 'Panel', 'sort_order' => 0]);
+        $ok->bundleItems()->create(['component_product_id' => $batt->id, 'quantity' => 1, 'component_label' => 'Baterai', 'sort_order' => 1]);
+
         $this->assertSame(0, Artisan::call('product:audit-weight'));
         $output = Artisan::output();
 
+        $this->assertStringContainsString('Bundle Demo', $output);
+        $this->assertStringContainsString('berat paket 150,0 kg vs total komponen 210,6 kg (2 komponen)', $output);
+        $this->assertStringNotContainsString('Bundle Pas', $output);
         $this->assertStringContainsString('Paket Kembar', $output);
         $this->assertStringContainsString('3 varian beda harga (24,9 jt–54,9 jt) tapi beratnya sama semua (80,0 kg)', $output);
         $this->assertStringContainsString('Baterai Dimensi Sama', $output);
@@ -249,6 +261,44 @@ class ProductWeightAuditTest extends TestCase
         // Dijalankan ulang: tidak ada yang berubah.
         $this->seed(VarianBeratDimensiSeeder::class);
         $this->assertSame('230×115×49', $this->dimsOf('PH605-5KWP-15KWH'));
+    }
+
+    /**
+     * Produksi: Paket Amal sudah ada dengan induk 80 kg dan varian kosong.
+     * Seeder koreksi mengisi varian DAN menyamakan induk ke varian teringan;
+     * halaman produk menampilkan berat varian yang dipilih, bukan induk.
+     */
+    public function test_paket_amal_in_production_gets_parent_and_variant_weights_and_the_page_follows_the_variant(): void
+    {
+        $this->defaultWarehouse();
+        $this->seed(PaketAmalSeeder::class);
+        // Kondisi produksi sebelum koreksi: induk 80 kg tanpa dimensi, varian tanpa berat.
+        Product::where('sku', 'PAKET-AMAL')->update(['weight_grams' => 80000, 'length_cm' => 0, 'width_cm' => 0, 'height_cm' => 0, 'package_count' => 1]);
+        ProductVariant::where('product_id', Product::where('sku', 'PAKET-AMAL')->value('id'))
+            ->update(['weight_grams' => null, 'length_cm' => null, 'width_cm' => null, 'height_cm' => null]);
+
+        $this->seed(VarianBeratDimensiSeeder::class);
+
+        $product = Product::where('sku', 'PAKET-AMAL')->firstOrFail();
+        $this->assertSame(100000, (int) $product->weight_grams);
+        $this->assertSame(230, (int) $product->length_cm);
+        $this->assertSame(6, (int) $product->package_count);
+        $this->assertSame(290000, (int) ProductVariant::where('sku', 'PAKET-AMAL-8000')->value('weight_grams'));
+
+        // Induk yang sudah diubah admin (bukan 80 kg lagi) dibiarkan.
+        $product->update(['weight_grams' => 120000]);
+        $this->seed(VarianBeratDimensiSeeder::class);
+        $this->assertSame(120000, (int) $product->fresh()->weight_grams);
+
+        // Halaman produk: berat awal = varian pertama yang ada stok (100 kg), dan
+        // peta berat tiap varian tersedia agar tab Pengiriman ikut varian yang dipilih.
+        $ids = $product->variants()->orderBy('sort_order')->pluck('id');
+        $this->get(route('products.show', $product->slug))
+            ->assertOk()
+            ->assertSee('100.00 kg')
+            ->assertDontSee('120.00 kg')
+            ->assertSee('variant-changed', false)
+            ->assertSee($ids[2].chr(92).'u0022:290000', false); // peta {id: berat} di dalam Js::from — tanda kutip ter-escape jadi \u0022
     }
 
     /** Paket 290 kg terdiri dari 6 kolli → kolli terberat ±48 kg, bukan 290 kg (forklift kargo tidak salah kena). */

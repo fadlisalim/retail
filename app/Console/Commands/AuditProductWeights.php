@@ -27,7 +27,7 @@ class AuditProductWeights extends Command
 
     public function handle(): int
     {
-        $query = Product::with('variants')->orderBy('id');
+        $query = Product::with(['variants', 'bundleItems.component'])->orderBy('id');
         if (! $this->option('all')) {
             $query->where('status', 'published');
         }
@@ -97,7 +97,33 @@ class AuditProductWeights extends Command
             $issues[] = 'aksesoris murah tapi berat > 200 g — cek timbangan';
         }
 
-        return array_merge($issues, $this->twinVariantIssues($product));
+        return array_merge($issues, $this->twinVariantIssues($product), $this->bundleIssues($product));
+    }
+
+    /**
+     * Paket tipe bundle: berat paket harus mendekati jumlah berat komponennya
+     * (kasus paket demo: 150 kg semua padahal komponennya 246 kg).
+     *
+     * @return list<string>
+     */
+    private function bundleIssues(Product $product): array
+    {
+        if ($product->product_type !== 'bundle' || $product->bundleItems->isEmpty()) {
+            return [];
+        }
+
+        $components = (int) $product->bundleItems->sum(fn ($item) => (int) ($item->component?->weight_grams ?? 0) * (int) $item->quantity);
+        $weight = (int) $product->weight_grams;
+        if ($components <= 0 || abs($weight - $components) <= max(5000, $components * 0.2)) {
+            return [];
+        }
+
+        return [sprintf(
+            'berat paket %s kg vs total komponen %s kg (%d komponen) — samakan dengan isi paket',
+            number_format($weight / 1000, 1, ',', '.'),
+            number_format($components / 1000, 1, ',', '.'),
+            $product->bundleItems->count(),
+        )];
     }
 
     /**

@@ -56,6 +56,17 @@ class VarianBeratDimensiSeeder extends Seeder
         'BAT-LFP-5K-1024kwh' => ['weight' => 92000, 'dims' => [44, 42, 44]], // 2 modul ditumpuk
     ];
 
+    /**
+     * Induk produk bervarian yang masih memakai berat seeder lama → disamakan
+     * dengan varian teringan (berat induk = "mulai dari" yang tampil di halaman
+     * produk). Hanya bila beratnya masih persis nilai lama (editan admin dibiarkan).
+     *
+     * @var array<string, array{weight_was: int, weight: int, dims: array{float, float, float}}>
+     */
+    public const PARENT = [
+        'PAKET-AMAL' => ['weight_was' => 80000, 'weight' => 100000, 'dims' => [230, 115, 12]],
+    ];
+
     /** @var array<string, int> SKU produk paket => jumlah kolli (untuk aturan forklift kargo) */
     public const PACKAGE_COUNT = [
         'PAKET-AMAL' => 6,              // palet panel, baterai, inverter, proteksi, kabel, mounting
@@ -74,6 +85,18 @@ class VarianBeratDimensiSeeder extends Seeder
             }
         }
 
+        $parents = 0;
+        foreach (self::PARENT as $sku => $row) {
+            $product = Product::where('sku', $sku)->first();
+            if ($product && (int) $product->weight_grams === $row['weight_was']) {
+                $product->forceFill([
+                    'weight_grams' => $row['weight'],
+                    'length_cm' => $row['dims'][0], 'width_cm' => $row['dims'][1], 'height_cm' => $row['dims'][2],
+                ])->save();
+                $parents++;
+            }
+        }
+
         $kolli = 0;
         foreach (self::PACKAGE_COUNT as $sku => $count) {
             $product = Product::where('sku', $sku)->first();
@@ -83,7 +106,7 @@ class VarianBeratDimensiSeeder extends Seeder
             }
         }
 
-        $this->command?->info("Berat/dimensi varian diisi: {$filled} varian; jumlah kolli paket diisi: {$kolli} produk (yang sudah diisi admin dibiarkan).");
+        $this->command?->info("Berat/dimensi varian diisi: {$filled} varian; induk dikoreksi: {$parents}; jumlah kolli paket diisi: {$kolli} produk (yang sudah diisi admin dibiarkan).");
         $this->command?->warn('Cek hasilnya: php artisan product:audit-weight');
     }
 
