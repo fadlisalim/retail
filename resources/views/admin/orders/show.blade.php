@@ -109,11 +109,12 @@
             @if ($order->invoice)
                 @php
                     $snap = (array) $order->invoice->customer_snapshot;
-                    $invoiceLocked = $order->isInvoiceLocked();
+                    $superAdminOverride = $order->isInvoiceLocked() && auth()->user()->isSuperAdmin();
+                    $invoiceLocked = $order->isInvoiceLocked() && ! $superAdminOverride;
                 @endphp
                 <div class="card p-5"
-                     x-data="{ open: {{ $errors->has('invoice') || $errors->hasAny(['name', 'company', 'pic', 'items']) ? 'true' : 'false' }},
-                               docItems: {{ json_encode(array_map(fn ($i) => ['name' => $i['name'], 'sku' => $i['sku'] ?? '', 'quantity' => $i['quantity'], 'unit_price' => $i['unit_price']], $order->invoice->lineItems())) }},
+                     x-data="{ open: {{ $errors->has('invoice') || $errors->hasAny(['name', 'company', 'pic', 'items']) || $errors->has('items.*') ? 'true' : 'false' }},
+                               docItems: {{ json_encode($order->items->map(fn ($i) => ['id' => $i->id, 'name' => $i->name, 'sku' => $i->sku ?? '', 'quantity' => (int) $i->quantity, 'unit_price' => (float) $i->unit_price])->values()->all()) }},
                                rupiah(n) { return 'Rp ' + Number(n || 0).toLocaleString('id-ID'); },
                                subtotal() { return this.docItems.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unit_price) || 0), 0); } }">
                     <div class="flex flex-wrap items-center justify-between gap-2">
@@ -133,6 +134,10 @@
                     </div>
 
                     @error('invoice')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                    @error('items')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                    @if ($superAdminOverride)
+                        <p class="mt-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">Pesanan sudah {{ $order->status->label() }} dan terkunci untuk admin lain. Sebagai Super Admin Anda tetap bisa mengoreksi salah input — total, stok, komisi, dan dokumen akan ikut dikoreksi.</p>
+                    @endif
 
                     @unless ($invoiceLocked)
                         <form x-show="open" x-cloak method="POST" action="{{ route('admin.orders.invoice.update', $order) }}"
@@ -168,16 +173,17 @@
                                 <input name="address" maxlength="500" value="{{ old('address', $snap['address'] ?? '') }}" class="form-input">
                             </div>
 
-                            {{-- Baris barang di dokumen — order_items (stok/komisi) tidak berubah. --}}
+                            {{-- Baris item = item PESANAN. Mengubahnya mengoreksi total, stok, komisi, dan dokumen sekaligus. --}}
                             <div class="sm:col-span-2">
                                 <div class="mb-2 flex items-center justify-between">
-                                    <label class="input-label mb-0">Barang di Dokumen</label>
-                                    <button type="button" @click="docItems.push({ name: '', sku: '', quantity: 1, unit_price: 0 })"
+                                    <label class="input-label mb-0">Item Pesanan (koreksi jumlah / harga)</label>
+                                    <button type="button" @click="docItems.push({ id: null, name: '', sku: '', quantity: 1, unit_price: 0 })"
                                             class="text-sm font-medium text-brand-700 hover:underline">+ Tambah baris</button>
                                 </div>
                                 <div class="space-y-2">
                                     <template x-for="(item, index) in docItems" :key="index">
                                         <div class="flex flex-wrap items-center gap-2">
+                                            <input type="hidden" :name="'items[' + index + '][id]'" :value="item.id || ''">
                                             <input :name="'items[' + index + '][name]'" x-model="item.name" required maxlength="191"
                                                    placeholder="Uraian barang/jasa" class="form-input min-w-[200px] flex-1">
                                             <input type="hidden" :name="'items[' + index + '][sku]'" :value="item.sku">
@@ -192,15 +198,15 @@
                                         </div>
                                     </template>
                                 </div>
-                                <p class="mt-2 text-right text-sm font-semibold text-gray-800">Subtotal dokumen: <span x-text="rupiah(subtotal())"></span></p>
-                                <p class="mt-1 text-xs text-gray-400">Mengubah baris ini hanya mengubah yang TERCETAK di invoice & kuitansi — item pesanan, stok, dan komisi tidak tersentuh. Total dokumen dihitung ulang (subtotal − diskon + ongkir + PPN dokumen).</p>
+                                <p class="mt-2 text-right text-sm font-semibold text-gray-800">Subtotal item: <span x-text="rupiah(subtotal())"></span></p>
+                                <p class="mt-1 text-xs text-gray-400">Mengubah baris ini mengoreksi PESANAN itu sendiri: total pesanan &amp; dashboard, nominal pembayaran, stok (selisih qty dipotong/dikembalikan ke gudang), komisi afiliator, serta invoice &amp; kuitansi ikut berubah. Diskon, ongkir, dan PPN pesanan tidak berubah.</p>
                             </div>
 
                             <div class="flex gap-2 sm:col-span-2">
-                                <button type="submit" class="btn-primary">Simpan ke Invoice &amp; Kuitansi</button>
+                                <button type="submit" class="btn-primary">Simpan Koreksi</button>
                                 <button type="button" @click="open = false" class="btn-outline">Batal</button>
                             </div>
-                            <p class="text-xs text-gray-400 sm:col-span-2">Perubahan langsung tampil di invoice (web &amp; PDF) dan kuitansi. Setelah pesanan Selesai, dokumen terkunci.</p>
+                            <p class="text-xs text-gray-400 sm:col-span-2">Perubahan langsung tampil di invoice (web &amp; PDF) dan kuitansi. Setelah pesanan Selesai, hanya Super Admin yang bisa mengoreksi.</p>
                         </form>
                     @endunless
                 </div>

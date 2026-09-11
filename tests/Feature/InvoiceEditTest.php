@@ -83,11 +83,14 @@ class InvoiceEditTest extends TestCase
             ->assertSee('u.p. Ibu Sari (Finance)');
     }
 
-    /** Baris barang dokumen bisa disunting tanpa menyentuh order_items. */
-    public function test_document_line_items_can_be_edited_without_touching_the_order(): void
+    /**
+     * Baris item yang disunting = item PESANAN: pesanan, invoice, dan kuitansi
+     * selalu menampilkan angka yang sama (tidak ada lagi dokumen "beda sendiri").
+     */
+    public function test_editing_line_items_corrects_the_order_and_documents_follow(): void
     {
         $order = $this->paidOrder();
-        $order->items()->create([
+        $item = $order->items()->create([
             'product_id' => null, 'sku' => 'MANUAL', 'name' => 'Inverter 5kW',
             'unit_price' => 5_000_000, 'quantity' => 1, 'line_total' => 5_000_000,
         ]);
@@ -96,18 +99,22 @@ class InvoiceEditTest extends TestCase
             ->put(route('admin.orders.invoice.update', $order), [
                 'name' => 'Budi Perorangan',
                 'items' => [
-                    ['name' => 'Inverter Hybrid 5kW (termasuk instalasi)', 'quantity' => 1, 'unit_price' => 4_500_000],
+                    ['id' => $item->id, 'name' => 'Inverter Hybrid 5kW (termasuk instalasi)', 'quantity' => 1, 'unit_price' => 4_500_000],
                     ['name' => 'Jasa komisioning & training', 'quantity' => 2, 'unit_price' => 250_000],
                 ],
             ])->assertRedirect()->assertSessionHas('success');
 
-        $invoice = $order->fresh()->invoice;
-        // Dokumen berubah: 4,5jt + 2×250rb = 5jt.
+        $order = $order->fresh();
+        $invoice = $order->invoice;
+        // Pesanan & dokumen: 4,5jt + 2×250rb = 5jt.
+        $this->assertCount(2, $order->items);
+        $this->assertSame('Inverter Hybrid 5kW (termasuk instalasi)', $order->items()->orderBy('id')->first()->name);
+        $this->assertEquals(5_000_000, (float) $order->items_subtotal);
+        $this->assertEquals(5_000_000, (float) $order->grand_total);
         $this->assertCount(2, $invoice->lineItems());
+        $this->assertNull($invoice->items_snapshot);
         $this->assertEquals(5_000_000, (float) $invoice->subtotal);
         $this->assertEquals(5_000_000, (float) $invoice->total);
-        // Item pesanan asli tidak tersentuh.
-        $this->assertSame('Inverter 5kW', $order->items()->first()->name);
 
         // Ketiga dokumen menampilkan baris hasil suntingan.
         $this->get(route('invoices.show', $invoice->public_token))

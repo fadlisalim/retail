@@ -2,12 +2,17 @@
 
 namespace App\Services;
 
+use App\Enums\CommissionStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Shipment;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -121,6 +126,127 @@ class OrderService
     }
 
     /** Payment received (full): commit reserved stock into a real sale. */
+    /**
+     * Koreksi item pesanan (nama, qty, harga; tambah/hapus baris) SETELAH
+     * pesanan dibuat. Total, jumlah pembayaran, stok, komisi afiliator, dan
+     * dokumen (invoice/kuitansi) ikut berubah — supaya tidak pernah ada dua
+     * angka berbeda antara dashboard dan dokumen.
+     *
+     * @param  list<array{id?:int|string|null,name:string,sku?:string|null,quantity:int|string,unit_price:float|string}>  $rows
+     */
+    public function correctItems(Order $order, array $rows, ?User $actor = null): Order
+    {
+        return DB::transaction(function () use ($order, $rows, $actor) {
+            $order->load('items');
+            $committed = $order->reservations()->where('status', 'committed')->exists();
+            $reserved = $order->reservations()->where('status', 'active')->exists();
+            $changes = [];
+            $kept = [];
+
+            foreach ($rows as $row) {
+                $qty = max(1, (int) $row['quantity']);
+                $price = round((float) $row['unit_price'], 2);
+                $name = Str::limit(trim((string) $row['name']), 191, '');
+                $existing = ! empty($row['id']) ? $order->items->firstWhere('id', (int) $row['id']) : null;
+
+                if ($existing) {
+                    $delta = $qty - (int) $existing->quantity;
+                    if ($delta !== 0 && $existing->product_id) {
+                        $this->applyStockDelta($order, $existing, $delta, $committed, $reserved, $actor);
+                    }
+                    if ($delta !== 0 || round((float) $existing->unit_price, 2) !== $price || $existing->name !== $name) {
+                        $changes[] = sprintf('%s: %d × %s → %d × %s', $existing->name, $existing->quantity, rupiah($existing->unit_price), $qty, rupiah($price));
+                    }
+                    $existing->update([
+                        'name' => $name, 'sku' => ($row['sku'] ?? null) ?: $existing->sku,
+                        'quantity' => $qty, 'unit_price' => $price, 'line_total' => round($qty * $price, 2),
+                    ]);
+                    $kept[] = $existing->id;
+                } else {
+                    $item = $order->items()->create([
+                        'product_id' => null, 'product_variant_id' => null, 'sku' => ($row['sku'] ?? null) ?: 'MANUAL', 'name' => $name,
+                        'unit_price' => $price, 'original_unit_price' => $price, 'quantity' => $qty,
+                        'discount_amount' => 0, 'tax_amount' => 0, 'line_total' => round($qty * $price, 2), 'weight_grams' => 0, 'is_taxable' => false,
+                    ]);
+                    $kept[] = $item->id;
+                    $changes[] = sprintf('+ %s: %d × %s', $name, $qty, rupiah($price));
+                }
+            }
+
+            foreach ($order->items->whereNotIn('id', $kept) as $removed) {
+                if ($removed->product_id) {
+                    $this->applyStockDelta($order, $removed, -(int) $removed->quantity, $committed, $reserved, $actor);
+                }
+                $order->affiliateCommissions()->where('order_item_id', $removed->id)
+                    ->whereIn('status', [CommissionStatus::AwaitingReview->value, CommissionStatus::Pending->value, CommissionStatus::Approved->value])
+                    ->update(['status' => CommissionStatus::Cancelled->value]);
+                $changes[] = sprintf('− %s (%d × %s)', $removed->name, $removed->quantity, rupiah($removed->unit_price));
+                $removed->delete();
+            }
+
+            $order->load('items');
+            $subtotal = round((float) $order->items->sum('line_total'), 2);
+            $grand = max(0, round($subtotal - (float) $order->product_discount - (float) $order->coupon_discount
+                + (float) $order->shipping_cost + (float) $order->packing_fee + (float) $order->handling_fee + (float) $order->insurance_fee
+                + (float) $order->tax_amount, 2));
+            $paid = $order->payment_status === PaymentStatus::Paid;
+
+            $order->update([
+                'items_subtotal' => $subtotal,
+                'grand_total' => $grand,
+                'paid_amount' => $paid ? $grand : $order->paid_amount,
+                'billable_weight_grams' => (int) $order->items->sum(fn ($i) => (int) $i->weight_grams * (int) $i->quantity),
+            ]);
+            $order->payments()->latest()->first()?->update($paid ? ['amount' => $grand, 'amount_paid' => $grand] : ['amount' => $grand]);
+
+            // Dokumen mengikuti pesanan: suntingan lama pada baris dokumen dibuang.
+            if ($invoice = $order->invoice) {
+                $invoice->update([
+                    'items_snapshot' => null,
+                    'subtotal' => $subtotal,
+                    'total' => max(0, round($subtotal - (float) $invoice->discount + (float) $invoice->shipping + (float) $invoice->tax, 2)),
+                ]);
+            }
+
+            // Komisi afiliator yang belum dibayarkan mengikuti dasar yang baru.
+            $order->affiliateCommissions()
+                ->whereIn('status', [CommissionStatus::AwaitingReview->value, CommissionStatus::Pending->value, CommissionStatus::Approved->value])
+                ->get()
+                ->each(function ($commission) use ($order) {
+                    $item = $order->items->firstWhere('id', $commission->order_item_id);
+                    if ($item) {
+                        $commission->update(['base_amount' => $item->line_total, 'amount' => round((float) $item->line_total * (float) $commission->rate / 100, 2)]);
+                    }
+                });
+
+            if ($changes) {
+                $order->statusHistories()->create([
+                    'status' => $order->status->value,
+                    'changed_by' => $actor?->id,
+                    'internal_note' => 'Koreksi item pesanan: '.implode('; ', $changes).'. Total menjadi '.rupiah($grand).'.',
+                ]);
+            }
+
+            return $order->refresh();
+        });
+    }
+
+    private function applyStockDelta(Order $order, OrderItem $item, int $delta, bool $committed, bool $reserved, ?User $actor): void
+    {
+        $product = Product::find($item->product_id);
+        if (! $product) {
+            return;
+        }
+        $variant = $item->product_variant_id ? ProductVariant::find($item->product_variant_id) : null;
+
+        if ($committed) {
+            $this->stock->adjustCommittedSale($order, $product, $variant, $delta, $actor?->id);
+        } elseif ($reserved) {
+            $this->stock->adjustReservation($order, $product, $variant, $delta);
+        }
+        // Tanpa reservasi sama sekali (pesanan manual "jangan potong stok"): stok memang tidak dikelola di sini.
+    }
+
     public function markPaid(Order $order, ?User $actor = null): Order
     {
         return DB::transaction(function () use ($order, $actor) {

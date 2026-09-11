@@ -165,6 +165,65 @@ class StockService
         });
     }
 
+    /**
+     * Koreksi jumlah item pada pesanan yang stoknya SUDAH dipotong (dibayar):
+     * delta positif = tambahan penjualan keluar rak, negatif = kembali ke rak.
+     */
+    public function adjustCommittedSale(Order $order, Product $product, ?ProductVariant $variant, int $delta, ?int $userId = null): void
+    {
+        if ($delta === 0) {
+            return;
+        }
+
+        $this->adjust(
+            $product, $variant, -$delta,
+            $delta > 0 ? StockMovementType::Sale : StockMovementType::Return,
+            reference: $order, note: 'Koreksi jumlah item pesanan '.$order->order_number, userId: $userId,
+        );
+
+        if ($delta > 0) {
+            $product->increment('sold_count', $delta);
+        } else {
+            $product->decrement('sold_count', min((int) $product->sold_count, -$delta));
+        }
+    }
+
+    /** Koreksi jumlah item pada pesanan yang stoknya masih DITAHAN (belum dibayar). */
+    public function adjustReservation(Order $order, Product $product, ?ProductVariant $variant, int $delta): void
+    {
+        if ($delta === 0) {
+            return;
+        }
+
+        DB::transaction(function () use ($order, $product, $variant, $delta) {
+            $reservation = $order->reservations()->where('status', 'active')
+                ->where('product_id', $product->id)->where('product_variant_id', $variant?->id)
+                ->lockForUpdate()->first();
+            $warehouse = $reservation?->warehouse ?? $this->defaultWarehouse();
+            $row = WarehouseStock::where('id', $this->stockRow($warehouse, $product, $variant)->id)->lockForUpdate()->first();
+
+            if ($delta > 0 && $row->quantity_available < $delta) {
+                throw new RuntimeException("Stok tidak mencukupi untuk {$product->name}.");
+            }
+
+            $row->update([
+                'quantity_available' => $row->quantity_available - $delta,
+                'quantity_reserved' => max(0, $row->quantity_reserved + $delta),
+            ]);
+
+            if ($reservation) {
+                $reservation->update(['quantity' => max(0, $reservation->quantity + $delta)]);
+            } elseif ($delta > 0) {
+                StockReservation::create([
+                    'order_id' => $order->id, 'product_id' => $product->id, 'product_variant_id' => $variant?->id,
+                    'warehouse_id' => $warehouse->id, 'quantity' => $delta, 'status' => 'active', 'expires_at' => now()->addDays(7),
+                ]);
+            }
+
+            $this->syncCache($product, $variant);
+        });
+    }
+
     /** Order cancelled/expired before payment: return reserved stock to sellable. */
     public function releaseForOrder(Order $order): void
     {

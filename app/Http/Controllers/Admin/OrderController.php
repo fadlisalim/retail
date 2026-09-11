@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\ManualOrderService;
 use App\Services\OrderService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -127,8 +128,10 @@ class OrderController extends Controller
         $invoice = $order->invoice;
         abort_unless($invoice, 404);
 
-        if ($order->isInvoiceLocked()) {
-            return back()->withErrors(['invoice' => 'Pesanan sudah '.$order->status->label().' — invoice & kuitansi terkunci dan tidak bisa diedit lagi.']);
+        // Terkunci setelah pesanan tutup — kecuali Super Admin yang memang perlu
+        // mengoreksi salah input (total, stok, dan dokumen ikut dikoreksi).
+        if ($order->isInvoiceLocked() && ! $request->user()->isSuperAdmin()) {
+            return back()->withErrors(['invoice' => 'Pesanan sudah '.$order->status->label().' — invoice & kuitansi terkunci dan tidak bisa diedit lagi (hubungi Super Admin bila perlu koreksi).']);
         }
 
         $data = $request->validate([
@@ -139,8 +142,9 @@ class OrderController extends Controller
             'email' => ['nullable', 'email', 'max:191'],
             'address' => ['nullable', 'string', 'max:500'],
             'npwp' => ['nullable', 'string', 'max:40'],
-            // Baris barang di DOKUMEN — order_items (stok/komisi) tidak disentuh.
+            // Baris item = item PESANAN: mengubahnya mengoreksi total, stok, komisi, dan dokumen sekaligus.
             'items' => ['sometimes', 'array', 'min:1'],
+            'items.*.id' => ['nullable', 'integer'],
             'items.*.name' => ['required_with:items', 'string', 'max:191'],
             'items.*.sku' => ['nullable', 'string', 'max:64'],
             'items.*.quantity' => ['required_with:items', 'integer', 'min:1'],
@@ -159,27 +163,20 @@ class OrderController extends Controller
             ]),
         ];
 
-        if (array_key_exists('items', $data)) {
-            $snapshot = collect($data['items'])->map(fn (array $row) => [
-                'name' => $row['name'],
-                'sku' => $row['sku'] ?? null,
-                'quantity' => (int) $row['quantity'],
-                'unit_price' => round((float) $row['unit_price'], 2),
-                'line_total' => round((int) $row['quantity'] * (float) $row['unit_price'], 2),
-            ])->values()->all();
-
-            // Total dokumen mengikuti baris baru; diskon/ongkir/PPN dokumen tetap.
-            $subtotal = array_sum(array_column($snapshot, 'line_total'));
-            $update['items_snapshot'] = $snapshot;
-            $update['subtotal'] = $subtotal;
-            $update['total'] = max(0, round($subtotal - (float) $invoice->discount + (float) $invoice->shipping + (float) $invoice->tax, 2));
-        }
-
         $invoice->update($update);
-
         $message = 'Data invoice & kuitansi diperbarui.';
-        if (isset($update['total']) && round((float) $update['total']) !== round((float) $order->grand_total)) {
-            $message .= ' Perhatian: total dokumen ('.rupiah((float) $update['total']).') kini berbeda dari total pesanan ('.rupiah((float) $order->grand_total).').';
+
+        if (array_key_exists('items', $data)) {
+            try {
+                $order = $this->orders->correctItems($order, $data['items'], $request->user());
+            } catch (\RuntimeException $e) {
+                if ($e instanceof QueryException || $e instanceof \PDOException) {
+                    throw $e;
+                }
+
+                return back()->withErrors(['items' => $e->getMessage()]);
+            }
+            $message = 'Item pesanan dikoreksi — total pesanan '.rupiah($order->grand_total).', stok, komisi, dan invoice/kuitansi sudah sinkron.';
         }
 
         return back()->with('success', $message);
