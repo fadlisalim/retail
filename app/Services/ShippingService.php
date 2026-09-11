@@ -128,7 +128,9 @@ class ShippingService
             $actual += $unitWeight * $qty;
             $volume += $unitVolume * $qty;
             $packages += (int) $product->package_count * $qty;
-            $maxUnit = max($maxUnit, $unitWeight);
+            // Kolli terberat: paket berisi beberapa kolli, jadi berat unitnya
+            // dibagi jumlah kolli (aturan forklift kargo per kolli > 200 kg).
+            $maxUnit = max($maxUnit, intdiv($unitWeight, max(1, (int) $product->package_count)));
 
             // Only heavy-enough units contribute to the packing charge.
             if ($packingThreshold <= 0 || $unitWeight >= $packingThreshold) {

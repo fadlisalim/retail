@@ -10,8 +10,10 @@ use Illuminate\Console\Command;
  * Audit berat & dimensi katalog — mencari angka yang bakal bikin ongkir
  * salah hitung: berat kosong, dimensi placeholder 20×20×20 dari seeder demo,
  * volumetrik jauh di atas berat aktual (kabel per meter dengan kotak 20 cm =
- * 1,3 kg/meter!), barang ≥ 50 kg yang belum diset kargo, dan aksesoris murah
- * dengan berat tidak wajar. Hanya membaca — perbaikannya lewat Admin → Produk.
+ * 1,3 kg/meter!), barang ≥ 50 kg yang belum diset kargo, aksesoris murah
+ * dengan berat tidak wajar, dan varian "kembar" (isi/harga beda tapi berat
+ * atau dimensinya sama semua). Hanya membaca — perbaikannya lewat Admin →
+ * Produk atau Edit Cepat Produk.
  */
 class AuditProductWeights extends Command
 {
@@ -95,7 +97,58 @@ class AuditProductWeights extends Command
             $issues[] = 'aksesoris murah tapi berat > 200 g — cek timbangan';
         }
 
+        return array_merge($issues, $this->twinVariantIssues($product));
+    }
+
+    /**
+     * Varian "kembar": isinya beda (harga jauh berbeda) tapi berat semua varian
+     * sama, atau beratnya beda jauh tapi dimensinya sama — tanda angka jatuh ke
+     * induk, bukan diisi per varian (kasus Paket Amal: 3 varian 80 kg semua).
+     *
+     * @return list<string>
+     */
+    private function twinVariantIssues(Product $product): array
+    {
+        $variants = $product->variants->where('is_active', true)->values();
+        if ($variants->count() < 2) {
+            return [];
+        }
+
+        $issues = [];
+        $weights = $variants->map(fn (ProductVariant $v) => $v->weightGrams());
+        $prices = $variants->map(fn (ProductVariant $v) => (float) ($v->sale_price ?: $v->price))->filter(fn ($p) => $p > 0);
+        $priceSpread = $prices->count() >= 2 && $prices->min() > 0 ? $prices->max() / $prices->min() : 1.0;
+
+        if ($weights->unique()->count() === 1 && $priceSpread >= 1.15) {
+            $issues[] = sprintf(
+                '%d varian beda harga (%s–%s) tapi beratnya sama semua (%s kg) — isi berat per varian',
+                $variants->count(),
+                $this->short($prices->min()),
+                $this->short($prices->max()),
+                number_format((int) $weights->first() / 1000, 1, ',', '.'),
+            );
+        }
+
+        $dims = $variants->map(fn (ProductVariant $v) => $v->lengthCm().'×'.$v->widthCm().'×'.$v->heightCm());
+        $weightSpread = $weights->min() > 0 ? $weights->max() / $weights->min() : 1.0;
+        if ($dims->unique()->count() === 1 && $variants->first()->volumeCm3() > 0 && $weightSpread >= 1.3) {
+            $issues[] = sprintf(
+                '%d varian beratnya beda (%s–%s kg) tapi dimensinya sama semua (%s) — isi dimensi per varian',
+                $variants->count(),
+                number_format($weights->min() / 1000, 1, ',', '.'),
+                number_format($weights->max() / 1000, 1, ',', '.'),
+                $dims->first(),
+            );
+        }
+
         return $issues;
+    }
+
+    private function short(float $rupiah): string
+    {
+        return $rupiah >= 1_000_000
+            ? rtrim(rtrim(number_format($rupiah / 1_000_000, 1, ',', '.'), '0'), ',').' jt'
+            : number_format($rupiah / 1000, 0, ',', '.').' rb';
     }
 
     /** @return list<string> */

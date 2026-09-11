@@ -17,6 +17,25 @@ use Illuminate\Database\Seeder;
  */
 class PaketAmalSeeder extends Seeder
 {
+    /**
+     * Estimasi berat & volume kargo per varian (bukan satu kolli — dimensi =
+     * kotak setara total volume, alas palet panel 230×115 cm):
+     *  - AMAL 2000: 2 panel ±550 Wp (2×27,5 kg) + baterai 24V 80Ah (±20 kg)
+     *    + inverter 1.200 W (±7 kg) + proteksi (±4 kg) + kabel (±5 kg)
+     *    + mounting 2 panel (±10 kg) ≈ 100 kg, ±0,32 m³.
+     *  - AMAL 4000: 3 panel (82,5 kg) + baterai 160Ah (±38 kg) + inverter
+     *    1.600 W (±9 kg) + proteksi + kabel + mounting 3 panel ≈ 150 kg, ±0,45 m³.
+     *  - AMAL 8000: 6 panel (165 kg) + 2 baterai 160Ah (±76 kg) + inverter
+     *    3.000 W (±14 kg) + proteksi + kabel + mounting 6 panel ≈ 290 kg, ±0,82 m³.
+     * Angkanya satu sumber dengan VarianBeratDimensiSeeder; hanya diisi bila
+     * varian belum punya berat/dimensi sendiri (editan admin tidak ditimpa).
+     */
+    private const VARIANT_SHIPPING = [
+        'PAKET-AMAL-2000' => VarianBeratDimensiSeeder::SHIPPING['PAKET-AMAL-2000'],
+        'PAKET-AMAL-4000' => VarianBeratDimensiSeeder::SHIPPING['PAKET-AMAL-4000'],
+        'PAKET-AMAL-8000' => VarianBeratDimensiSeeder::SHIPPING['PAKET-AMAL-8000'],
+    ];
+
     public function run(): void
     {
         $category = Category::where('slug', 'paket-plts')->first();
@@ -67,7 +86,12 @@ HTML;
                 'price' => 24900000,   // base = cheapest variant ("mulai dari")
                 'sale_price' => null,
                 'unit' => 'paket',
-                'weight_grams' => 80000,
+                // Induk = varian teringan (AMAL 2000); berat/dimensi asli per varian di bawah.
+                'weight_grams' => self::VARIANT_SHIPPING['PAKET-AMAL-2000']['weight'],
+                'length_cm' => self::VARIANT_SHIPPING['PAKET-AMAL-2000']['dims'][0],
+                'width_cm' => self::VARIANT_SHIPPING['PAKET-AMAL-2000']['dims'][1],
+                'height_cm' => self::VARIANT_SHIPPING['PAKET-AMAL-2000']['dims'][2],
+                'package_count' => VarianBeratDimensiSeeder::PACKAGE_COUNT['PAKET-AMAL'], // palet panel, baterai, inverter, proteksi, kabel, mounting
                 'requires_freight' => true,
                 'warranty' => 'Garansi 2 tahun',
                 'is_featured' => true,
@@ -98,6 +122,7 @@ HTML;
                     'sort_order' => $i,
                 ],
             );
+            VarianBeratDimensiSeeder::fillVariant($variant, self::VARIANT_SHIPPING[$v['sku']]);
             $this->setVariantStock($product, $variant, 5);
         }
 
