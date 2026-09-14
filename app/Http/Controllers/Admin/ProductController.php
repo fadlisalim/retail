@@ -7,12 +7,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\Shopee\MassUploadExporter;
 use App\Services\StockService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ProductController extends Controller
 {
@@ -217,6 +219,29 @@ class ProductController extends Controller
         }
 
         return back()->with('success', 'Produk "'.$produk->name.'" diperbarui.');
+    }
+
+    /** Unduh katalog dalam template Mass Upload Shopee (basic). */
+    public function exportShopee(MassUploadExporter $exporter): BinaryFileResponse|RedirectResponse
+    {
+        $path = storage_path('app/shopee-'.now()->format('Ymd-Hi').'.xlsx');
+        $count = $exporter->write($path);
+
+        if ($count === 0) {
+            @unlink($path);
+
+            return back()->with('error', 'Tidak ada produk yang bisa diekspor ke Shopee (butuh produk terbit, dijual online, dan punya foto sampul).');
+        }
+
+        $notes = array_merge(
+            array_map(fn ($s) => 'Dilewati: '.$s, $exporter->skipped),
+            $exporter->warnings,
+        );
+        if ($notes) {
+            session()->flash('warning', 'Ekspor Shopee: '.$count.' baris. Catatan: '.implode(' • ', array_slice($notes, 0, 8)).(count($notes) > 8 ? ' • …dan '.(count($notes) - 8).' lainnya (lihat php artisan shopee:export)' : ''));
+        }
+
+        return response()->download($path, 'shopee-mass-upload-'.now()->format('Ymd').'.xlsx')->deleteFileAfterSend();
     }
 
     /** Ubah status beberapa produk sekaligus dari daftar (pilih lalu terapkan). */

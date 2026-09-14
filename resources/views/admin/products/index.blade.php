@@ -5,6 +5,7 @@
 @section('content')
     <x-admin.page-header title="Produk" subtitle="Katalog produk">
         <x-slot:actions>
+            <a href="{{ route('admin.products.export-shopee') }}" class="btn-outline" title="Unduh file Excel untuk Mass Upload di Shopee Seller Centre">Ekspor Shopee</a>
             <a href="{{ route('admin.products.create') }}" class="btn-primary">Tambah Produk</a>
         </x-slot:actions>
     </x-admin.page-header>

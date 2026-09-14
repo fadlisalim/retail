@@ -273,6 +273,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::middleware('permission:catalog.manage')->group(function () {
         Route::resource('kategori', Admin\CategoryController::class)->names('categories')->except('show');
         Route::resource('brand', Admin\BrandController::class)->names('brands')->except('show');
+        Route::get('produk/ekspor-shopee', [Admin\ProductController::class, 'exportShopee'])->name('products.export-shopee');
         Route::resource('produk', Admin\ProductController::class)->names('products')->except('show');
         Route::put('produk/{produk}/cepat', [Admin\ProductController::class, 'quickUpdate'])->name('products.quick');
         Route::post('produk/status-massal', [Admin\ProductController::class, 'bulkStatus'])->name('products.bulk-status');
