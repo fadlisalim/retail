@@ -7,7 +7,9 @@ use App\Models\User;
 use App\Models\WaMessage;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class WaChatTest extends TestCase
@@ -47,6 +49,18 @@ class WaChatTest extends TestCase
         $this->postJson('/webhook/wablas?token=rahasia', ['phone' => '081234567890', 'message' => 'ok'])->assertOk();
 
         $this->assertSame(1, WaMessage::count());
+    }
+
+    /** Produksi tanpa token webhook = inbox bisa disusupi pesan palsu → ditolak. */
+    public function test_webhook_refuses_to_run_without_a_token_in_production(): void
+    {
+        config(['app.env' => 'production', 'services.wablas.webhook_token' => '']);
+
+        $this->postJson('/webhook/wablas', ['phone' => '081234567890', 'message' => 'palsu'])->assertForbidden();
+        $this->assertSame(0, WaMessage::count());
+
+        // Endpoint tidak lagi punya halaman status GET yang mengumumkan dirinya.
+        $this->get('/webhook/wablas')->assertStatus(405);
     }
 
     public function test_webhook_records_from_me_messages_as_outgoing(): void
@@ -201,14 +215,14 @@ class WaChatTest extends TestCase
 
     public function test_admin_can_send_an_image_attachment(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('public');
+        Storage::fake('public');
         config(['services.wablas.enabled' => true, 'services.wablas.token' => 'tok', 'services.wablas.base_url' => 'https://pati.wablas.com']);
         Http::fake(['pati.wablas.com/*' => Http::response(['status' => true], 200)]);
 
         $this->actingAs($this->admin())->post('/admin/wa-chat/kirim-media', [
             'phone' => '08170188989',
             'caption' => 'Foto unit',
-            'file' => \Illuminate\Http\UploadedFile::fake()->image('unit.jpg'),
+            'file' => UploadedFile::fake()->image('unit.jpg'),
         ])->assertOk()->assertJsonPath('ok', true);
 
         $m = WaMessage::first();
@@ -230,13 +244,13 @@ class WaChatTest extends TestCase
 
     public function test_pdf_attachment_is_sent_as_a_document(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('public');
+        Storage::fake('public');
         config(['services.wablas.enabled' => true, 'services.wablas.token' => 'tok', 'services.wablas.base_url' => 'https://pati.wablas.com']);
         Http::fake(['pati.wablas.com/*' => Http::response(['status' => true], 200)]);
 
         $this->actingAs($this->admin())->post('/admin/wa-chat/kirim-media', [
             'phone' => '08170188989',
-            'file' => \Illuminate\Http\UploadedFile::fake()->create('penawaran.pdf', 120, 'application/pdf'),
+            'file' => UploadedFile::fake()->create('penawaran.pdf', 120, 'application/pdf'),
         ])->assertOk();
 
         $this->assertSame('document', WaMessage::first()->media_type);

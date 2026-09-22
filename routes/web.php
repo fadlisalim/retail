@@ -191,9 +191,8 @@ Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 Route::post('/webhook/pembayaran/{provider}', PaymentWebhookController::class)->name('webhook.payment');
 
 // Wablas incoming-message webhook (CSRF-exempt; shared-token check inside).
+// Hanya POST — tanpa halaman status GET agar endpoint tidak mudah ditemukan.
 Route::post('/webhook/wablas', WablasWebhookController::class)->name('webhook.wablas');
-// Friendly status page when the webhook URL is opened in a browser (Wablas POSTs).
-Route::get('/webhook/wablas', fn () => response('Webhook Wablas aktif ✅ — endpoint ini menerima POST dari server Wablas, bukan akses browser.', 200)->header('Content-Type', 'text/plain; charset=utf-8'));
 
 /*
 |--------------------------------------------------------------------------

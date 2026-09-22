@@ -7,6 +7,7 @@ use App\Services\WhatsAppService;
 use App\Support\WablasMedia;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -23,7 +24,20 @@ class WablasWebhookController extends Controller
     public function __invoke(Request $request, WhatsAppService $wa): Response
     {
         $expected = (string) config('services.wablas.webhook_token');
+
+        // Produksi tanpa WABLAS_WEBHOOK_TOKEN = siapa pun bisa menyuntikkan
+        // "pesan masuk" palsu ke inbox. Tolak, dan ingatkan lewat log.
+        if ($expected === '' && config('app.env') === 'production') {
+            if (Cache::add('wablas_webhook_no_token_warned', 1, 3600)) {
+                Log::warning('Webhook Wablas ditolak: WABLAS_WEBHOOK_TOKEN belum diisi di .env — isi token lalu tambahkan ?token=... di URL webhook Wablas.');
+            }
+
+            return response('', 403);
+        }
+
         if ($expected !== '' && ! hash_equals($expected, (string) ($request->query('token') ?: $request->header('X-Webhook-Token')))) {
+            Log::warning('Webhook Wablas ditolak: token salah', ['ip' => $request->ip()]);
+
             return response('', 403);
         }
 
@@ -95,5 +109,4 @@ class WablasWebhookController extends Controller
         // body here would land in the customer's WhatsApp as garbage.
         return response('', 200);
     }
-
 }
