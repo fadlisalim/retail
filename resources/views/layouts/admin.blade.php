@@ -30,6 +30,7 @@
                 ['admin.warehouses.index', 'Gudang', 'inventory.manage'],
                 ['admin.coupons.index', 'Voucher', 'price.manage'],
                 ['admin.orders.index', 'Pesanan', 'order.view', 'orders'],
+                ['admin.reports.monthly', 'Laporan Pendapatan', 'payment.manage'],
                 ['admin.quotations.index', 'Quotation', 'quotation.manage', 'quotations'],
                 ['admin.reviews.index', 'Review', 'review.moderate', 'reviews'],
                 ['admin.questions.index', 'Tanya Jawab', 'review.moderate', 'questions'],
