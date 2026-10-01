@@ -3,7 +3,10 @@
 @section('title', 'Kuitansi '.$order->order_number)
 
 @section('content')
-    @php($company = app(\App\Services\SettingService::class)->company())
+    {{-- Bentuk BLOK: @php(...) sebaris akan berpasangan dengan @endphp di bawah dan menelan markup. --}}
+    @php
+        $company = app(\App\Services\SettingService::class)->company();
+    @endphp
 
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2 print:hidden">
         <a href="{{ route('admin.orders.show', $order) }}" class="text-sm font-medium text-brand-700 hover:underline">← Kembali ke pesanan</a>

@@ -80,7 +80,9 @@ class InvoiceEditTest extends TestCase
             ->get(route('admin.orders.receipt', $order))
             ->assertOk()
             ->assertSee('PT Maju Energi Nusantara')
-            ->assertSee('u.p. Ibu Sari (Finance)');
+            ->assertSee('u.p. Ibu Sari (Finance)')
+            ->assertDontSee('@if', false)      // Blade harus terkompilasi penuh (bug @php sebaris)
+            ->assertDontSee('{{', false);
     }
 
     /**
