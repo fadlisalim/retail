@@ -9,7 +9,7 @@
         $channelLabels = \App\Models\Order::CHANNELS;
     @endphp
 
-    <x-admin.page-header title="Laporan Pendapatan" subtitle="Rekap bulanan pesanan lunas — dibukukan pada bulan pembayaran">
+    <x-admin.page-header title="Laporan Pendapatan" subtitle="Rekap bulanan pesanan yang diverifikasi lunas Keuangan — dibukukan pada bulan verifikasi">
         <x-slot:actions>
             <form method="GET" class="flex items-center gap-2">
                 <label class="text-sm text-gray-500" for="tahun">Tahun</label>
@@ -116,7 +116,7 @@
             </tfoot>
         </table>
         <p class="px-4 py-3 text-xs text-gray-400">
-            Pendapatan = total pesanan lunas (sudah termasuk ongkir, biaya &amp; PPN, setelah diskon). Penjualan Produk = nilai barang setelah diskon.
+            Pendapatan = pesanan yang <strong>diverifikasi lunas oleh Keuangan</strong> (kuitansi terbit) atau dibayar otomatis lewat payment gateway, dibukukan pada tanggal verifikasi; total sudah termasuk ongkir, biaya &amp; PPN, setelah diskon. Penjualan Produk = nilai barang setelah diskon.
             HPP = qty × harga modal produk/varian <strong>saat ini</strong> (bukan modal saat transaksi), jadi laba kotor adalah estimasi. Komisi afiliasi belum dikurangkan dari laba kotor.
         </p>
     </div>

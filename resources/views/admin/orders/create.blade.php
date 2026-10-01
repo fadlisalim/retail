@@ -189,11 +189,16 @@
                     <p class="mt-1 text-xs text-gray-400">Pesanan WA/offline tidak membawa cookie referral — pilih afiliatornya di sini agar komisinya tetap tercatat (masuk saat dibayar, cair saat pesanan Selesai).</p>
                 </div>
                 <div class="sm:col-span-2 space-y-2 border-t border-gray-100 pt-3">
+                    @can('payment.manage')
                     <label class="flex items-center gap-2 text-sm text-gray-700">
                         <input type="hidden" name="mark_paid" value="0">
                         <input type="checkbox" name="mark_paid" value="1" x-model="markPaid" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
                         <span>Sudah dibayar (langsung terbit kuitansi &amp; stok terpotong)</span>
                     </label>
+                    @else
+                    <p class="text-xs text-gray-500">Pesanan tersimpan sebagai <strong>belum dibayar</strong>. Setelah uang diterima, Keuangan yang menandai lunas ("Verifikasi Lunas" di halaman pesanan) — kuitansi terbit dan masuk laporan pendapatan.</p>
+                    @endcan
+                    @error('mark_paid')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
                     <div x-show="markPaid" x-cloak class="grid gap-4 pl-6 sm:grid-cols-2">
                         <x-form.input name="paid_at" label="Tanggal Bayar" type="date" :value="old('paid_at', now()->toDateString())" />
                         <div class="flex items-end pb-2">

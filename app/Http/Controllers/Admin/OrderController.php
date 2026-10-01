@@ -97,6 +97,13 @@ class OrderController extends Controller
             }
         }
 
+        // Menandai lunas = kuitansi terbit = masuk laporan pendapatan: hanya Keuangan.
+        if ($request->boolean('mark_paid') && ! $request->user()->can('payment.manage')) {
+            return back()->withInput()->withErrors([
+                'mark_paid' => 'Hanya Keuangan yang bisa menandai pesanan sudah dibayar. Simpan sebagai belum dibayar, lalu minta Keuangan klik "Verifikasi Lunas" di halaman pesanan.',
+            ]);
+        }
+
         try {
             $order = $this->manualOrders->create($data, $data['items'], $request->user());
         } catch (\RuntimeException $e) {

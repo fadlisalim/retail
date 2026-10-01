@@ -55,7 +55,15 @@ class OrderService
         // "Pembayaran Diverifikasi" pada pesanan belum lunas = maksud admin
         // jelas: uang sudah diterima → jalankan pelunasan sungguhan (status
         // bayar, paid_at, stok terjual, komisi afiliator ikut tercatat).
+        // Hanya KEUANGAN (payment.manage) yang boleh — pelunasan = kuitansi
+        // terbit = masuk laporan pendapatan. Sales cukup "Menunggu Verifikasi".
         if ($unpaid && $status === OrderStatus::PaymentVerified) {
+            if ($actor && ! $actor->can('payment.manage')) {
+                throw ValidationException::withMessages([
+                    'status' => 'Hanya Keuangan yang bisa memverifikasi pembayaran (menerbitkan kuitansi). Set "Menunggu Verifikasi Pembayaran", lalu minta Keuangan klik "Verifikasi Lunas".',
+                ]);
+            }
+
             $this->markPaid($order, $actor);
 
             return $order->refresh(); // markPaid sudah menulis status + riwayatnya

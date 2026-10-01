@@ -326,11 +326,17 @@
                         @csrf
                         <div>
                             <label for="status" class="input-label">Status Baru</label>
+                            @php $unpaidOrder = in_array($order->payment_status->value, ['unpaid', 'awaiting_verification'], true); @endphp
                             <select name="status" id="status" class="form-select">
                                 @foreach (\App\Enums\OrderStatus::options() as $opt)
-                                    <option value="{{ $opt['value'] }}" @selected($order->status->value === $opt['value'])>{{ $opt['label'] }}</option>
+                                    @php $financeOnly = $unpaidOrder && $opt['value'] === 'payment_verified' && ! auth()->user()->can('payment.manage'); @endphp
+                                    <option value="{{ $opt['value'] }}" @selected($order->status->value === $opt['value']) @disabled($financeOnly)>{{ $opt['label'] }}{{ $financeOnly ? ' (hanya Keuangan)' : '' }}</option>
                                 @endforeach
                             </select>
+                            @error('status')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            @if ($unpaidOrder && ! auth()->user()->can('payment.manage'))
+                                <p class="mt-1 text-xs text-gray-400">Pelunasan ditandai oleh Keuangan lewat "Verifikasi Lunas" (kuitansi terbit, masuk laporan pendapatan).</p>
+                            @endif
                         </div>
                         <div>
                             <label for="internal_note" class="input-label">Catatan Internal</label>
@@ -379,10 +385,10 @@
                 @unless ($order->payment_status->value === 'paid')
                     <div class="card p-5">
                         <h2 class="mb-2 font-semibold text-gray-900">Verifikasi Pembayaran</h2>
-                        <p class="mb-3 text-xs text-gray-500">Tandai pembayaran sebagai lunas dan komit stok.</p>
-                        <form method="POST" action="{{ route('admin.orders.verify', $order) }}" onsubmit="return confirm('Verifikasi pembayaran pesanan ini sebagai lunas?')">
+                        <p class="mb-3 text-xs text-gray-500">Tandai lunas setelah uang benar-benar diterima: kuitansi terbit, stok terjual, komisi afiliator tercatat, dan pesanan masuk laporan pendapatan.</p>
+                        <form method="POST" action="{{ route('admin.orders.verify', $order) }}" onsubmit="return confirm('Verifikasi pembayaran pesanan ini sebagai lunas dan terbitkan kuitansi?')">
                             @csrf
-                            <button type="submit" class="btn-primary w-full">Verifikasi Lunas</button>
+                            <button type="submit" class="btn-primary w-full">Verifikasi Lunas &amp; Terbitkan Kuitansi</button>
                         </form>
                     </div>
                 @endunless
