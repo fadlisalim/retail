@@ -27,7 +27,7 @@
     <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
         <x-admin.stat-card label="Pendapatan {{ $year }}" :value="rupiah($total['pendapatan'])" color="green" :sub="$total['pesanan'].' pesanan lunas'" />
         <x-admin.stat-card label="Penjualan Produk" :value="rupiah($total['penjualan'])" color="brand" sub="Nilai barang setelah diskon" />
-        <x-admin.stat-card label="Laba Kotor (estimasi)" :value="rupiah($total['laba_kotor'])" color="blue" :sub="'Margin '.$fmtPct($total['margin']).' dari modal saat ini'" />
+        <x-admin.stat-card label="Laba Kotor (estimasi)" :value="rupiah($total['laba_kotor'])" color="blue" :sub="$total['item_tanpa_modal'] > 0 ? 'HPP belum lengkap — '.$total['item_tanpa_modal'].' item tanpa modal' : 'Margin '.$fmtPct($total['margin']).' dari modal saat ini'" />
         <x-admin.stat-card label="Ongkir & Biaya" :value="rupiah($total['ongkir_biaya'])" color="amber" :sub="'PPN '.rupiah($total['ppn'])" />
         <x-admin.stat-card label="Komisi Afiliasi" :value="rupiah($total['komisi'])" color="red" :sub="'Rata-rata '.rupiah($total['rata_rata']).' / pesanan'" />
     </div>
@@ -47,7 +47,7 @@
         <div class="flex h-48 items-end gap-2">
             @foreach ($months as $m => $row)
                 @php $pct = (int) round(($row['pendapatan'] / $maxRevenue) * 100); @endphp
-                <a href="{{ route('admin.reports.monthly', ['tahun' => $year, 'bulan' => $m]) }}#rincian" class="group flex flex-1 flex-col items-center justify-end" title="{{ $row['label'] }}: {{ rupiah($row['pendapatan']) }} ({{ $row['pesanan'] }} pesanan)">
+                <a href="{{ route('admin.reports.monthly', ['tahun' => $year, 'bulan' => $m]) }}#rincian" class="group flex h-full flex-1 flex-col items-center justify-end" title="{{ $row['label'] }}: {{ rupiah($row['pendapatan']) }} ({{ $row['pesanan'] }} pesanan)">
                     <div class="relative w-full rounded-t {{ $m === $month ? 'bg-accent-500' : 'bg-brand-500/80' }} transition group-hover:bg-brand-600" style="height: {{ max($pct, 2) }}%">
                         <span class="pointer-events-none absolute -top-6 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-1.5 py-0.5 text-[10px] text-white group-hover:block">{{ rupiah($row['pendapatan']) }}</span>
                     </div>
@@ -85,10 +85,15 @@
                         <td class="px-4 py-2 text-right">{{ rupiah($row['penjualan']) }}</td>
                         <td class="px-4 py-2 text-right">{{ rupiah($row['ongkir_biaya']) }}</td>
                         <td class="px-4 py-2 text-right">{{ rupiah($row['ppn']) }}</td>
-                        <td class="px-4 py-2 text-right">{{ rupiah($row['hpp']) }}</td>
+                        <td class="px-4 py-2 text-right">
+                            {{ rupiah($row['hpp']) }}
+                            @if ($row['item_tanpa_modal'] > 0)
+                                <span class="block text-xs text-amber-600" title="{{ $row['item_tanpa_modal'] }} baris item produknya belum punya harga modal — HPP belum lengkap">⚠ {{ $row['item_tanpa_modal'] }} item tanpa modal</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-2 text-right {{ $row['laba_kotor'] < 0 ? 'text-red-600' : '' }}">
                             {{ rupiah($row['laba_kotor']) }}
-                            @if ($row['penjualan'] > 0)<span class="ml-1 text-xs text-gray-400">{{ $fmtPct($row['margin']) }}</span>@endif
+                            @if ($row['penjualan'] > 0 && $row['item_tanpa_modal'] === 0)<span class="ml-1 text-xs text-gray-400">{{ $fmtPct($row['margin']) }}</span>@endif
                         </td>
                         <td class="px-4 py-2 text-right">{{ rupiah($row['komisi']) }}</td>
                         <td class="px-4 py-2 text-center text-xs">{{ $row['dibatalkan'] }} / {{ $row['belum_bayar'] }}</td>
@@ -104,7 +109,7 @@
                     <td class="px-4 py-3 text-right">{{ rupiah($total['ongkir_biaya']) }}</td>
                     <td class="px-4 py-3 text-right">{{ rupiah($total['ppn']) }}</td>
                     <td class="px-4 py-3 text-right">{{ rupiah($total['hpp']) }}</td>
-                    <td class="px-4 py-3 text-right">{{ rupiah($total['laba_kotor']) }} <span class="text-xs font-normal text-gray-400">{{ $fmtPct($total['margin']) }}</span></td>
+                    <td class="px-4 py-3 text-right">{{ rupiah($total['laba_kotor']) }} @if ($total['item_tanpa_modal'] === 0)<span class="text-xs font-normal text-gray-400">{{ $fmtPct($total['margin']) }}</span>@endif</td>
                     <td class="px-4 py-3 text-right">{{ rupiah($total['komisi']) }}</td>
                     <td class="px-4 py-3 text-center text-xs">{{ $total['dibatalkan'] }} / {{ $total['belum_bayar'] }}</td>
                 </tr>
