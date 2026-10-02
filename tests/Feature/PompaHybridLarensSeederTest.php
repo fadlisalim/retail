@@ -44,7 +44,12 @@ class PompaHybridLarensSeederTest extends TestCase
         $this->assertSame(34000, $v2200->weightGrams());
         $this->assertSame(2, (int) $v2200->fresh()->stock);
 
-        $this->get(route('products.show', $p->slug))->assertOk()->assertSee('4PSS3.5/260-280/2200-H')->assertSee('Hybrid');
+        $this->get(route('products.show', $p->slug))->assertOk()->assertSee('4PSS3.5/260-280/2200-H')->assertSee('Hybrid')->assertSee('Dokumen (1)');
+
+        // Brosur gambar dibungkus jadi PDF di tab Dokumen.
+        $doc = $p->documents()->firstOrFail();
+        Storage::disk('public')->assertExists($doc->path);
+        $this->assertStringStartsWith('%PDF', Storage::disk('public')->get($doc->path));
 
         // Idempotent: harga editan admin tidak ditimpa, varian hilang dilengkapi.
         $v750->update(['price' => 18_500_000]);
@@ -53,5 +58,6 @@ class PompaHybridLarensSeederTest extends TestCase
         $this->assertEquals(18_500_000, $v750->fresh()->price);
         $this->assertSame(10, $p->variants()->count());
         $this->assertSame(1, Product::where('sku', 'LARENS-PSS-HYBRID')->count());
+        $this->assertSame(1, $p->documents()->count()); // brosur tidak digandakan
     }
 }

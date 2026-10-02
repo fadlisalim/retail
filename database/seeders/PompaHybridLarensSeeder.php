@@ -10,6 +10,7 @@ use App\Models\ProductVariant;
 use App\Models\WarehouseStock;
 use App\Services\StockService;
 use App\Services\WatermarkService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
 
@@ -105,6 +106,7 @@ HTML,
             $product->categories()->sync(array_values(array_filter([$product->category_id, $parent?->id])));
             $this->attachImage($product, 'larens-4pss-tabel.jpg');
         }
+        $this->attachBrochure($product, 'Brosur LARENS 4PSS/6PSS Hybrid — Tabel Model (PDF)', 'larens-4pss-tabel.jpg');
 
         $created = 0;
         foreach (self::MODELS as $i => [$model, $w, $flow, $head, $outlet, $voc, $inch]) {
@@ -130,6 +132,23 @@ HTML,
 
         $this->command?->info('Pompa Hybrid LARENS: produk '.($existing ? 'sudah ada' : 'ditambahkan').", {$created} varian baru (750 W Rp 17.940.000 · 2200 W Rp 21.950.000; modal 13,45 / 16,458 jt).");
         $this->command?->warn('Berat/dimensi estimasi; stok awal 2/varian placeholder. Foto = tabel brosur — ganti foto pompa asli lewat Admin bila ada.');
+    }
+
+    /** Brosur dari pabrikan berupa gambar → dibungkus jadi PDF (dompdf) agar tampil di tab Dokumen seperti brosur lain. */
+    private function attachBrochure(Product $product, string $title, string $imageFile): void
+    {
+        $src = __DIR__.'/assets/pju/'.$imageFile;
+        if (! is_file($src) || $product->documents()->where('title', $title)->exists()) {
+            return;
+        }
+
+        $stored = 'products/docs/pju-larens-4pss-hybrid.pdf';
+        if (! Storage::disk('public')->exists($stored)) {
+            $data = 'data:image/jpeg;base64,'.base64_encode((string) file_get_contents($src));
+            $html = '<html><body style="margin:0"><img src="'.$data.'" style="width:100%"></body></html>';
+            Storage::disk('public')->put($stored, Pdf::loadHTML($html)->setPaper('a4', 'portrait')->output());
+        }
+        $product->documents()->create(['type' => 'brosur', 'title' => $title, 'path' => $stored]);
     }
 
     private function attachImage(Product $product, string $file): void
