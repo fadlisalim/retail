@@ -32,7 +32,7 @@ class SeraphimClearanceSeederTest extends TestCase
         $p = Product::where('sku', SeraphimClearanceSeeder::SKU)->firstOrFail();
         $this->assertEquals(850_000, $p->price);
         $this->assertEquals(450_000, $p->cost_price);
-        $this->assertSame('new_project_surplus', $p->condition);
+        $this->assertSame('used', $p->condition); // bekas proyek, fungsi normal
         $this->assertTrue((bool) $p->is_clearance);
         $this->assertTrue((bool) $p->requires_freight);
         $this->assertSame(23000, (int) $p->weight_grams);
@@ -58,8 +58,8 @@ class SeraphimClearanceSeederTest extends TestCase
 
         // Tampil di halaman produk & halaman clearance dengan label kondisi.
         $this->get(route('products.show', $p->slug))->assertOk()
-            ->assertSee('SRP-345-6MA-DG')->assertSee('Baru - Sisa Proyek')->assertSee('Rp 850.000')->assertSee('JAMINAN TERMURAH')->assertSee('Dokumen (1)')
-            ->assertDontSee('marketplace');
+            ->assertSee('SRP-345-6MA-DG')->assertSee('Bekas Pakai')->assertSee('kotoran / bekas pemakaian minor', false)->assertSee('Rp 850.000')->assertSee('JAMINAN TERMURAH')->assertSee('Dokumen (1)')
+            ->assertDontSee('marketplace')->assertDontSee('Sisa Proyek');
         $this->get('/barang-clearance')->assertOk()->assertSee('Seraphim 345Wp');
 
         // Idempotent: editan admin (harga, stok) tidak ditimpa, dokumen tidak digandakan.
@@ -71,26 +71,40 @@ class SeraphimClearanceSeederTest extends TestCase
         $this->assertSame(100, (int) $p->fresh()->stock);
     }
 
-    /** Produk dari versi awal seeder (ada kalimat pembanding harga marketplace) → teks diganti "JAMINAN TERMURAH". */
-    public function test_rerun_replaces_marketplace_comparison_with_jaminan_termurah(): void
+    /** Produk dari versi awal seeder ("Baru - Sisa Proyek", pembanding marketplace) → kondisi Bekas Pakai + teks baru; harga admin tetap. */
+    public function test_rerun_fixes_condition_from_new_surplus_to_used_with_minor_dirt(): void
     {
         Storage::fake('public');
         $this->defaultWarehouse();
         $this->seed(SeraphimClearanceSeeder::class);
         $p = Product::where('sku', SeraphimClearanceSeeder::SKU)->firstOrFail();
         $p->forceFill([
-            'description' => '<p>Dijual <strong>clearance Rp 850.000/panel</strong> — bandingkan dengan panel 350Wp baru di marketplace yang umumnya Rp 1,6–1,9 juta. Garansi toko 3 tahun.</p>',
-            'short_description' => 'Harga clearance Rp 850.000 — jauh di bawah harga pasar panel 350Wp.',
+            'condition' => 'new_project_surplus',
+            'name' => 'Panel Surya Seraphim 345Wp Mono Double Glass SRP-345-6MA-DG (Sisa Proyek)',
+            'description' => '<p>Kondisi: BARU, sisa proyek PLTS. Dijual <strong>clearance Rp 850.000/panel</strong> — bandingkan dengan panel 350Wp baru di marketplace yang umumnya Rp 1,6–1,9 juta.</p>',
+            'short_description' => 'kondisi BARU sisa proyek. Harga clearance Rp 850.000 — jauh di bawah harga pasar panel 350Wp.',
             'badge_text' => 'Clearance',
+            'price' => 820_000,
         ])->save();
+        $p->conditionDetail->update(['defect_notes' => 'Tidak ada cacat fungsi.', 'available_quantity' => 97]);
 
         $this->seed(SeraphimClearanceSeeder::class);
 
         $p->refresh();
-        $this->assertSame('<p>Dijual <strong>clearance Rp 850.000/panel — JAMINAN TERMURAH</strong>. Garansi toko 3 tahun.</p>', $p->description);
-        $this->assertStringContainsString('JAMINAN TERMURAH', $p->short_description);
-        $this->assertStringNotContainsString('marketplace', $p->short_description);
+        $this->assertSame('used', $p->condition);
+        $this->assertStringContainsString('(Bekas Proyek)', $p->name);
+        $this->assertStringContainsString('kotoran / bekas pemakaian minor', $p->description);
+        $this->assertStringNotContainsString('marketplace', $p->description);
+        $this->assertStringNotContainsString('BARU', $p->short_description);
         $this->assertSame('Jaminan Termurah', $p->badge_text);
+        $this->assertEquals(820_000, $p->price); // harga editan admin tidak disentuh
+        $this->assertStringContainsString('Kotoran / bekas pemakaian minor', $p->conditionDetail->defect_notes);
+        $this->assertSame(97, (int) $p->conditionDetail->available_quantity); // jumlah tersedia dipertahankan
+
+        // Sudah 'used' → jalan lagi tidak mengubah apa pun (editan admin aman).
+        $p->update(['description' => '<p>Edit admin.</p>']);
+        $this->seed(SeraphimClearanceSeeder::class);
+        $this->assertSame('<p>Edit admin.</p>', $p->fresh()->description);
     }
 
     /** Versi awal seeder mengisi stok placeholder 10 → dinaikkan ke 100; tidak disentuh bila sudah ada mutasi lain. */
