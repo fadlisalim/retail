@@ -22,17 +22,24 @@ use Illuminate\Support\Str;
  * All-in-One = panel+baterai+lampu satu unit; Two-in-One = lampu + panel surya
  * terpisah (dijual sepaket).
  *
- * Harga = daftar harga jual (Okt 2026). Harga modal belum diketahui → kosong
- * (isi di Edit Cepat Produk). Berat/dimensi dari brosur; yang tidak ada di
- * brosur = estimasi (ditandai di komentar). Idempotent: produk yang sudah
- * ada tidak ditimpa (editan admin aman); varian baru dilengkapi; foto dari
- * database/seeders/assets/pju hanya dipasang saat produk pertama dibuat;
- * brosur PDF dilampirkan bila filenya ada di storage/app/pju-brosur/ atau
- * database/seeders/assets/pju/ (PDF besar tidak ikut repo).
+ * Angka di daftar harga (Okt 2026) = HARGA MODAL. Harga jual = modal ÷ 0,75
+ * (profit 25% dari harga jual), dibulatkan ke ATAS ke kelipatan 10.000.
+ * Berat/dimensi dari brosur; yang tidak ada di brosur = estimasi (ditandai di
+ * komentar). Idempotent: produk yang sudah ada tidak ditimpa (editan admin
+ * aman) — kecuali baris yang masih memakai angka modal sebagai harga jual
+ * (versi awal seeder) yang dikoreksi ke modal + harga jual; varian baru
+ * dilengkapi; foto dari database/seeders/assets/pju hanya dipasang saat produk
+ * pertama dibuat; brosur PDF dari folder yang sama dilampirkan ke tab Dokumen.
  */
 class PjuTenagaSuryaSeeder extends Seeder
 {
     private const ASSETS = __DIR__.'/assets/pju';
+
+    /** Profit 25% dari harga jual → harga jual = modal ÷ 0,75, bulat ke atas kelipatan 10.000. */
+    public static function sellingPrice(int $cost): int
+    {
+        return (int) (ceil($cost / 0.75 / 10000) * 10000);
+    }
 
     private StockService $stock;
 
@@ -47,6 +54,8 @@ class PjuTenagaSuryaSeeder extends Seeder
     private int $skipped = 0;
 
     private array $brosurMissing = [];
+
+    private int $repriced = 0;
 
     public function run(): void
     {
@@ -72,12 +81,12 @@ class PjuTenagaSuryaSeeder extends Seeder
             $this->seedProduct($row);
         }
 
-        $this->command?->info("PJU Tenaga Surya: {$this->created} produk ditambahkan, {$this->skipped} sudah ada (dilewati).");
+        $this->command?->info("PJU Tenaga Surya: {$this->created} produk ditambahkan, {$this->skipped} sudah ada (dilewati), {$this->repriced} baris harga dikoreksi (modal → jual ÷ 0,75).");
         if ($this->brosurMissing) {
             $this->command?->warn('Brosur PDF belum terpasang untuk: '.implode(', ', array_unique($this->brosurMissing)));
             $this->command?->line('Taruh file PDF brosur di storage/app/pju-brosur/ (nama sesuai di atas), lalu jalankan seeder ini lagi — atau upload lewat Admin → Produk → Edit → Dokumen.');
         }
-        $this->command?->warn('Harga modal PJU belum diisi (Edit Cepat Produk → "Tanpa modal"). Stok awal 5/varian = placeholder.');
+        $this->command?->warn('Harga jual = modal ÷ 0,75 (profit 25%), bulat ke atas 10.000. Stok awal 5/varian = placeholder.');
     }
 
     /** @param array<string, mixed> $row */
@@ -99,9 +108,9 @@ class PjuTenagaSuryaSeeder extends Seeder
             'short_description' => $row['short'],
             'description' => $row['description'],
             'specifications' => $row['specifications'],
-            'price' => $first['price'] ?? $row['price'],
+            'price' => self::sellingPrice($first['cost'] ?? $row['cost']),
             'sale_price' => null,
-            'cost_price' => null,
+            'cost_price' => $first['cost'] ?? $row['cost'],
             'unit' => 'unit',
             'weight_grams' => $first['weight'] ?? $row['weight'],
             'length_cm' => ($first['dims'] ?? $row['dims'])[0],
@@ -122,6 +131,13 @@ class PjuTenagaSuryaSeeder extends Seeder
 
         if ($existing) {
             $this->skipped++;
+            // Versi awal seeder memakai angka modal sebagai harga jual — koreksi
+            // hanya baris yang masih persis seperti itu (editan admin dibiarkan).
+            $cost = $first['cost'] ?? $row['cost'];
+            if ($product->cost_price === null && (int) $product->price === $cost) {
+                $product->forceFill(['cost_price' => $cost, 'price' => self::sellingPrice($cost)])->save();
+                $this->repriced++;
+            }
         } else {
             $this->created++;
             $product->categories()->sync(array_values(array_filter([$product->category_id, $this->categories['parent']?->id])));
@@ -134,20 +150,25 @@ class PjuTenagaSuryaSeeder extends Seeder
         }
 
         foreach ($variants as $i => $v) {
-            $variant = ProductVariant::updateOrCreate(
+            $variant = ProductVariant::firstOrCreate(
                 ['sku' => $v['sku']],
                 [
                     'product_id' => $product->id,
                     'name' => $v['name'],
                     'option_values' => [$row['option'] => $v['name']],
-                    'price' => $v['price'],
+                    'price' => self::sellingPrice($v['cost']),
                     'sale_price' => null,
+                    'cost_price' => $v['cost'],
                     'weight_grams' => $v['weight'],
                     'length_cm' => $v['dims'][0], 'width_cm' => $v['dims'][1], 'height_cm' => $v['dims'][2],
                     'is_active' => true,
                     'sort_order' => $i,
                 ],
             );
+            if (! $variant->wasRecentlyCreated && $variant->cost_price === null && (int) $variant->price === $v['cost']) {
+                $variant->forceFill(['cost_price' => $v['cost'], 'price' => self::sellingPrice($v['cost'])])->save();
+                $this->repriced++;
+            }
             if ($variant->wasRecentlyCreated) {
                 if ($v['image'] ?? $row['image'] ?? null) {
                     $this->attachImage($product, $variant, $v['image'] ?? $row['image']);
@@ -201,7 +222,7 @@ class PjuTenagaSuryaSeeder extends Seeder
             return;
         }
 
-        $src = collect([storage_path('app/pju-brosur/'.$file), self::ASSETS.'/'.$file])->first(fn ($p) => is_file($p));
+        $src = collect([self::ASSETS.'/'.$file, storage_path('app/pju-brosur/'.$file)])->first(fn ($p) => is_file($p));
         if (! $src) {
             $this->brosurMissing[] = $file;
 
@@ -267,9 +288,9 @@ HTML
 </tbody></table>
 HTML,
                 'variants' => [
-                    ['sku' => 'ICOM-IC-AIOM60', 'name' => '60W', 'price' => 1300000, 'weight' => 10500, 'dims' => [102, 41, 18], 'image' => 'ic-aiom60.jpg'],
-                    ['sku' => 'ICOM-IC-AIOM80', 'name' => '80W', 'price' => 1650000, 'weight' => 14000, 'dims' => [114, 41, 18], 'image' => 'ic-aiom80.jpg'],
-                    ['sku' => 'ICOM-IC-AIOM100', 'name' => '100W', 'price' => 1815000, 'weight' => 21300, 'dims' => [136, 41, 18], 'image' => 'ic-aiom100.jpg'],
+                    ['sku' => 'ICOM-IC-AIOM60', 'name' => '60W', 'cost' => 1300000, 'weight' => 10500, 'dims' => [102, 41, 18], 'image' => 'ic-aiom60.jpg'],
+                    ['sku' => 'ICOM-IC-AIOM80', 'name' => '80W', 'cost' => 1650000, 'weight' => 14000, 'dims' => [114, 41, 18], 'image' => 'ic-aiom80.jpg'],
+                    ['sku' => 'ICOM-IC-AIOM100', 'name' => '100W', 'cost' => 1815000, 'weight' => 21300, 'dims' => [136, 41, 18], 'image' => 'ic-aiom100.jpg'],
                 ],
             ],
 
@@ -302,9 +323,9 @@ HTML
 </tbody></table>
 HTML,
                 'variants' => [
-                    ['sku' => 'ICOM-AIO-60-6V', 'name' => '60W 6V · 4 Strip', 'price' => 2850000, 'weight' => 12000, 'dims' => [105, 40, 18]],  // estimasi
-                    ['sku' => 'ICOM-AIO-80-6V', 'name' => '80W 6V · 5 Strip', 'price' => 3550000, 'weight' => 14000, 'dims' => [115, 40, 18]],  // estimasi
-                    ['sku' => 'ICOM-AIO-80-12V', 'name' => '80W 12,8V · 4 Strip', 'price' => 4228000, 'weight' => 16000, 'dims' => [115, 40, 18]], // estimasi
+                    ['sku' => 'ICOM-AIO-60-6V', 'name' => '60W 6V · 4 Strip', 'cost' => 2850000, 'weight' => 12000, 'dims' => [105, 40, 18]],  // estimasi
+                    ['sku' => 'ICOM-AIO-80-6V', 'name' => '80W 6V · 5 Strip', 'cost' => 3550000, 'weight' => 14000, 'dims' => [115, 40, 18]],  // estimasi
+                    ['sku' => 'ICOM-AIO-80-12V', 'name' => '80W 12,8V · 4 Strip', 'cost' => 4228000, 'weight' => 16000, 'dims' => [115, 40, 18]], // estimasi
                 ],
             ],
 
@@ -343,10 +364,10 @@ HTML
 </tbody></table>
 HTML,
                 'variants' => [
-                    ['sku' => 'ICOM-IC-TEEN90', 'name' => '90W', 'price' => 2098000, 'weight' => 10700, 'dims' => [87, 37, 10], 'image' => 'ic-teen90.jpg'],
-                    ['sku' => 'ICOM-IC-TEEN120', 'name' => '120W', 'price' => 2455000, 'weight' => 11800, 'dims' => [107.3, 37, 10], 'image' => 'ic-teen120.jpg'],
-                    ['sku' => 'ICOM-IC-TEEN150', 'name' => '150W', 'price' => 2740000, 'weight' => 12800, 'dims' => [119.2, 37, 10], 'image' => 'ic-teen150.jpg'],
-                    ['sku' => 'ICOM-IC-TEEN180', 'name' => '180W', 'price' => 3070000, 'weight' => 14100, 'dims' => [141.7, 37, 10], 'image' => 'ic-teen180.jpg'],
+                    ['sku' => 'ICOM-IC-TEEN90', 'name' => '90W', 'cost' => 2098000, 'weight' => 10700, 'dims' => [87, 37, 10], 'image' => 'ic-teen90.jpg'],
+                    ['sku' => 'ICOM-IC-TEEN120', 'name' => '120W', 'cost' => 2455000, 'weight' => 11800, 'dims' => [107.3, 37, 10], 'image' => 'ic-teen120.jpg'],
+                    ['sku' => 'ICOM-IC-TEEN150', 'name' => '150W', 'cost' => 2740000, 'weight' => 12800, 'dims' => [119.2, 37, 10], 'image' => 'ic-teen150.jpg'],
+                    ['sku' => 'ICOM-IC-TEEN180', 'name' => '180W', 'cost' => 3070000, 'weight' => 14100, 'dims' => [141.7, 37, 10], 'image' => 'ic-teen180.jpg'],
                 ],
             ],
 
@@ -386,9 +407,9 @@ HTML
 </tbody></table>
 HTML,
                 'variants' => [
-                    ['sku' => 'SOLARI-SL-MW80', 'name' => '80W', 'price' => 1990000, 'weight' => 16000, 'dims' => [105, 38, 16], 'image' => 'sl-mw80.jpg'],   // dus estimasi dari ukuran produk
-                    ['sku' => 'SOLARI-SL-MW100', 'name' => '100W', 'price' => 2210000, 'weight' => 16700, 'dims' => [119, 38, 16], 'image' => 'sl-mw100.jpg'],
-                    ['sku' => 'SOLARI-SL-MW120', 'name' => '120W', 'price' => 2535000, 'weight' => 17800, 'dims' => [138, 38, 16], 'image' => 'sl-mw120.jpg'],
+                    ['sku' => 'SOLARI-SL-MW80', 'name' => '80W', 'cost' => 1990000, 'weight' => 16000, 'dims' => [105, 38, 16], 'image' => 'sl-mw80.jpg'],   // dus estimasi dari ukuran produk
+                    ['sku' => 'SOLARI-SL-MW100', 'name' => '100W', 'cost' => 2210000, 'weight' => 16700, 'dims' => [119, 38, 16], 'image' => 'sl-mw100.jpg'],
+                    ['sku' => 'SOLARI-SL-MW120', 'name' => '120W', 'cost' => 2535000, 'weight' => 17800, 'dims' => [138, 38, 16], 'image' => 'sl-mw120.jpg'],
                 ],
                 'brosur' => ['Brosur SOLARI SL-MW80 (PDF)' => 'sl-mw80.pdf', 'Brosur SOLARI SL-MW100 (PDF)' => 'sl-mw100.pdf', 'Brosur SOLARI SL-MW120 (PDF)' => 'sl-mw120.pdf'],
             ],
@@ -428,9 +449,9 @@ HTML
 </tbody></table>
 HTML,
                 'variants' => [
-                    ['sku' => 'LEIND-LI-RON85', 'name' => '85W', 'price' => 2285000, 'weight' => 10500, 'dims' => [104, 38, 15.5]],
-                    ['sku' => 'LEIND-LI-RON110', 'name' => '110W', 'price' => 2440000, 'weight' => 12000, 'dims' => [114, 38, 15.5]],
-                    ['sku' => 'LEIND-LI-RON128', 'name' => '128W', 'price' => 2820000, 'weight' => 14000, 'dims' => [135, 38, 15.5]],
+                    ['sku' => 'LEIND-LI-RON85', 'name' => '85W', 'cost' => 2285000, 'weight' => 10500, 'dims' => [104, 38, 15.5]],
+                    ['sku' => 'LEIND-LI-RON110', 'name' => '110W', 'cost' => 2440000, 'weight' => 12000, 'dims' => [114, 38, 15.5]],
+                    ['sku' => 'LEIND-LI-RON128', 'name' => '128W', 'cost' => 2820000, 'weight' => 14000, 'dims' => [135, 38, 15.5]],
                 ],
                 'image' => 'li-ron.jpg',
                 'brosur' => ['Brosur LEIND LI-RON (PDF)' => 'li-ron.pdf'],
@@ -467,9 +488,9 @@ HTML
 </tbody></table>
 HTML,
                 'variants' => [
-                    ['sku' => 'LEIND-LI-ZLW100', 'name' => '100W', 'price' => 950000, 'weight' => 4000, 'dims' => [62, 22, 10]],   // estimasi
-                    ['sku' => 'LEIND-LI-ZLW180', 'name' => '180W', 'price' => 1280000, 'weight' => 5000, 'dims' => [78, 22, 10]],  // estimasi
-                    ['sku' => 'LEIND-LI-ZLW240', 'name' => '240W', 'price' => 1750000, 'weight' => 6500, 'dims' => [95, 22, 10]],  // estimasi
+                    ['sku' => 'LEIND-LI-ZLW100', 'name' => '100W', 'cost' => 950000, 'weight' => 4000, 'dims' => [62, 22, 10]],   // estimasi
+                    ['sku' => 'LEIND-LI-ZLW180', 'name' => '180W', 'cost' => 1280000, 'weight' => 5000, 'dims' => [78, 22, 10]],  // estimasi
+                    ['sku' => 'LEIND-LI-ZLW240', 'name' => '240W', 'cost' => 1750000, 'weight' => 6500, 'dims' => [95, 22, 10]],  // estimasi
                 ],
                 'image' => 'li-zlw.jpg',
                 'brosur' => ['Brosur LEIND LI-ZLW (PDF)' => 'li-zlw.pdf'],
@@ -511,10 +532,10 @@ HTML
 </tbody></table>
 HTML,
                 'variants' => [ // berat = lampu + panel (estimasi panel 100Wp 7 kg, 135Wp 9 kg, 160Wp 11 kg, 200Wp 13 kg)
-                    ['sku' => 'LEIND-LI-CITY50-100', 'name' => '50W + PV 100Wp', 'price' => 2285000, 'weight' => 13000, 'dims' => [100, 67, 22]],
-                    ['sku' => 'LEIND-LI-CITY100-135', 'name' => '100W + PV 135Wp', 'price' => 2785000, 'weight' => 17000, 'dims' => [115, 67, 22]],
-                    ['sku' => 'LEIND-LI-CITY150-160', 'name' => '150W + PV 160Wp', 'price' => 3450000, 'weight' => 22000, 'dims' => [130, 70, 22]],
-                    ['sku' => 'LEIND-LI-CITY150-12V-200', 'name' => '150W 12,8V + PV 200Wp', 'price' => 5500000, 'weight' => 24000, 'dims' => [150, 70, 22]],
+                    ['sku' => 'LEIND-LI-CITY50-100', 'name' => '50W + PV 100Wp', 'cost' => 2285000, 'weight' => 13000, 'dims' => [100, 67, 22]],
+                    ['sku' => 'LEIND-LI-CITY100-135', 'name' => '100W + PV 135Wp', 'cost' => 2785000, 'weight' => 17000, 'dims' => [115, 67, 22]],
+                    ['sku' => 'LEIND-LI-CITY150-160', 'name' => '150W + PV 160Wp', 'cost' => 3450000, 'weight' => 22000, 'dims' => [130, 70, 22]],
+                    ['sku' => 'LEIND-LI-CITY150-12V-200', 'name' => '150W 12,8V + PV 200Wp', 'cost' => 5500000, 'weight' => 24000, 'dims' => [150, 70, 22]],
                 ],
                 'image' => 'li-city.jpg',
             ],
@@ -553,9 +574,9 @@ HTML
 </tbody></table>
 HTML,
                 'variants' => [ // berat estimasi: lampu 7–9 kg + panel 100Wp 7 kg / 135Wp 9 kg
-                    ['sku' => 'ICOM-IC-YIN40', 'name' => '40W + PV 100Wp', 'price' => 2055000, 'weight' => 14000, 'dims' => [100, 67, 20], 'image' => 'ic-yin40.jpg'],
-                    ['sku' => 'ICOM-IC-YIN60', 'name' => '60W + PV 135Wp', 'price' => 2365000, 'weight' => 17000, 'dims' => [115, 67, 20], 'image' => 'ic-yin60.jpg'],
-                    ['sku' => 'ICOM-IC-YIN80', 'name' => '80W + PV 135Wp', 'price' => 2695000, 'weight' => 18000, 'dims' => [115, 67, 20], 'image' => 'ic-yin80.jpg'],
+                    ['sku' => 'ICOM-IC-YIN40', 'name' => '40W + PV 100Wp', 'cost' => 2055000, 'weight' => 14000, 'dims' => [100, 67, 20], 'image' => 'ic-yin40.jpg'],
+                    ['sku' => 'ICOM-IC-YIN60', 'name' => '60W + PV 135Wp', 'cost' => 2365000, 'weight' => 17000, 'dims' => [115, 67, 20], 'image' => 'ic-yin60.jpg'],
+                    ['sku' => 'ICOM-IC-YIN80', 'name' => '80W + PV 135Wp', 'cost' => 2695000, 'weight' => 18000, 'dims' => [115, 67, 20], 'image' => 'ic-yin80.jpg'],
                 ],
                 'brosur' => ['Brosur ICOM IC-YIN40 (PDF)' => 'ic-yin40.pdf', 'Brosur ICOM IC-YIN60 (PDF)' => 'ic-yin60.pdf', 'Brosur ICOM IC-YIN80 (PDF)' => 'ic-yin80.pdf'],
             ],
@@ -593,8 +614,8 @@ HTML
 </tbody></table>
 HTML,
                 'variants' => [ // berat estimasi: lampu 10–12 kg + panel 135Wp 9 kg / 200Wp 13 kg
-                    ['sku' => 'ICOM-IC-FIN100', 'name' => '100W + PV 135Wp', 'price' => 2890000, 'weight' => 19000, 'dims' => [120, 67, 22], 'image' => 'ic-fin100.jpg'],
-                    ['sku' => 'ICOM-IC-FIN120', 'name' => '120W + PV 200Wp', 'price' => 3295000, 'weight' => 25000, 'dims' => [150, 70, 22], 'image' => 'ic-fin120.jpg'],
+                    ['sku' => 'ICOM-IC-FIN100', 'name' => '100W + PV 135Wp', 'cost' => 2890000, 'weight' => 19000, 'dims' => [120, 67, 22], 'image' => 'ic-fin100.jpg'],
+                    ['sku' => 'ICOM-IC-FIN120', 'name' => '120W + PV 200Wp', 'cost' => 3295000, 'weight' => 25000, 'dims' => [150, 70, 22], 'image' => 'ic-fin120.jpg'],
                 ],
                 'brosur' => ['Brosur ICOM IC-FIN100 (PDF)' => 'ic-fin100.pdf', 'Brosur ICOM IC-FIN120 (PDF)' => 'ic-fin120.pdf'],
             ],
@@ -634,9 +655,9 @@ HTML
 </tbody></table>
 HTML,
                 'variants' => [ // berat estimasi: lampu 8–10 kg + panel 100Wp 7 / 135Wp 9 / 200Wp 13 kg
-                    ['sku' => 'SUNYO-SY-BEK60', 'name' => '60W + PV 100Wp', 'price' => 2150000, 'weight' => 15000, 'dims' => [100, 67, 22]],
-                    ['sku' => 'SUNYO-SY-BEK90', 'name' => '90W + PV 135Wp', 'price' => 2895000, 'weight' => 18000, 'dims' => [115, 67, 22]],
-                    ['sku' => 'SUNYO-SY-BEK110', 'name' => '110W + PV 200Wp', 'price' => 3275000, 'weight' => 23000, 'dims' => [150, 70, 22]],
+                    ['sku' => 'SUNYO-SY-BEK60', 'name' => '60W + PV 100Wp', 'cost' => 2150000, 'weight' => 15000, 'dims' => [100, 67, 22]],
+                    ['sku' => 'SUNYO-SY-BEK90', 'name' => '90W + PV 135Wp', 'cost' => 2895000, 'weight' => 18000, 'dims' => [115, 67, 22]],
+                    ['sku' => 'SUNYO-SY-BEK110', 'name' => '110W + PV 200Wp', 'cost' => 3275000, 'weight' => 23000, 'dims' => [150, 70, 22]],
                 ],
                 'image' => 'sy-bek.jpg',
                 'brosur' => ['Brosur SUNYO SY-BEK (PDF)' => 'sy-bek.pdf'],
@@ -673,7 +694,7 @@ HTML
 <tr><th>Material / Proteksi</th><td>Die-cast aluminium / IP66, −20 s/d +60 °C</td></tr>
 </tbody></table>
 HTML,
-                'price' => 1999000, 'weight' => 15000, 'dims' => [100, 67, 22], // estimasi lampu 8 kg + panel 7 kg
+                'cost' => 1999000, 'weight' => 15000, 'dims' => [100, 67, 22], // estimasi lampu 8 kg + panel 7 kg
                 'image' => 'li-slim.jpg',
                 'brosur' => ['Brosur LEIND LI-SLIM (PDF)' => 'li-slim.pdf'],
             ],
@@ -711,7 +732,7 @@ HTML
 <tr><th>Garansi</th><td>1 tahun</td></tr>
 </tbody></table>
 HTML,
-                'price' => 950000, 'weight' => 8500, 'dims' => [71, 36, 14], // lampu 5,5 kg + panel 35Wp ±3 kg
+                'cost' => 950000, 'weight' => 8500, 'dims' => [71, 36, 14], // lampu 5,5 kg + panel 35Wp ±3 kg
                 'image' => 'li-vill100.jpg',
             ],
         ];
