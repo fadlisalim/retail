@@ -130,7 +130,6 @@ HTML,
             $product->categories()->sync(array_values(array_filter([$product->category_id, $parent?->id])));
             $product->conditionDetail()->create(self::conditionDetail(self::INITIAL_STOCK));
             $this->attachAttributes($product);
-            $this->attachImage($product, 'srp-345-6ma-dg.jpg');
 
             $current = (int) WarehouseStock::where('product_id', $product->id)->whereNull('product_variant_id')->sum('quantity_available');
             if ($current < self::INITIAL_STOCK) {
@@ -138,6 +137,7 @@ HTML,
             }
         }
 
+        $this->syncImages($product);
         $this->attachBrochure($product, 'Datasheet Seraphim SRP-6MA-DG 345–360W (PDF)', 'srp-6ma-dg-datasheet.pdf');
 
         $this->command?->info('Seraphim 345Wp clearance: produk '.($existing ? 'sudah ada (harga/teks admin tidak diubah)' : 'ditambahkan — Rp 850.000, modal Rp 450.000, stok '.self::INITIAL_STOCK).'.');
@@ -159,7 +159,7 @@ HTML,
 <p><strong>Seraphim SRP-345-6MA-DG</strong> — panel surya monocrystalline 345Wp, 72 sel, konstruksi <strong>double glass tanpa bingkai (frameless)</strong>: kaca tempered 2 mm di depan dan belakang, sehingga tahan lembap, garam, amonia, dan bebas PID. Seraphim adalah produsen panel <strong>Tier-1</strong> yang terpasang di lebih dari 100 negara.</p>
 <p><strong>Kondisi: bekas proyek PLTS (pernah terpasang).</strong> Panel dibongkar dari proyek dalam keadaan berfungsi normal. Ada <strong>kotoran / bekas pemakaian minor</strong> di permukaan kaca dan sisi belakang yang bisa dibersihkan, tanpa retak atau cacat fungsi. Dijual <strong>clearance Rp 850.000/panel — JAMINAN TERMURAH</strong>. Garansi toko 3 tahun.</p>
 <ul>
-<li>⚡ Daya 345Wp (toleransi 0 / +4,99 W), efisiensi modul 17,6%</li>
+<li>⚡ Daya 345Wp (toleransi 0 / +4,99 W), efisiensi modul 17,6% — performa terukur masih &gt;90% dari daya nominal</li>
 <li>🔋 Voc 47,3 V · Vmp 38,7 V · Imp 8,92 A — cocok untuk sistem on-grid, hybrid, maupun off-grid 24/48 V dengan MPPT</li>
 <li>🧱 Double glass 2 mm + 2 mm, frameless, junction box IP67, konektor MC4 compatible, beban mekanis 2400 Pa</li>
 <li>📐 1980 × 990 × 5,5 mm, 23 kg</li>
@@ -204,20 +204,51 @@ HTML,
         }
     }
 
-    private function attachImage(Product $product, string $file): void
+    /**
+     * Galeri (urut): gambar promo berlogo → foto utama (hanya dioptimalkan, tanpa watermark),
+     * foto palet stok (watermark), potongan foto panel dari datasheet (watermark). Idempotent.
+     */
+    private function syncImages(Product $product): void
     {
-        $src = self::ASSETS.'/'.$file;
-        if (! is_file($src)) {
+        $gallery = [
+            ['promo-srp-345-6ma-dg.jpg', true, 'Promo Panel Surya Seraphim 345Wp bekas proyek'],
+            ['foto-palet-srp-345.jpg', false, 'Stok panel Seraphim 345Wp bekas proyek di atas palet'],
+            ['srp-345-6ma-dg.jpg', false, 'Panel Seraphim SRP-345-6MA-DG (gambar datasheet)'],
+        ];
+        $watermark = app(WatermarkService::class);
+        $paths = [];
+        foreach ($gallery as [$file, $branded, $alt]) {
+            $src = self::ASSETS.'/'.$file;
+            if (! is_file($src)) {
+                continue;
+            }
+            $stem = 'products/seraphim/'.pathinfo($file, PATHINFO_FILENAME);
+            $disk = Storage::disk('public');
+            if ($disk->exists("{$stem}.webp")) {
+                $final = "{$stem}.webp";
+            } else {
+                if (! $disk->exists("{$stem}.jpg")) {
+                    $disk->put("{$stem}.jpg", (string) file_get_contents($src));
+                }
+                $final = "{$stem}.jpg";
+                if ($watermark->isSupported()) {
+                    $final = ($branded ? $watermark->optimize($final) : $watermark->apply($final)) ?? $final;
+                }
+            }
+            if (! $product->images()->where('path', $final)->exists()) {
+                $product->images()->create(['path' => $final, 'alt' => $alt, 'sort_order' => count($paths), 'watermarked_at' => $watermark->isSupported() ? now() : null]);
+            }
+            $paths[] = $final;
+        }
+        if (! $paths) {
             return;
         }
-        $stored = 'products/seraphim/'.pathinfo($file, PATHINFO_FILENAME).'.jpg';
-        if (! Storage::disk('public')->exists($stored)) {
-            Storage::disk('public')->put($stored, (string) file_get_contents($src));
+        foreach ($paths as $i => $path) {
+            $product->images()->where('path', $path)->update(['sort_order' => $i]);
         }
-        $watermark = app(WatermarkService::class);
-        $final = $watermark->isSupported() ? ($watermark->apply($stored) ?? $stored) : $stored;
-        $product->images()->create(['path' => $final, 'alt' => $product->name, 'sort_order' => 0, 'watermarked_at' => $watermark->isSupported() ? now() : null]);
-        $product->forceFill(['main_image_path' => $final])->save();
+        if ($product->main_image_path !== $paths[0]) {
+            $product->forceFill(['main_image_path' => $paths[0]])->save();
+        }
     }
 
     private function attachBrochure(Product $product, string $title, string $file): void

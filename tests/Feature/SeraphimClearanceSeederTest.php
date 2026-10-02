@@ -42,9 +42,14 @@ class SeraphimClearanceSeederTest extends TestCase
         $this->assertSame('Garansi toko 3 tahun', $p->warranty);
         $this->assertSame(100, (int) $p->fresh()->stock);
 
-        $this->assertNotNull($p->main_image_path);
+        // Galeri: promo berlogo (utama, tanpa watermark) → foto palet → gambar datasheet.
+        $this->assertStringContainsString('promo-srp-345-6ma-dg', $p->main_image_path);
         Storage::disk('public')->assertExists($p->main_image_path);
-        $this->assertSame(1, $p->images()->count());
+        $this->assertSame(3, $p->images()->count());
+        $this->assertSame(
+            ['promo-srp-345-6ma-dg', 'foto-palet-srp-345', 'srp-345-6ma-dg'],
+            $p->images()->orderBy('sort_order')->pluck('path')->map(fn ($x) => pathinfo($x, PATHINFO_FILENAME))->all(),
+        );
 
         $doc = $p->documents()->firstOrFail();
         Storage::disk('public')->assertExists($doc->path);
@@ -68,7 +73,27 @@ class SeraphimClearanceSeederTest extends TestCase
         $this->assertEquals(800_000, $p->fresh()->price);
         $this->assertSame(1, Product::where('sku', SeraphimClearanceSeeder::SKU)->count());
         $this->assertSame(1, $p->documents()->count());
+        $this->assertSame(3, $p->images()->count()); // galeri tidak digandakan
         $this->assertSame(100, (int) $p->fresh()->stock);
+    }
+
+    /** Produk versi awal (hanya gambar datasheet) → promo jadi foto utama, foto palet ditambah, datasheet tetap. */
+    public function test_rerun_adds_promo_and_pallet_photos_to_an_existing_product(): void
+    {
+        Storage::fake('public');
+        $this->defaultWarehouse();
+        $this->seed(SeraphimClearanceSeeder::class);
+        $p = Product::where('sku', SeraphimClearanceSeeder::SKU)->firstOrFail();
+        $p->images()->where(fn ($q) => $q->where('path', 'like', '%promo-%')->orWhere('path', 'like', '%palet%'))->delete();
+        $datasheet = $p->images()->firstOrFail();
+        $p->forceFill(['main_image_path' => $datasheet->path])->save();
+
+        $this->seed(SeraphimClearanceSeeder::class);
+
+        $p->refresh();
+        $this->assertStringContainsString('promo-srp-345-6ma-dg', $p->main_image_path);
+        $this->assertSame(3, $p->images()->count());
+        $this->assertSame(2, (int) $p->images()->where('path', $datasheet->path)->value('sort_order'));
     }
 
     /** Produk dari versi awal seeder ("Baru - Sisa Proyek", pembanding marketplace) → kondisi Bekas Pakai + teks baru; harga admin tetap. */
