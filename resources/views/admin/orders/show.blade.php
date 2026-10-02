@@ -102,6 +102,11 @@
                     @if ((float) $order->paid_amount > 0)
                         <div class="flex justify-between text-gray-500"><dt>Sudah Dibayar</dt><dd>{{ rupiah($order->paid_amount) }}</dd></div>
                     @endif
+                    @if ($order->needsFinanceVerification())
+                        <div class="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">⚠ <strong>Perlu verifikasi Keuangan.</strong> Ditandai lunas oleh bukan-Keuangan — belum dihitung sebagai pendapatan sampai Keuangan mengonfirmasi.</div>
+                    @elseif ($order->finance_verified_at)
+                        <div class="flex justify-between text-xs text-green-700"><dt>Verifikasi Keuangan</dt><dd>{{ $order->finance_verified_at->format('d/m/Y H:i') }}</dd></div>
+                    @endif
                 </dl>
             </div>
 
@@ -382,6 +387,17 @@
             @endcan
 
             @can('payment.manage')
+                @if ($order->needsFinanceVerification())
+                    <div class="card border-amber-200 p-5">
+                        <h2 class="mb-2 font-semibold text-amber-800">Konfirmasi Verifikasi Keuangan</h2>
+                        <p class="mb-3 text-xs text-gray-600">Pesanan ini ditandai lunas oleh bukan-Keuangan. Cocokkan dengan mutasi rekening / dana marketplace. Bila benar sudah dibayar, konfirmasi agar masuk laporan pendapatan; bila belum, ubah status ke Dibatalkan.</p>
+                        <form method="POST" action="{{ route('admin.orders.finance-verify', $order) }}" class="space-y-2" onsubmit="return confirm('Konfirmasi: pembayaran sudah dicek Keuangan?')">
+                            @csrf
+                            <input name="note" maxlength="500" placeholder="Catatan (mis. mutasi BCA 11/09, ref 1234)" class="form-input text-sm">
+                            <button type="submit" class="btn-primary w-full">Konfirmasi Verifikasi Keuangan</button>
+                        </form>
+                    </div>
+                @endif
                 @unless ($order->payment_status->value === 'paid')
                     <div class="card p-5">
                         <h2 class="mb-2 font-semibold text-gray-900">Verifikasi Pembayaran</h2>

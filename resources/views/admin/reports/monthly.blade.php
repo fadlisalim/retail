@@ -32,6 +32,12 @@
         <x-admin.stat-card label="Komisi Afiliasi" :value="rupiah($total['komisi'])" color="red" :sub="'Rata-rata '.rupiah($total['rata_rata']).' / pesanan'" />
     </div>
 
+    @if ($total['perlu_verifikasi'] > 0)
+        <p class="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            <strong>{{ $total['perlu_verifikasi'] }} pesanan lunas ({{ rupiah($total['perlu_verifikasi_nilai']) }}) belum dikonfirmasi Keuangan</strong> dan TIDAK dihitung sebagai pendapatan. Ditandai lunas oleh bukan-Keuangan (jalur lama). Buka pesanannya, cocokkan dengan mutasi rekening / dana marketplace, lalu klik "Konfirmasi Verifikasi Keuangan" — atau batalkan bila ternyata belum dibayar. Klik bulan untuk daftarnya.
+        </p>
+    @endif
+
     @if ($total['item_tanpa_modal'] > 0)
         <p class="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
             {{ $total['item_tanpa_modal'] }} baris item pesanan produknya belum punya harga modal, jadi HPP &amp; laba kotor masih kurang dari seharusnya. Lengkapi modal di <a href="{{ route('admin.prices.index', ['tampil' => 'tanpa-modal']) }}" class="underline">Edit Cepat Produk</a>.
@@ -72,6 +78,7 @@
                     <th class="px-4 py-3 text-right">Laba Kotor</th>
                     <th class="px-4 py-3 text-right">Komisi</th>
                     <th class="px-4 py-3 text-center" title="Pesanan dibatalkan / belum bayar pada bulan itu">Batal / Belum Bayar</th>
+                    <th class="px-4 py-3 text-right" title="Lunas tapi belum dikonfirmasi Keuangan — tidak dihitung pendapatan">Perlu Verifikasi</th>
                 </tr>
             </thead>
             <tbody>
@@ -97,6 +104,7 @@
                         </td>
                         <td class="px-4 py-2 text-right">{{ rupiah($row['komisi']) }}</td>
                         <td class="px-4 py-2 text-center text-xs">{{ $row['dibatalkan'] }} / {{ $row['belum_bayar'] }}</td>
+                        <td class="px-4 py-2 text-right text-xs {{ $row['perlu_verifikasi'] ? 'font-semibold text-amber-700' : 'text-gray-300' }}">{{ $row['perlu_verifikasi'] ? $row['perlu_verifikasi'].' · '.rupiah($row['perlu_verifikasi_nilai']) : '—' }}</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -112,6 +120,7 @@
                     <td class="px-4 py-3 text-right">{{ rupiah($total['laba_kotor']) }} @if ($total['item_tanpa_modal'] === 0)<span class="text-xs font-normal text-gray-400">{{ $fmtPct($total['margin']) }}</span>@endif</td>
                     <td class="px-4 py-3 text-right">{{ rupiah($total['komisi']) }}</td>
                     <td class="px-4 py-3 text-center text-xs">{{ $total['dibatalkan'] }} / {{ $total['belum_bayar'] }}</td>
+                    <td class="px-4 py-3 text-right text-xs {{ $total['perlu_verifikasi'] ? 'text-amber-700' : 'text-gray-300' }}">{{ $total['perlu_verifikasi'] ? $total['perlu_verifikasi'].' · '.rupiah($total['perlu_verifikasi_nilai']) : '—' }}</td>
                 </tr>
             </tfoot>
         </table>
@@ -140,7 +149,32 @@
     {{-- Rincian bulan --}}
     @if ($detail)
         @php $row = $months[$month]; @endphp
-        <div id="rincian" class="mt-6 grid gap-6 lg:grid-cols-2">
+        @if ($detail['pending']->isNotEmpty())
+            <div id="rincian" class="card mt-6 border-amber-200 p-5">
+                <h2 class="mb-1 font-semibold text-amber-800">Perlu Verifikasi Keuangan — {{ $row['label'] }}</h2>
+                <p class="mb-3 text-xs text-amber-700">Lunas menurut sistem, tetapi ditandai oleh bukan-Keuangan. Belum masuk pendapatan sampai dikonfirmasi.</p>
+                <table class="w-full text-sm">
+                    <thead><tr class="text-left text-xs uppercase text-gray-500"><th class="py-2">Tanggal</th><th class="py-2">Pesanan</th><th class="py-2">Kanal</th><th class="py-2 text-right">Total</th><th class="py-2"></th></tr></thead>
+                    <tbody>
+                        @foreach ($detail['pending'] as $order)
+                            <tr class="border-t border-gray-100">
+                                <td class="py-2 text-gray-500">{{ $report->bookingDate($order)->format('d/m') }}</td>
+                                <td class="py-2"><a href="{{ route('admin.orders.show', $order) }}" class="font-medium text-brand-700 hover:underline">{{ $order->order_number }}</a><span class="block text-xs text-gray-400">{{ $order->customer_name }}</span></td>
+                                <td class="py-2 text-xs text-gray-500">{{ $order->channelLabel() }}</td>
+                                <td class="py-2 text-right font-medium">{{ rupiah($order->grand_total) }}</td>
+                                <td class="py-2 text-right">
+                                    <form method="POST" action="{{ route('admin.orders.finance-verify', $order) }}" onsubmit="return confirm('Konfirmasi: pembayaran pesanan {{ $order->order_number }} sudah dicek Keuangan dan masuk pendapatan?')">
+                                        @csrf
+                                        <button type="submit" class="rounded-md bg-green-600 px-3 py-1 text-xs font-semibold text-white hover:bg-green-700">Konfirmasi</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+        <div @unless ($detail['pending']->isNotEmpty()) id="rincian" @endunless class="mt-6 grid gap-6 lg:grid-cols-2">
             <div class="card p-5">
                 <div class="mb-3 flex items-center justify-between">
                     <h2 class="font-semibold text-gray-900">Produk Terlaris — {{ $row['label'] }}</h2>

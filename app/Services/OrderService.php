@@ -260,11 +260,17 @@ class OrderService
         return DB::transaction(function () use ($order, $actor) {
             $this->stock->commitForOrder($order);
 
+            // Verifikasi Keuangan: gateway (tanpa aktor) atau aktor berhak payment.manage.
+            // Jalur lain (data lama) = lunas tapi belum dihitung pendapatan sampai Keuangan konfirmasi.
+            $financeVerified = $actor === null || $actor->can('payment.manage');
+
             $order->update([
                 'payment_status' => PaymentStatus::Paid,
                 'paid_amount' => $order->grand_total,
                 'paid_at' => now(),
                 'status' => OrderStatus::PaymentVerified,
+                'finance_verified_at' => $financeVerified ? now() : null,
+                'finance_verified_by' => $financeVerified ? $actor?->id : null,
             ]);
 
             $order->payments()->latest()->first()?->update([
@@ -286,6 +292,23 @@ class OrderService
 
             return $order;
         });
+    }
+
+    /** Keuangan mengonfirmasi pesanan lunas lama yang ditandai bukan-Keuangan → masuk pendapatan. */
+    public function financeVerify(Order $order, User $actor, ?string $note = null): Order
+    {
+        if ($order->payment_status !== PaymentStatus::Paid) {
+            throw ValidationException::withMessages(['finance' => 'Pesanan belum lunas — gunakan "Verifikasi Lunas" dulu.']);
+        }
+
+        $order->forceFill(['finance_verified_at' => now(), 'finance_verified_by' => $actor->id])->save();
+        $order->statusHistories()->create([
+            'status' => $order->status->value,
+            'changed_by' => $actor->id,
+            'internal_note' => 'Pembayaran dikonfirmasi Keuangan (masuk laporan pendapatan).'.($note ? ' '.$note : ''),
+        ]);
+
+        return $order;
     }
 
     /** Cancel an order and return any reserved stock to sellable. */

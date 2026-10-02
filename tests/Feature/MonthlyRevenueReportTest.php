@@ -42,6 +42,7 @@ class MonthlyRevenueReportTest extends TestCase
             'customer_name' => 'Budi', 'customer_email' => 'budi@test.id', 'customer_phone' => '0812',
             'status' => 'processing', 'payment_status' => PaymentStatus::Paid->value,
             'items_subtotal' => 0, 'tax_amount' => 0, 'grand_total' => 0,
+            'finance_verified_at' => ($attrs['payment_status'] ?? PaymentStatus::Paid->value) === PaymentStatus::Paid->value ? now() : null, // lunas terverifikasi Keuangan
         ], $attrs));
         $order->save();
         foreach ($items as $i) {

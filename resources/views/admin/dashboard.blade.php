@@ -20,7 +20,7 @@
 
     {{-- KPI cards --}}
     <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
-        <x-admin.stat-card label="Pendapatan (Lunas)" :value="rupiah($totalRevenue)" color="green" />
+        <x-admin.stat-card label="Pendapatan (Lunas)" :value="rupiah($totalRevenue)" color="green" :sub="$needsFinance > 0 ? $needsFinance.' pesanan perlu verifikasi Keuangan' : 'Terverifikasi Keuangan'" />
         <x-admin.stat-card label="Total Pesanan" :value="number_format($orderCount, 0, ',', '.')" color="brand" />
         <x-admin.stat-card label="Belum Dibayar" :value="number_format($unpaidOrders, 0, ',', '.')" color="amber" sub="Menunggu pembayaran" />
         <x-admin.stat-card label="Perlu Diproses" :value="number_format($toProcess, 0, ',', '.')" color="blue" sub="Verified / proses / kemas" />

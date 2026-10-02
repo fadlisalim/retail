@@ -14,7 +14,8 @@ class DashboardController extends Controller
 {
     public function index(): View
     {
-        $totalRevenue = (float) Order::where('payment_status', 'paid')->sum('grand_total');
+        $totalRevenue = (float) Order::revenue()->sum('grand_total');
+        $needsFinance = Order::where('payment_status', 'paid')->whereNull('finance_verified_at')->count();
         $orderCount = Order::count();
         $unpaidOrders = Order::where('payment_status', 'unpaid')->count();
         $toProcess = Order::whereIn('status', ['payment_verified', 'processing', 'packing'])->count();
@@ -38,7 +39,7 @@ class DashboardController extends Controller
         // Sales chart: revenue for the last 14 days (built in PHP so it stays
         // database-agnostic and avoids date-function differences).
         $since = now()->subDays(13)->startOfDay();
-        $paidOrders = Order::where('payment_status', 'paid')
+        $paidOrders = Order::revenue()
             ->where('created_at', '>=', $since)
             ->get(['grand_total', 'created_at']);
 
@@ -52,7 +53,7 @@ class DashboardController extends Controller
         }
 
         return view('admin.dashboard', compact(
-            'totalRevenue', 'orderCount', 'unpaidOrders', 'toProcess',
+            'totalRevenue', 'needsFinance', 'orderCount', 'unpaidOrders', 'toProcess',
             'lowStock', 'outOfStock', 'pendingQuotations', 'pendingReviews', 'newCustomers',
             'recentOrders', 'topProducts', 'ordersByStatus', 'salesChart',
         ));

@@ -339,6 +339,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     });
     Route::middleware('permission:payment.manage')->group(function () {
         Route::post('/pesanan/{order}/verifikasi-bayar', [Admin\OrderController::class, 'verifyPayment'])->name('orders.verify');
+        Route::post('/pesanan/{order}/konfirmasi-keuangan', [Admin\OrderController::class, 'financeVerify'])->name('orders.finance-verify');
         // Laporan pendapatan bulanan (keuangan): rekap, rincian bulan, CSV.
         Route::get('/laporan/pendapatan', [Admin\ReportController::class, 'monthly'])->name('reports.monthly');
     });

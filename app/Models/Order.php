@@ -26,6 +26,7 @@ class Order extends Model
         'shipping_cost_confirmed', 'shipping_method', 'shipping_service_name', 'billable_weight_grams',
         'payment_method', 'customer_note', 'internal_note', 'idempotency_key',
         'paid_at', 'thanks_sent_at', 'completed_at', 'cancelled_at',
+        'finance_verified_at', 'finance_verified_by',
     ];
 
     /** Sales channels an order can originate from. */
@@ -37,6 +38,18 @@ class Order extends Model
         'offline' => 'Offline / Showroom',
         'lainnya' => 'Lainnya',
     ];
+
+    /** Lunas tapi belum dikonfirmasi Keuangan (ditandai lunas oleh bukan-Keuangan, jalur lama). */
+    public function needsFinanceVerification(): bool
+    {
+        return $this->payment_status === PaymentStatus::Paid && $this->finance_verified_at === null;
+    }
+
+    /** Scope: pesanan lunas yang sudah dikonfirmasi Keuangan / gateway — satu-satunya yang dihitung pendapatan. */
+    public function scopeRevenue($query)
+    {
+        return $query->where('payment_status', 'paid')->whereNotNull('finance_verified_at');
+    }
 
     public function channelLabel(): string
     {
@@ -58,6 +71,7 @@ class Order extends Model
         'status' => OrderStatus::class,
         'payment_status' => PaymentStatus::class,
         'paid_at' => 'datetime',
+        'finance_verified_at' => 'datetime',
         'thanks_sent_at' => 'datetime',
         'completed_at' => 'datetime',
         'cancelled_at' => 'datetime',

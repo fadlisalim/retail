@@ -189,6 +189,20 @@ class OrderController extends Controller
         return back()->with('success', $message);
     }
 
+    /** Keuangan mengonfirmasi pesanan lunas yang ditandai bukan-Keuangan (data lama). */
+    public function financeVerify(Request $request, Order $order): RedirectResponse
+    {
+        $data = $request->validate(['note' => ['nullable', 'string', 'max:500']]);
+
+        try {
+            $this->orders->financeVerify($order, $request->user(), $data['note'] ?? null);
+        } catch (ValidationException $e) {
+            return back()->with('error', collect($e->errors())->flatten()->first());
+        }
+
+        return back()->with('success', 'Pembayaran dikonfirmasi Keuangan — pesanan masuk laporan pendapatan.');
+    }
+
     /** Payment receipt (kuitansi) — print-friendly, paid orders only. */
     public function receipt(Order $order): View
     {

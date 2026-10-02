@@ -97,6 +97,9 @@
                         </td>
                         <td class="px-4 py-3">
                             <span class="badge {{ $badgeClasses[$order->payment_status->color()] ?? $badgeClasses['gray'] }}">{{ $order->payment_status->label() }}</span>
+                            @if ($order->needsFinanceVerification())
+                                <span class="badge {{ $badgeClasses['amber'] }}" title="Ditandai lunas oleh bukan-Keuangan — belum masuk pendapatan">Perlu verifikasi Keuangan</span>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-right font-semibold">{{ rupiah($order->grand_total) }}</td>
                         <td class="px-4 py-3 text-right text-xs text-gray-400">{{ $order->created_at?->format('d/m/Y H:i') }}</td>

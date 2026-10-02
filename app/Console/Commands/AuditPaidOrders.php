@@ -63,6 +63,15 @@ class AuditPaidOrders extends Command
             $summary[$group][0]++;
             $summary[$group][1] += (float) $order->grand_total;
 
+            if ($order->finance_verified_at && $group === 'PERLU CEK') {
+                $group = 'Keuangan'; // sudah dikonfirmasi Keuangan belakangan
+                $summary['PERLU CEK'][0]--;
+                $summary['PERLU CEK'][1] -= (float) $order->grand_total;
+                $summary['Keuangan'][0]++;
+                $summary['Keuangan'][1] += (float) $order->grand_total;
+                $who .= ' → dikonfirmasi Keuangan '.$order->finance_verified_at->format('d/m/Y');
+            }
+
             if ($this->option('semua') || $group !== 'Keuangan') {
                 $rows[] = [
                     $order->order_number,

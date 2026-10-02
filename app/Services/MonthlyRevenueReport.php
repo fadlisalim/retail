@@ -13,6 +13,11 @@ use Illuminate\Support\Collection;
  * paid), dibukukan pada bulan pembayaran (paid_at; pesanan lama tanpa paid_at
  * memakai created_at) — sama dengan "Pendapatan (Lunas)" di dashboard.
  *
+ * Hanya pesanan yang DIKONFIRMASI KEUANGAN (finance_verified_at terisi: ditandai
+ * lunas oleh Keuangan/super admin, gateway, atau dikonfirmasi belakangan) yang
+ * dihitung. Pesanan lunas tanpa konfirmasi Keuangan dilaporkan terpisah
+ * sebagai "perlu verifikasi".
+ *
  * Kolom per bulan:
  *  - pendapatan     : grand_total (sudah termasuk ongkir, biaya, PPN, setelah diskon)
  *  - penjualan      : items_subtotal − diskon produk − diskon voucher (nilai barang)
@@ -48,6 +53,11 @@ class MonthlyRevenueReport
             ->get(['id', 'cancelled_at', 'created_at']);
         $unpaid = Order::where('payment_status', 'unpaid')->where('status', '!=', 'cancelled')
             ->whereBetween('created_at', [$start, $end])->get(['id', 'created_at']);
+        // Lunas tapi belum dikonfirmasi Keuangan: TIDAK masuk pendapatan, dilaporkan terpisah.
+        $pendingFinance = Order::where('payment_status', 'paid')->whereNull('finance_verified_at')
+            ->where(fn ($q) => $q->whereBetween('paid_at', [$start, $end])
+                ->orWhere(fn ($q2) => $q2->whereNull('paid_at')->whereBetween('created_at', [$start, $end])))
+            ->get(['id', 'paid_at', 'created_at', 'grand_total']);
 
         $months = [];
         for ($m = 1; $m <= 12; $m++) {
@@ -64,11 +74,16 @@ class MonthlyRevenueReport
         foreach ($unpaid as $o) {
             $months[(int) $o->created_at->format('n')]['belum_bayar']++;
         }
+        foreach ($pendingFinance as $o) {
+            $m = (int) $this->bookingDate($o)->format('n');
+            $months[$m]['perlu_verifikasi']++;
+            $months[$m]['perlu_verifikasi_nilai'] += (float) $o->grand_total;
+        }
 
         $total = $this->emptyRow($year, 0);
         foreach ($months as $row) {
             $this->finish($row);
-            foreach (['pesanan', 'pendapatan', 'penjualan', 'ongkir_biaya', 'ppn', 'hpp', 'laba_kotor', 'komisi', 'item_tanpa_modal', 'dibatalkan', 'belum_bayar'] as $k) {
+            foreach (['pesanan', 'pendapatan', 'penjualan', 'ongkir_biaya', 'ppn', 'hpp', 'laba_kotor', 'komisi', 'item_tanpa_modal', 'dibatalkan', 'belum_bayar', 'perlu_verifikasi', 'perlu_verifikasi_nilai'] as $k) {
                 $total[$k] += $row[$k];
             }
             foreach ($row['channel'] as $ch => $c) {
@@ -110,7 +125,12 @@ class MonthlyRevenueReport
         }
         usort($products, fn ($a, $b) => $b['penjualan'] <=> $a['penjualan']);
 
-        return ['orders' => $orders, 'products' => array_values($products)];
+        $pending = Order::where('payment_status', 'paid')->whereNull('finance_verified_at')
+            ->where(fn ($q) => $q->whereBetween('paid_at', [$start, $start->endOfMonth()])
+                ->orWhere(fn ($q2) => $q2->whereNull('paid_at')->whereBetween('created_at', [$start, $start->endOfMonth()])))
+            ->orderBy('paid_at')->get();
+
+        return ['orders' => $orders, 'products' => array_values($products), 'pending' => $pending];
     }
 
     /** @return list<int> tahun yang punya pesanan (terbaru dulu), minimal tahun ini */
@@ -127,12 +147,13 @@ class MonthlyRevenueReport
     public function csv(int $year): array
     {
         $data = $this->year($year);
-        $rows = [['Bulan', 'Pesanan Lunas', 'Pendapatan', 'Penjualan Produk', 'Ongkir & Biaya', 'PPN', 'Estimasi HPP', 'Laba Kotor', 'Komisi Afiliasi', 'Rata-rata/Pesanan', 'Dibatalkan', 'Belum Bayar']];
+        $rows = [['Bulan', 'Pesanan Lunas', 'Pendapatan', 'Penjualan Produk', 'Ongkir & Biaya', 'PPN', 'Estimasi HPP', 'Laba Kotor', 'Komisi Afiliasi', 'Rata-rata/Pesanan', 'Dibatalkan', 'Belum Bayar', 'Perlu Verifikasi Keuangan', 'Nilai Perlu Verifikasi']];
         foreach ($data['months'] + [13 => $data['total']] as $m => $row) {
             $rows[] = [
                 $m === 13 ? 'TOTAL '.$year : $row['label'],
                 $row['pesanan'], $row['pendapatan'], $row['penjualan'], $row['ongkir_biaya'], $row['ppn'],
                 $row['hpp'], $row['laba_kotor'], $row['komisi'], $row['rata_rata'], $row['dibatalkan'], $row['belum_bayar'],
+                $row['perlu_verifikasi'], $row['perlu_verifikasi_nilai'],
             ];
         }
 
@@ -142,7 +163,7 @@ class MonthlyRevenueReport
     private function paidOrdersBetween(CarbonImmutable $start, CarbonImmutable $end): Collection
     {
         return Order::with(['items.product:id,cost_price', 'items.variant:id,product_id,cost_price', 'user:id,name'])
-            ->where('payment_status', 'paid')
+            ->revenue()
             ->where(fn ($q) => $q->whereBetween('paid_at', [$start, $end])
                 ->orWhere(fn ($q2) => $q2->whereNull('paid_at')->whereBetween('created_at', [$start, $end])))
             ->get();
@@ -161,7 +182,7 @@ class MonthlyRevenueReport
             'label' => $month ? CarbonImmutable::create($year, $month, 1)->locale('id')->translatedFormat('F Y') : 'Total',
             'pesanan' => 0, 'pendapatan' => 0.0, 'penjualan' => 0.0, 'ongkir_biaya' => 0.0, 'ppn' => 0.0,
             'hpp' => 0.0, 'laba_kotor' => 0.0, 'komisi' => 0.0, 'item_tanpa_modal' => 0,
-            'dibatalkan' => 0, 'belum_bayar' => 0, 'rata_rata' => 0.0, 'margin' => 0.0,
+            'dibatalkan' => 0, 'belum_bayar' => 0, 'perlu_verifikasi' => 0, 'perlu_verifikasi_nilai' => 0.0, 'rata_rata' => 0.0, 'margin' => 0.0,
             'channel' => [],
         ];
     }
