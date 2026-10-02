@@ -37,6 +37,9 @@ class SeraphimClearanceSeederTest extends TestCase
         $this->assertTrue((bool) $p->requires_freight);
         $this->assertSame(23000, (int) $p->weight_grams);
         $this->assertSame('seraphim', $p->brand->slug);
+        $this->assertSame('brands/seraphim.png', $p->brand->logo_path);
+        Storage::disk('public')->assertExists('brands/seraphim.png');
+        $this->get(route('brands.index'))->assertOk()->assertSee('brands/seraphim.png');
         $this->assertSame('panel-surya-monocrystalline', $p->category->slug);
         $this->assertTrue($p->categories->contains('slug', 'panel-surya'));
         $this->assertSame('Garansi toko 3 tahun', $p->warranty);

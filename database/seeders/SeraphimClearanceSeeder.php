@@ -45,6 +45,10 @@ class SeraphimClearanceSeeder extends Seeder
             'description' => 'Seraphim Solar System — produsen panel surya Tier-1 (Bloomberg NEF) sejak 2011, terpasang di 100+ negara.',
             'meta_title' => 'Produk Seraphim — Panel Surya Tier-1',
         ]);
+        if (! $brand->logo_path && is_file(self::ASSETS.'/seraphim-logo.png')) {
+            Storage::disk('public')->put('brands/seraphim.png', (string) file_get_contents(self::ASSETS.'/seraphim-logo.png'));
+            $brand->forceFill(['logo_path' => 'brands/seraphim.png'])->save();
+        }
         $category = Category::where('slug', 'panel-surya-monocrystalline')->first() ?? Category::where('slug', 'panel-surya')->first();
         $parent = Category::where('slug', 'panel-surya')->first();
 
