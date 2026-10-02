@@ -34,6 +34,11 @@ class SeraphimClearanceSeeder extends Seeder
 
     private const ASSETS = __DIR__.'/assets/seraphim';
 
+    private const SHORT = 'Panel surya Seraphim 345Wp monocrystalline 72 sel, double glass frameless (PID free), kondisi BARU sisa proyek. Harga clearance Rp 850.000 — JAMINAN TERMURAH. Garansi toko 3 tahun.';
+
+    /** Kalimat pembanding harga marketplace dari versi awal seeder → diganti "JAMINAN TERMURAH". */
+    private const OLD_COMPARISON = ' — bandingkan dengan panel 350Wp baru di marketplace yang umumnya Rp 1,6–1,9 juta.';
+
     public function run(): void
     {
         $brand = Brand::firstOrCreate(['slug' => 'seraphim'], [
@@ -54,10 +59,10 @@ class SeraphimClearanceSeeder extends Seeder
             'model' => 'SRP-345-6MA-DG',
             'product_type' => 'simple',
             'condition' => ProductCondition::NewProjectSurplus->value,
-            'short_description' => 'Panel surya Seraphim 345Wp monocrystalline 72 sel, double glass frameless (PID free), kondisi BARU sisa proyek. Harga clearance Rp 850.000 — jauh di bawah harga pasar panel 350Wp. Garansi toko 3 tahun.',
+            'short_description' => self::SHORT,
             'description' => <<<'HTML'
 <p><strong>Seraphim SRP-345-6MA-DG</strong> — panel surya monocrystalline 345Wp, 72 sel, konstruksi <strong>double glass tanpa bingkai (frameless)</strong>: kaca tempered 2 mm di depan dan belakang, sehingga tahan lembap, garam, amonia, dan bebas PID. Seraphim adalah produsen panel <strong>Tier-1</strong> yang terpasang di lebih dari 100 negara.</p>
-<p><strong>Kondisi: BARU, sisa proyek PLTS.</strong> Unit belum pernah dipasang, masih dalam kemasan. Karena stok kelebihan proyek, dijual <strong>clearance Rp 850.000/panel</strong> — bandingkan dengan panel 350Wp baru di marketplace yang umumnya Rp 1,6–1,9 juta. Garansi toko 3 tahun.</p>
+<p><strong>Kondisi: BARU, sisa proyek PLTS.</strong> Unit belum pernah dipasang, masih dalam kemasan. Karena stok kelebihan proyek, dijual <strong>clearance Rp 850.000/panel — JAMINAN TERMURAH</strong>. Garansi toko 3 tahun.</p>
 <ul>
 <li>⚡ Daya 345Wp (toleransi 0 / +4,99 W), efisiensi modul 17,6%</li>
 <li>🔋 Voc 47,3 V · Vmp 38,7 V · Imp 8,92 A — cocok untuk sistem on-grid, hybrid, maupun off-grid 24/48 V dengan MPPT</li>
@@ -111,15 +116,28 @@ HTML,
             'is_new' => false,
             'is_promo' => false,
             'is_clearance' => true,
-            'badge_text' => 'Clearance',
+            'badge_text' => 'Jaminan Termurah',
             'is_purchasable' => true,
             'requires_quotation' => false,
             'min_purchase' => 1,
             'keywords' => 'panel surya 345wp, seraphim, srp-345-6ma-dg, panel surya mono 72 cell, double glass, frameless, sisa proyek, clearance panel surya, panel surya murah, solar panel 345w, panel surya 350wp',
-            'meta_title' => 'Panel Surya Seraphim 345Wp Mono Double Glass — Clearance Sisa Proyek Rp 850.000',
-            'meta_description' => 'Panel surya Seraphim SRP-345-6MA-DG 345Wp mono 72 sel double glass, kondisi baru sisa proyek. Clearance Rp 850.000/panel, garansi toko 3 tahun. Stok terbatas.',
+            'meta_title' => 'Panel Surya Seraphim 345Wp Mono Double Glass — Clearance Sisa Proyek Rp 850.000, Jaminan Termurah',
+            'meta_description' => 'Panel surya Seraphim SRP-345-6MA-DG 345Wp mono 72 sel double glass, kondisi baru sisa proyek. Clearance Rp 850.000/panel JAMINAN TERMURAH, garansi toko 3 tahun. Stok terbatas.',
             'published_at' => now(),
         ]);
+
+        if ($existing && str_contains((string) $existing->description, self::OLD_COMPARISON)) {
+            $existing->forceFill([
+                'description' => str_replace(
+                    ['<strong>clearance Rp 850.000/panel</strong>'.self::OLD_COMPARISON, self::OLD_COMPARISON],
+                    ['<strong>clearance Rp 850.000/panel — JAMINAN TERMURAH</strong>.', '.'],
+                    $existing->description,
+                ),
+                'short_description' => str_contains((string) $existing->short_description, 'jauh di bawah harga pasar') ? self::SHORT : $existing->short_description,
+                'badge_text' => $existing->badge_text === 'Clearance' ? 'Jaminan Termurah' : $existing->badge_text,
+            ])->save();
+            $this->command?->info('Keterangan pembanding harga marketplace diganti "JAMINAN TERMURAH".');
+        }
 
         if (! $existing) {
             $product->categories()->sync(array_values(array_filter([$product->category_id, $parent?->id])));

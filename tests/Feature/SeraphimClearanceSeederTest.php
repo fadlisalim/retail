@@ -54,7 +54,8 @@ class SeraphimClearanceSeederTest extends TestCase
 
         // Tampil di halaman produk & halaman clearance dengan label kondisi.
         $this->get(route('products.show', $p->slug))->assertOk()
-            ->assertSee('SRP-345-6MA-DG')->assertSee('Baru - Sisa Proyek')->assertSee('Rp 850.000')->assertSee('Dokumen (1)');
+            ->assertSee('SRP-345-6MA-DG')->assertSee('Baru - Sisa Proyek')->assertSee('Rp 850.000')->assertSee('JAMINAN TERMURAH')->assertSee('Dokumen (1)')
+            ->assertDontSee('marketplace');
         $this->get('/barang-clearance')->assertOk()->assertSee('Seraphim 345Wp');
 
         // Idempotent: editan admin (harga, stok) tidak ditimpa, dokumen tidak digandakan.
@@ -64,5 +65,27 @@ class SeraphimClearanceSeederTest extends TestCase
         $this->assertSame(1, Product::where('sku', SeraphimClearanceSeeder::SKU)->count());
         $this->assertSame(1, $p->documents()->count());
         $this->assertSame(10, (int) $p->fresh()->stock);
+    }
+
+    /** Produk dari versi awal seeder (ada kalimat pembanding harga marketplace) → teks diganti "JAMINAN TERMURAH". */
+    public function test_rerun_replaces_marketplace_comparison_with_jaminan_termurah(): void
+    {
+        Storage::fake('public');
+        $this->defaultWarehouse();
+        $this->seed(SeraphimClearanceSeeder::class);
+        $p = Product::where('sku', SeraphimClearanceSeeder::SKU)->firstOrFail();
+        $p->forceFill([
+            'description' => '<p>Dijual <strong>clearance Rp 850.000/panel</strong> — bandingkan dengan panel 350Wp baru di marketplace yang umumnya Rp 1,6–1,9 juta. Garansi toko 3 tahun.</p>',
+            'short_description' => 'Harga clearance Rp 850.000 — jauh di bawah harga pasar panel 350Wp.',
+            'badge_text' => 'Clearance',
+        ])->save();
+
+        $this->seed(SeraphimClearanceSeeder::class);
+
+        $p->refresh();
+        $this->assertSame('<p>Dijual <strong>clearance Rp 850.000/panel — JAMINAN TERMURAH</strong>. Garansi toko 3 tahun.</p>', $p->description);
+        $this->assertStringContainsString('JAMINAN TERMURAH', $p->short_description);
+        $this->assertStringNotContainsString('marketplace', $p->short_description);
+        $this->assertSame('Jaminan Termurah', $p->badge_text);
     }
 }
