@@ -211,7 +211,7 @@ HTML,
     private function syncImages(Product $product): void
     {
         $gallery = [
-            ['promo-srp-345-6ma-dg.jpg', true, 'Promo Panel Surya Seraphim 345Wp bekas proyek'],
+            ['promo-srp-345-6ma-dg-v2.jpg', true, 'Promo Panel Surya Seraphim 345Wp bekas proyek'], // v2: badge "345 Wp" (bukan "Seri 345–360 Wp")
             ['foto-palet-srp-345.jpg', false, 'Stok panel Seraphim 345Wp bekas proyek di atas palet'],
             ['srp-345-6ma-dg.jpg', false, 'Panel Seraphim SRP-345-6MA-DG (gambar datasheet)'],
         ];
@@ -242,6 +242,11 @@ HTML,
         }
         if (! $paths) {
             return;
+        }
+        // Versi lama gambar promo (badge "Seri 345–360 Wp") dibuang dari galeri & disk.
+        foreach ($product->images()->where('path', 'like', 'products/seraphim/promo-srp-345-6ma-dg.%')->get() as $old) {
+            Storage::disk('public')->delete($old->path);
+            $old->delete();
         }
         foreach ($paths as $i => $path) {
             $product->images()->where('path', $path)->update(['sort_order' => $i]);

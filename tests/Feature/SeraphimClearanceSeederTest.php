@@ -47,7 +47,7 @@ class SeraphimClearanceSeederTest extends TestCase
         Storage::disk('public')->assertExists($p->main_image_path);
         $this->assertSame(3, $p->images()->count());
         $this->assertSame(
-            ['promo-srp-345-6ma-dg', 'foto-palet-srp-345', 'srp-345-6ma-dg'],
+            ['promo-srp-345-6ma-dg-v2', 'foto-palet-srp-345', 'srp-345-6ma-dg'],
             $p->images()->orderBy('sort_order')->pluck('path')->map(fn ($x) => pathinfo($x, PATHINFO_FILENAME))->all(),
         );
 
@@ -86,14 +86,18 @@ class SeraphimClearanceSeederTest extends TestCase
         $p = Product::where('sku', SeraphimClearanceSeeder::SKU)->firstOrFail();
         $p->images()->where(fn ($q) => $q->where('path', 'like', '%promo-%')->orWhere('path', 'like', '%palet%'))->delete();
         $datasheet = $p->images()->firstOrFail();
+        Storage::disk('public')->put('products/seraphim/promo-srp-345-6ma-dg.webp', 'old');
+        $p->images()->create(['path' => 'products/seraphim/promo-srp-345-6ma-dg.webp', 'alt' => 'promo lama', 'sort_order' => 0]); // versi lama
         $p->forceFill(['main_image_path' => $datasheet->path])->save();
 
         $this->seed(SeraphimClearanceSeeder::class);
 
         $p->refresh();
-        $this->assertStringContainsString('promo-srp-345-6ma-dg', $p->main_image_path);
+        $this->assertStringContainsString('promo-srp-345-6ma-dg-v2', $p->main_image_path);
         $this->assertSame(3, $p->images()->count());
         $this->assertSame(2, (int) $p->images()->where('path', $datasheet->path)->value('sort_order'));
+        $this->assertFalse($p->images()->where('path', 'products/seraphim/promo-srp-345-6ma-dg.webp')->exists()); // promo lama dibuang
+        Storage::disk('public')->assertMissing('products/seraphim/promo-srp-345-6ma-dg.webp');
     }
 
     /** Produk dari versi awal seeder ("Baru - Sisa Proyek", pembanding marketplace) → kondisi Bekas Pakai + teks baru; harga admin tetap. */
