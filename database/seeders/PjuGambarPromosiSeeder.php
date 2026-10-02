@@ -10,7 +10,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Gambar promosi 1:1 (Okt 2026) untuk produk PJU Tenaga Surya + pompa LARENS
+ * Gambar promosi 1:1 (Okt 2026, 19 gambar) untuk produk PJU Tenaga Surya + pompa LARENS
  * menggantikan foto hasil potongan brosur sebagai foto utama. Gambar sudah
  * berlogo Energi.click, jadi hanya dioptimalkan (webp) tanpa watermark bertumpuk.
  *
@@ -28,6 +28,8 @@ class PjuGambarPromosiSeeder extends Seeder
      * @var array<string, array{promo: array<string, list<string>>, drop?: list<string>}>
      */
     private const MAP = [
+        'ICOM-IC-AIOM' => ['promo' => ['promo-ic-aiom60.jpg' => ['ICOM-IC-AIOM60'], 'promo-ic-aiom80.jpg' => ['ICOM-IC-AIOM80'], 'promo-ic-aiom100.jpg' => ['ICOM-IC-AIOM100']]],
+        'ICOM-IC-TEEN' => ['promo' => ['promo-ic-teen90.jpg' => ['ICOM-IC-TEEN90']]], // varian 120/150/180 tetap foto brosur masing-masing
         'ICOM-IC-FIN' => ['promo' => ['promo-ic-fin100.jpg' => ['ICOM-IC-FIN100'], 'promo-ic-fin120.jpg' => ['ICOM-IC-FIN120']]],
         'ICOM-IC-YIN' => ['promo' => ['promo-ic-yin40.jpg' => ['ICOM-IC-YIN40'], 'promo-ic-yin60.jpg' => ['ICOM-IC-YIN60'], 'promo-ic-yin80.jpg' => ['ICOM-IC-YIN80']]],
         'SOLARI-SL-MW' => ['promo' => ['promo-sl-mw80.jpg' => ['SOLARI-SL-MW80'], 'promo-sl-mw100.jpg' => ['SOLARI-SL-MW100'], 'promo-sl-mw120.jpg' => ['SOLARI-SL-MW120']]],

@@ -66,8 +66,14 @@ class PjuGambarPromosiSeederTest extends TestCase
         $this->assertSame(1, $larens->images()->count());
         $this->assertSame(1, $larens->documents()->count()); // brosur PDF tetap
 
-        // AIOM/TEEN tidak punya gambar promo → tidak disentuh.
-        $this->assertStringContainsString('ic-aiom60', Product::where('sku', 'ICOM-IC-AIOM')->value('main_image_path'));
+        // AIOM: promo per varian; TEEN: hanya 90W yang punya promo, varian lain tetap foto brosur.
+        $this->assertStringContainsString('promo-ic-aiom60', Product::where('sku', 'ICOM-IC-AIOM')->value('main_image_path'));
+        $this->assertStringContainsString('promo-ic-aiom100', ProductVariant::where('sku', 'ICOM-IC-AIOM100')->value('image_path'));
+        $this->assertStringContainsString('promo-ic-teen90', Product::where('sku', 'ICOM-IC-TEEN')->value('main_image_path'));
+        $this->assertStringContainsString('promo-ic-teen90', ProductVariant::where('sku', 'ICOM-IC-TEEN90')->value('image_path'));
+        $this->assertStringContainsString('ic-teen150', ProductVariant::where('sku', 'ICOM-IC-TEEN150')->value('image_path'));
+        $this->assertSame(6, Product::where('sku', 'ICOM-IC-AIOM')->firstOrFail()->images()->count()); // 3 promo + 3 brosur
+        $this->assertNull(Product::where('sku', 'ICOM-AIO-SENSOR')->value('main_image_path')); // tanpa gambar promo → tidak disentuh
 
         $this->get(route('products.show', $ron->slug))->assertOk()->assertSee('promo-li-ron');
 
