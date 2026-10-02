@@ -8,6 +8,7 @@ use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\StockMovement;
 use App\Models\WarehouseStock;
 use App\Services\StockService;
 use App\Services\WatermarkService;
@@ -29,8 +30,10 @@ class SeraphimClearanceSeeder extends Seeder
 
     public const COST = 450000;
 
-    /** Stok awal placeholder — sesuaikan jumlah sisa proyek sebenarnya lewat Edit Cepat Produk. */
-    public const INITIAL_STOCK = 10;
+    /** Stok sisa proyek: 100 panel (versi awal seeder memakai placeholder 10 → dinaikkan otomatis). */
+    public const INITIAL_STOCK = 100;
+
+    private const OLD_PLACEHOLDER_STOCK = 10;
 
     private const ASSETS = __DIR__.'/assets/seraphim';
 
@@ -139,6 +142,17 @@ HTML,
             $this->command?->info('Keterangan pembanding harga marketplace diganti "JAMINAN TERMURAH".');
         }
 
+        // Versi awal seeder mengisi stok placeholder 10; naikkan ke 100 selama belum ada mutasi lain (penjualan/koreksi admin).
+        if ($existing) {
+            $current = (int) WarehouseStock::where('product_id', $existing->id)->whereNull('product_variant_id')->sum('quantity_available');
+            $onlySeeded = StockMovement::where('product_id', $existing->id)->count() === 1;
+            if ($current === self::OLD_PLACEHOLDER_STOCK && $onlySeeded) {
+                app(StockService::class)->adjust($existing, null, self::INITIAL_STOCK - $current, StockMovementType::Purchase, note: 'Koreksi stok sisa proyek: 100 panel (seeder)');
+                $existing->conditionDetail?->update(['available_quantity' => self::INITIAL_STOCK]);
+                $this->command?->info('Stok dinaikkan dari placeholder 10 menjadi 100.');
+            }
+        }
+
         if (! $existing) {
             $product->categories()->sync(array_values(array_filter([$product->category_id, $parent?->id])));
             $product->conditionDetail()->create([
@@ -165,10 +179,7 @@ HTML,
 
         $this->attachBrochure($product, 'Datasheet Seraphim SRP-6MA-DG 345–360W (PDF)', 'srp-6ma-dg-datasheet.pdf');
 
-        $this->command?->info('Seraphim 345Wp clearance: produk '.($existing ? 'sudah ada (tidak diubah)' : 'ditambahkan — Rp 850.000, modal Rp 450.000, stok awal '.self::INITIAL_STOCK).'.');
-        if (! $existing) {
-            $this->command?->warn('Stok awal '.self::INITIAL_STOCK.' adalah placeholder — sesuaikan jumlah sisa proyek sebenarnya di Edit Cepat Produk.');
-        }
+        $this->command?->info('Seraphim 345Wp clearance: produk '.($existing ? 'sudah ada (harga/teks admin tidak diubah)' : 'ditambahkan — Rp 850.000, modal Rp 450.000, stok '.self::INITIAL_STOCK).'.');
     }
 
     /** Atribut terfilter (Spesifikasi Panel Surya) bila AttributeSeeder sudah dijalankan. */

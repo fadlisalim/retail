@@ -2,8 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Enums\StockMovementType;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\StockMovement;
+use App\Models\WarehouseStock;
+use App\Services\StockService;
 use Database\Seeders\AttributeSeeder;
 use Database\Seeders\SeraphimClearanceSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -36,7 +40,7 @@ class SeraphimClearanceSeederTest extends TestCase
         $this->assertSame('panel-surya-monocrystalline', $p->category->slug);
         $this->assertTrue($p->categories->contains('slug', 'panel-surya'));
         $this->assertSame('Garansi toko 3 tahun', $p->warranty);
-        $this->assertSame(10, (int) $p->fresh()->stock);
+        $this->assertSame(100, (int) $p->fresh()->stock);
 
         $this->assertNotNull($p->main_image_path);
         Storage::disk('public')->assertExists($p->main_image_path);
@@ -49,7 +53,7 @@ class SeraphimClearanceSeederTest extends TestCase
         $detail = $p->conditionDetail;
         $this->assertNotNull($detail);
         $this->assertTrue((bool) $detail->is_negotiable);
-        $this->assertSame(10, (int) $detail->available_quantity);
+        $this->assertSame(100, (int) $detail->available_quantity);
         $this->assertEquals(345, $p->attributeValues()->whereHas('attribute', fn ($q) => $q->where('slug', 'spesifikasi-panel-surya-daya-maksimum'))->value('value_number'));
 
         // Tampil di halaman produk & halaman clearance dengan label kondisi.
@@ -64,7 +68,7 @@ class SeraphimClearanceSeederTest extends TestCase
         $this->assertEquals(800_000, $p->fresh()->price);
         $this->assertSame(1, Product::where('sku', SeraphimClearanceSeeder::SKU)->count());
         $this->assertSame(1, $p->documents()->count());
-        $this->assertSame(10, (int) $p->fresh()->stock);
+        $this->assertSame(100, (int) $p->fresh()->stock);
     }
 
     /** Produk dari versi awal seeder (ada kalimat pembanding harga marketplace) → teks diganti "JAMINAN TERMURAH". */
@@ -87,5 +91,30 @@ class SeraphimClearanceSeederTest extends TestCase
         $this->assertStringContainsString('JAMINAN TERMURAH', $p->short_description);
         $this->assertStringNotContainsString('marketplace', $p->short_description);
         $this->assertSame('Jaminan Termurah', $p->badge_text);
+    }
+
+    /** Versi awal seeder mengisi stok placeholder 10 → dinaikkan ke 100; tidak disentuh bila sudah ada mutasi lain. */
+    public function test_rerun_raises_placeholder_stock_to_one_hundred_unless_stock_was_touched(): void
+    {
+        Storage::fake('public');
+        $this->defaultWarehouse();
+        $this->seed(SeraphimClearanceSeeder::class);
+        $p = Product::where('sku', SeraphimClearanceSeeder::SKU)->firstOrFail();
+        $stock = app(StockService::class);
+
+        // Simulasi versi awal: hanya satu mutasi seeder dengan saldo 10.
+        StockMovement::where('product_id', $p->id)->delete();
+        WarehouseStock::where('product_id', $p->id)->delete();
+        $stock->adjust($p, null, 10, StockMovementType::Purchase, note: 'Stok awal sisa proyek (seeder)');
+        $this->assertSame(10, (int) $p->fresh()->stock);
+
+        $this->seed(SeraphimClearanceSeeder::class);
+        $this->assertSame(100, (int) $p->fresh()->stock);
+        $this->assertSame(100, (int) $p->conditionDetail->fresh()->available_quantity);
+
+        // Sudah ada penjualan/koreksi admin → stok dibiarkan.
+        $stock->adjust($p, null, -3, StockMovementType::Sale, note: 'Terjual 3');
+        $this->seed(SeraphimClearanceSeeder::class);
+        $this->assertSame(97, (int) $p->fresh()->stock);
     }
 }
