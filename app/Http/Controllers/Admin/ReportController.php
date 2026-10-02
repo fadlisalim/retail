@@ -17,8 +17,11 @@ class ReportController extends Controller
         $year = (int) $request->integer('tahun') ?: (int) now()->format('Y');
         $year = in_array($year, $years, true) ? $year : $years[0];
 
+        // Semua staf boleh memantau rekap; HPP & laba kotor hanya untuk yang boleh melihat harga modal.
+        $showCost = $request->user()->can('payment.manage') || $request->user()->can('price.manage');
+
         if ($request->query('export') === 'csv') {
-            return $this->csv($report, $year);
+            return $this->csv($report, $year, $showCost);
         }
 
         $data = $report->year($year);
@@ -29,12 +32,13 @@ class ReportController extends Controller
             'month' => $month,
             'detail' => $detail,
             'report' => $report,
+            'showCost' => $showCost,
         ]);
     }
 
-    private function csv(MonthlyRevenueReport $report, int $year): StreamedResponse
+    private function csv(MonthlyRevenueReport $report, int $year, bool $withCost): StreamedResponse
     {
-        $rows = $report->csv($year);
+        $rows = $report->csv($year, $withCost);
 
         return response()->streamDownload(function () use ($rows) {
             $out = fopen('php://output', 'w');

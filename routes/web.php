@@ -340,9 +340,9 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::middleware('permission:payment.manage')->group(function () {
         Route::post('/pesanan/{order}/verifikasi-bayar', [Admin\OrderController::class, 'verifyPayment'])->name('orders.verify');
         Route::post('/pesanan/{order}/konfirmasi-keuangan', [Admin\OrderController::class, 'financeVerify'])->name('orders.finance-verify');
-        // Laporan pendapatan bulanan (keuangan): rekap, rincian bulan, CSV.
-        Route::get('/laporan/pendapatan', [Admin\ReportController::class, 'monthly'])->name('reports.monthly');
     });
+    // Laporan pendapatan bulanan: semua staf boleh memantau rekap; HPP/laba & tombol konfirmasi dibatasi di view/controller.
+    Route::get('/laporan/pendapatan', [Admin\ReportController::class, 'monthly'])->middleware('permission:dashboard.view')->name('reports.monthly');
 
     Route::middleware('permission:affiliate.manage')->group(function () {
         Route::get('/afiliasi', [Admin\AffiliateController::class, 'index'])->name('affiliates.index');

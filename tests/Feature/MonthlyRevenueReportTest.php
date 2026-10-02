@@ -113,7 +113,7 @@ class MonthlyRevenueReportTest extends TestCase
         $this->assertSame(2, $detail['products'][0]['qty']);
     }
 
-    public function test_finance_sees_the_page_and_csv_but_sales_cannot(): void
+    public function test_finance_sees_the_page_and_csv_with_cost_columns(): void
     {
         $this->defaultWarehouse();
         $this->order(['paid_at' => '2026-03-03 10:00:00', 'items_subtotal' => 2_000_000, 'grand_total' => 2_000_000, 'customer_name' => 'Pak Sutrisno']);
@@ -135,13 +135,34 @@ class MonthlyRevenueReportTest extends TestCase
         $csv->assertOk()->assertHeader('content-type', 'text/csv; charset=UTF-8');
         $body = $csv->streamedContent();
         $this->assertStringContainsString('Bulan;"Pesanan Lunas";Pendapatan', $body);
+        $this->assertStringContainsString('"Estimasi HPP";"Laba Kotor"', $body);
         $this->assertStringContainsString('"Maret 2026";1;2000000', $body);
         $this->assertStringContainsString('"TOTAL 2026";1;2000000', $body);
 
-        // Menu tampil untuk keuangan, halaman ditolak untuk sales.
         $this->actingAs($finance)->get(route('admin.dashboard'))->assertSee('Laporan Pendapatan');
-        $sales = $this->staff('admin-sales');
-        $this->actingAs($sales)->get(route('admin.reports.monthly'))->assertForbidden();
+    }
+
+    /** Semua staf boleh memantau rekap pendapatan; HPP/laba kotor hanya untuk Keuangan & yang boleh lihat modal. */
+    public function test_other_staff_see_the_recap_without_cost_columns(): void
+    {
+        $this->defaultWarehouse();
+        $this->order(['paid_at' => '2026-03-03 10:00:00', 'items_subtotal' => 2_000_000, 'grand_total' => 2_000_000]);
+
+        foreach (['admin-sales', 'admin-gudang', 'customer-service', 'admin-konten'] as $role) {
+            $staff = $this->staff($role);
+            $this->actingAs($staff)->get(route('admin.dashboard'))->assertSee('Laporan Pendapatan');
+            $this->actingAs($staff)->get(route('admin.reports.monthly', ['tahun' => 2026]))
+                ->assertOk()->assertSee('Maret 2026')->assertSee('Rp 2.000.000')
+                ->assertDontSee('Laba Kotor')->assertDontSee('HPP');
+
+            $body = $this->actingAs($staff)->get(route('admin.reports.monthly', ['tahun' => 2026, 'export' => 'csv']))->assertOk()->streamedContent();
+            $this->assertStringNotContainsString('HPP', $body);
+            $this->assertStringNotContainsString('Laba Kotor', $body);
+            $this->assertStringContainsString('"Maret 2026";1;2000000;2000000;0;0;0;', $body); // kolom HPP & laba dilewati
+        }
+
+        // Admin katalog boleh lihat modal → kolom HPP tampil.
+        $this->actingAs($this->staff('admin-katalog'))->get(route('admin.reports.monthly', ['tahun' => 2026]))->assertOk()->assertSee('Laba Kotor');
     }
 
     public function test_year_selector_falls_back_to_a_year_that_exists(): void

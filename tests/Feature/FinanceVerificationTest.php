@@ -73,6 +73,8 @@ class FinanceVerificationTest extends TestCase
         // Halaman laporan & pesanan menandainya; sales tidak melihat tombol konfirmasi.
         $this->actingAs($finance)->get(route('admin.reports.monthly', ['tahun' => $year, 'bulan' => (int) now()->format('n')]))
             ->assertOk()->assertSee('belum dikonfirmasi Keuangan')->assertSee('ORD-SALES')->assertSee('Konfirmasi');
+        $this->actingAs($sales)->get(route('admin.reports.monthly', ['tahun' => $year, 'bulan' => (int) now()->format('n')]))
+            ->assertOk()->assertSee('ORD-SALES')->assertSee('Menunggu Keuangan')->assertDontSee('finance-verify');
         $this->actingAs($finance)->get(route('admin.orders.show', $legacy))->assertOk()->assertSee('Konfirmasi Verifikasi Keuangan');
         $this->actingAs($sales)->get(route('admin.orders.show', $legacy))->assertOk()
             ->assertSee('Perlu verifikasi Keuangan')->assertDontSee('Konfirmasi Verifikasi Keuangan');

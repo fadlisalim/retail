@@ -144,7 +144,8 @@ class MonthlyRevenueReport
     }
 
     /** Baris CSV (header + 12 bulan + total). @return list<list<string|int|float>> */
-    public function csv(int $year): array
+    /** @param bool $withCost sertakan kolom HPP & laba kotor (hanya untuk yang boleh melihat harga modal) */
+    public function csv(int $year, bool $withCost = true): array
     {
         $data = $this->year($year);
         $rows = [['Bulan', 'Pesanan Lunas', 'Pendapatan', 'Penjualan Produk', 'Ongkir & Biaya', 'PPN', 'Estimasi HPP', 'Laba Kotor', 'Komisi Afiliasi', 'Rata-rata/Pesanan', 'Dibatalkan', 'Belum Bayar', 'Perlu Verifikasi Keuangan', 'Nilai Perlu Verifikasi']];
@@ -155,6 +156,10 @@ class MonthlyRevenueReport
                 $row['hpp'], $row['laba_kotor'], $row['komisi'], $row['rata_rata'], $row['dibatalkan'], $row['belum_bayar'],
                 $row['perlu_verifikasi'], $row['perlu_verifikasi_nilai'],
             ];
+        }
+
+        if (! $withCost) {
+            $rows = array_map(fn (array $r) => array_values(array_diff_key($r, [6 => 1, 7 => 1])), $rows);
         }
 
         return $rows;
