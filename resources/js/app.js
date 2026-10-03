@@ -632,6 +632,7 @@ Alpine.data('csChat', (config = {}) => ({
             if (res.ok && data.ok) {
                 m.leadForm = false;
                 if (window.fbq) fbq('track', 'Lead'); // Meta ads conversion: contact captured
+                window.dispatchEvent(new CustomEvent('ec:lead', { detail: { via: 'kirana' } })); // Google Ads lead
                 // welcome:true keeps this system-side bubble out of the AI history.
                 this.messages.push({
                     role: 'assistant',
@@ -773,6 +774,7 @@ Alpine.data('siteChat', (config = {}) => ({
             const data = await res.json().catch(() => ({}));
             if (res.ok && data.ok) {
                 if (firstContact && window.fbq) fbq('track', 'Lead');
+                if (firstContact) window.dispatchEvent(new CustomEvent('ec:lead', { detail: { via: 'chat' } })); // Google Ads lead
                 const now = new Date();
                 this.messages.push({
                     id: data.id,

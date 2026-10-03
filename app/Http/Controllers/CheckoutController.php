@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CheckoutRequest;
 use App\Models\IndahCargoRate;
+use App\Models\SiteVisit;
 use App\Services\AffiliateService;
 use App\Services\CartCalculator;
 use App\Services\CartService;
@@ -154,6 +155,11 @@ class CheckoutController extends Controller
 
         // Attribute the sale to a referring affiliate (last-click cookie), if any.
         $this->affiliates->attributeOrder($order);
+
+        // Kaitkan ke kunjungan (sumber trafik + gclid) untuk konversi offline Google Ads.
+        if ($visit = SiteVisit::forRequest($request)) {
+            $order->forceFill(['site_visit_id' => $visit->id])->save();
+        }
 
         // Order confirmation email (in-app for members, email for guests too).
         $title = 'Pesanan diterima';

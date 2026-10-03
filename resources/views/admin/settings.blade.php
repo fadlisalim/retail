@@ -99,6 +99,38 @@
                 <p class="mt-1 text-xs text-gray-500">Angka Pixel ID dari Meta Events Manager (Business Suite → Events Manager → Data Sources). Kalau diisi, website otomatis mengirim event PageView, ViewContent, AddToCart, Lead &amp; Purchase untuk optimasi iklan Meta/Facebook. Kosongkan untuk mematikan.</p>
                 @error('marketing_meta_pixel_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
+            <div class="mt-5 border-t border-gray-100 pt-5">
+                <h3 class="mb-3 text-sm font-semibold text-gray-800">Google Ads / Google tag</h3>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label for="marketing_google_tag_id" class="input-label">Google tag ID</label>
+                        <input type="text" name="marketing_google_tag_id" id="marketing_google_tag_id" value="{{ old('marketing_google_tag_id', $settings['marketing.google_tag_id']) }}" placeholder="AW-123456789" class="form-input">
+                        <p class="mt-1 text-xs text-gray-500">Dari Google Ads → Tools → Google tag (format <code>AW-…</code>), atau ID GA4 <code>G-…</code>. Kalau diisi, website mengirim event <em>generate_lead</em> (klik WhatsApp / form Kirana), <em>request_quote</em> (Permintaan Penawaran) dan <em>purchase</em> (pesanan dibuat). Kosongkan untuk mematikan.</p>
+                        @error('marketing_google_tag_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label for="marketing_google_ads_offline_name" class="input-label">Nama konversi offline (pesanan lunas)</label>
+                        <input type="text" name="marketing_google_ads_offline_name" id="marketing_google_ads_offline_name" value="{{ old('marketing_google_ads_offline_name', $settings['marketing.google_ads_offline_name']) }}" class="form-input">
+                        <p class="mt-1 text-xs text-gray-500">Harus sama persis dengan nama conversion action bertipe <em>Import → Other data sources → Clicks</em> di Google Ads. Dipakai di file CSV "Unduh konversi Google Ads" pada Laporan Pendapatan.</p>
+                    </div>
+                    <div>
+                        <label for="marketing_google_ads_label_lead" class="input-label">Label konversi: Lead (WhatsApp / kontak)</label>
+                        <input type="text" name="marketing_google_ads_label_lead" id="marketing_google_ads_label_lead" value="{{ old('marketing_google_ads_label_lead', $settings['marketing.google_ads_label_lead']) }}" placeholder="AbCdEfGhIjK" class="form-input">
+                        @error('marketing_google_ads_label_lead')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label for="marketing_google_ads_label_rfq" class="input-label">Label konversi: Permintaan Penawaran</label>
+                        <input type="text" name="marketing_google_ads_label_rfq" id="marketing_google_ads_label_rfq" value="{{ old('marketing_google_ads_label_rfq', $settings['marketing.google_ads_label_rfq']) }}" class="form-input">
+                        @error('marketing_google_ads_label_rfq')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label for="marketing_google_ads_label_order" class="input-label">Label konversi: Pesanan dibuat</label>
+                        <input type="text" name="marketing_google_ads_label_order" id="marketing_google_ads_label_order" value="{{ old('marketing_google_ads_label_order', $settings['marketing.google_ads_label_order']) }}" class="form-input">
+                        <p class="mt-1 text-xs text-gray-500">Label = bagian setelah garis miring pada tag konversi Google Ads (<code>AW-123/<strong>AbCdEf</strong></code>). Kosongkan label yang belum dibuat — event GA4 tetap terkirim.</p>
+                        @error('marketing_google_ads_label_order')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                </div>
+            </div>
         </div>
 
         {{-- Payment --}}

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\GoogleAdsOfflineConversions;
 use App\Services\MonthlyRevenueReport;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -34,6 +36,18 @@ class ReportController extends Controller
             'report' => $report,
             'showCost' => $showCost,
         ]);
+    }
+
+    /** CSV "Offline Conversion Import" Google Ads: pesanan lunas terverifikasi Keuangan dari klik iklan (gclid). */
+    public function googleAds(Request $request, GoogleAdsOfflineConversions $export): StreamedResponse
+    {
+        $to = $request->filled('sampai') ? CarbonImmutable::parse($request->input('sampai')) : CarbonImmutable::today();
+        $from = $request->filled('dari') ? CarbonImmutable::parse($request->input('dari')) : $to->subDays(30);
+        $csv = $export->csv($from, $to);
+
+        return response()->streamDownload(function () use ($csv): void {
+            echo $csv;
+        }, 'google-ads-konversi-'.$from->format('Ymd').'-'.$to->format('Ymd').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     private function csv(MonthlyRevenueReport $report, int $year, bool $withCost): StreamedResponse

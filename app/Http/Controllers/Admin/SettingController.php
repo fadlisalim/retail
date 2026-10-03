@@ -10,9 +10,7 @@ use Illuminate\View\View;
 
 class SettingController extends Controller
 {
-    public function __construct(private readonly SettingService $settings)
-    {
-    }
+    public function __construct(private readonly SettingService $settings) {}
 
     public function edit(): View
     {
@@ -29,6 +27,11 @@ class SettingController extends Controller
             'whatsapp.greeting' => $this->settings->get('whatsapp.greeting'),
             'whatsapp.admin_notify' => $this->settings->get('whatsapp.admin_notify'),
             'marketing.meta_pixel_id' => $this->settings->get('marketing.meta_pixel_id'),
+            'marketing.google_tag_id' => $this->settings->get('marketing.google_tag_id'),
+            'marketing.google_ads_label_lead' => $this->settings->get('marketing.google_ads_label_lead'),
+            'marketing.google_ads_label_rfq' => $this->settings->get('marketing.google_ads_label_rfq'),
+            'marketing.google_ads_label_order' => $this->settings->get('marketing.google_ads_label_order'),
+            'marketing.google_ads_offline_name' => $this->settings->get('marketing.google_ads_offline_name', 'Pesanan Lunas (offline)'),
             'payment.bank_account' => $this->settings->get('payment.bank_account'),
             'payment.qris_image' => $this->settings->get('payment.qris_image'),
             'pickup.address' => $this->settings->get('pickup.address'),
@@ -53,6 +56,11 @@ class SettingController extends Controller
             'whatsapp_greeting' => ['nullable', 'string', 'max:500'],
             'whatsapp_admin_notify' => ['nullable', 'string', 'max:30'],
             'marketing_meta_pixel_id' => ['nullable', 'string', 'max:32', 'regex:/^\d*$/'],
+            'marketing_google_tag_id' => ['nullable', 'string', 'max:40', 'regex:/^(AW|G|GT)-[A-Za-z0-9]+$/'],
+            'marketing_google_ads_label_lead' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'marketing_google_ads_label_rfq' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'marketing_google_ads_label_order' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'marketing_google_ads_offline_name' => ['nullable', 'string', 'max:100'],
             'payment_bank_account' => ['nullable', 'string', 'max:500'],
             'payment_qris_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:4096'],
             'pickup_address' => ['nullable', 'string', 'max:1000'],
@@ -73,6 +81,11 @@ class SettingController extends Controller
         $this->settings->set('whatsapp.greeting', $data['whatsapp_greeting'] ?? '', 'string', 'whatsapp');
         $this->settings->set('whatsapp.admin_notify', $data['whatsapp_admin_notify'] ?? '', 'string', 'whatsapp');
         $this->settings->set('marketing.meta_pixel_id', $data['marketing_meta_pixel_id'] ?? '', 'string', 'marketing');
+        $this->settings->set('marketing.google_tag_id', $data['marketing_google_tag_id'] ?? '', 'string', 'marketing');
+        $this->settings->set('marketing.google_ads_label_lead', $data['marketing_google_ads_label_lead'] ?? '', 'string', 'marketing');
+        $this->settings->set('marketing.google_ads_label_rfq', $data['marketing_google_ads_label_rfq'] ?? '', 'string', 'marketing');
+        $this->settings->set('marketing.google_ads_label_order', $data['marketing_google_ads_label_order'] ?? '', 'string', 'marketing');
+        $this->settings->set('marketing.google_ads_offline_name', trim($data['marketing_google_ads_offline_name'] ?? '') ?: 'Pesanan Lunas (offline)', 'string', 'marketing');
 
         $this->settings->set('payment.bank_account', $data['payment_bank_account'] ?? '', 'string', 'payment');
 

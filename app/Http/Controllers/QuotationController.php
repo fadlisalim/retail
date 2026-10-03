@@ -5,19 +5,17 @@ namespace App\Http\Controllers;
 use App\Enums\QuotationStatus;
 use App\Models\Product;
 use App\Models\Quotation;
+use App\Models\SiteVisit;
 use App\Services\QuotationService;
 use App\Support\QuotationForm;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class QuotationController extends Controller
 {
-    public function __construct(private readonly QuotationService $quotations)
-    {
-    }
+    public function __construct(private readonly QuotationService $quotations) {}
 
     public function create(Request $request): View
     {
@@ -74,6 +72,9 @@ class QuotationController extends Controller
             ->all();
 
         $quotation = $this->quotations->createRfq($data, $data['items'], auth()->id());
+        if ($visit = SiteVisit::forRequest($request)) {
+            $quotation->forceFill(['site_visit_id' => $visit->id])->save();
+        }
 
         // BOQ / document upload with a randomised filename (no executables).
         if ($request->hasFile('attachment')) {

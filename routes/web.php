@@ -346,6 +346,8 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     });
     // Laporan pendapatan bulanan: semua staf boleh memantau rekap; HPP/laba & tombol konfirmasi dibatasi di view/controller.
     Route::get('/laporan/pendapatan', [Admin\ReportController::class, 'monthly'])->middleware('permission:dashboard.view')->name('reports.monthly');
+    // CSV konversi offline Google Ads (pesanan lunas terverifikasi + gclid) — Keuangan.
+    Route::get('/laporan/konversi-google-ads', [Admin\ReportController::class, 'googleAds'])->middleware('permission:payment.manage')->name('reports.google-ads');
 
     Route::middleware('permission:affiliate.manage')->group(function () {
         Route::get('/afiliasi', [Admin\AffiliateController::class, 'index'])->name('affiliates.index');

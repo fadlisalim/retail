@@ -10,6 +10,25 @@
     $qrisImage = $payment ? data_get($payment->meta, 'qris_image') : null;
 @endphp
 
+{{-- Event konversi "pesanan dibuat" (Meta Purchase + Google Ads order) — hanya pada
+     redirect tepat setelah checkout (flash sukses), bukan saat halaman dibuka lagi. --}}
+@if (session('success') && str_contains((string) session('success'), 'berhasil dibuat'))
+    @push('head')
+        <script>
+            window.fbq && fbq('track', 'Purchase', {
+                value: {{ (float) $order->grand_total }},
+                currency: 'IDR',
+                content_type: 'product',
+                content_ids: @js($order->items->pluck('sku')->filter()->values()),
+                num_items: {{ (int) $order->items->sum('quantity') }},
+            });
+            window.addEventListener('DOMContentLoaded', function () {
+                window.ecConv && ecConv('order', { value: {{ (float) $order->grand_total }}, transaction_id: @js($order->order_number) });
+            });
+        </script>
+    @endpush
+@endif
+
 @section('content')
     <x-breadcrumbs :items="[['label' => 'Pesanan', 'url' => route('orders.track', $order->public_token)], ['label' => 'Pembayaran']]" />
 

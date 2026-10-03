@@ -13,7 +13,7 @@ class Quotation extends Model
     use HasFactory;
 
     protected $fillable = [
-        'rfq_number', 'quotation_number', 'public_token', 'user_id', 'status',
+        'rfq_number', 'quotation_number', 'public_token', 'user_id', 'site_visit_id', 'status',
         'contact_name', 'contact_email', 'contact_phone', 'company_name', 'npwp',
         'requester_role', 'decision_role',
         'project_name', 'project_type', 'project_status', 'funding_source', 'budget_range',
@@ -46,6 +46,11 @@ class Quotation extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function siteVisit(): BelongsTo
+    {
+        return $this->belongsTo(SiteVisit::class);
     }
 
     public function items(): HasMany

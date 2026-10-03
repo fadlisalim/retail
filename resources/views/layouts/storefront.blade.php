@@ -29,6 +29,7 @@
     <meta name="twitter:card" content="summary_large_image">
 
     @include('partials.meta-pixel')
+    @include('partials.google-tag')
     @stack('head')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     {{-- Analitik kunjungan halaman (tracker eksternal milik toko). Kosongkan

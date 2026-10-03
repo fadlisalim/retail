@@ -16,7 +16,7 @@ class Order extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'order_number', 'public_token', 'user_id', 'affiliate_id', 'affiliate_source', 'affiliate_attributed_by',
+        'order_number', 'public_token', 'user_id', 'affiliate_id', 'affiliate_source', 'affiliate_attributed_by', 'site_visit_id',
         'channel', 'external_reference', 'created_by',
         'customer_name', 'customer_email', 'customer_phone',
         'status', 'payment_status',
@@ -90,6 +90,11 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function siteVisit(): BelongsTo
+    {
+        return $this->belongsTo(SiteVisit::class);
     }
 
     public function affiliate(): BelongsTo

@@ -20,6 +20,9 @@
                 </select>
             </form>
             <a href="{{ route('admin.reports.monthly', ['tahun' => $year, 'export' => 'csv']) }}" class="btn-outline">Unduh CSV</a>
+            @can('payment.manage')
+                <a href="{{ route('admin.reports.google-ads') }}" class="btn-outline" title="Pesanan lunas 30 hari terakhir yang datang dari klik iklan Google — unggah di Google Ads → Goals → Conversions → Uploads">Konversi Google Ads</a>
+            @endcan
         </x-slot:actions>
     </x-admin.page-header>
 

@@ -3,6 +3,18 @@
 @section('title', 'Penawaran '.$quotation->rfq_number.' — '.config('rekasurya.company.brand_name'))
 @section('noindex', 'noindex')
 
+{{-- Konversi "permintaan penawaran terkirim" (Meta Lead + Google Ads rfq) — sekali, saat redirect setelah submit. --}}
+@if (session('success') && str_contains((string) session('success'), 'berhasil dikirim'))
+    @push('head')
+        <script>
+            window.fbq && fbq('track', 'Lead', { content_name: 'rfq' });
+            window.addEventListener('DOMContentLoaded', function () {
+                window.ecConv && ecConv('rfq', { transaction_id: @js($quotation->rfq_number) });
+            });
+        </script>
+    @endpush
+@endif
+
 @php
     $badgeColors = [
         'gray' => 'bg-gray-100 text-gray-700',

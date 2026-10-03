@@ -7,6 +7,7 @@ use App\Services\TrafficAttribution;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -60,6 +61,8 @@ class TrackVisit
             $visit->forceFill([
                 'last_seen_at' => now(),
                 'user_id' => $request->user()?->id ?? $visit->user_id,
+                // Klik iklan Google di tengah sesi tetap dicatat (gclid terbaru) untuk konversi offline.
+                'gclid' => SiteVisit::clickIdFrom($request) ?? $visit->gclid,
             ])->save();
 
             return;
@@ -73,8 +76,9 @@ class TrackVisit
             'medium' => $attribution['medium'],
             'campaign' => $attribution['campaign'],
             'content' => $attribution['content'],
+            'gclid' => SiteVisit::clickIdFrom($request),
             'referrer_host' => $attribution['referrer_host'],
-            'landing_path' => \Illuminate\Support\Str::limit('/'.ltrim($request->path(), '/'), 191, ''),
+            'landing_path' => Str::limit('/'.ltrim($request->path(), '/'), 191, ''),
             'is_mobile' => $this->isMobile((string) $request->userAgent()),
             'page_views' => 1,
             'user_id' => $request->user()?->id,
