@@ -53,6 +53,18 @@ class ShippingEstimateTest extends TestCase
         $this->seed(BrCargoSeeder::class);
     }
 
+    /** Pengunjung yang mencoba banyak wilayah berturut-turut tidak boleh kena 429 di bawah 60 hit/menit. */
+    public function test_estimate_allows_sixty_requests_per_minute_before_throttling(): void
+    {
+        $product = $this->stockedProduct(10, ['name' => 'MC4 Sepasang', 'price' => 20800, 'weight_grams' => 50, 'length_cm' => 6, 'width_cm' => 4, 'height_cm' => 3]);
+        $payload = ['product_id' => $product->id, 'qty' => 1, 'lat' => -5.16, 'lng' => 119.41];
+
+        for ($i = 0; $i < 60; $i++) {
+            $this->postJson(route('shipping.estimate'), $payload)->assertOk();
+        }
+        $this->postJson(route('shipping.estimate'), $payload)->assertStatus(429);
+    }
+
     public function test_gps_estimate_resolves_the_village_and_lists_every_courier(): void
     {
         $product = $this->stockedProduct(10, ['name' => 'MC4 Sepasang', 'price' => 20800, 'weight_grams' => 50, 'length_cm' => 6, 'width_cm' => 4, 'height_cm' => 3]);

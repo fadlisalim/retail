@@ -189,7 +189,10 @@ function ongkirEstimate(cfg) {
                     body: JSON.stringify({ ...this.productPayload(), ...dest }),
                 });
                 const body = await res.json().catch(() => ({}));
-                if (!res.ok) { if (!silent) this.error = body.message || 'Gagal menghitung ongkir.'; return; }
+                if (!res.ok) {
+                    if (!silent) this.error = res.status === 429 ? 'Terlalu sering mencoba — tunggu sebentar (± 1 menit) lalu pilih wilayah lagi.' : (body.message || 'Gagal menghitung ongkir.');
+                    return;
+                }
                 this.result = body; this.changing = false;
                 try { localStorage.setItem(KEY, JSON.stringify(body.destination)); } catch (e) {}
             } catch (e) {

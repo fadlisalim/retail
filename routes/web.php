@@ -123,8 +123,11 @@ Route::get('/api/ongkir/wilayah', [ShippingDestinationController::class, 'region
     ->middleware('throttle:60,1')->name('shipping.regions'); // publik: dipakai estimasi ongkir di halaman produk
 
 /* Estimasi ongkir di halaman produk ("Berapa ongkir ke lokasi saya?") — tamu boleh */
+// 60/menit per IP: pengunjung yang mencoba beberapa wilayah berturut-turut jangan kena 429
+// (tiap ganti kelurahan + buka modal = 1 hit). Pastikan TRUSTED_PROXIES terisi di .env agar
+// jatah ini per pengunjung, bukan per IP Cloudflare yang dipakai bersama.
 Route::post('/api/ongkir/estimasi', [ShippingEstimateController::class, 'estimate'])
-    ->middleware('throttle:20,1')->name('shipping.estimate');
+    ->middleware('throttle:60,1')->name('shipping.estimate');
 Route::get('/api/ongkir/kota-indah', [ShippingEstimateController::class, 'indahCities'])
     ->middleware('throttle:30,1')->name('shipping.indah-cities');
 
