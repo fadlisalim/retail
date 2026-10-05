@@ -395,6 +395,7 @@ docs/               DATABASE.md, SHIPPING.md, PAYMENTS.md
 
 ## Further documentation
 
+- [`docs/WA-CAMPAIGN.md`](docs/WA-CAMPAIGN.md) — **WhatsApp Campaign** (promo via Wablas): kredensial, jenis koneksi, webhook STOP/status, scheduler, alur sales.
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — **step-by-step production deployment** (VPS/Nginx, shared hosting/cPanel, SSL, queue, cron, backup, troubleshooting).
 - [`docs/DATABASE.md`](docs/DATABASE.md) — database schema & key relationships.
 - [`docs/SHIPPING.md`](docs/SHIPPING.md) — volumetric weight & shipping-provider architecture.

@@ -412,6 +412,36 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/audit-log', [Admin\AuditController::class, 'index'])->name('audit.index');
     });
 
+    // WhatsApp Campaign (promo via Wablas): campaign, kontak + izin, template, pengaturan.
+    Route::middleware('permission:marketing.manage')->prefix('wa-campaign')->name('wa-campaign.')->group(function () {
+        Route::get('/', [Admin\WaCampaignController::class, 'index'])->name('index');
+        Route::get('/buat', [Admin\WaCampaignController::class, 'create'])->name('create');
+        Route::post('/', [Admin\WaCampaignController::class, 'store'])->name('store');
+        Route::post('/audiens', [Admin\WaCampaignController::class, 'audience'])->name('audience');
+        Route::post('/tes', [Admin\WaCampaignController::class, 'test'])->middleware('throttle:10,1')->name('test');
+        Route::post('/emergency', [Admin\WaCampaignController::class, 'emergency'])->name('emergency');
+        Route::get('/kontak', [Admin\WaContactController::class, 'index'])->name('contacts');
+        Route::post('/kontak', [Admin\WaContactController::class, 'store'])->name('contacts.store');
+        Route::post('/kontak/import', [Admin\WaContactController::class, 'import'])->name('contacts.import');
+        Route::post('/kontak/sinkron', [Admin\WaContactController::class, 'sync'])->name('contacts.sync');
+        Route::put('/kontak/{contact}', [Admin\WaContactController::class, 'update'])->name('contacts.update');
+        Route::get('/template', [Admin\WaCampaignTemplateController::class, 'index'])->name('templates');
+        Route::post('/template', [Admin\WaCampaignTemplateController::class, 'store'])->name('templates.store');
+        Route::put('/template/{template}', [Admin\WaCampaignTemplateController::class, 'update'])->name('templates.update');
+        Route::delete('/template/{template}', [Admin\WaCampaignTemplateController::class, 'destroy'])->name('templates.destroy');
+        Route::get('/pengaturan', [Admin\WaCampaignSettingController::class, 'edit'])->name('settings');
+        Route::put('/pengaturan', [Admin\WaCampaignSettingController::class, 'update'])->name('settings.update');
+        Route::get('/{campaign}', [Admin\WaCampaignController::class, 'show'])->name('show');
+        Route::get('/{campaign}/edit', [Admin\WaCampaignController::class, 'edit'])->name('edit');
+        Route::put('/{campaign}', [Admin\WaCampaignController::class, 'update'])->name('update');
+        Route::post('/{campaign}/mulai', [Admin\WaCampaignController::class, 'start'])->name('start');
+        Route::post('/{campaign}/jeda', [Admin\WaCampaignController::class, 'pause'])->name('pause');
+        Route::post('/{campaign}/lanjut', [Admin\WaCampaignController::class, 'resume'])->name('resume');
+        Route::post('/{campaign}/batal', [Admin\WaCampaignController::class, 'cancel'])->name('cancel');
+        Route::post('/{campaign}/pesan/{message}/ulang', [Admin\WaCampaignController::class, 'requeue'])->name('requeue');
+        Route::delete('/{campaign}', [Admin\WaCampaignController::class, 'destroy'])->name('destroy');
+    });
+
     Route::middleware('permission:assistant.view')->group(function () {
         Route::get('/cs-assistant', [Admin\AssistantLogController::class, 'index'])->name('assistant.index');
 

@@ -55,6 +55,13 @@ return [
         // ("abc.jpeg") instead of a URL. Set the base that serves those files
         // (e.g. https://pati.wablas.com/media/) so the inbox can show them.
         'media_base_url' => env('WABLAS_MEDIA_BASE_URL'),
+        // Secret key akun (opsional; Authorization = token.secret bila diisi).
+        'secret' => env('WABLAS_SECRET'),
+        // WA Campaign: mode mock = tidak ada request keluar, pesan "diterima" dengan
+        // id MOCK-… (dipakai saat pengembangan / belum ada kredensial).
+        'campaign_mock' => (bool) env('WABLAS_CAMPAIGN_MOCK', false),
+        // Endpoint pembatalan pesan pending (bila server Wablas mendukung).
+        'cancel_path' => env('WABLAS_CANCEL_PATH', '/api/v2/cancel-message'),
     ],
 
     // CS Assistant (Claude / Anthropic). API key ONLY from .env — never hardcode.

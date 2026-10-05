@@ -12,6 +12,10 @@
         <x-form.phone name="whatsapp" label="Nomor WhatsApp" :value="old('whatsapp')" required />
         <x-form.input name="password" label="Kata Sandi" type="password" required hint="Minimal 8 karakter, mengandung huruf dan angka." />
         <x-form.input name="password_confirmation" label="Ulangi Kata Sandi" type="password" required />
+        <label class="flex items-start gap-2 text-xs text-gray-600">
+            <input type="checkbox" name="promo_consent" value="1" class="mt-0.5 rounded text-brand-600" @checked(old('promo_consent'))>
+            Saya bersedia menerima info promo &amp; produk baru via WhatsApp (bisa berhenti kapan saja dengan membalas STOP).
+        </label>
 
         <button type="submit" class="btn-primary w-full">Daftar</button>
         <p class="text-center text-xs text-gray-400">Dengan mendaftar Anda menyetujui <a href="{{ route('pages.show', 'syarat-ketentuan') }}" class="underline">Syarat &amp; Ketentuan</a>.</p>

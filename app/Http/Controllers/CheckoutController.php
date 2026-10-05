@@ -13,6 +13,7 @@ use App\Services\NotificationService;
 use App\Services\PaymentManager;
 use App\Services\Shipping\ShippingDestination;
 use App\Services\ShippingService;
+use App\Services\WaCampaign\WaContactService;
 use App\Services\WhatsAppService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -155,6 +156,14 @@ class CheckoutController extends Controller
 
         // Attribute the sale to a referring affiliate (last-click cookie), if any.
         $this->affiliates->attributeOrder($order);
+
+        // Izin promo WhatsApp (centang di checkout) → kontak WA Campaign dengan bukti.
+        if ($request->boolean('promo_consent')) {
+            app(WaContactService::class)->recordConsent(
+                $order->customer_phone, $order->customer_name, $order->user_id, 'checkout',
+                'Centang "bersedia menerima promo via WhatsApp" saat checkout pesanan '.$order->order_number.' pada '.now()->format('d/m/Y H:i').' (IP '.substr(hash('sha256', (string) $request->ip()), 0, 12).')',
+            );
+        }
 
         // Kaitkan ke kunjungan (sumber trafik + gclid) untuk konversi offline Google Ads.
         if ($visit = SiteVisit::forRequest($request)) {

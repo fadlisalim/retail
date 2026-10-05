@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\CustomerProfile;
 use App\Models\User;
 use App\Services\CartService;
+use App\Services\WaCampaign\WaContactService;
+use App\Services\WhatsAppService;
 use App\Services\WishlistService;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -31,12 +33,13 @@ class RegisterController extends Controller
             'email' => ['required', 'email', 'max:191', Rule::unique('users', 'email')->whereNull('deleted_at')],
             'whatsapp' => ['required', 'string', 'max:30'],
             'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'promo_consent' => ['nullable', 'boolean'],
         ], [
             'email.unique' => 'Email ini sudah terdaftar. Silakan masuk atau reset kata sandi.',
         ]);
 
         // Store WhatsApp in international format (08… → 62…) so Wablas can reach it.
-        $data['whatsapp'] = app(\App\Services\WhatsAppService::class)->normalize($data['whatsapp']) ?? $data['whatsapp'];
+        $data['whatsapp'] = app(WhatsAppService::class)->normalize($data['whatsapp']) ?? $data['whatsapp'];
 
         $guestToken = $request->session()->get('guest_token');
 
@@ -73,6 +76,14 @@ class RegisterController extends Controller
 
             return $user;
         });
+
+        // Izin promo WhatsApp (centang saat daftar) → kontak WA Campaign dengan bukti.
+        if ($request->boolean('promo_consent')) {
+            app(WaContactService::class)->recordConsent(
+                $user->whatsapp, $user->name, $user->id, 'register',
+                'Centang "bersedia menerima promo via WhatsApp" saat daftar akun pada '.now()->format('d/m/Y H:i').' (IP '.substr(hash('sha256', (string) $request->ip()), 0, 12).')',
+            );
+        }
 
         // Fires SendEmailVerificationNotification (User implements MustVerifyEmail).
         event(new Registered($user));

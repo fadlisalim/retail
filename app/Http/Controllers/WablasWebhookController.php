@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\WaMessage;
+use App\Services\WaCampaign\WablasCampaignClient;
+use App\Services\WaCampaign\WaCampaignService;
+use App\Services\WaCampaign\WaContactService;
 use App\Services\WhatsAppService;
 use App\Support\WablasMedia;
 use Illuminate\Http\Request;
@@ -55,6 +58,33 @@ class WablasWebhookController extends Controller
         $phone = $wa->normalize((string) ($payload['phone'] ?? $payload['sender'] ?? ''));
         $message = trim((string) ($payload['message'] ?? ''));
 
+        // Webhook tracking status pesan keluar (ack: sent/delivered/read/cancel/reject) —
+        // ada id + status, tanpa isi pesan masuk. Idempotent, status tidak mundur.
+        $ack = strtolower((string) ($payload['status'] ?? $payload['ack'] ?? ''));
+        if (isset($payload['id']) && $ack !== '' && $message === '' && ! isset($payload['pushName'])) {
+            app(WaCampaignService::class)->applyStatus((string) $payload['id'], $ack, isset($payload['note']) ? (string) $payload['note'] : null);
+
+            return response('', 200);
+        }
+
+        // "STOP" dari pelanggan = berhenti promo: kontak masuk daftar pengecualian,
+        // antreannya dibatalkan (termasuk pending di Wablas bila didukung), lalu
+        // konfirmasi singkat dikirim sekali. Dedupe via wablas_id di bawah tetap berlaku
+        // untuk inbox; untuk STOP, opt-out berulang tidak berbahaya (idempotent).
+        $fromMe = filter_var($payload['fromMe'] ?? $payload['from_me'] ?? $payload['isFromMe'] ?? false, FILTER_VALIDATE_BOOL);
+        if ($phone && ! $fromMe && $message !== '') {
+            $contacts = app(WaContactService::class);
+            if ($contacts->isStopMessage($message)) {
+                $contact = $contacts->upsert($phone, ['name' => $payload['pushName'] ?? null, 'source' => 'wachat']);
+                if ($contact && ! $contact->isOptedOut()) {
+                    $contacts->optOut($contact, 'Balas STOP', app(WablasCampaignClient::class));
+                    $wa->send($phone, 'Baik, nomor ini tidak akan menerima promo dari '.brand().' lagi. Terima kasih 🙏');
+                }
+            } else {
+                app(WaCampaignService::class)->noteReply($phone);
+            }
+        }
+
         // Media arrives either as a full URL or as a bare stored filename,
         // depending on the Wablas server. Keep it as media (not text) so the
         // inbox can show a thumbnail instead of "[media] abc.jpeg".
@@ -81,9 +111,8 @@ class WablasWebhookController extends Controller
         }
 
         // Messages sent from the device phone itself (admin replying on the HP)
-        // are webhooked by some Wablas setups with a fromMe flag — record those
-        // as outgoing so the thread mirrors WhatsApp correctly.
-        $fromMe = filter_var($payload['fromMe'] ?? $payload['from_me'] ?? $payload['isFromMe'] ?? false, FILTER_VALIDATE_BOOL);
+        // are webhooked by some Wablas setups with a fromMe flag — recorded as
+        // outgoing so the thread mirrors WhatsApp correctly ($fromMe di atas).
 
         try {
             WaMessage::create([

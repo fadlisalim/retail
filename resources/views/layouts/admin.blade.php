@@ -45,6 +45,7 @@
                 ['admin.traffic.index', 'Statistik Trafik', 'traffic.view'],
                 ['admin.assistant.index', 'CS Assistant', 'assistant.view'],
                 ['admin.wachat.index', 'WA Chat', 'assistant.view', 'wachat'],
+                ['admin.wa-campaign.index', 'WA Campaign', 'marketing.manage'],
                 ['admin.sitechat.index', 'Chat Toko', 'assistant.view', 'sitechat'],
                 ['admin.audit.index', 'Audit Log', 'audit.view'],
             ];

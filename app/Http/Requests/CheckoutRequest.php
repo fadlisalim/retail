@@ -29,6 +29,7 @@ class CheckoutRequest extends FormRequest
             'customer_note' => ['nullable', 'string', 'max:1000'],
             'idempotency_key' => ['required', 'string', 'max:64'],
             'agree_terms' => ['accepted'],
+            'promo_consent' => ['nullable', 'boolean'],
         ];
     }
 

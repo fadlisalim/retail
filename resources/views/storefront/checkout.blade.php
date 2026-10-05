@@ -203,6 +203,10 @@
                         <input type="checkbox" name="agree_terms" value="1" required class="mt-0.5 rounded text-brand-600">
                         Saya menyetujui <a href="{{ route('pages.show', 'syarat-ketentuan') }}" class="text-brand-600 underline">syarat &amp; ketentuan</a> dan konfirmasi kondisi produk.
                     </label>
+                    <label class="flex items-start gap-2 text-xs text-gray-600">
+                        <input type="checkbox" name="promo_consent" value="1" class="mt-0.5 rounded text-brand-600" @checked(old('promo_consent'))>
+                        Saya bersedia menerima info promo &amp; produk baru via WhatsApp (bisa berhenti kapan saja dengan membalas STOP).
+                    </label>
 
                     {{-- Cargo/freight: ongkir dikonfirmasi admin sebelum bayar. --}}
                     <div x-show="!shippingConfirmed" x-cloak role="alert" class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">

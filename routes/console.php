@@ -26,3 +26,6 @@ Schedule::command('assistant:prune')->daily();
 
 // Retention: prune the traffic-source log (default 90 days / ~3 months).
 Schedule::command('visits:prune')->daily();
+
+// WA Campaign: dispatcher antrean promo (jam kirim, rate, kuota, izin) tiap menit.
+Schedule::command('wa-campaign:dispatch')->everyMinute()->withoutOverlapping(5);
