@@ -6,10 +6,12 @@ use App\Enums\QuotationStatus;
 use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\SiteVisit;
+use App\Services\QuotationPdf;
 use App\Services\QuotationService;
 use App\Support\QuotationForm;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -96,6 +98,14 @@ class QuotationController extends Controller
         $quotation->load(['items.product', 'attachments', 'revisions']);
 
         return view('storefront.quotation-show', ['quotation' => $quotation]);
+    }
+
+    /** PDF penawaran untuk pelanggan (link publik ber-token). */
+    public function pdf(Quotation $quotation): Response
+    {
+        abort_if(! $quotation->quotation_number, 404); // belum dikirim = belum ada PDF resmi
+
+        return app(QuotationPdf::class)->response($quotation);
     }
 
     public function approve(Quotation $quotation): RedirectResponse

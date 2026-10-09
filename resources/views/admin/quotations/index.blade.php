@@ -15,7 +15,9 @@
         ];
     @endphp
 
-    <x-admin.page-header title="Quotation / RFQ" subtitle="Permintaan penawaran dari pelanggan" />
+    <x-admin.page-header title="Quotation / Penawaran" subtitle="Permintaan penawaran dari pelanggan (RFQ-…) dan penawaran yang disusun sales (SQ-…)">
+        <x-slot:actions><a href="{{ route('admin.quotations.create') }}" class="btn-primary">Susun Penawaran</a></x-slot:actions>
+    </x-admin.page-header>
 
     <form method="GET" action="{{ route('admin.quotations.index') }}" class="card mb-4 flex flex-wrap items-end gap-3 p-4">
         <div class="min-w-52 flex-1">

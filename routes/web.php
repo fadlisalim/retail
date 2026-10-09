@@ -142,6 +142,7 @@ Route::controller(QuotationController::class)->group(function () {
     Route::get('/permintaan-penawaran', 'create')->name('quotations.create');
     Route::post('/permintaan-penawaran', 'store')->middleware('throttle:10,1')->name('quotations.store');
     Route::get('/penawaran/{quotation:public_token}', 'show')->name('quotations.show');
+    Route::get('/penawaran/{quotation:public_token}/pdf', 'pdf')->name('quotations.pdf');
     Route::post('/penawaran/{quotation:public_token}/setujui', 'approve')->name('quotations.approve');
     Route::post('/penawaran/{quotation:public_token}/tolak', 'reject')->name('quotations.reject');
 });
@@ -370,7 +371,12 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
 
     Route::middleware('permission:quotation.manage')->group(function () {
         Route::get('/quotation', [Admin\QuotationController::class, 'index'])->name('quotations.index');
+        // Susun penawaran oleh sales (katalog / produk & jasa manual) + PDF.
+        Route::get('/quotation/buat', [Admin\QuotationController::class, 'create'])->name('quotations.create');
+        Route::post('/quotation', [Admin\QuotationController::class, 'store'])->name('quotations.store');
         Route::get('/quotation/{quotation}', [Admin\QuotationController::class, 'show'])->name('quotations.show');
+        Route::put('/quotation/{quotation}', [Admin\QuotationController::class, 'update'])->name('quotations.update');
+        Route::get('/quotation/{quotation}/pdf', [Admin\QuotationController::class, 'pdf'])->name('quotations.pdf');
         Route::post('/quotation/{quotation}/harga', [Admin\QuotationController::class, 'price'])->name('quotations.price');
         Route::post('/quotation/{quotation}/status', [Admin\QuotationController::class, 'status'])->name('quotations.status');
         Route::post('/quotation/{quotation}/jadikan-pesanan', [Admin\QuotationController::class, 'convert'])->name('quotations.convert');

@@ -46,10 +46,15 @@
                         <span class="badge {{ $badgeColors[$quotation->status->color()] ?? $badgeColors['gray'] }}">{{ $quotation->status->label() }}</span>
                     </div>
                 </div>
+                <div class="flex flex-wrap gap-2">
+                @if ($quotation->quotation_number)
+                    <a href="{{ route('quotations.pdf', $quotation->public_token) }}" target="_blank" rel="noopener" class="btn-primary text-sm">Unduh PDF</a>
+                @endif
                 <a href="{{ whatsapp_link('Halo Rekasurya, terkait penawaran '.$quotation->rfq_number) }}" target="_blank" rel="noopener" class="btn-outline text-sm">
                     <svg class="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24z"/></svg>
                     Tanya via WhatsApp
                 </a>
+                </div>
             </div>
 
             @if ($canDecide)

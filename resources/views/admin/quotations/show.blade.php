@@ -19,6 +19,14 @@
     <x-admin.page-header :title="'Penawaran ' . $quotation->rfq_number" :subtitle="$quotation->quotation_number ?? 'Belum ada nomor penawaran'">
         <x-slot:actions>
             <a href="{{ route('admin.quotations.index') }}" class="btn-outline">&larr; Kembali</a>
+            <a href="{{ route('admin.quotations.pdf', $quotation) }}" target="_blank" rel="noopener" class="btn-outline">{{ $quotation->quotation_number ? 'Unduh PDF' : 'Pratinjau PDF (draf)' }}</a>
+            @if ($quotation->quotation_number)
+                @php $waText = 'Halo '.$quotation->contact_name.', berikut penawaran '.$quotation->quotation_number.' dari '.brand().' (total '.rupiah($quotation->grand_total).'). Detail & PDF: '.route('quotations.show', $quotation->public_token).' — PDF: '.route('quotations.pdf', $quotation->public_token); @endphp
+                <button type="button" class="btn-outline" onclick="navigator.clipboard.writeText(@js(route('quotations.show', $quotation->public_token))).then(() => this.textContent = 'Link disalin ✓')">Salin link customer</button>
+                @if ($quotation->contact_phone)
+                    <a href="https://wa.me/{{ preg_replace('/\D/', '', str_starts_with(ltrim($quotation->contact_phone, '+'), '0') ? '62'.substr(ltrim($quotation->contact_phone, '+'), 1) : ltrim($quotation->contact_phone, '+')) }}?text={{ rawurlencode($waText) }}" target="_blank" rel="noopener" class="btn-primary">Kirim via WhatsApp</a>
+                @endif
+            @endif
         </x-slot:actions>
     </x-admin.page-header>
 
@@ -110,74 +118,27 @@
                 @endif
             </div>
 
+            {{-- Customer / proyek (bisa diubah sales) --}}
+            <div class="card p-5" x-data="{ edit: {{ $errors->has('contact_name') ? 'true' : 'false' }} }">
+                <div class="flex items-center justify-between"><h2 class="font-semibold text-gray-900">Data Customer</h2><button type="button" class="text-xs text-brand-700 hover:underline" @click="edit = !edit" x-text="edit ? 'Tutup' : 'Ubah'"></button></div>
+                <form method="POST" action="{{ route('admin.quotations.update', $quotation) }}" class="mt-3 space-y-3" x-show="edit" x-cloak>
+                    @csrf @method('PUT')
+                    @include('admin.quotations._header-fields', ['q' => $quotation])
+                    <button class="btn-primary">Simpan data customer</button>
+                </form>
+            </div>
+
             {{-- Pricing form --}}
             <div class="card p-5">
-                <h2 class="mb-4 font-semibold text-gray-900">Penetapan Harga</h2>
+                <h2 class="mb-1 font-semibold text-gray-900">Produk / Jasa &amp; Harga</h2>
+                <p class="mb-4 text-xs text-gray-500">Tambah baris dari katalog atau manual (jasa instalasi, survei, tiang, dsb.), ubah qty/harga, lalu simpan draf atau kirim. Setiap kirim ulang membuat revisi baru.</p>
                 <form method="POST" action="{{ route('admin.quotations.price', $quotation) }}" class="space-y-4">
                     @csrf
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="border-b border-gray-100 text-left text-xs uppercase text-gray-500">
-                                <tr>
-                                    <th class="py-2 pr-2">Item</th>
-                                    <th class="px-2 py-2 text-center">Qty</th>
-                                    <th class="px-2 py-2">Harga Satuan</th>
-                                    <th class="px-2 py-2">Diskon</th>
-                                    <th class="px-2 py-2 text-center">Kena Pajak</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-50">
-                                @foreach ($quotation->items as $i => $item)
-                                    <tr>
-                                        <td class="py-2 pr-2">
-                                            <input type="hidden" name="items[{{ $i }}][id]" value="{{ $item->id }}">
-                                            <div class="font-medium text-gray-800">{{ $item->name }}</div>
-                                            @if ($item->note)<div class="text-xs text-gray-400">{{ $item->note }}</div>@endif
-                                        </td>
-                                        <td class="px-2 py-2 text-center">{{ $item->quantity }}</td>
-                                        <td class="px-2 py-2">
-                                            <input type="number" step="1" min="0" name="items[{{ $i }}][unit_price]"
-                                                   value="{{ old('items.'.$i.'.unit_price', (int) $item->unit_price) }}" class="form-input w-32">
-                                        </td>
-                                        <td class="px-2 py-2">
-                                            <input type="number" step="1" min="0" name="items[{{ $i }}][discount]"
-                                                   value="{{ old('items.'.$i.'.discount', (int) $item->discount) }}" class="form-input w-28">
-                                        </td>
-                                        <td class="px-2 py-2 text-center">
-                                            <input type="checkbox" name="items[{{ $i }}][is_taxable]" value="1"
-                                                   @checked(old('items.'.$i.'.is_taxable', $item->is_taxable ?? true))
-                                                   class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                    @include('admin.quotations._items-editor', ['quotation' => $quotation])
+                    <div class="flex flex-wrap gap-2">
+                        <button type="submit" name="action" value="draft" class="btn-outline">Simpan draf</button>
+                        <button type="submit" name="action" value="send" class="btn-primary" onclick="return confirm('Kirim penawaran ke customer? {{ $quotation->quotation_number ? 'Ini akan membuat revisi baru.' : 'Nomor penawaran akan diterbitkan.' }}')">{{ $quotation->quotation_number ? 'Simpan & kirim revisi' : 'Simpan & kirim ke customer' }}</button>
                     </div>
-
-                    <div class="grid gap-4 border-t border-gray-100 pt-4 sm:grid-cols-2">
-                        <div>
-                            <label for="discount" class="input-label">Diskon Header (Rp)</label>
-                            <input type="number" step="1" min="0" name="discount" id="discount" value="{{ old('discount', (int) $quotation->discount) }}" class="form-input">
-                        </div>
-                        <div>
-                            <label for="shipping_cost" class="input-label">Ongkir (Rp)</label>
-                            <input type="number" step="1" min="0" name="shipping_cost" id="shipping_cost" value="{{ old('shipping_cost', (int) $quotation->shipping_cost) }}" class="form-input">
-                        </div>
-                        <div>
-                            <label for="payment_terms" class="input-label">Termin Pembayaran</label>
-                            <input type="text" name="payment_terms" id="payment_terms" value="{{ old('payment_terms', $quotation->payment_terms) }}" placeholder="mis. 30% DP, 70% sebelum kirim" class="form-input">
-                        </div>
-                        <div>
-                            <label for="valid_until" class="input-label">Berlaku Sampai</label>
-                            <input type="date" name="valid_until" id="valid_until" value="{{ old('valid_until', $quotation->valid_until?->format('Y-m-d')) }}" class="form-input">
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label for="admin_note" class="input-label">Catatan Penawaran</label>
-                            <textarea name="admin_note" id="admin_note" rows="3" class="form-textarea">{{ old('admin_note', $quotation->admin_note) }}</textarea>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn-primary">Simpan &amp; Kirim Penawaran</button>
                 </form>
             </div>
 
