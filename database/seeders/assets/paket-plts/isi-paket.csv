@@ -1,0 +1,1065 @@
+﻿sku,urutan,kelompok,komponen,spesifikasi,qty,satuan
+SIAGA-500,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 0,5 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+SIAGA-500,2,Perangkat utama,Inverter off-grid,"1,2 kW, 1 fasa (sistem 12V)",1,unit
+SIAGA-500,3,Perangkat utama,Baterai lithium LiFePO4,"12,8V 100Ah (1,28 kWh)",1,unit
+SIAGA-500,4,Panel proteksi,Fuse PV + holder,"gPV 1000VDC, per kutub",2,set
+SIAGA-500,5,Panel proteksi,SPD DC 2P 600V,Surge protection DC T2 40kA,1,pcs
+SIAGA-500,6,Panel proteksi,Fuse baterai ANL + holder,"150–200A, 12/24VDC",1,set
+SIAGA-500,7,Panel proteksi,MCB AC 2P 16–32A,Input PLN + output beban,2,pcs
+SIAGA-500,8,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+SIAGA-500,9,Panel proteksi,COS 2P 32A,Changeover switch PLN–inverter,1,pcs
+SIAGA-500,10,Panel proteksi,Box panel modular ±12 modul + aksesoris,"DIN rail, terminal, skun",1,set
+SIAGA-500,11,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m (+ dan −)",60,m
+SIAGA-500,12,Kabel & aksesoris,Kabel NYM 3x2.5 / 3x4,AC 2 jalur × 10 m,20,m
+SIAGA-500,13,Kabel & aksesoris,Kabel baterai + skun,"35–50 mm², 1 set",1,set
+SIAGA-500,14,Kabel & aksesoris,Konektor MC4,1000V IP67,2,pasang
+SIAGA-500,15,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa, klem, cable tie",50,m
+SIAGA-500,16,Grounding,Grounding set,"Rod 5/8"" 1,5 m + klem + kabel BC 16 mm² 5 m + NYAF 4 mm 30 m",1,set
+SIAGA-1000,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 1 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+SIAGA-1000,2,Perangkat utama,Inverter off-grid,"2,5 kW, 1 fasa (sistem 12V)",1,unit
+SIAGA-1000,3,Perangkat utama,Baterai lithium LiFePO4,"12,8V 100Ah (1,28 kWh) per unit · paralel",3,unit
+SIAGA-1000,4,Panel proteksi,Fuse PV + holder,"gPV 1000VDC, per kutub",2,set
+SIAGA-1000,5,Panel proteksi,SPD DC 2P 600V,Surge protection DC T2 40kA,1,pcs
+SIAGA-1000,6,Panel proteksi,Fuse baterai ANL + holder,"150–200A, 12/24VDC",1,set
+SIAGA-1000,7,Panel proteksi,MCB AC 2P 16–32A,Input PLN + output beban,2,pcs
+SIAGA-1000,8,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+SIAGA-1000,9,Panel proteksi,COS 2P 32A,Changeover switch PLN–inverter,1,pcs
+SIAGA-1000,10,Panel proteksi,Box panel modular ±12 modul + aksesoris,"DIN rail, terminal, skun",1,set
+SIAGA-1000,11,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m (+ dan −)",60,m
+SIAGA-1000,12,Kabel & aksesoris,Kabel NYM 3x2.5 / 3x4,AC 2 jalur × 10 m,20,m
+SIAGA-1000,13,Kabel & aksesoris,Kabel baterai + skun,"35–50 mm², 1 set",1,set
+SIAGA-1000,14,Kabel & aksesoris,Konektor MC4,1000V IP67,2,pasang
+SIAGA-1000,15,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa, klem, cable tie",50,m
+SIAGA-1000,16,Grounding,Grounding set,"Rod 5/8"" 1,5 m + klem + kabel BC 16 mm² 5 m + NYAF 4 mm 30 m",1,set
+SIAGA-1500,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 1,5 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+SIAGA-1500,2,Perangkat utama,Inverter off-grid,"4 kW, 1 fasa (sistem 24V)",1,unit
+SIAGA-1500,3,Perangkat utama,Baterai lithium LiFePO4,"25,6V 200Ah (5,12 kWh)",1,unit
+SIAGA-1500,4,Panel proteksi,Fuse PV + holder,"gPV 1000VDC, per kutub",2,set
+SIAGA-1500,5,Panel proteksi,SPD DC 2P 600V,Surge protection DC T2 40kA,1,pcs
+SIAGA-1500,6,Panel proteksi,Fuse baterai ANL + holder,"150–200A, 12/24VDC",1,set
+SIAGA-1500,7,Panel proteksi,MCB AC 2P 16–32A,Input PLN + output beban,2,pcs
+SIAGA-1500,8,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+SIAGA-1500,9,Panel proteksi,COS 2P 32A,Changeover switch PLN–inverter,1,pcs
+SIAGA-1500,10,Panel proteksi,Box panel modular ±12 modul + aksesoris,"DIN rail, terminal, skun",1,set
+SIAGA-1500,11,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m (+ dan −)",60,m
+SIAGA-1500,12,Kabel & aksesoris,Kabel NYM 3x2.5 / 3x4,AC 2 jalur × 10 m,20,m
+SIAGA-1500,13,Kabel & aksesoris,Kabel baterai + skun,"35–50 mm², 1 set",1,set
+SIAGA-1500,14,Kabel & aksesoris,Konektor MC4,1000V IP67,2,pasang
+SIAGA-1500,15,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa, klem, cable tie",50,m
+SIAGA-1500,16,Grounding,Grounding set,"Rod 5/8"" 1,5 m + klem + kabel BC 16 mm² 5 m + NYAF 4 mm 30 m",1,set
+SIAGA-2000,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 2 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+SIAGA-2000,2,Perangkat utama,Inverter off-grid,"4 kW, 1 fasa (sistem 24V)",1,unit
+SIAGA-2000,3,Perangkat utama,Baterai lithium LiFePO4,"25,6V 100Ah (2,56 kWh) per unit · paralel",3,unit
+SIAGA-2000,4,Panel proteksi,Fuse PV + holder,"gPV 1000VDC, per kutub",2,set
+SIAGA-2000,5,Panel proteksi,SPD DC 2P 600V,Surge protection DC T2 40kA,1,pcs
+SIAGA-2000,6,Panel proteksi,Fuse baterai ANL + holder,"150–200A, 12/24VDC",1,set
+SIAGA-2000,7,Panel proteksi,MCB AC 2P 16–32A,Input PLN + output beban,2,pcs
+SIAGA-2000,8,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+SIAGA-2000,9,Panel proteksi,COS 2P 32A,Changeover switch PLN–inverter,1,pcs
+SIAGA-2000,10,Panel proteksi,Box panel modular ±12 modul + aksesoris,"DIN rail, terminal, skun",1,set
+SIAGA-2000,11,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m (+ dan −)",60,m
+SIAGA-2000,12,Kabel & aksesoris,Kabel NYM 3x2.5 / 3x4,AC 2 jalur × 10 m,20,m
+SIAGA-2000,13,Kabel & aksesoris,Kabel baterai + skun,"35–50 mm², 1 set",1,set
+SIAGA-2000,14,Kabel & aksesoris,Konektor MC4,1000V IP67,2,pasang
+SIAGA-2000,15,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa, klem, cable tie",50,m
+SIAGA-2000,16,Grounding,Grounding set,"Rod 5/8"" 1,5 m + klem + kabel BC 16 mm² 5 m + NYAF 4 mm 30 m",1,set
+HNG-1P-3K-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 3,5 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-1P-3K-S,2,Perangkat utama,Inverter hybrid on-grid,"3 kW, 1 fasa",1,unit
+HNG-1P-3K-S,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 200Ah (10,24 kWh)",1,unit
+HNG-1P-3K-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HNG-1P-3K-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HNG-1P-3K-S,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,1,pcs
+HNG-1P-3K-S,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HNG-1P-3K-S,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HNG-1P-3K-S,9,Panel proteksi,MCB AC 2P 32A,"Input PLN & output beban, 6kA",2,pcs
+HNG-1P-3K-S,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HNG-1P-3K-S,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HNG-1P-3K-S,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HNG-1P-3K-S,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HNG-1P-3K-S,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HNG-1P-3K-S,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HNG-1P-3K-S,16,Kabel & aksesoris,Kabel NYY 3x6,AC 2 jalur (grid & beban) × 10 m,20,m
+HNG-1P-3K-S,17,Kabel & aksesoris,Kabel baterai + skun,"25–35 mm², 1 set",1,set
+HNG-1P-3K-S,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HNG-1P-3K-S,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-1P-3K-S,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-1P-3K-S,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-1P-3K-S,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-1P-3K-S,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-1P-3K-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 3,5 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-1P-3K-P,2,Perangkat utama,Inverter hybrid on-grid,"3 kW, 1 fasa",1,unit
+HNG-1P-3K-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 230Ah (11,7 kWh) — anti kebakaran (fire extinguisher built-in)",1,unit
+HNG-1P-3K-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HNG-1P-3K-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HNG-1P-3K-P,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,1,pcs
+HNG-1P-3K-P,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HNG-1P-3K-P,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HNG-1P-3K-P,9,Panel proteksi,MCB AC 2P 32A,"Input PLN & output beban, 6kA",2,pcs
+HNG-1P-3K-P,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HNG-1P-3K-P,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HNG-1P-3K-P,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HNG-1P-3K-P,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HNG-1P-3K-P,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HNG-1P-3K-P,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HNG-1P-3K-P,16,Kabel & aksesoris,Kabel NYY 3x6,AC 2 jalur (grid & beban) × 10 m,20,m
+HNG-1P-3K-P,17,Kabel & aksesoris,Kabel baterai + skun,"25–35 mm², 1 set",1,set
+HNG-1P-3K-P,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HNG-1P-3K-P,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-1P-3K-P,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-1P-3K-P,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-1P-3K-P,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-1P-3K-P,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-1P-5K-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 6 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-1P-5K-S,2,Perangkat utama,Inverter hybrid on-grid,"5 kW, 1 fasa",1,unit
+HNG-1P-5K-S,3,Perangkat utama,Baterai lithium LiFePO4,48V 314Ah (15 kWh),1,unit
+HNG-1P-5K-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HNG-1P-5K-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HNG-1P-5K-S,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,1,pcs
+HNG-1P-5K-S,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HNG-1P-5K-S,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HNG-1P-5K-S,9,Panel proteksi,MCB AC 2P 32A,"Input PLN & output beban, 6kA",2,pcs
+HNG-1P-5K-S,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HNG-1P-5K-S,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HNG-1P-5K-S,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HNG-1P-5K-S,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HNG-1P-5K-S,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HNG-1P-5K-S,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HNG-1P-5K-S,16,Kabel & aksesoris,Kabel NYY 3x6,AC 2 jalur (grid & beban) × 10 m,20,m
+HNG-1P-5K-S,17,Kabel & aksesoris,Kabel baterai + skun,"25–35 mm², 1 set",1,set
+HNG-1P-5K-S,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HNG-1P-5K-S,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-1P-5K-S,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-1P-5K-S,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-1P-5K-S,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-1P-5K-S,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-1P-5K-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 6 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-1P-5K-P,2,Perangkat utama,Inverter hybrid on-grid,"5 kW, 1 fasa",1,unit
+HNG-1P-5K-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 300Ah (15 kWh) — anti kebakaran (fire extinguisher built-in)",1,unit
+HNG-1P-5K-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HNG-1P-5K-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HNG-1P-5K-P,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,1,pcs
+HNG-1P-5K-P,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HNG-1P-5K-P,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HNG-1P-5K-P,9,Panel proteksi,MCB AC 2P 32A,"Input PLN & output beban, 6kA",2,pcs
+HNG-1P-5K-P,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HNG-1P-5K-P,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HNG-1P-5K-P,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HNG-1P-5K-P,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HNG-1P-5K-P,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HNG-1P-5K-P,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HNG-1P-5K-P,16,Kabel & aksesoris,Kabel NYY 3x6,AC 2 jalur (grid & beban) × 10 m,20,m
+HNG-1P-5K-P,17,Kabel & aksesoris,Kabel baterai + skun,"25–35 mm², 1 set",1,set
+HNG-1P-5K-P,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HNG-1P-5K-P,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-1P-5K-P,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-1P-5K-P,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-1P-5K-P,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-1P-5K-P,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-1P-6K-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 7,5 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-1P-6K-S,2,Perangkat utama,Inverter hybrid on-grid,"6 kW, 1 fasa",1,unit
+HNG-1P-6K-S,3,Perangkat utama,Baterai lithium LiFePO4,48V 314Ah (15 kWh),1,unit
+HNG-1P-6K-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HNG-1P-6K-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HNG-1P-6K-S,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,1,pcs
+HNG-1P-6K-S,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HNG-1P-6K-S,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HNG-1P-6K-S,9,Panel proteksi,MCB AC 2P 32A,"Input PLN & output beban, 6kA",2,pcs
+HNG-1P-6K-S,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HNG-1P-6K-S,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HNG-1P-6K-S,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HNG-1P-6K-S,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HNG-1P-6K-S,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HNG-1P-6K-S,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HNG-1P-6K-S,16,Kabel & aksesoris,Kabel NYY 3x6,AC 2 jalur (grid & beban) × 10 m,20,m
+HNG-1P-6K-S,17,Kabel & aksesoris,Kabel baterai + skun,"25–35 mm², 1 set",1,set
+HNG-1P-6K-S,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HNG-1P-6K-S,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-1P-6K-S,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-1P-6K-S,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-1P-6K-S,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-1P-6K-S,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-1P-6K-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 7,5 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-1P-6K-P,2,Perangkat utama,Inverter hybrid on-grid,"6 kW, 1 fasa",1,unit
+HNG-1P-6K-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 300Ah (15 kWh) — anti kebakaran (fire extinguisher built-in)",1,unit
+HNG-1P-6K-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HNG-1P-6K-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HNG-1P-6K-P,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,1,pcs
+HNG-1P-6K-P,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HNG-1P-6K-P,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HNG-1P-6K-P,9,Panel proteksi,MCB AC 2P 32A,"Input PLN & output beban, 6kA",2,pcs
+HNG-1P-6K-P,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HNG-1P-6K-P,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HNG-1P-6K-P,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HNG-1P-6K-P,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HNG-1P-6K-P,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HNG-1P-6K-P,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HNG-1P-6K-P,16,Kabel & aksesoris,Kabel NYY 3x6,AC 2 jalur (grid & beban) × 10 m,20,m
+HNG-1P-6K-P,17,Kabel & aksesoris,Kabel baterai + skun,"25–35 mm², 1 set",1,set
+HNG-1P-6K-P,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HNG-1P-6K-P,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-1P-6K-P,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-1P-6K-P,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-1P-6K-P,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-1P-6K-P,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-1P-8K-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 10 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-1P-8K-S,2,Perangkat utama,Inverter hybrid on-grid,"8 kW, 1 fasa",1,unit
+HNG-1P-8K-S,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 410Ah (20,99 kWh)",1,unit
+HNG-1P-8K-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HNG-1P-8K-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HNG-1P-8K-S,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,2,pcs
+HNG-1P-8K-S,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HNG-1P-8K-S,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HNG-1P-8K-S,9,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,2,pcs
+HNG-1P-8K-S,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HNG-1P-8K-S,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HNG-1P-8K-S,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HNG-1P-8K-S,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HNG-1P-8K-S,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HNG-1P-8K-S,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HNG-1P-8K-S,16,Kabel & aksesoris,Kabel NYY 3x10,AC 2 jalur (grid & beban) × 10 m,20,m
+HNG-1P-8K-S,17,Kabel & aksesoris,Kabel baterai + skun,"50–70 mm², 1 set",1,set
+HNG-1P-8K-S,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HNG-1P-8K-S,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-1P-8K-S,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-1P-8K-S,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-1P-8K-S,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-1P-8K-S,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-1P-8K-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 10 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-1P-8K-P,2,Perangkat utama,Inverter hybrid on-grid,"8 kW, 1 fasa",1,unit
+HNG-1P-8K-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 230Ah (11,7 kWh) per unit · paralel — anti kebakaran (fire extinguisher built-in)",2,unit
+HNG-1P-8K-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HNG-1P-8K-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HNG-1P-8K-P,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,2,pcs
+HNG-1P-8K-P,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HNG-1P-8K-P,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HNG-1P-8K-P,9,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,2,pcs
+HNG-1P-8K-P,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HNG-1P-8K-P,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HNG-1P-8K-P,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HNG-1P-8K-P,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HNG-1P-8K-P,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HNG-1P-8K-P,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HNG-1P-8K-P,16,Kabel & aksesoris,Kabel NYY 3x10,AC 2 jalur (grid & beban) × 10 m,20,m
+HNG-1P-8K-P,17,Kabel & aksesoris,Kabel baterai + skun,"50–70 mm², 1 set",1,set
+HNG-1P-8K-P,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HNG-1P-8K-P,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-1P-8K-P,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-1P-8K-P,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-1P-8K-P,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-1P-8K-P,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-1P-10K-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 12,5 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-1P-10K-S,2,Perangkat utama,Inverter hybrid on-grid,"10 kW, 1 fasa",1,unit
+HNG-1P-10K-S,3,Perangkat utama,Baterai lithium LiFePO4,48V 628Ah (30 kWh),1,unit
+HNG-1P-10K-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HNG-1P-10K-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HNG-1P-10K-S,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,2,pcs
+HNG-1P-10K-S,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HNG-1P-10K-S,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HNG-1P-10K-S,9,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,2,pcs
+HNG-1P-10K-S,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HNG-1P-10K-S,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HNG-1P-10K-S,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HNG-1P-10K-S,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HNG-1P-10K-S,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HNG-1P-10K-S,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HNG-1P-10K-S,16,Kabel & aksesoris,Kabel NYY 3x10,AC 2 jalur (grid & beban) × 10 m,20,m
+HNG-1P-10K-S,17,Kabel & aksesoris,Kabel baterai + skun,"50–70 mm², 1 set",1,set
+HNG-1P-10K-S,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HNG-1P-10K-S,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-1P-10K-S,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-1P-10K-S,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-1P-10K-S,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-1P-10K-S,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-1P-10K-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 12,5 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-1P-10K-P,2,Perangkat utama,Inverter hybrid on-grid,"10 kW, 1 fasa",1,unit
+HNG-1P-10K-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 300Ah (15 kWh) per unit · paralel — anti kebakaran (fire extinguisher built-in)",2,unit
+HNG-1P-10K-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HNG-1P-10K-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HNG-1P-10K-P,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,2,pcs
+HNG-1P-10K-P,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HNG-1P-10K-P,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HNG-1P-10K-P,9,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,2,pcs
+HNG-1P-10K-P,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HNG-1P-10K-P,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HNG-1P-10K-P,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HNG-1P-10K-P,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HNG-1P-10K-P,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HNG-1P-10K-P,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HNG-1P-10K-P,16,Kabel & aksesoris,Kabel NYY 3x10,AC 2 jalur (grid & beban) × 10 m,20,m
+HNG-1P-10K-P,17,Kabel & aksesoris,Kabel baterai + skun,"50–70 mm², 1 set",1,set
+HNG-1P-10K-P,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HNG-1P-10K-P,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-1P-10K-P,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-1P-10K-P,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-1P-10K-P,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-1P-10K-P,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-3P-10K-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 12,5 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-3P-10K-S,2,Perangkat utama,Inverter hybrid on-grid,"10 kW, 3 fasa",1,unit
+HNG-3P-10K-S,3,Perangkat utama,Baterai lithium LiFePO4,48V 628Ah (30 kWh),1,unit
+HNG-3P-10K-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,8,pcs
+HNG-3P-10K-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,8,pcs
+HNG-3P-10K-S,6,Panel proteksi,SPD DC 3P 1000V,Surge protection DC 40kA,2,pcs
+HNG-3P-10K-S,7,Panel proteksi,MCCB DC 2P 400A,Pemutus DC baterai,1,pcs
+HNG-3P-10K-S,8,Panel proteksi,Box besi MCCB 40x50x20 cm,"Outdoor, plat 1,2 mm",1,pcs
+HNG-3P-10K-S,9,Panel proteksi,MCB AC 3P 50/63A,Input PLN & output beban 3 fasa,2,pcs
+HNG-3P-10K-S,10,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HNG-3P-10K-S,11,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HNG-3P-10K-S,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HNG-3P-10K-S,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HNG-3P-10K-S,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",240,m
+HNG-3P-10K-S,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HNG-3P-10K-S,16,Kabel & aksesoris,Kabel NYY 4x6,AC 3 fasa 2 jalur × 10 m,20,m
+HNG-3P-10K-S,17,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",1,set
+HNG-3P-10K-S,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,8,pasang
+HNG-3P-10K-S,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-3P-10K-S,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-3P-10K-S,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-3P-10K-S,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-3P-10K-S,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-3P-10K-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 12,5 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-3P-10K-P,2,Perangkat utama,Inverter hybrid on-grid,"10 kW, 3 fasa",1,unit
+HNG-3P-10K-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 300Ah (15 kWh) per unit · paralel — anti kebakaran (fire extinguisher built-in)",2,unit
+HNG-3P-10K-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,8,pcs
+HNG-3P-10K-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,8,pcs
+HNG-3P-10K-P,6,Panel proteksi,SPD DC 3P 1000V,Surge protection DC 40kA,2,pcs
+HNG-3P-10K-P,7,Panel proteksi,MCCB DC 2P 400A,Pemutus DC baterai,1,pcs
+HNG-3P-10K-P,8,Panel proteksi,Box besi MCCB 40x50x20 cm,"Outdoor, plat 1,2 mm",1,pcs
+HNG-3P-10K-P,9,Panel proteksi,MCB AC 3P 50/63A,Input PLN & output beban 3 fasa,2,pcs
+HNG-3P-10K-P,10,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HNG-3P-10K-P,11,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HNG-3P-10K-P,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HNG-3P-10K-P,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HNG-3P-10K-P,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",240,m
+HNG-3P-10K-P,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HNG-3P-10K-P,16,Kabel & aksesoris,Kabel NYY 4x6,AC 3 fasa 2 jalur × 10 m,20,m
+HNG-3P-10K-P,17,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",1,set
+HNG-3P-10K-P,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,8,pasang
+HNG-3P-10K-P,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-3P-10K-P,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-3P-10K-P,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-3P-10K-P,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-3P-10K-P,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-3P-15K-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 18,5 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-3P-15K-S,2,Perangkat utama,Inverter hybrid on-grid,"15 kW, 3 fasa",1,unit
+HNG-3P-15K-S,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 410Ah (20,99 kWh) per unit · paralel",2,unit
+HNG-3P-15K-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,8,pcs
+HNG-3P-15K-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,8,pcs
+HNG-3P-15K-S,6,Panel proteksi,SPD DC 3P 1000V,Surge protection DC 40kA,2,pcs
+HNG-3P-15K-S,7,Panel proteksi,MCCB DC 2P 400A,Pemutus DC baterai,1,pcs
+HNG-3P-15K-S,8,Panel proteksi,Box besi MCCB 40x50x20 cm,"Outdoor, plat 1,2 mm",1,pcs
+HNG-3P-15K-S,9,Panel proteksi,MCB AC 3P 50/63A,Input PLN & output beban 3 fasa,2,pcs
+HNG-3P-15K-S,10,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HNG-3P-15K-S,11,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HNG-3P-15K-S,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HNG-3P-15K-S,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HNG-3P-15K-S,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",240,m
+HNG-3P-15K-S,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HNG-3P-15K-S,16,Kabel & aksesoris,Kabel NYY 4x6,AC 3 fasa 2 jalur × 10 m,20,m
+HNG-3P-15K-S,17,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",1,set
+HNG-3P-15K-S,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,8,pasang
+HNG-3P-15K-S,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-3P-15K-S,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-3P-15K-S,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-3P-15K-S,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-3P-15K-S,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-3P-15K-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 18,5 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-3P-15K-P,2,Perangkat utama,Inverter hybrid on-grid,"15 kW, 3 fasa",1,unit
+HNG-3P-15K-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 300Ah (15 kWh) per unit · paralel — anti kebakaran (fire extinguisher built-in)",3,unit
+HNG-3P-15K-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,8,pcs
+HNG-3P-15K-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,8,pcs
+HNG-3P-15K-P,6,Panel proteksi,SPD DC 3P 1000V,Surge protection DC 40kA,2,pcs
+HNG-3P-15K-P,7,Panel proteksi,MCCB DC 2P 400A,Pemutus DC baterai,1,pcs
+HNG-3P-15K-P,8,Panel proteksi,Box besi MCCB 40x50x20 cm,"Outdoor, plat 1,2 mm",1,pcs
+HNG-3P-15K-P,9,Panel proteksi,MCB AC 3P 50/63A,Input PLN & output beban 3 fasa,2,pcs
+HNG-3P-15K-P,10,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HNG-3P-15K-P,11,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HNG-3P-15K-P,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HNG-3P-15K-P,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HNG-3P-15K-P,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",240,m
+HNG-3P-15K-P,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HNG-3P-15K-P,16,Kabel & aksesoris,Kabel NYY 4x6,AC 3 fasa 2 jalur × 10 m,20,m
+HNG-3P-15K-P,17,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",1,set
+HNG-3P-15K-P,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,8,pasang
+HNG-3P-15K-P,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-3P-15K-P,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-3P-15K-P,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-3P-15K-P,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-3P-15K-P,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-3P-20K-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 25 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-3P-20K-S,2,Perangkat utama,Inverter hybrid on-grid,"20 kW, 3 fasa",1,unit
+HNG-3P-20K-S,3,Perangkat utama,Baterai lithium LiFePO4,48V 628Ah (30 kWh) per unit · paralel,2,unit
+HNG-3P-20K-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,8,pcs
+HNG-3P-20K-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,8,pcs
+HNG-3P-20K-S,6,Panel proteksi,SPD DC 3P 1000V,Surge protection DC 40kA,2,pcs
+HNG-3P-20K-S,7,Panel proteksi,MCCB DC 2P 400A,Pemutus DC baterai,1,pcs
+HNG-3P-20K-S,8,Panel proteksi,Box besi MCCB 40x50x20 cm,"Outdoor, plat 1,2 mm",1,pcs
+HNG-3P-20K-S,9,Panel proteksi,MCB AC 3P 50/63A,Input PLN & output beban 3 fasa,2,pcs
+HNG-3P-20K-S,10,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HNG-3P-20K-S,11,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HNG-3P-20K-S,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HNG-3P-20K-S,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HNG-3P-20K-S,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",240,m
+HNG-3P-20K-S,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HNG-3P-20K-S,16,Kabel & aksesoris,Kabel NYY 4x6,AC 3 fasa 2 jalur × 10 m,20,m
+HNG-3P-20K-S,17,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",1,set
+HNG-3P-20K-S,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,8,pasang
+HNG-3P-20K-S,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-3P-20K-S,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-3P-20K-S,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-3P-20K-S,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-3P-20K-S,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-3P-20K-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 25 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-3P-20K-P,2,Perangkat utama,Inverter hybrid on-grid,"20 kW, 3 fasa",1,unit
+HNG-3P-20K-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 350Ah (17,5 kWh) per unit · paralel — anti kebakaran (fire extinguisher built-in)",4,unit
+HNG-3P-20K-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,8,pcs
+HNG-3P-20K-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,8,pcs
+HNG-3P-20K-P,6,Panel proteksi,SPD DC 3P 1000V,Surge protection DC 40kA,2,pcs
+HNG-3P-20K-P,7,Panel proteksi,MCCB DC 2P 400A,Pemutus DC baterai,1,pcs
+HNG-3P-20K-P,8,Panel proteksi,Box besi MCCB 40x50x20 cm,"Outdoor, plat 1,2 mm",1,pcs
+HNG-3P-20K-P,9,Panel proteksi,MCB AC 3P 50/63A,Input PLN & output beban 3 fasa,2,pcs
+HNG-3P-20K-P,10,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HNG-3P-20K-P,11,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HNG-3P-20K-P,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HNG-3P-20K-P,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HNG-3P-20K-P,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",240,m
+HNG-3P-20K-P,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HNG-3P-20K-P,16,Kabel & aksesoris,Kabel NYY 4x6,AC 3 fasa 2 jalur × 10 m,20,m
+HNG-3P-20K-P,17,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",1,set
+HNG-3P-20K-P,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,8,pasang
+HNG-3P-20K-P,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-3P-20K-P,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-3P-20K-P,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-3P-20K-P,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-3P-20K-P,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-3P-30K-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 37,5 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-3P-30K-S,2,Perangkat utama,Inverter hybrid on-grid,10 kW per unit · 3 unit diparalel · total 30 kW 3 fasa,3,unit
+HNG-3P-30K-S,3,Perangkat utama,Baterai lithium LiFePO4,48V 628Ah (30 kWh) per unit · paralel,3,unit
+HNG-3P-30K-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,12,pcs
+HNG-3P-30K-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,12,pcs
+HNG-3P-30K-S,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,6,pcs
+HNG-3P-30K-S,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",3,pcs
+HNG-3P-30K-S,8,Panel proteksi,Box besi MCCB 60x80x25 cm,Untuk 3 MCCB + busbar DC,1,pcs
+HNG-3P-30K-S,9,Panel proteksi,Busbar DC baterai + isolator,Tembaga ±600A (bank baterai bersama),1,set
+HNG-3P-30K-S,10,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,6,pcs
+HNG-3P-30K-S,11,Panel proteksi,MCB utama AC 4P 63A,Penggabung output inverter paralel (grid & load),2,pcs
+HNG-3P-30K-S,12,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HNG-3P-30K-S,13,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HNG-3P-30K-S,14,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",2,pcs
+HNG-3P-30K-S,15,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",2,set
+HNG-3P-30K-S,16,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",360,m
+HNG-3P-30K-S,17,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",9,m
+HNG-3P-30K-S,18,Kabel & aksesoris,Kabel NYY 4x10,AC 3 fasa 2 jalur × 10 m,20,m
+HNG-3P-30K-S,19,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",3,set
+HNG-3P-30K-S,20,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,12,pasang
+HNG-3P-30K-S,21,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-3P-30K-S,22,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-3P-30K-S,23,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-3P-30K-S,24,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-3P-30K-S,25,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HNG-3P-30K-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 37,5 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HNG-3P-30K-P,2,Perangkat utama,Inverter hybrid on-grid,10 kW per unit · 3 unit diparalel · total 30 kW 3 fasa,3,unit
+HNG-3P-30K-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 300Ah (15 kWh) per unit · paralel — anti kebakaran (fire extinguisher built-in)",6,unit
+HNG-3P-30K-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,12,pcs
+HNG-3P-30K-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,12,pcs
+HNG-3P-30K-P,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,6,pcs
+HNG-3P-30K-P,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",3,pcs
+HNG-3P-30K-P,8,Panel proteksi,Box besi MCCB 60x80x25 cm,Untuk 3 MCCB + busbar DC,1,pcs
+HNG-3P-30K-P,9,Panel proteksi,Busbar DC baterai + isolator,Tembaga ±600A (bank baterai bersama),1,set
+HNG-3P-30K-P,10,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,6,pcs
+HNG-3P-30K-P,11,Panel proteksi,MCB utama AC 4P 63A,Penggabung output inverter paralel (grid & load),2,pcs
+HNG-3P-30K-P,12,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HNG-3P-30K-P,13,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HNG-3P-30K-P,14,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",2,pcs
+HNG-3P-30K-P,15,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",2,set
+HNG-3P-30K-P,16,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",360,m
+HNG-3P-30K-P,17,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",9,m
+HNG-3P-30K-P,18,Kabel & aksesoris,Kabel NYY 4x10,AC 3 fasa 2 jalur × 10 m,20,m
+HNG-3P-30K-P,19,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",3,set
+HNG-3P-30K-P,20,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,12,pasang
+HNG-3P-30K-P,21,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HNG-3P-30K-P,22,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HNG-3P-30K-P,23,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HNG-3P-30K-P,24,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HNG-3P-30K-P,25,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-1P-5-E,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 2 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-1P-5-E,2,Perangkat utama,Inverter hybrid off-grid,"6,2 kW, 1 fasa",1,unit
+HFG-1P-5-E,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 100Ah (5,12 kWh)",1,unit
+HFG-1P-5-E,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HFG-1P-5-E,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HFG-1P-5-E,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,1,pcs
+HFG-1P-5-E,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HFG-1P-5-E,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HFG-1P-5-E,9,Panel proteksi,MCB AC 2P 32A,"Input PLN & output beban, 6kA",2,pcs
+HFG-1P-5-E,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HFG-1P-5-E,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HFG-1P-5-E,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HFG-1P-5-E,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HFG-1P-5-E,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HFG-1P-5-E,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HFG-1P-5-E,16,Kabel & aksesoris,Kabel NYY 3x6,AC 2 jalur (grid & beban) × 10 m,20,m
+HFG-1P-5-E,17,Kabel & aksesoris,Kabel baterai + skun,"25–35 mm², 1 set",1,set
+HFG-1P-5-E,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HFG-1P-5-E,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-1P-5-E,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-1P-5-E,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-1P-5-E,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-1P-5-E,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-1P-5-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 2 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-1P-5-S,2,Perangkat utama,Inverter hybrid off-grid,"3,6 kW, 1 fasa",1,unit
+HFG-1P-5-S,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 100Ah (5,12 kWh)",1,unit
+HFG-1P-5-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HFG-1P-5-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HFG-1P-5-S,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,1,pcs
+HFG-1P-5-S,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HFG-1P-5-S,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HFG-1P-5-S,9,Panel proteksi,MCB AC 2P 32A,"Input PLN & output beban, 6kA",2,pcs
+HFG-1P-5-S,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HFG-1P-5-S,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HFG-1P-5-S,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HFG-1P-5-S,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HFG-1P-5-S,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HFG-1P-5-S,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HFG-1P-5-S,16,Kabel & aksesoris,Kabel NYY 3x6,AC 2 jalur (grid & beban) × 10 m,20,m
+HFG-1P-5-S,17,Kabel & aksesoris,Kabel baterai + skun,"25–35 mm², 1 set",1,set
+HFG-1P-5-S,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HFG-1P-5-S,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-1P-5-S,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-1P-5-S,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-1P-5-S,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-1P-5-S,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-1P-5-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 2 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-1P-5-P,2,Perangkat utama,Inverter hybrid off-grid,"3,6 kW, 1 fasa",1,unit
+HFG-1P-5-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 100Ah (5 kWh) — anti kebakaran (fire extinguisher built-in)",1,unit
+HFG-1P-5-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HFG-1P-5-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HFG-1P-5-P,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,1,pcs
+HFG-1P-5-P,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HFG-1P-5-P,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HFG-1P-5-P,9,Panel proteksi,MCB AC 2P 32A,"Input PLN & output beban, 6kA",2,pcs
+HFG-1P-5-P,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HFG-1P-5-P,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HFG-1P-5-P,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HFG-1P-5-P,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HFG-1P-5-P,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HFG-1P-5-P,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HFG-1P-5-P,16,Kabel & aksesoris,Kabel NYY 3x6,AC 2 jalur (grid & beban) × 10 m,20,m
+HFG-1P-5-P,17,Kabel & aksesoris,Kabel baterai + skun,"25–35 mm², 1 set",1,set
+HFG-1P-5-P,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HFG-1P-5-P,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-1P-5-P,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-1P-5-P,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-1P-5-P,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-1P-5-P,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-1P-10-E,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 4 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-1P-10-E,2,Perangkat utama,Inverter hybrid off-grid,"6,2 kW, 1 fasa",1,unit
+HFG-1P-10-E,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 200Ah (10,24 kWh)",1,unit
+HFG-1P-10-E,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HFG-1P-10-E,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HFG-1P-10-E,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,1,pcs
+HFG-1P-10-E,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HFG-1P-10-E,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HFG-1P-10-E,9,Panel proteksi,MCB AC 2P 32A,"Input PLN & output beban, 6kA",2,pcs
+HFG-1P-10-E,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HFG-1P-10-E,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HFG-1P-10-E,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HFG-1P-10-E,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HFG-1P-10-E,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HFG-1P-10-E,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HFG-1P-10-E,16,Kabel & aksesoris,Kabel NYY 3x6,AC 2 jalur (grid & beban) × 10 m,20,m
+HFG-1P-10-E,17,Kabel & aksesoris,Kabel baterai + skun,"25–35 mm², 1 set",1,set
+HFG-1P-10-E,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HFG-1P-10-E,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-1P-10-E,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-1P-10-E,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-1P-10-E,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-1P-10-E,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-1P-10-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 4 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-1P-10-S,2,Perangkat utama,Inverter hybrid off-grid,"5 kW, 1 fasa",1,unit
+HFG-1P-10-S,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 200Ah (10,24 kWh)",1,unit
+HFG-1P-10-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HFG-1P-10-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HFG-1P-10-S,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,1,pcs
+HFG-1P-10-S,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HFG-1P-10-S,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HFG-1P-10-S,9,Panel proteksi,MCB AC 2P 32A,"Input PLN & output beban, 6kA",2,pcs
+HFG-1P-10-S,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HFG-1P-10-S,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HFG-1P-10-S,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HFG-1P-10-S,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HFG-1P-10-S,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HFG-1P-10-S,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HFG-1P-10-S,16,Kabel & aksesoris,Kabel NYY 3x6,AC 2 jalur (grid & beban) × 10 m,20,m
+HFG-1P-10-S,17,Kabel & aksesoris,Kabel baterai + skun,"25–35 mm², 1 set",1,set
+HFG-1P-10-S,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HFG-1P-10-S,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-1P-10-S,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-1P-10-S,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-1P-10-S,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-1P-10-S,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-1P-10-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 4 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-1P-10-P,2,Perangkat utama,Inverter hybrid off-grid,"5 kW, 1 fasa",1,unit
+HFG-1P-10-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 230Ah (11,7 kWh) — anti kebakaran (fire extinguisher built-in)",1,unit
+HFG-1P-10-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HFG-1P-10-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HFG-1P-10-P,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,1,pcs
+HFG-1P-10-P,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HFG-1P-10-P,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HFG-1P-10-P,9,Panel proteksi,MCB AC 2P 32A,"Input PLN & output beban, 6kA",2,pcs
+HFG-1P-10-P,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HFG-1P-10-P,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HFG-1P-10-P,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HFG-1P-10-P,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HFG-1P-10-P,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HFG-1P-10-P,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HFG-1P-10-P,16,Kabel & aksesoris,Kabel NYY 3x6,AC 2 jalur (grid & beban) × 10 m,20,m
+HFG-1P-10-P,17,Kabel & aksesoris,Kabel baterai + skun,"25–35 mm², 1 set",1,set
+HFG-1P-10-P,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HFG-1P-10-P,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-1P-10-P,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-1P-10-P,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-1P-10-P,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-1P-10-P,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-1P-15-E,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 6 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-1P-15-E,2,Perangkat utama,Inverter hybrid off-grid,"6,2 kW, 1 fasa",1,unit
+HFG-1P-15-E,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 280Ah (14,34 kWh)",1,unit
+HFG-1P-15-E,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HFG-1P-15-E,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HFG-1P-15-E,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,2,pcs
+HFG-1P-15-E,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HFG-1P-15-E,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HFG-1P-15-E,9,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,2,pcs
+HFG-1P-15-E,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HFG-1P-15-E,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HFG-1P-15-E,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HFG-1P-15-E,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HFG-1P-15-E,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HFG-1P-15-E,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HFG-1P-15-E,16,Kabel & aksesoris,Kabel NYY 3x10,AC 2 jalur (grid & beban) × 10 m,20,m
+HFG-1P-15-E,17,Kabel & aksesoris,Kabel baterai + skun,"50–70 mm², 1 set",1,set
+HFG-1P-15-E,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HFG-1P-15-E,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-1P-15-E,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-1P-15-E,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-1P-15-E,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-1P-15-E,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-1P-15-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 6 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-1P-15-S,2,Perangkat utama,Inverter hybrid off-grid,"6,6 kW, 1 fasa",1,unit
+HFG-1P-15-S,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 280Ah (14,34 kWh)",1,unit
+HFG-1P-15-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HFG-1P-15-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HFG-1P-15-S,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,2,pcs
+HFG-1P-15-S,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HFG-1P-15-S,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HFG-1P-15-S,9,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,2,pcs
+HFG-1P-15-S,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HFG-1P-15-S,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HFG-1P-15-S,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HFG-1P-15-S,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HFG-1P-15-S,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HFG-1P-15-S,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HFG-1P-15-S,16,Kabel & aksesoris,Kabel NYY 3x10,AC 2 jalur (grid & beban) × 10 m,20,m
+HFG-1P-15-S,17,Kabel & aksesoris,Kabel baterai + skun,"50–70 mm², 1 set",1,set
+HFG-1P-15-S,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HFG-1P-15-S,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-1P-15-S,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-1P-15-S,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-1P-15-S,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-1P-15-S,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-1P-15-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 6 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-1P-15-P,2,Perangkat utama,Inverter hybrid off-grid,"6,6 kW, 1 fasa",1,unit
+HFG-1P-15-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 300Ah (15 kWh) — anti kebakaran (fire extinguisher built-in)",1,unit
+HFG-1P-15-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HFG-1P-15-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HFG-1P-15-P,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,2,pcs
+HFG-1P-15-P,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HFG-1P-15-P,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HFG-1P-15-P,9,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,2,pcs
+HFG-1P-15-P,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HFG-1P-15-P,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HFG-1P-15-P,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HFG-1P-15-P,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HFG-1P-15-P,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HFG-1P-15-P,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HFG-1P-15-P,16,Kabel & aksesoris,Kabel NYY 3x10,AC 2 jalur (grid & beban) × 10 m,20,m
+HFG-1P-15-P,17,Kabel & aksesoris,Kabel baterai + skun,"50–70 mm², 1 set",1,set
+HFG-1P-15-P,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HFG-1P-15-P,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-1P-15-P,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-1P-15-P,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-1P-15-P,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-1P-15-P,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-1P-20-E,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 8 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-1P-20-E,2,Perangkat utama,Inverter hybrid off-grid,"11 kW, 1 fasa",1,unit
+HFG-1P-20-E,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 410Ah (20,99 kWh)",1,unit
+HFG-1P-20-E,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,4,pcs
+HFG-1P-20-E,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,4,pcs
+HFG-1P-20-E,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,2,pcs
+HFG-1P-20-E,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",1,pcs
+HFG-1P-20-E,8,Panel proteksi,Box besi MCCB 30x40x20 cm,"Plat 1,5 mm, powder coating",1,pcs
+HFG-1P-20-E,9,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,2,pcs
+HFG-1P-20-E,10,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HFG-1P-20-E,11,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HFG-1P-20-E,12,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HFG-1P-20-E,13,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HFG-1P-20-E,14,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",120,m
+HFG-1P-20-E,15,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",3,m
+HFG-1P-20-E,16,Kabel & aksesoris,Kabel NYY 3x10,AC 2 jalur (grid & beban) × 10 m,20,m
+HFG-1P-20-E,17,Kabel & aksesoris,Kabel baterai + skun,"50–70 mm², 1 set",1,set
+HFG-1P-20-E,18,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,4,pasang
+HFG-1P-20-E,19,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-1P-20-E,20,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-1P-20-E,21,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-1P-20-E,22,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-1P-20-E,23,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-1P-20-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 8 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-1P-20-S,2,Perangkat utama,Inverter hybrid off-grid,5 kW per unit · 2 unit diparalel · total 10 kW 1 fasa,2,unit
+HFG-1P-20-S,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 410Ah (20,99 kWh)",1,unit
+HFG-1P-20-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,8,pcs
+HFG-1P-20-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,8,pcs
+HFG-1P-20-S,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,2,pcs
+HFG-1P-20-S,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",2,pcs
+HFG-1P-20-S,8,Panel proteksi,Box besi MCCB 40x50x20 cm,"Outdoor, plat 1,2 mm",1,pcs
+HFG-1P-20-S,9,Panel proteksi,Busbar DC baterai + isolator,Tembaga ±300A (2 inverter),1,set
+HFG-1P-20-S,10,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,4,pcs
+HFG-1P-20-S,11,Panel proteksi,MCB AC 2P 63A,"Input PLN & output beban, 6kA",2,pcs
+HFG-1P-20-S,12,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HFG-1P-20-S,13,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HFG-1P-20-S,14,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HFG-1P-20-S,15,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HFG-1P-20-S,16,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",240,m
+HFG-1P-20-S,17,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",6,m
+HFG-1P-20-S,18,Kabel & aksesoris,Kabel NYY 3x10,AC 2 jalur (grid & beban) × 10 m,20,m
+HFG-1P-20-S,19,Kabel & aksesoris,Kabel baterai + skun,"50–70 mm², 1 set",2,set
+HFG-1P-20-S,20,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,8,pasang
+HFG-1P-20-S,21,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-1P-20-S,22,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-1P-20-S,23,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-1P-20-S,24,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-1P-20-S,25,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-1P-20-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 8 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-1P-20-P,2,Perangkat utama,Inverter hybrid off-grid,5 kW per unit · 2 unit diparalel · total 10 kW 1 fasa,2,unit
+HFG-1P-20-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 230Ah (11,7 kWh) per unit · paralel — anti kebakaran (fire extinguisher built-in)",2,unit
+HFG-1P-20-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,8,pcs
+HFG-1P-20-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,8,pcs
+HFG-1P-20-P,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,2,pcs
+HFG-1P-20-P,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",2,pcs
+HFG-1P-20-P,8,Panel proteksi,Box besi MCCB 40x50x20 cm,"Outdoor, plat 1,2 mm",1,pcs
+HFG-1P-20-P,9,Panel proteksi,Busbar DC baterai + isolator,Tembaga ±300A (2 inverter),1,set
+HFG-1P-20-P,10,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,4,pcs
+HFG-1P-20-P,11,Panel proteksi,MCB AC 2P 63A,"Input PLN & output beban, 6kA",2,pcs
+HFG-1P-20-P,12,Panel proteksi,SPD AC 2P 385V,Surge protection AC T2 40kA,1,pcs
+HFG-1P-20-P,13,Panel proteksi,COS 2P 63A,Changeover switch PLN–inverter (interlock),1,pcs
+HFG-1P-20-P,14,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",1,pcs
+HFG-1P-20-P,15,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",1,set
+HFG-1P-20-P,16,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",240,m
+HFG-1P-20-P,17,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",6,m
+HFG-1P-20-P,18,Kabel & aksesoris,Kabel NYY 3x10,AC 2 jalur (grid & beban) × 10 m,20,m
+HFG-1P-20-P,19,Kabel & aksesoris,Kabel baterai + skun,"50–70 mm², 1 set",2,set
+HFG-1P-20-P,20,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,8,pasang
+HFG-1P-20-P,21,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-1P-20-P,22,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-1P-20-P,23,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-1P-20-P,24,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-1P-20-P,25,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-3P-10K-E,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 10 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-3P-10K-E,2,Perangkat utama,Inverter hybrid off-grid,"6,2 kW per unit · 3 unit diparalel · total 18,6 kW 3 fasa",3,unit
+HFG-3P-10K-E,3,Perangkat utama,Baterai lithium LiFePO4,48V 628Ah (30 kWh),1,unit
+HFG-3P-10K-E,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,12,pcs
+HFG-3P-10K-E,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,12,pcs
+HFG-3P-10K-E,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,6,pcs
+HFG-3P-10K-E,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",3,pcs
+HFG-3P-10K-E,8,Panel proteksi,Box besi MCCB 60x80x25 cm,Untuk 3 MCCB + busbar DC,1,pcs
+HFG-3P-10K-E,9,Panel proteksi,Busbar DC baterai + isolator,Tembaga ±600A (bank baterai bersama),1,set
+HFG-3P-10K-E,10,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,6,pcs
+HFG-3P-10K-E,11,Panel proteksi,MCB utama AC 4P 63A,Penggabung output inverter paralel (grid & load),2,pcs
+HFG-3P-10K-E,12,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HFG-3P-10K-E,13,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HFG-3P-10K-E,14,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",2,pcs
+HFG-3P-10K-E,15,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",2,set
+HFG-3P-10K-E,16,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",360,m
+HFG-3P-10K-E,17,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",9,m
+HFG-3P-10K-E,18,Kabel & aksesoris,Kabel NYY 4x10,AC 3 fasa 2 jalur × 10 m,20,m
+HFG-3P-10K-E,19,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",3,set
+HFG-3P-10K-E,20,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,12,pasang
+HFG-3P-10K-E,21,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-3P-10K-E,22,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-3P-10K-E,23,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-3P-10K-E,24,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-3P-10K-E,25,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-3P-10K-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 10 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-3P-10K-S,2,Perangkat utama,Inverter hybrid off-grid,"3,6 kW per unit · 3 unit diparalel · total 10,8 kW 3 fasa",3,unit
+HFG-3P-10K-S,3,Perangkat utama,Baterai lithium LiFePO4,48V 628Ah (30 kWh),1,unit
+HFG-3P-10K-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,12,pcs
+HFG-3P-10K-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,12,pcs
+HFG-3P-10K-S,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,6,pcs
+HFG-3P-10K-S,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",3,pcs
+HFG-3P-10K-S,8,Panel proteksi,Box besi MCCB 60x80x25 cm,Untuk 3 MCCB + busbar DC,1,pcs
+HFG-3P-10K-S,9,Panel proteksi,Busbar DC baterai + isolator,Tembaga ±600A (bank baterai bersama),1,set
+HFG-3P-10K-S,10,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,6,pcs
+HFG-3P-10K-S,11,Panel proteksi,MCB utama AC 4P 63A,Penggabung output inverter paralel (grid & load),2,pcs
+HFG-3P-10K-S,12,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HFG-3P-10K-S,13,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HFG-3P-10K-S,14,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",2,pcs
+HFG-3P-10K-S,15,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",2,set
+HFG-3P-10K-S,16,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",360,m
+HFG-3P-10K-S,17,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",9,m
+HFG-3P-10K-S,18,Kabel & aksesoris,Kabel NYY 4x10,AC 3 fasa 2 jalur × 10 m,20,m
+HFG-3P-10K-S,19,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",3,set
+HFG-3P-10K-S,20,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,12,pasang
+HFG-3P-10K-S,21,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-3P-10K-S,22,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-3P-10K-S,23,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-3P-10K-S,24,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-3P-10K-S,25,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-3P-10K-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 10 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-3P-10K-P,2,Perangkat utama,Inverter hybrid off-grid,"3,6 kW per unit · 3 unit diparalel · total 10,8 kW 3 fasa",3,unit
+HFG-3P-10K-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 300Ah (15 kWh) per unit · paralel — anti kebakaran (fire extinguisher built-in)",2,unit
+HFG-3P-10K-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,12,pcs
+HFG-3P-10K-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,12,pcs
+HFG-3P-10K-P,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,6,pcs
+HFG-3P-10K-P,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",3,pcs
+HFG-3P-10K-P,8,Panel proteksi,Box besi MCCB 60x80x25 cm,Untuk 3 MCCB + busbar DC,1,pcs
+HFG-3P-10K-P,9,Panel proteksi,Busbar DC baterai + isolator,Tembaga ±600A (bank baterai bersama),1,set
+HFG-3P-10K-P,10,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,6,pcs
+HFG-3P-10K-P,11,Panel proteksi,MCB utama AC 4P 63A,Penggabung output inverter paralel (grid & load),2,pcs
+HFG-3P-10K-P,12,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HFG-3P-10K-P,13,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HFG-3P-10K-P,14,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",2,pcs
+HFG-3P-10K-P,15,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",2,set
+HFG-3P-10K-P,16,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",360,m
+HFG-3P-10K-P,17,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",9,m
+HFG-3P-10K-P,18,Kabel & aksesoris,Kabel NYY 4x10,AC 3 fasa 2 jalur × 10 m,20,m
+HFG-3P-10K-P,19,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",3,set
+HFG-3P-10K-P,20,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,12,pasang
+HFG-3P-10K-P,21,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-3P-10K-P,22,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-3P-10K-P,23,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-3P-10K-P,24,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-3P-10K-P,25,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-3P-15K-E,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 15 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-3P-15K-E,2,Perangkat utama,Inverter hybrid off-grid,"6,2 kW per unit · 3 unit diparalel · total 18,6 kW 3 fasa",3,unit
+HFG-3P-15K-E,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 410Ah (20,99 kWh) per unit · paralel",2,unit
+HFG-3P-15K-E,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,12,pcs
+HFG-3P-15K-E,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,12,pcs
+HFG-3P-15K-E,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,6,pcs
+HFG-3P-15K-E,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",3,pcs
+HFG-3P-15K-E,8,Panel proteksi,Box besi MCCB 60x80x25 cm,Untuk 3 MCCB + busbar DC,1,pcs
+HFG-3P-15K-E,9,Panel proteksi,Busbar DC baterai + isolator,Tembaga ±600A (bank baterai bersama),1,set
+HFG-3P-15K-E,10,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,6,pcs
+HFG-3P-15K-E,11,Panel proteksi,MCB utama AC 4P 63A,Penggabung output inverter paralel (grid & load),2,pcs
+HFG-3P-15K-E,12,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HFG-3P-15K-E,13,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HFG-3P-15K-E,14,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",2,pcs
+HFG-3P-15K-E,15,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",2,set
+HFG-3P-15K-E,16,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",360,m
+HFG-3P-15K-E,17,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",9,m
+HFG-3P-15K-E,18,Kabel & aksesoris,Kabel NYY 4x10,AC 3 fasa 2 jalur × 10 m,20,m
+HFG-3P-15K-E,19,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",3,set
+HFG-3P-15K-E,20,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,12,pasang
+HFG-3P-15K-E,21,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-3P-15K-E,22,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-3P-15K-E,23,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-3P-15K-E,24,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-3P-15K-E,25,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-3P-15K-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 15 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-3P-15K-S,2,Perangkat utama,Inverter hybrid off-grid,5 kW per unit · 3 unit diparalel · total 15 kW 3 fasa,3,unit
+HFG-3P-15K-S,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 410Ah (20,99 kWh) per unit · paralel",2,unit
+HFG-3P-15K-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,12,pcs
+HFG-3P-15K-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,12,pcs
+HFG-3P-15K-S,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,6,pcs
+HFG-3P-15K-S,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",3,pcs
+HFG-3P-15K-S,8,Panel proteksi,Box besi MCCB 60x80x25 cm,Untuk 3 MCCB + busbar DC,1,pcs
+HFG-3P-15K-S,9,Panel proteksi,Busbar DC baterai + isolator,Tembaga ±600A (bank baterai bersama),1,set
+HFG-3P-15K-S,10,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,6,pcs
+HFG-3P-15K-S,11,Panel proteksi,MCB utama AC 4P 63A,Penggabung output inverter paralel (grid & load),2,pcs
+HFG-3P-15K-S,12,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HFG-3P-15K-S,13,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HFG-3P-15K-S,14,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",2,pcs
+HFG-3P-15K-S,15,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",2,set
+HFG-3P-15K-S,16,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",360,m
+HFG-3P-15K-S,17,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",9,m
+HFG-3P-15K-S,18,Kabel & aksesoris,Kabel NYY 4x10,AC 3 fasa 2 jalur × 10 m,20,m
+HFG-3P-15K-S,19,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",3,set
+HFG-3P-15K-S,20,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,12,pasang
+HFG-3P-15K-S,21,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-3P-15K-S,22,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-3P-15K-S,23,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-3P-15K-S,24,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-3P-15K-S,25,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-3P-15K-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 15 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-3P-15K-P,2,Perangkat utama,Inverter hybrid off-grid,5 kW per unit · 3 unit diparalel · total 15 kW 3 fasa,3,unit
+HFG-3P-15K-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 300Ah (15 kWh) per unit · paralel — anti kebakaran (fire extinguisher built-in)",3,unit
+HFG-3P-15K-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,12,pcs
+HFG-3P-15K-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,12,pcs
+HFG-3P-15K-P,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,6,pcs
+HFG-3P-15K-P,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",3,pcs
+HFG-3P-15K-P,8,Panel proteksi,Box besi MCCB 60x80x25 cm,Untuk 3 MCCB + busbar DC,1,pcs
+HFG-3P-15K-P,9,Panel proteksi,Busbar DC baterai + isolator,Tembaga ±600A (bank baterai bersama),1,set
+HFG-3P-15K-P,10,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,6,pcs
+HFG-3P-15K-P,11,Panel proteksi,MCB utama AC 4P 63A,Penggabung output inverter paralel (grid & load),2,pcs
+HFG-3P-15K-P,12,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HFG-3P-15K-P,13,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HFG-3P-15K-P,14,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",2,pcs
+HFG-3P-15K-P,15,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",2,set
+HFG-3P-15K-P,16,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",360,m
+HFG-3P-15K-P,17,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",9,m
+HFG-3P-15K-P,18,Kabel & aksesoris,Kabel NYY 4x10,AC 3 fasa 2 jalur × 10 m,20,m
+HFG-3P-15K-P,19,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",3,set
+HFG-3P-15K-P,20,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,12,pasang
+HFG-3P-15K-P,21,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-3P-15K-P,22,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-3P-15K-P,23,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-3P-15K-P,24,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-3P-15K-P,25,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-3P-20K-E,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 20 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-3P-20K-E,2,Perangkat utama,Inverter hybrid off-grid,"6,2 kW per unit · 3 unit diparalel · total 18,6 kW 3 fasa",3,unit
+HFG-3P-20K-E,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 314Ah (16 kWh) per unit · paralel",3,unit
+HFG-3P-20K-E,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,12,pcs
+HFG-3P-20K-E,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,12,pcs
+HFG-3P-20K-E,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,6,pcs
+HFG-3P-20K-E,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",3,pcs
+HFG-3P-20K-E,8,Panel proteksi,Box besi MCCB 60x80x25 cm,Untuk 3 MCCB + busbar DC,1,pcs
+HFG-3P-20K-E,9,Panel proteksi,Busbar DC baterai + isolator,Tembaga ±600A (bank baterai bersama),1,set
+HFG-3P-20K-E,10,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,6,pcs
+HFG-3P-20K-E,11,Panel proteksi,MCB utama AC 4P 63A,Penggabung output inverter paralel (grid & load),2,pcs
+HFG-3P-20K-E,12,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HFG-3P-20K-E,13,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HFG-3P-20K-E,14,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",2,pcs
+HFG-3P-20K-E,15,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",2,set
+HFG-3P-20K-E,16,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",360,m
+HFG-3P-20K-E,17,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",9,m
+HFG-3P-20K-E,18,Kabel & aksesoris,Kabel NYY 4x10,AC 3 fasa 2 jalur × 10 m,20,m
+HFG-3P-20K-E,19,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",3,set
+HFG-3P-20K-E,20,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,12,pasang
+HFG-3P-20K-E,21,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-3P-20K-E,22,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-3P-20K-E,23,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-3P-20K-E,24,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-3P-20K-E,25,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-3P-20K-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 20 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-3P-20K-S,2,Perangkat utama,Inverter hybrid off-grid,"6,6 kW per unit · 3 unit diparalel · total 19,8 kW 3 fasa",3,unit
+HFG-3P-20K-S,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 314Ah (16 kWh) per unit · paralel",3,unit
+HFG-3P-20K-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,12,pcs
+HFG-3P-20K-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,12,pcs
+HFG-3P-20K-S,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,6,pcs
+HFG-3P-20K-S,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",3,pcs
+HFG-3P-20K-S,8,Panel proteksi,Box besi MCCB 60x80x25 cm,Untuk 3 MCCB + busbar DC,1,pcs
+HFG-3P-20K-S,9,Panel proteksi,Busbar DC baterai + isolator,Tembaga ±600A (bank baterai bersama),1,set
+HFG-3P-20K-S,10,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,6,pcs
+HFG-3P-20K-S,11,Panel proteksi,MCB utama AC 4P 63A,Penggabung output inverter paralel (grid & load),2,pcs
+HFG-3P-20K-S,12,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HFG-3P-20K-S,13,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HFG-3P-20K-S,14,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",2,pcs
+HFG-3P-20K-S,15,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",2,set
+HFG-3P-20K-S,16,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",360,m
+HFG-3P-20K-S,17,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",9,m
+HFG-3P-20K-S,18,Kabel & aksesoris,Kabel NYY 4x10,AC 3 fasa 2 jalur × 10 m,20,m
+HFG-3P-20K-S,19,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",3,set
+HFG-3P-20K-S,20,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,12,pasang
+HFG-3P-20K-S,21,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-3P-20K-S,22,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-3P-20K-S,23,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-3P-20K-S,24,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-3P-20K-S,25,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-3P-20K-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 20 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-3P-20K-P,2,Perangkat utama,Inverter hybrid off-grid,"6,6 kW per unit · 3 unit diparalel · total 19,8 kW 3 fasa",3,unit
+HFG-3P-20K-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 350Ah (17,5 kWh) per unit · paralel — anti kebakaran (fire extinguisher built-in)",3,unit
+HFG-3P-20K-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,12,pcs
+HFG-3P-20K-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,12,pcs
+HFG-3P-20K-P,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,6,pcs
+HFG-3P-20K-P,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",3,pcs
+HFG-3P-20K-P,8,Panel proteksi,Box besi MCCB 60x80x25 cm,Untuk 3 MCCB + busbar DC,1,pcs
+HFG-3P-20K-P,9,Panel proteksi,Busbar DC baterai + isolator,Tembaga ±600A (bank baterai bersama),1,set
+HFG-3P-20K-P,10,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,6,pcs
+HFG-3P-20K-P,11,Panel proteksi,MCB utama AC 4P 63A,Penggabung output inverter paralel (grid & load),2,pcs
+HFG-3P-20K-P,12,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HFG-3P-20K-P,13,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HFG-3P-20K-P,14,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",2,pcs
+HFG-3P-20K-P,15,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",2,set
+HFG-3P-20K-P,16,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",360,m
+HFG-3P-20K-P,17,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",9,m
+HFG-3P-20K-P,18,Kabel & aksesoris,Kabel NYY 4x10,AC 3 fasa 2 jalur × 10 m,20,m
+HFG-3P-20K-P,19,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",3,set
+HFG-3P-20K-P,20,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,12,pasang
+HFG-3P-20K-P,21,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-3P-20K-P,22,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-3P-20K-P,23,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-3P-20K-P,24,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-3P-20K-P,25,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-3P-30K-E,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 30 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-3P-30K-E,2,Perangkat utama,Inverter hybrid off-grid,11 kW per unit · 3 unit diparalel · total 33 kW 3 fasa,3,unit
+HFG-3P-30K-E,3,Perangkat utama,Baterai lithium LiFePO4,48V 314Ah (15 kWh) per unit · paralel,5,unit
+HFG-3P-30K-E,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,12,pcs
+HFG-3P-30K-E,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,12,pcs
+HFG-3P-30K-E,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,6,pcs
+HFG-3P-30K-E,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",3,pcs
+HFG-3P-30K-E,8,Panel proteksi,Box besi MCCB 60x80x25 cm,Untuk 3 MCCB + busbar DC,1,pcs
+HFG-3P-30K-E,9,Panel proteksi,Busbar DC baterai + isolator,Tembaga ±600A (bank baterai bersama),1,set
+HFG-3P-30K-E,10,Panel proteksi,MCB AC 2P 50A,Input PLN & output beban,6,pcs
+HFG-3P-30K-E,11,Panel proteksi,MCB utama AC 4P 63A,Penggabung output inverter paralel (grid & load),2,pcs
+HFG-3P-30K-E,12,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HFG-3P-30K-E,13,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HFG-3P-30K-E,14,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",2,pcs
+HFG-3P-30K-E,15,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",2,set
+HFG-3P-30K-E,16,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",360,m
+HFG-3P-30K-E,17,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",9,m
+HFG-3P-30K-E,18,Kabel & aksesoris,Kabel NYY 4x10,AC 3 fasa 2 jalur × 10 m,20,m
+HFG-3P-30K-E,19,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",3,set
+HFG-3P-30K-E,20,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,12,pasang
+HFG-3P-30K-E,21,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-3P-30K-E,22,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-3P-30K-E,23,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-3P-30K-E,24,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-3P-30K-E,25,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-3P-30K-S,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 30 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-3P-30K-S,2,Perangkat utama,Inverter hybrid off-grid,5 kW per unit · 6 unit diparalel · total 30 kW 3 fasa,6,unit
+HFG-3P-30K-S,3,Perangkat utama,Baterai lithium LiFePO4,48V 314Ah (15 kWh) per unit · paralel,5,unit
+HFG-3P-30K-S,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,12,pcs
+HFG-3P-30K-S,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,12,pcs
+HFG-3P-30K-S,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,6,pcs
+HFG-3P-30K-S,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",6,pcs
+HFG-3P-30K-S,8,Panel proteksi,Box besi MCCB 60x80x25 cm,Untuk 3 MCCB + busbar DC,2,pcs
+HFG-3P-30K-S,9,Panel proteksi,Busbar DC baterai + isolator,Tembaga ±600A (bank baterai bersama),1,set
+HFG-3P-30K-S,10,Panel proteksi,MCB AC 2P 32A,"Input PLN & output beban, 6kA",12,pcs
+HFG-3P-30K-S,11,Panel proteksi,MCB utama AC 4P 63A,Penggabung output inverter paralel (grid & load),2,pcs
+HFG-3P-30K-S,12,Panel proteksi,Busbar AC per fasa (L1/L2/L3/N),Tembaga + isolator,1,set
+HFG-3P-30K-S,13,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HFG-3P-30K-S,14,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HFG-3P-30K-S,15,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",3,pcs
+HFG-3P-30K-S,16,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",3,set
+HFG-3P-30K-S,17,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",360,m
+HFG-3P-30K-S,18,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",18,m
+HFG-3P-30K-S,19,Kabel & aksesoris,Kabel NYY 4x10,AC 3 fasa 2 jalur × 10 m,20,m
+HFG-3P-30K-S,20,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",6,set
+HFG-3P-30K-S,21,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,12,pasang
+HFG-3P-30K-S,22,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-3P-30K-S,23,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-3P-30K-S,24,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-3P-30K-S,25,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-3P-30K-S,26,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m
+HFG-3P-30K-P,1,Perangkat utama,Panel surya monocrystalline + bracket atap,"Total 30 kWp, bracket atap genteng/metal; jumlah modul menyesuaikan Wp modul",1,set
+HFG-3P-30K-P,2,Perangkat utama,Inverter hybrid off-grid,5 kW per unit · 6 unit diparalel · total 30 kW 3 fasa,6,unit
+HFG-3P-30K-P,3,Perangkat utama,Baterai lithium LiFePO4,"51,2V 300Ah (15 kWh) per unit · paralel — anti kebakaran (fire extinguisher built-in)",5,unit
+HFG-3P-30K-P,4,Panel proteksi,Fuse PV,gPV 10x38 1000VDC 15A,12,pcs
+HFG-3P-30K-P,5,Panel proteksi,Fuse holder PV,10x38 1000VDC,12,pcs
+HFG-3P-30K-P,6,Panel proteksi,SPD DC 2P 600V,Surge protection DC 20–40kA,6,pcs
+HFG-3P-30K-P,7,Panel proteksi,MCCB DC 2P 125–250A,"Pemutus DC baterai, rating sesuai arus baterai",6,pcs
+HFG-3P-30K-P,8,Panel proteksi,Box besi MCCB 60x80x25 cm,Untuk 3 MCCB + busbar DC,2,pcs
+HFG-3P-30K-P,9,Panel proteksi,Busbar DC baterai + isolator,Tembaga ±600A (bank baterai bersama),1,set
+HFG-3P-30K-P,10,Panel proteksi,MCB AC 2P 32A,"Input PLN & output beban, 6kA",12,pcs
+HFG-3P-30K-P,11,Panel proteksi,MCB utama AC 4P 63A,Penggabung output inverter paralel (grid & load),2,pcs
+HFG-3P-30K-P,12,Panel proteksi,Busbar AC per fasa (L1/L2/L3/N),Tembaga + isolator,1,set
+HFG-3P-30K-P,13,Panel proteksi,SPD AC 1P 385V,Surge protection AC T2 40kA (4 pcs = 3P+N),4,pcs
+HFG-3P-30K-P,14,Panel proteksi,COS 4P 63A,Changeover switch 3 fasa,1,pcs
+HFG-3P-30K-P,15,Panel proteksi,Box panel DIN 36 modul,"Combiner PV + panel AC + COS, 2 baris × 18 modul",3,pcs
+HFG-3P-30K-P,16,Panel proteksi,Aksesoris panel,"DIN rail, busbar, terminal, skun, label",3,set
+HFG-3P-30K-P,17,Kabel & aksesoris,Kabel PV 4 mm²,"Kabel DC surya, 60 m per string (+ dan −)",360,m
+HFG-3P-30K-P,18,Kabel & aksesoris,Kabel AC inverter → panel proteksi,"NYY 3x6 (3 fasa: 4x6), 3 m per inverter",18,m
+HFG-3P-30K-P,19,Kabel & aksesoris,Kabel NYY 4x10,AC 3 fasa 2 jalur × 10 m,20,m
+HFG-3P-30K-P,20,Kabel & aksesoris,Kabel baterai + skun,"95 mm² ke atas, 1 set",6,set
+HFG-3P-30K-P,21,Kabel & aksesoris,Konektor MC4,1000V 30A IP67,12,pasang
+HFG-3P-30K-P,22,Kabel & aksesoris,Conduit & aksesoris kabel,"Pipa PVC/flexible, klem, cable tie, label",50,m
+HFG-3P-30K-P,23,Grounding,"Grounding rod 5/8"" 1,5 m",Lapis tembaga,1,pcs
+HFG-3P-30K-P,24,Grounding,Klem rod,"Klem cincin tembaga 5/8""",1,pcs
+HFG-3P-30K-P,25,Grounding,Kabel BC 16 mm²,Rod → panel,5,m
+HFG-3P-30K-P,26,Grounding,Kabel NYAF 4 mm (hijau-kuning),Frame panel surya → panel,30,m

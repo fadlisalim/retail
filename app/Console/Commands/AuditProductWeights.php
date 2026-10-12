@@ -33,6 +33,7 @@ class AuditProductWeights extends Command
         '/^PAKET-AMAL-\d+$/', '/^PH605-\d+KWP-\d+KWH$/', '/^PAKET-APEX300-B\d$/', '/^AURORA-ECHO-\d+$/',
         '/^AIKO-COMET2U-\d+$/', '/^KBL-PV-\dMM-BLK$/', '/^NYAF-4MM-(MERAH|HITAM)$/', '/^SUNTREE-SL7N-\d+A$/',
         '/^PANEL-BEKAS-\d+$/', '/^PNL-MONO-550-\d+wp$/', '/^BAT-LFP-5K-\d+kwh$/',
+        '/^SIAGA-\d+$/', '/^H(NG|FG)-\dP-\d+K?-[ESP]$/', // Paket PLTS (PaketPltsSeeder)
     ];
 
     public function handle(): int
