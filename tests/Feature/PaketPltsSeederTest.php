@@ -56,8 +56,10 @@ class PaketPltsSeederTest extends TestCase
         $this->assertSame(4, $siaga->images()->count());
         // Hybrid On-Grid: foto kelompok (watermark) jadi foto utama semua produk HNG; Off-Grid belum ada foto.
         $this->assertStringContainsString('group-hng', Product::where('sku', 'HNG-1P-3K')->value('main_image_path'));
-        $this->assertStringContainsString('group-hng', Product::where('sku', 'HNG-3P-30K')->value('main_image_path'));
+        $this->assertStringContainsString('group-hng-3p', Product::where('sku', 'HNG-3P-30K')->value('main_image_path')); // per fasa menang
+        $this->assertStringNotContainsString('3p', Product::where('sku', 'HNG-1P-3K')->value('main_image_path'));
         $this->assertSame(1, Product::where('sku', 'HNG-1P-3K')->first()->images()->count());
+        $this->assertSame(1, Product::where('sku', 'HNG-3P-30K')->first()->images()->count());
         $this->assertNull(Product::where('sku', 'HFG-1P-5')->value('main_image_path'));
 
         // Hybrid On-Grid: varian Standard/Premium; nama produk tanpa baterai (beda per level).
@@ -105,6 +107,14 @@ class PaketPltsSeederTest extends TestCase
         $this->assertNotNull(ProductVariant::where('sku', 'SIAGA-1500')->first());
         $this->assertSame(4, $siaga->variants()->count());
         $this->assertSame(4, $siaga->images()->count()); // galeri tidak digandakan
+        // Produk 3 fasa yang sebelumnya memakai foto kelompok umum → diganti foto per fasa saat seeder dijalankan ulang.
+        $p3 = Product::where('sku', 'HNG-3P-10K')->firstOrFail();
+        $p3->images()->delete();
+        $p3->images()->create(['path' => 'products/paket-plts/group-hng.webp', 'alt' => 'lama', 'sort_order' => 0]);
+        $p3->forceFill(['main_image_path' => 'products/paket-plts/group-hng.webp'])->save();
+        $this->seed(PaketPltsSeeder::class);
+        $this->assertStringContainsString('group-hng-3p', $p3->fresh()->main_image_path);
+        $this->assertSame(1, $p3->images()->count());
         $this->assertStringContainsString('siaga-1500', ProductVariant::where('sku', 'SIAGA-1500')->value('image_path'));
     }
 }

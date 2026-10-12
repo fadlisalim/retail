@@ -299,26 +299,43 @@ class PaketPltsSeeder extends Seeder
             }
         }
 
-        // Foto kelompok (group-hng / group-hfg / group-siaga.jpg): foto suasana tanpa logo →
-        // diberi watermark, dipakai bersama semua produk dalam kelompok itu.
-        $group = strtolower(explode('-', $product->sku)[0]);
-        $src = self::ASSETS."/images/group-{$group}.jpg";
-        if (is_file($src)) {
-            $stem = "products/paket-plts/group-{$group}";
-            if ($disk->exists("{$stem}.webp")) {
-                $final = "{$stem}.webp";
-            } else {
-                if (! $disk->exists("{$stem}.jpg")) {
-                    $disk->put("{$stem}.jpg", (string) file_get_contents($src));
+        // Foto kelompok: foto suasana tanpa logo → diberi watermark, dipakai bersama produk sekelompok.
+        // Yang lebih spesifik menang: group-hng-3p.jpg (per fasa) > group-hng.jpg (per sistem).
+        $parts = explode('-', strtolower($product->sku));
+        $candidates = array_values(array_unique(array_filter([
+            isset($parts[1]) ? "group-{$parts[0]}-{$parts[1]}" : null,
+            "group-{$parts[0]}",
+        ])));
+        $chosen = collect($candidates)->first(fn ($name) => is_file(self::ASSETS."/images/{$name}.jpg"));
+        if (! $chosen) {
+            return;
+        }
+        $stem = "products/paket-plts/{$chosen}";
+        if ($disk->exists("{$stem}.webp")) {
+            $final = "{$stem}.webp";
+        } else {
+            if (! $disk->exists("{$stem}.jpg")) {
+                $disk->put("{$stem}.jpg", (string) file_get_contents(self::ASSETS."/images/{$chosen}.jpg"));
+            }
+            $final = $watermark->isSupported() ? ($watermark->apply("{$stem}.jpg") ?? "{$stem}.jpg") : "{$stem}.jpg";
+        }
+        // Foto kelompok yang kalah spesifik (dipasang seeder versi sebelumnya) diganti.
+        foreach ($candidates as $other) {
+            if ($other === $chosen) {
+                continue;
+            }
+            foreach ($product->images()->where('path', 'like', "products/paket-plts/{$other}.%")->get() as $old) {
+                if ($product->main_image_path === $old->path) {
+                    $product->forceFill(['main_image_path' => null])->save();
                 }
-                $final = $watermark->isSupported() ? ($watermark->apply("{$stem}.jpg") ?? "{$stem}.jpg") : "{$stem}.jpg";
+                $old->delete();
             }
-            if (! $product->images()->where('path', $final)->exists()) {
-                $product->images()->create(['path' => $final, 'alt' => $product->name, 'sort_order' => 0, 'watermarked_at' => $watermark->isSupported() ? now() : null]);
-            }
-            if (! $product->main_image_path) {
-                $product->forceFill(['main_image_path' => $final])->save();
-            }
+        }
+        if (! $product->images()->where('path', $final)->exists()) {
+            $product->images()->create(['path' => $final, 'alt' => $product->name, 'sort_order' => 0, 'watermarked_at' => $watermark->isSupported() ? now() : null]);
+        }
+        if (! $product->main_image_path) {
+            $product->forceFill(['main_image_path' => $final])->save();
         }
     }
 
