@@ -60,7 +60,8 @@ class PaketPltsSeederTest extends TestCase
         $this->assertStringNotContainsString('3p', Product::where('sku', 'HNG-1P-3K')->value('main_image_path'));
         $this->assertSame(1, Product::where('sku', 'HNG-1P-3K')->first()->images()->count());
         $this->assertSame(1, Product::where('sku', 'HNG-3P-30K')->first()->images()->count());
-        $this->assertNull(Product::where('sku', 'HFG-1P-5')->value('main_image_path'));
+        $this->assertStringContainsString('group-hfg-1p', Product::where('sku', 'HFG-1P-5')->value('main_image_path'));
+        $this->assertNull(Product::where('sku', 'HFG-3P-10K')->value('main_image_path')); // 3 fasa off-grid belum ada foto
 
         // Hybrid On-Grid: varian Standard/Premium; nama produk tanpa baterai (beda per level).
         $hng = Product::where('sku', 'HNG-1P-8K')->firstOrFail();
