@@ -54,7 +54,11 @@ class PaketPltsSeederTest extends TestCase
         Storage::disk('public')->assertExists($v->image_path);
         $this->assertStringContainsString('siaga-500', $siaga->main_image_path);
         $this->assertSame(4, $siaga->images()->count());
-        $this->assertNull(Product::where('sku', 'HNG-1P-3K')->value('main_image_path'));
+        // Hybrid On-Grid: foto kelompok (watermark) jadi foto utama semua produk HNG; Off-Grid belum ada foto.
+        $this->assertStringContainsString('group-hng', Product::where('sku', 'HNG-1P-3K')->value('main_image_path'));
+        $this->assertStringContainsString('group-hng', Product::where('sku', 'HNG-3P-30K')->value('main_image_path'));
+        $this->assertSame(1, Product::where('sku', 'HNG-1P-3K')->first()->images()->count());
+        $this->assertNull(Product::where('sku', 'HFG-1P-5')->value('main_image_path'));
 
         // Hybrid On-Grid: varian Standard/Premium; nama produk tanpa baterai (beda per level).
         $hng = Product::where('sku', 'HNG-1P-8K')->firstOrFail();

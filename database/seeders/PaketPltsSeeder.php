@@ -266,7 +266,7 @@ class PaketPltsSeeder extends Seeder
     }
 
     /**
-     * Gambar promosi per varian: assets/paket-plts/images/<sku kecil>.jpg (mis. siaga-500.jpg).
+     * Gambar per varian: assets/paket-plts/images/<sku kecil>.jpg (mis. siaga-500.jpg); foto kelompok: group-<hng|hfg|siaga>.jpg.
      * Sudah berlogo Energi.click → hanya dioptimalkan ke webp (tanpa watermark). Idempotent:
      * foto varian & utama hanya diisi bila kosong, galeri tidak digandakan.
      */
@@ -293,6 +293,28 @@ class PaketPltsSeeder extends Seeder
             }
             if (! $product->images()->where('path', $final)->exists()) {
                 $product->images()->create(['path' => $final, 'alt' => $product->name.' — '.$variant->name, 'sort_order' => (int) $variant->sort_order, 'watermarked_at' => now()]);
+            }
+            if (! $product->main_image_path) {
+                $product->forceFill(['main_image_path' => $final])->save();
+            }
+        }
+
+        // Foto kelompok (group-hng / group-hfg / group-siaga.jpg): foto suasana tanpa logo →
+        // diberi watermark, dipakai bersama semua produk dalam kelompok itu.
+        $group = strtolower(explode('-', $product->sku)[0]);
+        $src = self::ASSETS."/images/group-{$group}.jpg";
+        if (is_file($src)) {
+            $stem = "products/paket-plts/group-{$group}";
+            if ($disk->exists("{$stem}.webp")) {
+                $final = "{$stem}.webp";
+            } else {
+                if (! $disk->exists("{$stem}.jpg")) {
+                    $disk->put("{$stem}.jpg", (string) file_get_contents($src));
+                }
+                $final = $watermark->isSupported() ? ($watermark->apply("{$stem}.jpg") ?? "{$stem}.jpg") : "{$stem}.jpg";
+            }
+            if (! $product->images()->where('path', $final)->exists()) {
+                $product->images()->create(['path' => $final, 'alt' => $product->name, 'sort_order' => 0, 'watermarked_at' => $watermark->isSupported() ? now() : null]);
             }
             if (! $product->main_image_path) {
                 $product->forceFill(['main_image_path' => $final])->save();
