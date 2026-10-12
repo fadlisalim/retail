@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use Database\Seeders\PaketPltsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /** Katalog Paket PLTS (Okt 2026): 46 paket CSV → 18 produk bervarian (SIAGA, Hybrid On-Grid, Hybrid Off-Grid). */
@@ -16,6 +17,7 @@ class PaketPltsSeederTest extends TestCase
 
     private function seedPaket(): void
     {
+        Storage::fake('public');
         $this->defaultWarehouse();
         $parent = Category::factory()->create(['name' => 'Paket PLTS', 'slug' => 'paket-plts']);
         foreach (['paket-plts-off-grid', 'paket-plts-hybrid', 'paket-plts-rumah', 'paket-plts-kantor'] as $slug) {
@@ -46,6 +48,13 @@ class PaketPltsSeederTest extends TestCase
         $this->assertSame('Kapasitas', array_key_first($v->option_values));
         $this->assertStringContainsString('2 kWp', $v->name);
         $this->assertSame(3, (int) $v->fresh()->stock);
+
+        // Gambar promo SIAGA: foto per varian + foto utama + galeri 4 foto; produk lain belum ada foto.
+        $this->assertStringContainsString('siaga-2000', $v->image_path);
+        Storage::disk('public')->assertExists($v->image_path);
+        $this->assertStringContainsString('siaga-500', $siaga->main_image_path);
+        $this->assertSame(4, $siaga->images()->count());
+        $this->assertNull(Product::where('sku', 'HNG-1P-3K')->value('main_image_path'));
 
         // Hybrid On-Grid: varian Standard/Premium; nama produk tanpa baterai (beda per level).
         $hng = Product::where('sku', 'HNG-1P-8K')->firstOrFail();
@@ -91,5 +100,7 @@ class PaketPltsSeederTest extends TestCase
         $this->assertSame('Paket SIAGA (edit)', $siaga->fresh()->name);
         $this->assertNotNull(ProductVariant::where('sku', 'SIAGA-1500')->first());
         $this->assertSame(4, $siaga->variants()->count());
+        $this->assertSame(4, $siaga->images()->count()); // galeri tidak digandakan
+        $this->assertStringContainsString('siaga-1500', ProductVariant::where('sku', 'SIAGA-1500')->value('image_path'));
     }
 }

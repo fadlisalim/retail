@@ -8,7 +8,9 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\WarehouseStock;
 use App\Services\StockService;
+use App\Services\WatermarkService;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -114,10 +116,12 @@ class PaketPltsSeeder extends Seeder
                     $this->setStock($product, $variant, 3);
                 }
             }
+
+            $this->syncImages($product);
         }
 
         $this->command?->info("Paket PLTS: {$this->created} produk baru, {$this->variantsCreated} varian baru, {$this->skipped} produk sudah ada (tidak diubah).");
-        $this->command?->warn('Berat/dimensi/kolli estimasi & stok awal 3/varian placeholder — rapikan di Edit Cepat Produk. Belum ada foto: upload lewat Admin.');
+        $this->command?->warn('Berat/dimensi/kolli estimasi & stok awal 3/varian placeholder — rapikan di Edit Cepat Produk. Foto hanya untuk SKU yang ada di assets/paket-plts/images — sisanya upload lewat Admin.');
     }
 
     // ----------------------------------------------------------------- grouping
@@ -259,6 +263,41 @@ class PaketPltsSeeder extends Seeder
         $dims = [230, 115, (int) min(120, 15 + $modules * 4)];
 
         return ['weight' => (int) round($weight * 1000), 'dims' => $dims, 'kolli' => $kolli];
+    }
+
+    /**
+     * Gambar promosi per varian: assets/paket-plts/images/<sku kecil>.jpg (mis. siaga-500.jpg).
+     * Sudah berlogo Energi.click → hanya dioptimalkan ke webp (tanpa watermark). Idempotent:
+     * foto varian & utama hanya diisi bila kosong, galeri tidak digandakan.
+     */
+    private function syncImages(Product $product): void
+    {
+        $watermark = app(WatermarkService::class);
+        $disk = Storage::disk('public');
+        foreach ($product->variants()->orderBy('sort_order')->get() as $variant) {
+            $src = self::ASSETS.'/images/'.strtolower($variant->sku).'.jpg';
+            if (! is_file($src)) {
+                continue;
+            }
+            $stem = 'products/paket-plts/'.strtolower($variant->sku);
+            if ($disk->exists("{$stem}.webp")) {
+                $final = "{$stem}.webp";
+            } else {
+                if (! $disk->exists("{$stem}.jpg")) {
+                    $disk->put("{$stem}.jpg", (string) file_get_contents($src));
+                }
+                $final = $watermark->isSupported() ? ($watermark->optimize("{$stem}.jpg") ?? "{$stem}.jpg") : "{$stem}.jpg";
+            }
+            if (! $variant->image_path) {
+                $variant->forceFill(['image_path' => $final])->save();
+            }
+            if (! $product->images()->where('path', $final)->exists()) {
+                $product->images()->create(['path' => $final, 'alt' => $product->name.' — '.$variant->name, 'sort_order' => (int) $variant->sort_order, 'watermarked_at' => now()]);
+            }
+            if (! $product->main_image_path) {
+                $product->forceFill(['main_image_path' => $final])->save();
+            }
+        }
     }
 
     private function setStock(Product $product, ProductVariant $variant, int $target): void
