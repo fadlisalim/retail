@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Product;
 use App\Models\WaCampaign;
 use App\Models\WaCampaignTemplate;
+use App\Services\WaCampaign\WaCampaignService;
 use App\Services\WaCampaign\WaCampaignSettings;
 use Illuminate\Database\Seeder;
 
@@ -58,6 +59,7 @@ TXT;
             'utm_campaign' => 'seraphim-345-legacy',
             'segment' => ['tags' => ['legacy'], 'sources' => ['ridl']],
         ]);
+        $campaign->forceFill(['audience_count' => app(WaCampaignService::class)->audienceCount($campaign->segment)])->save();
 
         $this->command?->info('WA Campaign starter: pengaturan 100/hari · 2/menit · 09–17 Sen–Jum · jeda 7 hari; template "'.self::TEMPLATE_NAME.'"; campaign draf "'.$name.'"'.($campaign->wasRecentlyCreated ? ' dibuat' : ' sudah ada').($product ? '' : ' (produk Seraphim belum ada — pilih produk manual di builder)').'.');
         $this->command?->warn('Langkah: Admin → WA Campaign → buka draf → cek preview → Kirim tes → Simpan & Mulai. Pastikan nomor tes di Pengaturan & webhook Wablas sudah diisi.');

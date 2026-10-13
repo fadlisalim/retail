@@ -100,6 +100,14 @@ class WaCampaignController extends Controller
             ->when($filter, fn ($q) => $q->where('status', $filter))
             ->orderBy('id')->paginate(50)->withQueryString();
 
+        // Draf: jumlah penerima dihitung langsung dari kontak saat ini (bisa bertambah setelah sinkron/import).
+        if ($campaign->status === WaCampaign::DRAFT) {
+            $live = $this->service->audienceCount($campaign->segment ?? []);
+            if ($live !== (int) $campaign->audience_count) {
+                $campaign->forceFill(['audience_count' => $live])->save();
+            }
+        }
+
         return view('admin.wa-campaign.show', [
             'campaign' => $campaign->load('product', 'creator'),
             'stats' => $campaign->stats(),

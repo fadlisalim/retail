@@ -46,6 +46,7 @@ class WaCampaignStarterSeederTest extends TestCase
         $this->assertSame(['tags' => ['legacy'], 'sources' => ['ridl']], $campaign->segment);
         // Hanya kontak legacy ber-izin yang jadi penerima; pesan personal + link UTM + footer STOP.
         $this->assertSame(1, app(WaCampaignService::class)->audienceCount($campaign->segment));
+        $this->assertSame(1, (int) $campaign->audience_count);
         $rendered = app(WaCampaignService::class)->render($campaign, $legacy);
         $this->assertStringContainsString('Halo Kak Pak', $rendered);
         $this->assertStringContainsString(url('/go/seraphim-345-legacy'), $rendered);
@@ -55,7 +56,11 @@ class WaCampaignStarterSeederTest extends TestCase
         $this->seed(RoleSeeder::class);
         $sales = User::factory()->create(['is_staff' => true, 'is_active' => true]);
         $sales->roles()->attach(Role::where('slug', 'admin-sales')->first());
-        $this->actingAs($sales)->get(route('admin.wa-campaign.show', $campaign))->assertOk()->assertSee('Mulai / Jadwalkan')->assertSee('Seraphim');
+        // Kontak legacy baru masuk setelah draf dibuat → halaman draf menghitung ulang penerima.
+        $baru = $contacts->upsert('081200003333', ['name' => 'Baru', 'source' => 'ridl', 'tags' => ['legacy']]);
+        $contacts->optIn($baru, 'ridl', 'customer lama');
+        $this->actingAs($sales)->get(route('admin.wa-campaign.show', $campaign))->assertOk()->assertSee('Mulai / Jadwalkan')->assertSee('Seraphim')->assertSee('Mulai campaign ke 2 penerima');
+        $this->assertSame(2, (int) $campaign->fresh()->audience_count);
         $this->actingAs($sales)->get(route('admin.wa-campaign.edit', $campaign))->assertOk()->assertSee('Customer lama ridlabs');
 
         // Draf dibatalkan → seeder berikutnya membuat draf baru, bukan diam.
