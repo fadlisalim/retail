@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\WaCampaign;
 use App\Models\WaCampaignMessage;
 use App\Models\WaContact;
+use App\Services\SettingService;
 use App\Services\WaCampaign\WaCampaignService;
 use App\Services\WaCampaign\WaCampaignSettings;
 use App\Services\WaCampaign\WaContactService;
@@ -204,7 +205,7 @@ class WaCampaignTest extends TestCase
     public function test_consecutive_failures_pause_the_campaign_and_retryable_errors_backoff(): void
     {
         app(WaCampaignSettings::class)->set('failure_pause_after', 2);
-        app(WaCampaignSettings::class)->set('per_minute', 10);
+        app(WaCampaignSettings::class)->set('gap_seconds', 6);
         foreach (['081111111111', '082222222222', '083333333333'] as $i => $p) {
             $this->contact($p, 'Kontak '.$i);
         }
@@ -232,6 +233,42 @@ class WaCampaignTest extends TestCase
         $this->assertSame(WaCampaignMessage::FAILED, $m->status);
         $this->assertNull($m->next_attempt_at);
         $this->assertStringContainsString('Token Wablas ditolak', $m->error);
+    }
+
+    /** Jeda antar pesan > 60 detik: satu pesan per putaran, putaran berikutnya menunggu sampai jeda terpenuhi. */
+    public function test_gap_seconds_above_a_minute_sends_one_message_per_gap_and_migrates_old_per_minute_setting(): void
+    {
+        $this->fakeWablasOk();
+        $settings = app(WaCampaignSettings::class);
+        // Pengaturan lama "2 pesan/menit" tanpa gap_seconds → dibaca sebagai jeda 30 detik, 2 pesan per putaran.
+        app(SettingService::class)->set('wa_campaign.per_minute', 2, 'integer', 'wa_campaign');
+        $this->assertSame(30, $settings->get('gap_seconds'));
+        $this->assertSame(2, $settings->perRun());
+
+        $settings->set('gap_seconds', 120);
+        $this->assertSame(1, $settings->perRun());
+        foreach (['081111111111', '082222222222', '083333333333'] as $i => $p) {
+            $this->contact($p, 'Kontak '.$i);
+        }
+        $campaign = $this->campaign();
+        $service = app(WaCampaignService::class);
+        $service->schedule($campaign);
+
+        $this->travelTo(now()->setTime(10, 0));
+        $this->assertSame(1, $service->dispatch()['sent']);
+        $this->travelTo(now()->addMinute());
+        $r = $service->dispatch();
+        $this->assertSame(0, $r['sent']);
+        $this->assertSame('gap_wait', $r['reason']);
+        $this->travelTo(now()->addMinute());
+        $this->assertSame(1, $service->dispatch()['sent']);
+        $this->assertSame(2, $campaign->fresh()->stats()['accepted']);
+        // Tanpa cache (proses lain / restart) jeda tetap dihitung dari sent_at di tabel.
+        Cache::forget('wa-campaign:last-attempt-at');
+        $this->assertSame('gap_wait', $service->dispatch()['reason']);
+        // --limit eksplisit (manual) mengabaikan jeda.
+        $this->assertSame(1, $service->dispatch(1)['sent']);
+        $this->travelBack();
     }
 
     public function test_window_daily_limit_emergency_stop_and_device_disconnect_block_sending(): void
@@ -371,9 +408,9 @@ class WaCampaignTest extends TestCase
         $this->actingAs($sales)->get(route('admin.wa-campaign.contacts', ['consent' => 'opted_in']))->assertOk()->assertSee('Dewi')->assertDontSee('Eko');
 
         // Pengaturan: footer tanpa STOP ditolak; nomor tes disimpan ternormalisasi.
-        $this->actingAs($sales)->put(route('admin.wa-campaign.settings.update'), ['window_start' => '09:00', 'window_end' => '18:00', 'timezone' => 'Asia/Jakarta', 'per_minute' => 4, 'per_day' => 200, 'min_gap_days' => 7, 'failure_pause_after' => 5, 'max_attempts' => 3, 'footer' => 'Balas BERHENTI', 'connection_type' => 'qr'])
+        $this->actingAs($sales)->put(route('admin.wa-campaign.settings.update'), ['window_start' => '09:00', 'window_end' => '18:00', 'timezone' => 'Asia/Jakarta', 'gap_seconds' => 15, 'per_day' => 200, 'min_gap_days' => 7, 'failure_pause_after' => 5, 'max_attempts' => 3, 'footer' => 'Balas BERHENTI', 'connection_type' => 'qr'])
             ->assertSessionHasErrors('footer');
-        $this->actingAs($sales)->put(route('admin.wa-campaign.settings.update'), ['window_start' => '09:00', 'window_end' => '18:00', 'timezone' => 'Asia/Jakarta', 'per_minute' => 4, 'per_day' => 200, 'min_gap_days' => 7, 'failure_pause_after' => 5, 'max_attempts' => 3, 'footer' => 'Balas STOP untuk berhenti promo.', 'connection_type' => 'qr', 'test_phone' => '0812 9999 0000'])
+        $this->actingAs($sales)->put(route('admin.wa-campaign.settings.update'), ['window_start' => '09:00', 'window_end' => '18:00', 'timezone' => 'Asia/Jakarta', 'gap_seconds' => 15, 'per_day' => 200, 'min_gap_days' => 7, 'failure_pause_after' => 5, 'max_attempts' => 3, 'footer' => 'Balas STOP untuk berhenti promo.', 'connection_type' => 'qr', 'test_phone' => '0812 9999 0000'])
             ->assertRedirect()->assertSessionHasNoErrors();
         $this->assertSame('6281299990000', app(WaCampaignSettings::class)->get('test_phone'));
 

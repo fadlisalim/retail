@@ -10,8 +10,8 @@ use App\Services\WaCampaign\WaCampaignSettings;
 use Illuminate\Database\Seeder;
 
 /**
- * Starter WA Campaign (Okt 2026): pengaturan kirim konservatif (100/hari, 2/menit,
- * 09–17 WIB Sen–Jum, jeda 7 hari), template pesan Seraphim, dan campaign DRAF
+ * Starter WA Campaign (Okt 2026): pengaturan kirim konservatif (100/hari, 1 pesan
+ * tiap 2 menit, 09–17 WIB Sen–Sab, jeda 7 hari), template pesan Seraphim, dan campaign DRAF
  * "Seraphim 345Wp — customer legacy" (produk katalog → foto & link otomatis,
  * penerima = tag legacy). Admin tinggal cek preview, kirim tes, lalu Mulai.
  * Idempotent: template/campaign yang sudah ada tidak dibuat ulang; pengaturan
@@ -35,8 +35,8 @@ TXT;
     {
         $settings = app(WaCampaignSettings::class);
         foreach ([
-            'per_day' => 100, 'per_minute' => 2, 'window_start' => '09:00', 'window_end' => '17:00',
-            'send_days' => '1,2,3,4,5', 'min_gap_days' => 7, 'failure_pause_after' => 5, 'max_attempts' => 3,
+            'per_day' => 100, 'gap_seconds' => 120, 'window_start' => '09:00', 'window_end' => '17:00',
+            'send_days' => '1,2,3,4,5,6', 'min_gap_days' => 7, 'failure_pause_after' => 5, 'max_attempts' => 3,
             'connection_type' => 'qr', 'footer' => 'Balas STOP untuk berhenti promo.',
         ] as $key => $value) {
             $settings->set($key, $value);
@@ -61,7 +61,7 @@ TXT;
         ]);
         $campaign->forceFill(['audience_count' => app(WaCampaignService::class)->audienceCount($campaign->segment)])->save();
 
-        $this->command?->info('WA Campaign starter: pengaturan 100/hari · 2/menit · 09–17 Sen–Jum · jeda 7 hari; template "'.self::TEMPLATE_NAME.'"; campaign draf "'.$name.'"'.($campaign->wasRecentlyCreated ? ' dibuat' : ' sudah ada').($product ? '' : ' (produk Seraphim belum ada — pilih produk manual di builder)').'.');
+        $this->command?->info('WA Campaign starter: pengaturan 100/hari · 1 pesan tiap 2 menit · 09–17 Sen–Sab · jeda 7 hari; template "'.self::TEMPLATE_NAME.'"; campaign draf "'.$name.'"'.($campaign->wasRecentlyCreated ? ' dibuat' : ' sudah ada').($product ? '' : ' (produk Seraphim belum ada — pilih produk manual di builder)').'.');
         $this->command?->warn('Langkah: Admin → WA Campaign → buka draf → cek preview → Kirim tes → Simpan & Mulai. Pastikan nomor tes di Pengaturan & webhook Wablas sudah diisi.');
     }
 }

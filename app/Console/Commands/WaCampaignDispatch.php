@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 /** Dispatcher antrean WA Campaign — dijalankan scheduler tiap menit (lihat routes/console.php). */
 class WaCampaignDispatch extends Command
 {
-    protected $signature = 'wa-campaign:dispatch {--limit= : Maks. pesan pada putaran ini (default: per_minute dari Pengaturan)}';
+    protected $signature = 'wa-campaign:dispatch {--limit= : Maks. pesan pada putaran ini (default: mengikuti jeda antar pesan di Pengaturan)}';
 
     protected $description = 'Kirim pesan WA Campaign yang antre sesuai jam kirim, rate, kuota harian, dan izin kontak';
 
@@ -20,6 +20,7 @@ class WaCampaignDispatch extends Command
             'emergency_stop' => 'EMERGENCY STOP aktif — tidak ada yang dikirim.',
             'outside_window' => 'Di luar jam kirim.',
             'daily_limit' => 'Kuota harian tercapai.',
+            'gap_wait' => 'Menunggu jeda antar pesan.',
             'device_disconnected' => 'Device Wablas tidak terhubung — campaign dijeda.',
             'locked' => 'Putaran sebelumnya masih berjalan.',
             default => null,

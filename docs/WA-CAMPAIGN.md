@@ -96,7 +96,8 @@ Perintah manual: `php artisan wa-campaign:dispatch` (putaran sekali), `php artis
    berstatus *belum ada izin* dan **tidak** dikirimi.
 2. Catat izin: centang di checkout/daftar (otomatis, bukti tersimpan), import CSV (`telepon,nama,tag,minat,izin,bukti`),
    atau manual dengan bukti.
-3. **Pengaturan**: jam kirim (default 09.00–18.00 WIB, Sen–Sab), maks/menit, maks/hari, jeda 7 hari per kontak,
+3. **Pengaturan**: jam kirim (default 09.00–18.00 WIB, Sen–Sab), jeda antar pesan (detik; 120 = 1 pesan tiap
+   2 menit), maks/hari, jeda 7 hari per kontak,
    jeda otomatis setelah N gagal beruntun, footer STOP, nomor tes.
 4. **Buat Campaign**: filter penerima → pesan (`{nama}`, `{link}`, `{produk}`, `{harga}`) → gambar upload / foto produk →
    preview WhatsApp → **Kirim tes** (hanya ke nomor tes) → Simpan & Mulai / jadwalkan.

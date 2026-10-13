@@ -39,7 +39,7 @@ class WaCampaignSettingController extends Controller
             'timezone' => ['required', 'timezone'],
             'send_days' => ['nullable', 'array'],
             'send_days.*' => ['integer', 'between:1,7'],
-            'per_minute' => ['required', 'integer', 'between:1,30'],
+            'gap_seconds' => ['required', 'integer', 'between:2,900'],
             'per_day' => ['required', 'integer', 'between:1,5000'],
             'min_gap_days' => ['required', 'integer', 'between:0,90'],
             'failure_pause_after' => ['required', 'integer', 'between:0,50'],
@@ -52,7 +52,7 @@ class WaCampaignSettingController extends Controller
         ]);
 
         $old = $this->settings->all();
-        foreach (['window_start', 'window_end', 'timezone', 'per_minute', 'per_day', 'min_gap_days', 'failure_pause_after', 'max_attempts', 'footer', 'connection_type'] as $k) {
+        foreach (['window_start', 'window_end', 'timezone', 'gap_seconds', 'per_day', 'min_gap_days', 'failure_pause_after', 'max_attempts', 'footer', 'connection_type'] as $k) {
             $this->settings->set($k, $data[$k]);
         }
         $this->settings->set('send_days', implode(',', array_map('intval', $data['send_days'] ?? [1, 2, 3, 4, 5, 6])));

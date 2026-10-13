@@ -145,7 +145,7 @@
             {{-- 3. Jadwal --}}
             <div class="card p-5">
                 <h2 class="mb-1 font-semibold text-gray-900">3. Mulai / jadwal</h2>
-                <p class="mb-3 text-xs text-gray-500">Pengiriman selalu bertahap mengikuti jam kirim, batas per menit/hari, dan aturan 1 promo per kontak per 7 hari di Pengaturan. Tidak ada jaminan bebas blokir.</p>
+                <p class="mb-3 text-xs text-gray-500">Pengiriman selalu bertahap mengikuti jam kirim, jeda antar pesan, batas per hari, dan aturan 1 promo per kontak per 7 hari di Pengaturan. Tidak ada jaminan bebas blokir.</p>
                 <label for="scheduled_at" class="input-label">Jadwalkan (kosongkan = mulai sekarang)</label>
                 <input type="datetime-local" name="scheduled_at" id="scheduled_at" value="{{ old('scheduled_at') }}" class="form-input sm:w-64">
                 <p class="mt-1 text-xs text-gray-400">Zona waktu {{ $timezone }}.</p>

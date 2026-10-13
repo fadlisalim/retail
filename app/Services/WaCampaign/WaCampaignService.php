@@ -8,6 +8,7 @@ use App\Models\WaCampaignLog;
 use App\Models\WaCampaignMessage;
 use App\Models\WaContact;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -276,9 +277,18 @@ class WaCampaignService
 
         try {
             $dailyLeft = $this->settings->get('per_day') - $this->sentToday();
-            $budget = min($limit ?? $this->settings->get('per_minute'), max(0, $dailyLeft));
+            $budget = min($limit ?? $this->settings->perRun(), max(0, $dailyLeft));
             if ($budget <= 0) {
                 $out['reason'] = 'daily_limit';
+
+                return $out;
+            }
+
+            // Jeda antar pesan > 1 menit: tunggu sampai jeda sejak percobaan terakhir terpenuhi (granularitas cron 1 menit).
+            $gap = $this->settings->get('gap_seconds');
+            $last = $this->lastAttemptAt();
+            if ($limit === null && $gap > 60 && $last && $last->addSeconds($gap - 30)->isFuture()) {
+                $out['reason'] = 'gap_wait';
 
                 return $out;
             }
@@ -307,9 +317,10 @@ class WaCampaignService
                     $out[$result]++;
                     if ($result === 'sent' || $result === 'uncertain' || $result === 'failed') {
                         $budget--;
-                        // Jeda antar pesan supaya tidak menyembur (rate = per_minute).
+                        Cache::put('wa-campaign:last-attempt-at', now()->toIso8601String(), 86400);
+                        // Jeda antar pesan supaya tidak menyembur (gap_seconds).
                         if ($budget > 0 && ! app()->runningUnitTests()) {
-                            usleep((int) (60_000_000 / max(1, $this->settings->get('per_minute'))));
+                            usleep($gap * 1_000_000);
                         }
                     }
                     if ($campaign->fresh()->status !== WaCampaign::RUNNING) {
@@ -323,6 +334,18 @@ class WaCampaignService
         }
 
         return $out;
+    }
+
+    /** Waktu percobaan kirim terakhir (semua campaign): cache, cadangan dari tabel pesan. */
+    private function lastAttemptAt(): ?Carbon
+    {
+        $cached = Cache::get('wa-campaign:last-attempt-at');
+        if ($cached) {
+            return Carbon::parse($cached);
+        }
+        $db = WaCampaignMessage::query()->max('sent_at');
+
+        return $db ? Carbon::parse($db) : null;
     }
 
     /** Ambil satu baris antrean secara atomik (queued → sending) agar dua proses tidak mengirim pesan yang sama. */

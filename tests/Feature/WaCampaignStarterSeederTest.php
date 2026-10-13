@@ -34,9 +34,10 @@ class WaCampaignStarterSeederTest extends TestCase
 
         $s = app(WaCampaignSettings::class);
         $this->assertSame(100, $s->get('per_day'));
-        $this->assertSame(2, $s->get('per_minute'));
+        $this->assertSame(120, $s->get('gap_seconds')); // 1 pesan tiap 2 menit
+        $this->assertSame(1, $s->perRun());
         $this->assertSame('09:00', $s->get('window_start'));
-        $this->assertSame('1,2,3,4,5', $s->get('send_days'));
+        $this->assertSame('1,2,3,4,5,6', $s->get('send_days')); // Senin–Sabtu
         $this->assertSame(1, WaCampaignTemplate::where('name', WaCampaignStarterSeeder::TEMPLATE_NAME)->count());
 
         $campaign = WaCampaign::where('name', WaCampaignStarterSeeder::CAMPAIGN_NAME)->firstOrFail();

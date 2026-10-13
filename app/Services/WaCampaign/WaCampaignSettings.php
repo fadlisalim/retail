@@ -15,7 +15,7 @@ class WaCampaignSettings
         'window_start' => '09:00',
         'window_end' => '18:00',
         'timezone' => 'Asia/Jakarta',
-        'per_minute' => 4,            // maks. pesan per menit (jeda ±15 detik)
+        'gap_seconds' => 30,          // jeda antar pesan (detik); >60 = 1 pesan tiap N detik, dibulatkan ke menit cron
         'per_day' => 200,             // maks. pesan promo per hari (semua campaign)
         'min_gap_days' => 7,          // maks. 1 promo / kontak / 7 hari lintas campaign
         'failure_pause_after' => 5,   // jeda otomatis setelah N kegagalan beruntun
@@ -32,9 +32,15 @@ class WaCampaignSettings
     public function get(string $key): mixed
     {
         $value = $this->settings->get('wa_campaign.'.$key, self::DEFAULTS[$key] ?? null);
+        if ($key === 'gap_seconds' && $this->settings->get('wa_campaign.gap_seconds') === null) {
+            // Kompatibilitas pengaturan lama "pesan per menit" → jeda detik.
+            $perMinute = (int) $this->settings->get('wa_campaign.per_minute', 0);
+            $value = $perMinute > 0 ? intdiv(60, $perMinute) : $value;
+        }
 
         return match ($key) {
-            'per_minute', 'per_day', 'min_gap_days', 'failure_pause_after', 'max_attempts' => max(0, (int) $value),
+            'gap_seconds' => max(1, (int) $value),
+            'per_day', 'min_gap_days', 'failure_pause_after', 'max_attempts' => max(0, (int) $value),
             'emergency_stop' => filter_var($value, FILTER_VALIDATE_BOOL),
             default => $value,
         };
@@ -43,7 +49,7 @@ class WaCampaignSettings
     public function set(string $key, mixed $value): void
     {
         $type = match ($key) {
-            'per_minute', 'per_day', 'min_gap_days', 'failure_pause_after', 'max_attempts' => 'integer',
+            'gap_seconds', 'per_day', 'min_gap_days', 'failure_pause_after', 'max_attempts' => 'integer',
             'emergency_stop' => 'boolean',
             default => 'string',
         };
@@ -82,6 +88,12 @@ class WaCampaignSettings
         $time = $at->format('H:i');
 
         return $time >= $this->get('window_start') && $time < $this->get('window_end');
+    }
+
+    /** Jumlah pesan per putaran dispatcher (cron tiap menit) dari jeda antar pesan. */
+    public function perRun(): int
+    {
+        return max(1, intdiv(60, $this->get('gap_seconds')));
     }
 
     public function footer(): string
