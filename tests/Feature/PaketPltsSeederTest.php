@@ -89,6 +89,10 @@ class PaketPltsSeederTest extends TestCase
         $this->assertStringContainsString('Rincian isi paket', $hng->specifications);
         $this->assertStringContainsString('Kabel BC 16 mm²', $hng->specifications);
         $this->assertStringContainsString('Kabel PV 4 mm²', $hng->specifications);
+        // Hybrid Off-Grid = surya + baterai utama, PLN cadangan (BUKAN lepas PLN); On-Grid = bisa ekspor ke PLN.
+        $this->assertStringContainsString('PLN tetap tersambung sebagai cadangan otomatis', $hfg->description);
+        $this->assertStringNotContainsString('lepas dari PLN', $hfg->description);
+        $this->assertStringContainsString('diekspor ke jaringan PLN', $hng->description);
 
         // Halaman produk tampil dengan pilihan varian dan harga.
         $this->get(route('products.show', $hfg->slug))->assertOk()->assertSee('Ekonomis')->assertSee('Premium')->assertSee('Rp 56.600.000')->assertSee('belum termasuk jasa pemasangan');
