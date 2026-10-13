@@ -248,7 +248,33 @@ class WaCampaignService
      * Satu putaran dispatcher (dipanggil scheduler tiap menit). Mengembalikan
      * ringkasan ['sent'=>n,'skipped'=>n,'failed'=>n,'uncertain'=>n,'reason'=>?string].
      */
+    public const REASON_LABELS = [
+        'emergency_stop' => 'EMERGENCY STOP aktif — tidak ada yang dikirim.',
+        'outside_window' => 'Di luar jam/hari kirim.',
+        'daily_limit' => 'Kuota harian tercapai.',
+        'gap_wait' => 'Menunggu jeda antar pesan.',
+        'device_disconnected' => 'Device Wablas tidak terhubung — campaign dijeda.',
+        'locked' => 'Putaran sebelumnya masih berjalan.',
+    ];
+
     public function dispatch(?int $limit = null): array
+    {
+        $out = $this->runDispatch($limit);
+        // Detak jantung dispatcher: halaman campaign memberi tahu bila scheduler tidak jalan.
+        Cache::put('wa-campaign:last-dispatch', ['at' => now()->toIso8601String(), 'reason' => $out['reason'], 'sent' => $out['sent']], 86400);
+
+        return $out;
+    }
+
+    /** @return array{at: ?Carbon, reason: ?string, sent: int} */
+    public function lastDispatch(): array
+    {
+        $h = Cache::get('wa-campaign:last-dispatch');
+
+        return ['at' => $h ? Carbon::parse($h['at']) : null, 'reason' => $h['reason'] ?? null, 'sent' => (int) ($h['sent'] ?? 0)];
+    }
+
+    private function runDispatch(?int $limit): array
     {
         $out = ['sent' => 0, 'skipped' => 0, 'failed' => 0, 'uncertain' => 0, 'reason' => null];
 

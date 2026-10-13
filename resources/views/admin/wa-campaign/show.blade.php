@@ -45,6 +45,19 @@
     @if ($mock)
         <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">MODE MOCK: status "diterima gateway" di bawah hanya simulasi — tidak ada pesan nyata.</div>
     @endif
+    @if (in_array($campaign->status, ['running', 'scheduled']))
+        @php $stale = ! $lastDispatch['at'] || $lastDispatch['at']->lt(now()->subMinutes(3)); @endphp
+        <div class="mb-4 rounded-lg border p-3 text-xs {{ $stale ? 'border-red-300 bg-red-50 text-red-800' : 'border-gray-200 bg-gray-50 text-gray-600' }}">
+            <strong>Dispatcher:</strong>
+            @if (! $lastDispatch['at'])
+                belum pernah jalan — scheduler (cron <code>php artisan schedule:run</code> tiap menit) belum aktif di server, pesan tidak akan terkirim.
+            @else
+                terakhir {{ $lastDispatch['at']->timezone(config('app.timezone'))->format('d/m H:i:s') }} ({{ $lastDispatch['at']->diffForHumans() }}), {{ $lastDispatch['sent'] }} terkirim{{ $lastDispatch['reason'] ? ' · '.(\App\Services\WaCampaign\WaCampaignService::REASON_LABELS[$lastDispatch['reason']] ?? $lastDispatch['reason']) : '' }}.
+                @if ($stale) Sudah > 3 menit tidak jalan — cek cron <code>php artisan schedule:run</code> di server. @endif
+            @endif
+            @unless ($withinWindow) <span class="text-amber-700">Sekarang di luar jam/hari kirim — menunggu jendela berikutnya.</span> @endunless
+        </div>
+    @endif
 
     <div class="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
         <x-admin.stat-card label="Antre" :value="$stats['queued']" color="gray" />

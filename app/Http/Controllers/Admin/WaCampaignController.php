@@ -121,6 +121,8 @@ class WaCampaignController extends Controller
             'mock' => $this->client->isMock(),
             'emergency' => $this->settings->emergencyStop(),
             'testPhone' => $this->settings->get('test_phone'),
+            'lastDispatch' => $this->service->lastDispatch(),
+            'withinWindow' => $this->settings->withinWindow(),
         ]);
     }
 

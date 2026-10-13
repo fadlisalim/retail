@@ -379,12 +379,14 @@ class WaCampaignTest extends TestCase
         $this->assertNotNull($campaign->image_path);
         $this->assertDatabaseHas('wa_campaign_templates', ['name' => 'Reseller']);
 
-        $this->actingAs($sales)->get(route('admin.wa-campaign.show', $campaign))->assertOk()->assertSee('Promo Reseller')->assertSee('Halo Budi,')->assertSee('Antre');
+        // Campaign berjalan tapi scheduler belum pernah jalan → peringatan jelas di halaman.
+        $this->actingAs($sales)->get(route('admin.wa-campaign.show', $campaign))->assertOk()->assertSee('Promo Reseller')->assertSee('Halo Budi,')->assertSee('Antre')->assertSee('belum pernah jalan');
         $this->actingAs($sales)->get(route('admin.wa-campaign.edit', $campaign))->assertForbidden(); // sudah berjalan
 
         // Dispatch kirim gambar + caption ke endpoint send-image.
         app(WaCampaignService::class)->dispatch();
         Http::assertSent(fn ($req) => str_contains($req->url(), '/api/v2/send-image') && str_contains($req['data'][0]['caption'], 'Halo Budi'));
+        $this->actingAs($sales)->get(route('admin.wa-campaign.show', $campaign))->assertOk()->assertDontSee('belum pernah jalan'); // selesai → banner dispatcher tidak tampil
 
         // Jeda / lanjut / batal.
         $c2 = $this->campaign(['name' => 'Kedua']);

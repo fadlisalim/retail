@@ -16,15 +16,7 @@ class WaCampaignDispatch extends Command
     {
         $limit = $this->option('limit') !== null ? max(0, (int) $this->option('limit')) : null;
         $r = $service->dispatch($limit);
-        $reason = match ($r['reason']) {
-            'emergency_stop' => 'EMERGENCY STOP aktif — tidak ada yang dikirim.',
-            'outside_window' => 'Di luar jam kirim.',
-            'daily_limit' => 'Kuota harian tercapai.',
-            'gap_wait' => 'Menunggu jeda antar pesan.',
-            'device_disconnected' => 'Device Wablas tidak terhubung — campaign dijeda.',
-            'locked' => 'Putaran sebelumnya masih berjalan.',
-            default => null,
-        };
+        $reason = WaCampaignService::REASON_LABELS[$r['reason']] ?? null;
         $this->info("WA Campaign: terkirim {$r['sent']}, dilewati {$r['skipped']}, gagal {$r['failed']}, tidak pasti {$r['uncertain']}.".($reason ? ' '.$reason : ''));
 
         return self::SUCCESS;
