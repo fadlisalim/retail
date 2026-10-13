@@ -257,7 +257,7 @@ class WaCampaignController extends Controller
             'products' => Product::where('status', 'published')->orderBy('name')->get(['id', 'name', 'slug', 'main_image_path', 'price', 'sale_price']),
             'categories' => Category::orderBy('name')->get(['id', 'name', 'slug']),
             'tags' => WaContact::whereNotNull('tags')->pluck('tags')->flatten()->unique()->sort()->values()->all(),
-            'sources' => ['customer' => 'Akun customer', 'order' => 'Pernah pesan', 'lead' => 'Lead Kirana', 'wachat' => 'WA chat', 'import' => 'Import CSV', 'manual' => 'Manual', 'checkout' => 'Izin saat checkout', 'register' => 'Izin saat daftar'],
+            'sources' => ['customer' => 'Akun customer', 'order' => 'Pernah pesan', 'lead' => 'Lead Kirana', 'wachat' => 'WA chat', 'import' => 'Import CSV', 'manual' => 'Manual', 'checkout' => 'Izin saat checkout', 'register' => 'Izin saat daftar', 'ridl' => 'Customer lama ridlabs'],
             'eligibleTotal' => WaContact::eligible()->count(),
             'footer' => $this->settings->footer(),
             'testPhone' => $this->settings->get('test_phone'),
