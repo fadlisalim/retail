@@ -26,6 +26,7 @@ class SettingController extends Controller
             'whatsapp.number' => $this->settings->get('whatsapp.number'),
             'whatsapp.greeting' => $this->settings->get('whatsapp.greeting'),
             'whatsapp.admin_notify' => $this->settings->get('whatsapp.admin_notify'),
+            'chat.assistant_enabled' => $this->settings->assistantEnabled(),
             'marketing.meta_pixel_id' => $this->settings->get('marketing.meta_pixel_id'),
             'marketing.google_tag_id' => $this->settings->get('marketing.google_tag_id'),
             'marketing.google_ads_label_lead' => $this->settings->get('marketing.google_ads_label_lead'),
@@ -55,6 +56,7 @@ class SettingController extends Controller
             'whatsapp_number' => ['nullable', 'string', 'max:30'],
             'whatsapp_greeting' => ['nullable', 'string', 'max:500'],
             'whatsapp_admin_notify' => ['nullable', 'string', 'max:30'],
+            'chat_assistant_enabled' => ['nullable', 'boolean'],
             'marketing_meta_pixel_id' => ['nullable', 'string', 'max:32', 'regex:/^\d*$/'],
             'marketing_google_tag_id' => ['nullable', 'string', 'max:40', 'regex:/^(AW|G|GT)-[A-Za-z0-9]+$/'],
             'marketing_google_ads_label_lead' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
@@ -80,6 +82,7 @@ class SettingController extends Controller
         $this->settings->set('whatsapp.number', $data['whatsapp_number'] ?? '', 'string', 'whatsapp');
         $this->settings->set('whatsapp.greeting', $data['whatsapp_greeting'] ?? '', 'string', 'whatsapp');
         $this->settings->set('whatsapp.admin_notify', $data['whatsapp_admin_notify'] ?? '', 'string', 'whatsapp');
+        $this->settings->set('chat.assistant_enabled', $request->boolean('chat_assistant_enabled', true), 'boolean', 'chat');
         $this->settings->set('marketing.meta_pixel_id', $data['marketing_meta_pixel_id'] ?? '', 'string', 'marketing');
         $this->settings->set('marketing.google_tag_id', $data['marketing_google_tag_id'] ?? '', 'string', 'marketing');
         $this->settings->set('marketing.google_ads_label_lead', $data['marketing_google_ads_label_lead'] ?? '', 'string', 'marketing');

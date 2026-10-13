@@ -80,6 +80,24 @@ class SettingService
         return (bool) $this->get('whatsapp.enabled', true);
     }
 
+    /**
+     * Asisten AI Kirana aktif? Bila dimatikan (Admin → Pengaturan → WhatsApp), semua titik
+     * konsultasi di toko (widget, menu "CS", /konsultasi, tombol "Tanya Dulu") langsung
+     * membuka chat WhatsApp ke nomor CS.
+     */
+    public function assistantEnabled(): bool
+    {
+        return (bool) $this->get('chat.assistant_enabled', true);
+    }
+
+    /** Link wa.me konsultasi ke nomor CS dengan pesan sapaan dari pengaturan. */
+    public function consultationLink(?string $topic = null): string
+    {
+        $greeting = (string) ($this->get('whatsapp.greeting') ?: 'Halo '.brand().', saya ingin berkonsultasi.');
+
+        return whatsapp_link($topic ? rtrim($greeting, '. ').' tentang '.$topic.'.' : $greeting);
+    }
+
     public function company(): array
     {
         return [

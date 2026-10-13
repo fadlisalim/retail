@@ -81,6 +81,14 @@
                     <textarea name="whatsapp_greeting" id="whatsapp_greeting" rows="2" class="form-textarea">{{ old('whatsapp_greeting', $settings['whatsapp.greeting']) }}</textarea>
                     @error('whatsapp_greeting')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                 </div>
+                <div class="sm:col-span-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <input type="hidden" name="chat_assistant_enabled" value="0">
+                        <input type="checkbox" name="chat_assistant_enabled" value="1" @checked(old('chat_assistant_enabled', $settings['chat.assistant_enabled'])) class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
+                        <span>Asisten AI <strong>Kirana</strong> aktif</span>
+                    </label>
+                    <p class="mt-1 text-xs text-gray-500">Kalau dimatikan, semua tombol konsultasi di toko (widget chat, menu "CS" di HP, halaman /konsultasi, "Tanya Dulu", "Konsultasi Gratis") langsung membuka WhatsApp ke nomor di atas dengan pesan sapaan. Chat Toko (customer ↔ admin) tetap jalan.</p>
+                </div>
                 <div class="sm:col-span-2">
                     <label for="whatsapp_admin_notify" class="input-label">Nomor WA Notifikasi Admin (Chat Toko)</label>
                     <input type="text" name="whatsapp_admin_notify" id="whatsapp_admin_notify" value="{{ old('whatsapp_admin_notify', $settings['whatsapp.admin_notify']) }}" placeholder="6281xxxxxxxx" class="form-input">

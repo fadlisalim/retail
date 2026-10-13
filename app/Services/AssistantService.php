@@ -54,7 +54,7 @@ class AssistantService
 
     public function isEnabled(): bool
     {
-        return (bool) config('services.anthropic.enabled') && filled(config('services.anthropic.api_key'));
+        return $this->settings->assistantEnabled() && (bool) config('services.anthropic.enabled') && filled(config('services.anthropic.api_key'));
     }
 
     /**
@@ -791,7 +791,9 @@ PROMPT;
 
     private function offlineReply(): string
     {
-        return 'Halo! 👋 Asisten otomatis lagi belum aktif. Untuk info produk & pemesanan, silakan hubungi CS kami lewat tombol WhatsApp di bawah ya.';
+        return $this->settings->assistantEnabled()
+            ? 'Halo! 👋 Asisten otomatis lagi belum aktif. Untuk info produk & pemesanan, silakan hubungi CS kami lewat tombol WhatsApp di bawah ya.'
+            : 'Halo! 👋 Konsultasi sekarang langsung dengan tim '.brand().' via WhatsApp — klik tombol di bawah ya.';
     }
 
     /** Build the standard result payload. Fallback/escalation carries a WA link. */

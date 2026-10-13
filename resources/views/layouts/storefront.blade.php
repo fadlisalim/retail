@@ -63,9 +63,11 @@
         @include('partials.mini-cart')
         {{-- Halaman /konsultasi punya chat Kirana full-page sendiri — widget
              mengambang disembunyikan di sana supaya tidak dobel. --}}
-        @unless (View::hasSection('hide_cs_widget'))
+        @if (! app(\App\Services\SettingService::class)->assistantEnabled())
+            @include('partials.wa-consult')
+        @elseif (! View::hasSection('hide_cs_widget'))
             @include('partials.cs-chat')
-        @endunless
+        @endif
         @include('partials.site-chat')
     @endif
 

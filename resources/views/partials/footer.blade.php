@@ -23,7 +23,11 @@
             <div>
                 <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-700">Layanan</h3>
                 <ul class="space-y-2 text-sm text-gray-500">
-                    <li><a href="{{ route('consultation') }}" class="hover:text-brand-700">Konsultasi Gratis (Kirana)</a></li>
+                    @if (app(\App\Services\SettingService::class)->assistantEnabled())
+                        <li><a href="{{ route('consultation') }}" class="hover:text-brand-700">Konsultasi Gratis (Kirana)</a></li>
+                    @else
+                        <li><a href="{{ app(\App\Services\SettingService::class)->consultationLink() }}" target="_blank" rel="noopener" class="hover:text-brand-700">Konsultasi Gratis via WhatsApp</a></li>
+                    @endif
                     <li><a href="{{ route('quotations.create') }}" class="hover:text-brand-700">Permintaan Penawaran</a></li>
                     <li><a href="{{ route('affiliate.landing') }}" class="hover:text-brand-700">Program Afiliasi</a></li>
                     <li><a href="{{ route('documentation') }}" class="hover:text-brand-700">Dokumentasi Pengerjaan</a></li>
