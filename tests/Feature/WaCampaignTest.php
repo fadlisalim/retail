@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Product;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\WaCampaign;
@@ -271,6 +272,30 @@ class WaCampaignTest extends TestCase
         $this->assertStringContainsString('tidak terhubung', $campaign->fresh()->pause_reason);
         Http::assertNotSent(fn ($req) => str_contains($req->url(), 'send-message'));
         $this->assertSame(0, WaCampaignMessage::where('status', '!=', WaCampaignMessage::QUEUED)->count());
+    }
+
+    /** Foto produk .webp dikirim ke Wablas sebagai salinan JPG (Wablas tidak menerima webp). */
+    public function test_webp_product_image_is_sent_as_a_jpeg_copy_with_caption(): void
+    {
+        Storage::fake('public');
+        $this->fakeWablasOk();
+        $img = imagecreatetruecolor(40, 40);
+        ob_start();
+        imagewebp($img, null, 80);
+        Storage::disk('public')->put('products/x/foto.webp', (string) ob_get_clean());
+        $product = Product::factory()->create(['main_image_path' => 'products/x/foto.webp', 'status' => 'published']);
+        $this->contact('081111111111', 'Budi');
+        $campaign = $this->campaign(['product_id' => $product->id]);
+
+        $url = app(WaCampaignService::class)->imageUrl($campaign);
+        $this->assertStringEndsWith('.jpg', $url);
+        $copy = 'products/wa/'.substr(sha1('products/x/foto.webp'), 0, 16).'.jpg';
+        Storage::disk('public')->assertExists($copy);
+        $this->assertSame($url, app(WaCampaignService::class)->imageUrl($campaign)); // dibuat sekali
+
+        app(WaCampaignService::class)->schedule($campaign);
+        app(WaCampaignService::class)->dispatch();
+        Http::assertSent(fn ($req) => str_contains($req->url(), '/api/v2/send-image') && str_ends_with($req['data'][0]['image'], '.jpg') && str_contains($req['data'][0]['caption'], 'Halo Budi'));
     }
 
     public function test_mock_mode_never_calls_wablas(): void

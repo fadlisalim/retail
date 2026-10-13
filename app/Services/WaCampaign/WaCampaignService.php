@@ -119,9 +119,41 @@ class WaCampaignService
         if (! $path) {
             return null;
         }
+        $path = $this->jpegCopy($path);
         $url = Storage::disk('public')->url($path);
 
         return str_starts_with($url, 'http') ? $url : url($url);
+    }
+
+    /**
+     * Wablas hanya menerima JPG/PNG untuk send-image, sedangkan foto produk di situs
+     * disimpan .webp. Buat salinan JPEG sekali (products/wa/<hash>.jpg) dan pakai itu.
+     */
+    private function jpegCopy(string $path): string
+    {
+        if (! str_ends_with(strtolower($path), '.webp')) {
+            return $path;
+        }
+        $disk = Storage::disk('public');
+        $copy = 'products/wa/'.substr(sha1($path), 0, 16).'.jpg';
+        if ($disk->exists($copy) || ! $disk->exists($path) || ! \function_exists('imagecreatefromwebp')) {
+            return $disk->exists($copy) ? $copy : $path;
+        }
+        $img = @imagecreatefromwebp($disk->path($path));
+        if (! $img) {
+            return $path;
+        }
+        $canvas = imagecreatetruecolor(imagesx($img), imagesy($img));
+        $white = imagecolorallocate($canvas, 255, 255, 255);
+        imagefill($canvas, 0, 0, $white);
+        imagecopy($canvas, $img, 0, 0, 0, 0, imagesx($img), imagesy($img));
+        ob_start();
+        imagejpeg($canvas, null, 88);
+        $disk->put($copy, (string) ob_get_clean());
+        imagedestroy($img);
+        imagedestroy($canvas);
+
+        return $copy;
     }
 
     // ------------------------------------------------------------- lifecycle
