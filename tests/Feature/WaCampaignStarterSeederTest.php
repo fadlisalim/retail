@@ -48,7 +48,8 @@ class WaCampaignStarterSeederTest extends TestCase
         $this->assertSame(1, app(WaCampaignService::class)->audienceCount($campaign->segment));
         $rendered = app(WaCampaignService::class)->render($campaign, $legacy);
         $this->assertStringContainsString('Halo Kak Pak', $rendered);
-        $this->assertStringContainsString('utm_campaign=seraphim-345-legacy', $rendered);
+        $this->assertStringContainsString(url('/go/seraphim-345-legacy'), $rendered);
+        $this->get('/go/seraphim-345-legacy')->assertRedirect(route('products.show', 'seraphim-345').'?utm_source=whatsapp&utm_medium=campaign&utm_campaign=seraphim-345-legacy');
         $this->assertStringContainsString('Balas STOP', $rendered);
 
         $this->seed(RoleSeeder::class);
@@ -56,5 +57,10 @@ class WaCampaignStarterSeederTest extends TestCase
         $sales->roles()->attach(Role::where('slug', 'admin-sales')->first());
         $this->actingAs($sales)->get(route('admin.wa-campaign.show', $campaign))->assertOk()->assertSee('Mulai / Jadwalkan')->assertSee('Seraphim');
         $this->actingAs($sales)->get(route('admin.wa-campaign.edit', $campaign))->assertOk()->assertSee('Customer lama ridlabs');
+
+        // Draf dibatalkan → seeder berikutnya membuat draf baru, bukan diam.
+        $campaign->forceFill(['status' => WaCampaign::CANCELLED])->save();
+        $this->seed(WaCampaignStarterSeeder::class);
+        $this->assertSame(1, WaCampaign::where('status', WaCampaign::DRAFT)->where('name', 'like', WaCampaignStarterSeeder::CAMPAIGN_NAME.' (%')->count());
     }
 }

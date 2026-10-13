@@ -114,7 +114,7 @@
                         <p class="whitespace-pre-wrap">{{ $preview }}</p>
                     </div>
                 </div>
-                @if ($link)<p class="mt-2 break-all text-[11px] text-gray-400">Link: {{ $link }}</p>@endif
+                @if ($link)<p class="mt-2 break-all text-[11px] text-gray-400">Link di pesan: {{ $shortLink }}<br>→ {{ $link }}</p>@endif
             </div>
             <div class="card p-4 text-sm">
                 <h2 class="mb-2 font-semibold text-gray-900">Ringkasan</h2>

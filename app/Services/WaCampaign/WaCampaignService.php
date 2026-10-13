@@ -88,10 +88,20 @@ class WaCampaignService
         return $url.(str_contains($url, '?') ? '&' : '?').$utm;
     }
 
+    /** Link pendek untuk isi pesan: energi.click/go/<utm_campaign> → redirect ke link lengkap ber-UTM. */
+    public function shortLink(WaCampaign $campaign): ?string
+    {
+        if (! $this->trackedLink($campaign)) {
+            return null;
+        }
+
+        return route('wa-campaign.go', $campaign->utm_campaign ?: Str::slug($campaign->name));
+    }
+
     /** Render pesan untuk satu kontak: {nama}, {link}, {produk}, {harga} + footer STOP. */
     public function render(WaCampaign $campaign, WaContact $contact): string
     {
-        $link = $this->trackedLink($campaign) ?? '';
+        $link = $this->shortLink($campaign) ?? '';
         $product = $campaign->product;
         $body = strtr($campaign->message, [
             '{nama}' => $contact->firstName(),

@@ -109,6 +109,7 @@ class WaCampaignController extends Controller
             'preview' => $this->service->render($campaign, new WaContact(['name' => 'Budi Santoso', 'phone' => '628xxx'])),
             'imageUrl' => $this->service->imageUrl($campaign),
             'link' => $this->service->trackedLink($campaign),
+            'shortLink' => $this->service->shortLink($campaign),
             'mock' => $this->client->isMock(),
             'emergency' => $this->settings->emergencyStop(),
             'testPhone' => $this->settings->get('test_phone'),

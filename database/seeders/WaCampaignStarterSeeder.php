@@ -45,7 +45,13 @@ TXT;
 
         WaCampaignTemplate::firstOrCreate(['name' => self::TEMPLATE_NAME], ['body' => self::MESSAGE]);
 
-        $campaign = WaCampaign::firstOrCreate(['name' => self::CAMPAIGN_NAME], [
+        // Draf yang sudah dibatalkan/selesai tidak dipakai lagi → buat draf baru dengan nama bertanggal.
+        $name = self::CAMPAIGN_NAME;
+        $stale = WaCampaign::where('name', $name)->whereIn('status', [WaCampaign::CANCELLED, WaCampaign::COMPLETED])->exists();
+        if ($stale) {
+            $name .= ' ('.now()->format('d/m').')';
+        }
+        $campaign = WaCampaign::firstOrCreate(['name' => $name], [
             'status' => WaCampaign::DRAFT,
             'message' => self::MESSAGE,
             'product_id' => $product?->id,
@@ -53,7 +59,7 @@ TXT;
             'segment' => ['tags' => ['legacy'], 'sources' => ['ridl']],
         ]);
 
-        $this->command?->info('WA Campaign starter: pengaturan 100/hari · 2/menit · 09–17 Sen–Jum · jeda 7 hari; template "'.self::TEMPLATE_NAME.'"; campaign draf "'.self::CAMPAIGN_NAME.'"'.($campaign->wasRecentlyCreated ? ' dibuat' : ' sudah ada').($product ? '' : ' (produk Seraphim belum ada — pilih produk manual di builder)').'.');
+        $this->command?->info('WA Campaign starter: pengaturan 100/hari · 2/menit · 09–17 Sen–Jum · jeda 7 hari; template "'.self::TEMPLATE_NAME.'"; campaign draf "'.$name.'"'.($campaign->wasRecentlyCreated ? ' dibuat' : ' sudah ada').($product ? '' : ' (produk Seraphim belum ada — pilih produk manual di builder)').'.');
         $this->command?->warn('Langkah: Admin → WA Campaign → buka draf → cek preview → Kirim tes → Simpan & Mulai. Pastikan nomor tes di Pengaturan & webhook Wablas sudah diisi.');
     }
 }

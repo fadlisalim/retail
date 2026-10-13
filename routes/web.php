@@ -30,6 +30,8 @@ use App\Http\Controllers\ShortLinkController;
 use App\Http\Controllers\SiteChatController;
 use App\Http\Controllers\WablasWebhookController;
 use App\Http\Controllers\WishlistController;
+use App\Models\WaCampaign;
+use App\Services\WaCampaign\WaCampaignService;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -49,6 +51,13 @@ Route::redirect('/barang-sisa-proyek', '/barang-clearance', 301)->name('surplus'
 
 // Halaman konsultasi Kirana full-page — link yang bisa dibagikan ke pelanggan.
 Route::view('/konsultasi', 'storefront.konsultasi')->name('consultation');
+// Link pendek WA Campaign: /go/<utm_campaign> → halaman produk/link campaign lengkap dengan UTM.
+Route::get('/go/{slug}', function (string $slug) {
+    $campaign = WaCampaign::where('utm_campaign', $slug)->latest('id')->first();
+    $target = $campaign ? app(WaCampaignService::class)->trackedLink($campaign) : null;
+
+    return redirect()->to($target ?: route('home'));
+})->where('slug', '[A-Za-z0-9_-]+')->name('wa-campaign.go');
 
 Route::get('/pencarian', [SearchController::class, 'index'])->name('search');
 Route::get('/api/pencarian/suggest', [SearchController::class, 'suggest'])

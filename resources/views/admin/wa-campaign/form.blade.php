@@ -28,6 +28,7 @@
               'templates' => $templatesJs,
               'audienceUrl' => route('admin.wa-campaign.audience'),
               'testUrl' => route('admin.wa-campaign.test'),
+              'goBase' => url('/go'),
               'existingImage' => $campaign->image_path ? asset('storage/'.$campaign->image_path) : null,
               'csrf' => csrf_token(),
           ]) }})" class="grid gap-6 lg:grid-cols-[1fr_380px]">
@@ -123,7 +124,7 @@
                     <div>
                         <label for="link_url" class="input-label">Link lain (opsional)</label>
                         <input type="url" name="link_url" id="link_url" x-model="linkUrl" class="form-input" placeholder="https://energi.click/barang-clearance">
-                        <p class="mt-1 text-xs text-gray-400">UTM: utm_source=whatsapp, utm_medium=campaign, utm_campaign=<span x-text="utmSlug()"></span></p>
+                        <p class="mt-1 text-xs text-gray-400">Di pesan dipakai link pendek <span x-text="link() || '—'"></span> yang meneruskan ke halaman produk dengan utm_campaign=<span x-text="utmSlug()"></span>.</p>
                     </div>
                     <div>
                         <label for="utm_campaign" class="input-label">utm_campaign</label>
@@ -194,7 +195,7 @@
                 link() {
                     const base = this.linkUrl || (this.product() ? this.product().url : '');
                     if (!base) return '';
-                    return base + (base.includes('?') ? '&' : '?') + 'utm_source=whatsapp&utm_medium=campaign&utm_campaign=' + this.utmSlug();
+                    return cfg.goBase + '/' + this.utmSlug(); // link pendek → redirect ke produk + UTM
                 },
                 imageUrl() { return this.uploaded || cfg.existingImage || (this.product() ? this.product().image : null); },
                 rendered() {

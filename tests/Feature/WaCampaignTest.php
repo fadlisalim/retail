@@ -91,7 +91,10 @@ class WaCampaignTest extends TestCase
         $this->assertSame(WaCampaignMessage::ACCEPTED, $m->status);
         $this->assertStringStartsWith('WB-', $m->wablas_id);
         $this->assertStringContainsString('Halo Budi,', $m->rendered_message);
-        $this->assertStringContainsString('utm_source=whatsapp&utm_medium=campaign&utm_campaign=promo-okt', $m->rendered_message);
+        $this->assertStringContainsString(url('/go/promo-okt'), $m->rendered_message); // link pendek di pesan
+        $this->assertStringNotContainsString('utm_source', $m->rendered_message);
+        $this->get('/go/promo-okt')->assertRedirect('https://energi.click/barang-clearance?utm_source=whatsapp&utm_medium=campaign&utm_campaign=promo-okt');
+        $this->get('/go/tidak-ada')->assertRedirect(route('home'));
         $this->assertStringContainsString('Balas STOP untuk berhenti promo', $m->rendered_message);
         Http::assertSent(fn ($req) => str_contains($req->url(), '/api/v2/send-message') && $req->header('Authorization')[0] === 'tok' && $req['data'][0]['phone'] === '6281111111111');
         $this->assertSame(WaCampaign::COMPLETED, $campaign->fresh()->status);
