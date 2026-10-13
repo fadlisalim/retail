@@ -430,6 +430,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/kontak', [Admin\WaContactController::class, 'store'])->name('contacts.store');
         Route::post('/kontak/import', [Admin\WaContactController::class, 'import'])->name('contacts.import');
         Route::post('/kontak/sinkron', [Admin\WaContactController::class, 'sync'])->name('contacts.sync');
+        Route::post('/kontak/sinkron-ridl', [Admin\WaContactController::class, 'syncRidl'])->name('contacts.sync-ridl');
         Route::put('/kontak/{contact}', [Admin\WaContactController::class, 'update'])->name('contacts.update');
         Route::get('/template', [Admin\WaCampaignTemplateController::class, 'index'])->name('templates');
         Route::post('/template', [Admin\WaCampaignTemplateController::class, 'store'])->name('templates.store');

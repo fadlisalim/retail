@@ -29,3 +29,6 @@ Schedule::command('visits:prune')->daily();
 
 // WA Campaign: dispatcher antrean promo (jam kirim, rate, kuota, izin) tiap menit.
 Schedule::command('wa-campaign:dispatch')->everyMinute()->withoutOverlapping(5);
+
+// WA Campaign: tarik customer lama ridlabs yang sudah diklaim sales (bila RIDL_DB_DATABASE diisi).
+Schedule::command('wa-campaign:sync-ridl')->dailyAt('05:30');

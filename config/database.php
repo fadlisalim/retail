@@ -64,6 +64,24 @@ return [
             ]) : [],
         ],
 
+        // DB customer lama ridlabs (ridl_rekaDB.customers) — sumber sinkron kontak WA Campaign.
+        // Hanya dibaca. Kosongkan RIDL_DB_DATABASE untuk menonaktifkan.
+        'ridl' => [
+            'driver' => 'mysql',
+            'host' => env('RIDL_DB_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('RIDL_DB_PORT', env('DB_PORT', '3306')),
+            'database' => env('RIDL_DB_DATABASE', ''),
+            'username' => env('RIDL_DB_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('RIDL_DB_PASSWORD', env('DB_PASSWORD', '')),
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => false,
+            'engine' => null,
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),

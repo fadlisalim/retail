@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\WaContact;
 use App\Services\AuditService;
+use App\Services\SettingService;
 use App\Services\WaCampaign\WablasCampaignClient;
 use App\Services\WaCampaign\WaContactService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 /** Kontak WA Campaign: daftar + filter, import CSV, sinkron data existing, izin promo & STOP. */
@@ -43,6 +46,8 @@ class WaContactController extends Controller
             ],
             'tags' => WaContact::whereNotNull('tags')->pluck('tags')->flatten()->unique()->sort()->values()->all(),
             'sources' => WaContact::select('source')->distinct()->pluck('source')->all(),
+            'ridlEnabled' => (bool) config('services.ridl.enabled'),
+            'ridlLastSync' => (string) app(SettingService::class)->get('wa_campaign.ridl_last_sync', ''),
         ]);
     }
 
@@ -123,6 +128,22 @@ class WaContactController extends Controller
         $this->audit->log('wa_contact.import', null, [], $n);
 
         return back()->with('success', "Import selesai: {$n['created']} kontak baru, {$n['updated']} diperbarui, {$n['opted_in']} izin promo dicatat, {$n['kept_out']} tetap STOP (tidak dihidupkan), {$n['invalid']} nomor tidak valid.");
+    }
+
+    /** Sinkron dari DB customer lama ridlabs (hanya yang sudah diklaim sales). */
+    public function syncRidl(): RedirectResponse
+    {
+        if (! config('services.ridl.enabled')) {
+            return back()->with('error', 'RIDL_DB_DATABASE belum diisi di .env server.');
+        }
+        try {
+            Artisan::call('wa-campaign:sync-ridl');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Sinkron ridlabs gagal: '.Str::limit($e->getMessage(), 200));
+        }
+        $this->audit->log('wa_contact.sync_ridl', null, [], ['output' => trim(Artisan::output())]);
+
+        return back()->with('success', trim(Artisan::output()));
     }
 
     public function sync(): RedirectResponse

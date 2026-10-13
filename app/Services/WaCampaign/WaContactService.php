@@ -33,7 +33,7 @@ class WaContactService
         }
         if (str_starts_with($digits, '0')) {
             $digits = '62'.ltrim(substr($digits, 1), '0');
-        } elseif (str_starts_with($digits, '8') && strlen($digits) >= 9 && strlen($digits) <= 13) {
+        } elseif (str_starts_with($digits, '8') && strlen($digits) >= 9 && strlen($digits) <= 12) {
             $digits = '62'.$digits; // "812…" tanpa 0/62
         }
         if (! str_starts_with($digits, '62') || strlen($digits) < 10 || strlen($digits) > 15) {

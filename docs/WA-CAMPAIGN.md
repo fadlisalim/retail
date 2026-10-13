@@ -57,6 +57,29 @@ Yang diproses:
 
 Di produksi webhook **ditolak** bila `WABLAS_WEBHOOK_TOKEN` kosong.
 
+## 3b. Sinkron customer lama ridlabs (opsional)
+
+DB `ridl_rekaDB.customers` (±8.700 nomor) bisa ditarik otomatis. Isi di `.env` (user DB cukup hak SELECT):
+
+```env
+RIDL_DB_HOST=127.0.0.1
+RIDL_DB_DATABASE=ridl_rekaDB
+RIDL_DB_USERNAME=...
+RIDL_DB_PASSWORD=...
+RIDL_DB_TABLE=customers
+```
+
+Perintah `php artisan wa-campaign:sync-ridl` (otomatis tiap hari 05.30, juga tombol **Sinkron ridlabs** di Kontak):
+
+- hanya baris dengan `claimed_at` terisi (sudah diklaim/dilayani sales) dan `phone` valid Indonesia;
+- tag `legacy` + `sales-<id_sales>`, nama & perusahaan ikut bila ada;
+- izin promo dicatat dengan bukti "hubungan bisnis existing, dilayani sales X tanggal Y" — dasar ini keputusan pemilik,
+  tetap ada STOP di setiap pesan; `--tanpa-izin` bila hanya ingin menarik kontak;
+- kontak yang sudah STOP tidak pernah dihidupkan; izin yang sudah ada tidak ditimpa;
+- opsi `--since=2025-01-01`, `--limit=500` (terbaru dulu) untuk bertahap, `--dry-run` untuk menghitung saja.
+
+Saran: mulai `--limit=500`, kirim campaign, lihat rasio gagal & STOP, baru lanjut. Nomor tua banyak yang mati.
+
 ## 4. Scheduler (wajib)
 
 Dispatcher berjalan lewat scheduler Laravel tiap menit. Pastikan cron sistem ada (sudah dipakai fitur lain):

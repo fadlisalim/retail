@@ -64,6 +64,12 @@ return [
         'cancel_path' => env('WABLAS_CANCEL_PATH', '/api/v2/cancel-message'),
     ],
 
+    // Sumber kontak lama ridlabs untuk WA Campaign (lihat koneksi 'ridl' di config/database.php).
+    'ridl' => [
+        'enabled' => filled(env('RIDL_DB_DATABASE')),
+        'table' => env('RIDL_DB_TABLE', 'customers'),
+    ],
+
     // CS Assistant (Claude / Anthropic). API key ONLY from .env — never hardcode.
     // Powers the storefront chat assistant; answers are grounded in our own
     // product catalogue. Disabled by default so the site runs without a key.

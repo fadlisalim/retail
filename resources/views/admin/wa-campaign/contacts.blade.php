@@ -6,6 +6,9 @@
     <x-admin.page-header title="Kontak & Izin Promo" subtitle="Hanya kontak dengan izin promo (ada bukti) yang bisa dikirimi. STOP tidak pernah ditimpa oleh import/sinkron.">
         <x-slot:actions>
             <form method="POST" action="{{ route('admin.wa-campaign.contacts.sync') }}" onsubmit="return confirm('Tarik kontak dari customer, pesanan lunas, lead Kirana, dan WA chat? Izin promo TIDAK diubah.')">@csrf<button class="btn-outline">Sinkron dari data toko</button></form>
+            @if ($ridlEnabled)
+                <form method="POST" action="{{ route('admin.wa-campaign.contacts.sync-ridl') }}" onsubmit="return confirm('Tarik customer lama ridlabs yang sudah diklaim sales? Izin promo dicatat dengan bukti hubungan bisnis existing; yang sudah STOP tidak dihidupkan.')">@csrf<button class="btn-outline" title="{{ $ridlLastSync ?: 'Belum pernah disinkron' }}">Sinkron ridlabs</button></form>
+            @endif
         </x-slot:actions>
     </x-admin.page-header>
     @include('admin.wa-campaign._nav')
@@ -102,6 +105,9 @@
                     <li>Manual oleh admin dengan bukti (mis. pelanggan minta via chat).</li>
                 </ul>
                 <p class="mt-2">Customer lama yang disinkron dari data toko <strong>tidak otomatis</strong> punya izin.</p>
+                @if ($ridlEnabled)
+                    <p class="mt-2">Sinkron <strong>ridlabs</strong> otomatis tiap hari 05.30: hanya customer yang sudah diklaim sales, izin dicatat "hubungan bisnis existing", tag <code>legacy</code> + <code>sales-XXX</code>.{{ $ridlLastSync ? ' Terakhir: '.$ridlLastSync : '' }}</p>
+                @endif
             </div>
         </div>
     </div>
