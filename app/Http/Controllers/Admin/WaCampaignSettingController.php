@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\WablasWebhookController;
 use App\Services\AuditService;
 use App\Services\WaCampaign\WablasCampaignClient;
 use App\Services\WaCampaign\WaCampaignSettings;
@@ -10,6 +11,7 @@ use App\Services\WaCampaign\WaContactService;
 use App\Services\WhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 /** Pengaturan pengiriman WA Campaign + status koneksi Wablas (kredensial tetap di .env). */
@@ -28,6 +30,7 @@ class WaCampaignSettingController extends Controller
             'hasWebhookToken' => filled(config('services.wablas.webhook_token')),
             'device' => $client->deviceInfo(),
             'webhookUrl' => route('webhook.wablas'),
+            'recentWebhooks' => Cache::get(WablasWebhookController::RECENT_KEY, []),
         ]);
     }
 

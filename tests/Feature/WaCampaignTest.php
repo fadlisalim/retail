@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\WaCampaign;
 use App\Models\WaCampaignMessage;
 use App\Models\WaContact;
+use App\Models\WaMessage;
 use App\Services\SettingService;
 use App\Services\WaCampaign\WaCampaignService;
 use App\Services\WaCampaign\WaCampaignSettings;
@@ -191,10 +192,16 @@ class WaCampaignTest extends TestCase
         app(WaCampaignService::class)->dispatch();
         $this->assertSame(WaCampaignMessage::ACCEPTED, $m->fresh()->status);
 
+        // Tracking yang ikut membawa teks pesan keluar tetap dikenali sebagai status (bukan pesan masuk).
+        $this->postJson('/webhook/wablas', ['id' => 'WB-77', 'phone' => '6281111111111', 'status' => 'sent', 'message' => 'Halo Budi, promo panel surya!'])->assertOk();
+        $this->assertSame(WaCampaignMessage::SENT, $m->fresh()->status);
+        $this->assertSame(0, WaMessage::count());
         $this->postJson('/webhook/wablas', ['id' => 'WB-77', 'phone' => '6281111111111', 'status' => 'read'])->assertOk();
         $this->postJson('/webhook/wablas', ['id' => 'WB-77', 'phone' => '6281111111111', 'status' => 'delivered'])->assertOk(); // terlambat → diabaikan
         $this->assertSame(WaCampaignMessage::READ, $m->fresh()->status);
         $this->assertNotNull($m->fresh()->delivered_at);
+        // Jejak webhook terakhir tampil di Pengaturan (nomor disamarkan).
+        $this->actingAs($admin)->get(route('admin.wa-campaign.settings'))->assertOk()->assertSee('status campaign: read')->assertSee('6281******111')->assertDontSee('6281111111111');
 
         // Balasan dari penerima dalam 7 hari dihitung.
         $this->postJson('/webhook/wablas', ['id' => 'IN-9', 'phone' => '081111111111', 'pushName' => 'Budi', 'message' => 'Masih ada stok?'])->assertOk();

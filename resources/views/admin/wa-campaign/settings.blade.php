@@ -75,6 +75,18 @@
                 <code class="mt-1 block break-all rounded bg-gray-100 p-2">{{ $webhookUrl }}?token=…</code>
                 <p class="mt-1">Ganti … dengan WABLAS_WEBHOOK_TOKEN. Balasan STOP, balasan pelanggan, dan status terkirim/sampai/dibaca diproses lewat URL ini.</p>
             </div>
+            <div class="card p-4 text-xs text-gray-600">
+                <h2 class="mb-1 font-semibold text-gray-900">Webhook terakhir masuk</h2>
+                @forelse ($recentWebhooks as $w)
+                    <div class="border-t border-gray-100 py-1.5 first:border-0">
+                        <p><span class="text-gray-400">{{ \Illuminate\Support\Carbon::parse($w['at'])->timezone(config('app.timezone'))->format('d/m H:i:s') }}</span> <span class="font-medium text-gray-800">{{ $w['handled'] }}</span></p>
+                        <p class="text-[11px] text-gray-500">{{ $w['status'] ? 'status '.$w['status'].' · ' : '' }}{{ $w['id'] ? 'id '.$w['id'].' · ' : '' }}{{ $w['phone'] ?? '' }}{{ $w['message'] ? ' · "'.$w['message'].'"' : '' }}</p>
+                        <p class="text-[11px] text-gray-400">field: {{ $w['keys'] }}</p>
+                    </div>
+                @empty
+                    <p class="text-gray-400">Belum ada webhook yang diterima sejak deploy. Bila campaign berjalan tapi daftar ini kosong, Tracking URL di Wablas belum mengarah ke sini.</p>
+                @endforelse
+            </div>
         </div>
     </div>
 @endsection

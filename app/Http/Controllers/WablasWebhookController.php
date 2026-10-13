@@ -52,19 +52,23 @@ class WablasWebhookController extends Controller
 
         // Ignore group chats and payloads without a sender phone.
         if (($payload['isGroup'] ?? false) === true || ($payload['isGroup'] ?? null) === 'true') {
-            return response('', 200);
+            return $this->done($payload, 'grup — diabaikan');
         }
 
         $phone = $wa->normalize((string) ($payload['phone'] ?? $payload['sender'] ?? ''));
         $message = trim((string) ($payload['message'] ?? ''));
 
-        // Webhook tracking status pesan keluar (ack: sent/delivered/read/cancel/reject) —
-        // ada id + status, tanpa isi pesan masuk. Idempotent, status tidak mundur.
+        // Webhook tracking status pesan keluar (ack: sent/delivered/read/cancel/reject).
+        // Bila id cocok dengan pesan campaign, terapkan apa pun bentuk payload-nya
+        // (beberapa server Wablas ikut mengirim teks pesan). Idempotent, status tidak mundur.
         $ack = strtolower((string) ($payload['status'] ?? $payload['ack'] ?? ''));
-        if (isset($payload['id']) && $ack !== '' && $message === '' && ! isset($payload['pushName'])) {
-            app(WaCampaignService::class)->applyStatus((string) $payload['id'], $ack, isset($payload['note']) ? (string) $payload['note'] : null);
-
-            return response('', 200);
+        if (isset($payload['id']) && $ack !== '') {
+            if (app(WaCampaignService::class)->applyStatus((string) $payload['id'], $ack, isset($payload['note']) ? (string) $payload['note'] : null)) {
+                return $this->done($payload, 'status campaign: '.$ack);
+            }
+            if ($message === '' && ! isset($payload['pushName'])) {
+                return $this->done($payload, 'status pesan non-campaign: '.$ack);
+            }
         }
 
         // "STOP" dari pelanggan = berhenti promo: kontak masuk daftar pengecualian,
@@ -72,9 +76,11 @@ class WablasWebhookController extends Controller
         // konfirmasi singkat dikirim sekali. Dedupe via wablas_id di bawah tetap berlaku
         // untuk inbox; untuk STOP, opt-out berulang tidak berbahaya (idempotent).
         $fromMe = filter_var($payload['fromMe'] ?? $payload['from_me'] ?? $payload['isFromMe'] ?? false, FILTER_VALIDATE_BOOL);
+        $handled = $fromMe ? 'pesan keluar dari HP' : 'pesan masuk';
         if ($phone && ! $fromMe && $message !== '') {
             $contacts = app(WaContactService::class);
             if ($contacts->isStopMessage($message)) {
+                $handled = 'STOP — kontak berhenti promo';
                 $contact = $contacts->upsert($phone, ['name' => $payload['pushName'] ?? null, 'source' => 'wachat']);
                 if ($contact && ! $contact->isOptedOut()) {
                     $contacts->optOut($contact, 'Balas STOP', app(WablasCampaignClient::class));
@@ -102,12 +108,12 @@ class WablasWebhookController extends Controller
         $mediaType = WablasMedia::type((string) ($payload['messageType'] ?? $payload['type'] ?? ''), $file);
 
         if (! $phone || ($message === '' && $mediaUrl === null)) {
-            return response('', 200);
+            return $this->done($payload, 'tanpa nomor/isi — diabaikan');
         }
 
         $wablasId = isset($payload['id']) ? Str::limit((string) $payload['id'], 100, '') : null;
         if ($wablasId && WaMessage::where('wablas_id', $wablasId)->exists()) {
-            return response('', 200);
+            return $this->done($payload, $handled.' (duplikat)');
         }
 
         // Messages sent from the device phone itself (admin replying on the HP)
@@ -133,9 +139,35 @@ class WablasWebhookController extends Controller
             Log::warning('Wablas webhook store failed: '.$e->getMessage());
         }
 
-        // IMPORTANT: respond with an EMPTY body. Per the Wablas webhook docs,
-        // any text echoed back is auto-sent to the customer as a reply — a JSON
-        // body here would land in the customer's WhatsApp as garbage.
+        return $this->done($payload, $handled);
+    }
+
+    public const RECENT_KEY = 'wablas:webhook:recent';
+
+    /**
+     * Catat ringkasan webhook terakhir (maks. 15) untuk diagnosis di Admin → WA Campaign →
+     * Pengaturan: apakah tracking status benar-benar masuk dan bagaimana bentuknya.
+     * IMPORTANT: respond with an EMPTY body. Per the Wablas webhook docs, any text
+     * echoed back is auto-sent to the customer as a reply.
+     */
+    private function done(array $payload, string $handled): Response
+    {
+        try {
+            $recent = Cache::get(self::RECENT_KEY, []);
+            array_unshift($recent, [
+                'at' => now()->toIso8601String(),
+                'handled' => $handled,
+                'keys' => implode(', ', array_slice(array_keys($payload), 0, 12)),
+                'id' => isset($payload['id']) ? Str::limit((string) $payload['id'], 40, '…') : null,
+                'status' => isset($payload['status']) || isset($payload['ack']) ? Str::limit((string) ($payload['status'] ?? $payload['ack']), 20, '') : null,
+                'phone' => isset($payload['phone']) || isset($payload['sender']) ? Str::mask((string) ($payload['phone'] ?? $payload['sender']), '*', 4, -3) : null,
+                'message' => isset($payload['message']) ? Str::limit(trim((string) $payload['message']), 50) : null,
+            ]);
+            Cache::put(self::RECENT_KEY, array_slice($recent, 0, 15), 7 * 86400);
+        } catch (\Throwable) {
+            // diagnosis saja — jangan pernah menggagalkan webhook
+        }
+
         return response('', 200);
     }
 }
