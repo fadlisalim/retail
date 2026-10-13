@@ -64,7 +64,7 @@ class ExpireUnpaidOrders extends Command
                 continue;
             }
 
-            $orders->cancel($order, null, "Otomatis dibatalkan: pembayaran tidak diterima dalam {$hours} jam.");
+            $orders->cancel($order, null, OrderService::AUTO_CANCEL_NOTE_PREFIX." pembayaran tidak diterima dalam {$hours} jam.");
             $expired++;
         }
 

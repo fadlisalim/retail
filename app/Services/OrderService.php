@@ -337,6 +337,48 @@ class OrderService
         });
     }
 
+    /** Catatan riwayat yang ditulis pembatalan otomatis (orders:expire-unpaid). */
+    public const AUTO_CANCEL_NOTE_PREFIX = 'Otomatis dibatalkan:';
+
+    /**
+     * Hidupkan kembali pesanan yang dibatalkan (mis. terlanjur kena auto-batal padahal
+     * invoice sudah dikirim): status kembali "Menunggu Pembayaran", stok dipesan ulang
+     * (7 hari), customer diberi tahu agar mengabaikan pesan pembatalan sebelumnya.
+     * Komisi afiliator yang sudah dibatalkan tidak dihidupkan otomatis.
+     */
+    public function restore(Order $order, ?User $actor = null, ?string $reason = null): Order
+    {
+        if ($order->status !== OrderStatus::Cancelled) {
+            throw ValidationException::withMessages(['status' => 'Hanya pesanan berstatus Dibatalkan yang bisa dipulihkan.']);
+        }
+        if ($order->payment_status === PaymentStatus::Paid) {
+            throw ValidationException::withMessages(['status' => 'Pesanan ini sudah lunas — ubah statusnya lewat "Ubah Status".']);
+        }
+
+        return DB::transaction(function () use ($order, $actor, $reason) {
+            $order->update(['status' => OrderStatus::AwaitingPayment, 'cancelled_at' => null]);
+
+            if ($order->items()->whereNotNull('product_id')->exists() && ! $order->reservations()->where('status', 'active')->exists()) {
+                try {
+                    $this->stock->reserveForOrder($order->load('items'), 60 * 24 * 7);
+                } catch (\RuntimeException $e) {
+                    throw ValidationException::withMessages(['status' => 'Tidak bisa dipulihkan: '.$e->getMessage()]);
+                }
+            }
+
+            $order->statusHistories()->create([
+                'status' => OrderStatus::AwaitingPayment->value,
+                'changed_by' => $actor?->id,
+                'internal_note' => $reason ?: 'Pesanan dipulihkan dari pembatalan.',
+                'customer_note' => 'Pesanan diaktifkan kembali, menunggu pembayaran.',
+            ]);
+
+            $this->notifyCustomer($order, 'Pesanan diaktifkan kembali', "Mohon abaikan pemberitahuan pembatalan sebelumnya — pesanan {$order->order_number} tetap aktif dan menunggu pembayaran.", 'order');
+
+            return $order;
+        });
+    }
+
     public function ship(Order $order, string $trackingNumber, ?string $provider = null, ?User $actor = null): Order
     {
         return DB::transaction(function () use ($order, $trackingNumber, $provider, $actor) {

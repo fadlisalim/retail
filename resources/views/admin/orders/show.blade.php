@@ -324,6 +324,13 @@
         {{-- Sidebar: actions + timeline --}}
         <div class="space-y-6">
             @can('order.manage')
+                @if ($order->status === \App\Enums\OrderStatus::Cancelled && $order->payment_status !== \App\Enums\PaymentStatus::Paid)
+                    <div class="card border-amber-200 bg-amber-50 p-5">
+                        <h2 class="mb-1 font-semibold text-gray-900">Pesanan dibatalkan</h2>
+                        <p class="mb-3 text-xs text-gray-600">Terlanjur dibatalkan (mis. otomatis karena lewat batas bayar) padahal customer masih akan bayar? Pulihkan: status kembali "Menunggu Pembayaran", stok dipesan ulang 7 hari, customer dikirimi pemberitahuan agar mengabaikan pesan pembatalan.</p>
+                        <form method="POST" action="{{ route('admin.orders.restore', $order) }}" onsubmit="return confirm('Pulihkan pesanan {{ $order->order_number }} ke Menunggu Pembayaran?')">@csrf<button class="btn-primary w-full">Pulihkan pesanan</button></form>
+                    </div>
+                @endif
                 {{-- Update status --}}
                 <div class="card p-5">
                     <h2 class="mb-3 font-semibold text-gray-900">Ubah Status</h2>

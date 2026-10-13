@@ -291,6 +291,18 @@ class OrderController extends Controller
         return back()->with('success', 'Status pesanan diperbarui.');
     }
 
+    /** Pesanan Dibatalkan → kembali Menunggu Pembayaran (stok dipesan ulang, customer diberi tahu). */
+    public function restore(Request $request, Order $order): RedirectResponse
+    {
+        try {
+            $this->orders->restore($order, $request->user(), 'Dipulihkan oleh '.$request->user()->name.'.');
+        } catch (ValidationException $e) {
+            return back()->with('error', collect($e->errors())->flatten()->first());
+        }
+
+        return back()->with('success', 'Pesanan dipulihkan ke "Menunggu Pembayaran". Customer sudah diberi tahu.');
+    }
+
     public function confirmShipping(Request $request, Order $order): RedirectResponse
     {
         $data = $request->validate([

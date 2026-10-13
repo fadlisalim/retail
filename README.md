@@ -274,7 +274,9 @@ With that one entry in place, the scheduler runs everything automatically:
 - `stock:release-expired` every 5 minutes — frees stock held by carts that entered
   payment but never completed.
 - `orders:expire-unpaid` hourly — auto-cancels orders still awaiting payment past the
-  payment window (`ORDER_PAYMENT_WINDOW_HOURS`, default 24h), releasing their stock.
+  payment window (`ORDER_PAYMENT_WINDOW_HOURS`, default 168h = 7 hari), releasing their stock.
+  `php artisan orders:pulihkan --sejak=24` restores orders auto-cancelled in the last N hours
+  (also available as the "Pulihkan" button on a cancelled order's admin page).
 
 Notifications and other deferred work use the queue. Run a worker (VPS):
 

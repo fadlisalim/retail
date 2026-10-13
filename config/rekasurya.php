@@ -86,7 +86,8 @@ return [
     'orders' => [
         // Unpaid orders awaiting payment are auto-cancelled after this many hours
         // (stock released, commissions voided). 0 disables auto-cancel.
-        'payment_window_hours' => (int) env('ORDER_PAYMENT_WINDOW_HOURS', 24),
+        // Default 7×24 jam: customer B2B sering bayar beberapa hari setelah invoice.
+        'payment_window_hours' => (int) env('ORDER_PAYMENT_WINDOW_HOURS', 168),
     ],
 
     'demo' => [

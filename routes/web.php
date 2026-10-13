@@ -347,6 +347,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     });
     Route::middleware('permission:order.manage')->group(function () {
         Route::post('/pesanan/{order}/status', [Admin\OrderController::class, 'updateStatus'])->name('orders.status');
+        Route::post('/pesanan/{order}/pulihkan', [Admin\OrderController::class, 'restore'])->name('orders.restore');
         Route::post('/pesanan/{order}/ongkir', [Admin\OrderController::class, 'confirmShipping'])->name('orders.shipping');
         Route::post('/pesanan/{order}/kirim', [Admin\OrderController::class, 'ship'])->name('orders.ship');
     });
