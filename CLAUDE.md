@@ -8,8 +8,10 @@
 ## Konteks proyek
 - Energi.Click by Rekasurya — Laravel 13 + MySQL, Tailwind v4, Alpine. Produksi: energi.click (CyberPanel/LiteSpeed), repo `/home/energi.click/retail`, pemilik file `energ3514`.
 - Branch kerja: `claude/rekasurya-store-ecommerce-uwqx70`. Jangan push ke branch lain.
-- Deploy selalu sebagai user situs:
-  `su -s /bin/bash energ3514 -c "cd /home/energi.click/retail && git pull && php artisan optimize:clear"` (+ `php artisan migrate --force` / `db:seed --class=X --force` bila perlu).
+- Deploy OTOMATIS: cron `deploy/auto-deploy.sh` (user energ3514, tiap 2 menit) → pull, composer bila lock berubah, migrate, seeder di `deploy/seeders.txt`, optimize:clear. Cukup commit + push; JANGAN suruh pemilik deploy manual lewat SSH.
+- Butuh seeder jalan di produksi? Tambah baris `<id-unik> <NamaSeeder>` di `deploy/seeders.txt` (sekali per id).
+- Status/log deploy: Admin → Pengaturan → "Status deploy otomatis" (`storage/logs/deploy.log`).
+- Perintah manual (darurat saja) sebagai user situs: `su -s /bin/bash energ3514 -c "cd /home/energi.click/retail && ..."`.
 - Cron `schedule:run` tiap menit milik user `energ3514`.
 
 ## Aturan keamanan

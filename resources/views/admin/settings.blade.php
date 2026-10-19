@@ -199,4 +199,24 @@
             <button type="submit" class="btn-primary">Simpan Pengaturan</button>
         </div>
     </form>
+
+    {{-- Status auto-deploy (deploy/auto-deploy.sh via cron) --}}
+    <div class="card mt-6 p-5">
+        <h2 class="mb-2 font-semibold text-gray-900">Status deploy otomatis</h2>
+        @if ($deploy['commit'])
+            <p class="text-sm {{ $deploy['failed'] ? 'text-red-700' : 'text-green-700' }}">
+                {{ $deploy['failed'] ? '⚠️ Deploy terakhir GAGAL — situs masih memakai versi sebelumnya.' : '✅ Live' }}
+                · versi <code>{{ $deploy['commit'] }}</code> · sukses terakhir {{ $deploy['at'] }}
+            </p>
+        @else
+            <p class="text-sm text-gray-500">Belum aktif. Pasang cron <code>deploy/auto-deploy.sh</code> (lihat README → Auto-deploy).</p>
+        @endif
+        @if ($deploy['lines'])
+            <ul class="mt-3 space-y-0.5 font-mono text-[11px] text-gray-600">
+                @foreach ($deploy['lines'] as $line)
+                    <li class="{{ str_contains($line, 'GAGAL') ? 'text-red-600' : '' }}">{{ $line }}</li>
+                @endforeach
+            </ul>
+        @endif
+    </div>
 @endsection

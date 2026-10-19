@@ -1,0 +1,4 @@
+# Seeder yang dijalankan otomatis oleh deploy/auto-deploy.sh — masing-masing SEKALI.
+# Format: <id-unik> <NamaSeeder>
+# Mau menjalankan ulang seeder yang sama? Tambah baris baru dengan id baru.
+2026-10-19-rab-approve RoleSeeder

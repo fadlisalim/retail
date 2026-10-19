@@ -40,7 +40,32 @@ class SettingController extends Controller
             'pickup.maps_url' => $this->settings->get('pickup.maps_url'),
         ];
 
-        return view('admin.settings', compact('settings'));
+        return view('admin.settings', compact('settings') + ['deploy' => $this->deployStatus()]);
+    }
+
+    /**
+     * Status auto-deploy (deploy/auto-deploy.sh): commit yang live + ringkasan log terakhir.
+     *
+     * @return array{commit: ?string, subject: ?string, at: ?string, failed: bool, lines: list<string>}
+     */
+    private function deployStatus(): array
+    {
+        $dir = storage_path('app/deploy');
+        $log = storage_path('logs/deploy.log');
+        $commit = is_file($dir.'/last-ok') ? trim((string) @file_get_contents($dir.'/last-ok')) : null;
+        $lines = [];
+        if (is_file($log)) {
+            // Hanya baris bertanggal (ringkasan), bukan output mentah artisan/composer.
+            $tail = array_slice(@file($log, FILE_IGNORE_NEW_LINES) ?: [], -400);
+            $lines = array_slice(array_values(array_filter($tail, fn ($l) => preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} /', $l))), -12);
+        }
+
+        return [
+            'commit' => $commit ? substr($commit, 0, 7) : null,
+            'at' => is_file($dir.'/last-ok') ? date('d/m/Y H:i', (int) filemtime($dir.'/last-ok')) : null,
+            'failed' => is_file($dir.'/failed'),
+            'lines' => array_reverse($lines),
+        ];
     }
 
     public function update(Request $request): RedirectResponse

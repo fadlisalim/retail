@@ -289,6 +289,23 @@ Keep it alive with **Supervisor** or systemd. On shared hosting without a worker
 
 ---
 
+## Auto-deploy
+
+`deploy/auto-deploy.sh` checks GitHub every 2 minutes. When the checked-out branch has new
+commits it fast-forwards, runs `composer install` (only if `composer.lock` changed),
+`php artisan migrate --force`, any new seeders listed in `deploy/seeders.txt` (each line runs
+once), then `php artisan optimize:clear`. Log: `storage/logs/deploy.log`; status is shown in
+Admin → Pengaturan → "Status deploy otomatis". A failed step is retried every 15 minutes and
+the site keeps running the previous migration state.
+
+One-time setup on the server (as the site user, not root):
+
+```bash
+crontab -u energ3514 -l > /tmp/cron.energ3514 2>/dev/null
+echo "*/2 * * * * /home/energi.click/retail/deploy/auto-deploy.sh >/dev/null 2>&1" >> /tmp/cron.energ3514
+crontab -u energ3514 /tmp/cron.energ3514 && rm /tmp/cron.energ3514
+```
+
 ## Building frontend assets
 
 ```bash
