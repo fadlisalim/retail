@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class QuotationController extends Controller
@@ -44,16 +45,21 @@ class QuotationController extends Controller
             ->groupBy('status')
             ->pluck('total', 'status');
 
-        return view('admin.quotations.index', compact('quotations', 'statusCounts'));
+        $minMargin = $this->quotations->minMarginPercent();
+
+        return view('admin.quotations.index', compact('quotations', 'statusCounts', 'minMargin'));
     }
 
     public function show(Quotation $quotation): View
     {
         $quotation->load([
-            'items.product', 'attachments', 'revisions.creator', 'user', 'handler',
+            'items.product', 'attachments', 'revisions.creator', 'user', 'handler', 'rabApprover',
         ]);
 
-        return view('admin.quotations.show', compact('quotation') + $this->builderData());
+        return view('admin.quotations.show', compact('quotation') + $this->builderData() + [
+            'rab' => $quotation->rab(),
+            'rabReview' => $this->quotations->rabReview($quotation),
+        ]);
     }
 
     /** Halaman susun penawaran baru oleh sales (dari katalog atau produk/jasa manual). */
@@ -67,10 +73,22 @@ class QuotationController extends Controller
         $header = $this->validateHeader($request);
         $pricing = $this->validatePricing($request, null); // validasi dulu, baru buat — agar tidak ada draf kosong
         $quotation = $this->quotations->createManual($header, $request->user());
-        $this->applyPricing($request, $quotation, $pricing);
+        if ($blocked = $this->applyPricing($request, $quotation, $pricing)) {
+            return redirect()->route('admin.quotations.show', $quotation)->with('error', $blocked);
+        }
 
         return redirect()->route('admin.quotations.show', $quotation)
             ->with('success', $request->input('action') === 'send' ? 'Penawaran dibuat dan dikirim ke pelanggan.' : 'Penawaran disimpan sebagai draf. Cek PDF-nya, lalu kirim bila sudah pas.');
+    }
+
+    /** GM/atasan menyetujui RAB (harga & modal saat ini) supaya sales bisa mengirim. */
+    public function approveRab(Request $request, Quotation $quotation): RedirectResponse
+    {
+        abort_unless($request->user()->can('quotation.approve'), 403);
+        $data = $request->validate(['rab_note' => ['nullable', 'string', 'max:500']]);
+        $this->quotations->approveRab($quotation, $request->user(), $data['rab_note'] ?? null);
+
+        return back()->with('success', 'RAB disetujui. Sales sudah bisa mengirim penawaran ini (persetujuan gugur bila harga/modal diubah).');
     }
 
     /** Ubah data customer / proyek. */
@@ -83,7 +101,9 @@ class QuotationController extends Controller
 
     public function price(Request $request, Quotation $quotation): RedirectResponse
     {
-        $this->applyPricing($request, $quotation, $this->validatePricing($request, $quotation));
+        if ($blocked = $this->applyPricing($request, $quotation, $this->validatePricing($request, $quotation))) {
+            return back()->with('error', $blocked);
+        }
 
         return back()->with('success', $request->input('action') === 'send' ? 'Penawaran disimpan dan dikirim ke pelanggan.' : 'Penawaran disimpan sebagai draf.');
     }
@@ -122,6 +142,7 @@ class QuotationController extends Controller
             'items.*.product_id' => ['nullable', 'integer', 'exists:products,id'],
             'items.*.product_variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'items.*.unit_cost' => ['nullable', 'numeric', 'min:0'],
             'items.*.discount' => ['nullable', 'numeric', 'min:0'],
             'items.*.is_taxable' => ['nullable', 'boolean'],
             'discount' => ['nullable', 'numeric', 'min:0'],
@@ -138,7 +159,11 @@ class QuotationController extends Controller
         ]);
     }
 
-    private function applyPricing(Request $request, Quotation $quotation, array $data): void
+    /**
+     * Simpan harga & kirim. Bila pengiriman ditahan karena RAB perlu disetujui, perubahan
+     * tetap disimpan sebagai draf dan pesan alasannya dikembalikan (null = sukses).
+     */
+    private function applyPricing(Request $request, Quotation $quotation, array $data): ?string
     {
         $pricedItems = collect($data['items'])->map(fn (array $item) => [
             'id' => isset($item['id']) ? (int) $item['id'] : null,
@@ -148,6 +173,7 @@ class QuotationController extends Controller
             'product_id' => $item['product_id'] ?? null,
             'product_variant_id' => $item['product_variant_id'] ?? null,
             'unit_price' => (float) $item['unit_price'],
+            'unit_cost' => isset($item['unit_cost']) && $item['unit_cost'] !== '' ? (float) $item['unit_cost'] : null,
             'discount' => (float) ($item['discount'] ?? 0),
             'is_taxable' => (bool) ($item['is_taxable'] ?? false),
         ])->all();
@@ -161,7 +187,20 @@ class QuotationController extends Controller
             'admin_note' => $data['admin_note'] ?? null,
         ];
 
-        $this->quotations->price($quotation, $pricedItems, $meta, $request->user(), send: ($data['action'] ?? 'send') === 'send');
+        $send = ($data['action'] ?? 'send') === 'send';
+        try {
+            $this->quotations->price($quotation, $pricedItems, $meta, $request->user(), send: $send);
+        } catch (ValidationException $e) {
+            if (! $send || ! isset($e->errors()['rab'])) {
+                throw $e;
+            }
+            // Transaksi kirim sudah di-rollback → simpan data yang sama sebagai draf supaya isian sales tidak hilang.
+            $this->quotations->price($quotation->fresh(), $pricedItems, $meta, $request->user(), send: false);
+
+            return $e->errors()['rab'][0];
+        }
+
+        return null;
     }
 
     /** Data katalog untuk editor baris (produk + varian aktif, harga katalog). */
@@ -170,10 +209,11 @@ class QuotationController extends Controller
         return [
             'products' => Product::query()->where('status', 'published')
                 ->with(['variants' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')->orderBy('id')])
-                ->orderBy('name')->get(['id', 'name', 'sku', 'price', 'sale_price', 'product_type']),
+                ->orderBy('name')->get(['id', 'name', 'sku', 'price', 'sale_price', 'cost_price', 'product_type']),
             'customers' => User::where('is_staff', false)->orderBy('name')->get(['id', 'name', 'email', 'whatsapp', 'phone']),
             'ppnPercent' => app(SettingService::class)->ppnPercent(),
             'ppnEnabled' => app(SettingService::class)->ppnEnabled(),
+            'minMargin' => $this->quotations->minMarginPercent(),
         ];
     }
 

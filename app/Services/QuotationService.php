@@ -7,10 +7,14 @@ use App\Enums\PaymentStatus;
 use App\Enums\QuotationStatus;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Quotation;
+use App\Models\QuotationItem;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Request-for-quotation flow (spec §20). A customer submits an RFQ; sales prices
@@ -129,14 +133,17 @@ class QuotationService
                 $discount = round((float) ($priced['discount'] ?? 0), 2);
                 $lineTotal = max(0, $unit * $quantity - $discount);
                 $isTaxable = (bool) ($priced['is_taxable'] ?? true);
+                $productId = array_key_exists('product_id', $priced) ? ($priced['product_id'] ?: null) : $item->product_id;
+                $variantId = array_key_exists('product_variant_id', $priced) ? ($priced['product_variant_id'] ?: null) : $item->product_variant_id;
 
                 $item->fill([
                     'name' => isset($priced['name']) && trim((string) $priced['name']) !== '' ? trim((string) $priced['name']) : $item->name,
                     'note' => array_key_exists('note', $priced) ? ($priced['note'] ?: null) : $item->note,
-                    'product_id' => array_key_exists('product_id', $priced) ? ($priced['product_id'] ?: null) : $item->product_id,
-                    'product_variant_id' => array_key_exists('product_variant_id', $priced) ? ($priced['product_variant_id'] ?: null) : $item->product_variant_id,
+                    'product_id' => $productId,
+                    'product_variant_id' => $variantId,
                     'quantity' => $quantity,
                     'unit_price' => $unit,
+                    'unit_cost' => $this->resolveCost($priced, $item, $productId, $variantId),
                     'discount' => $discount,
                     'line_total' => $lineTotal,
                     'is_taxable' => $isTaxable,
@@ -170,6 +177,26 @@ class QuotationService
                 'handled_by' => $actor?->id ?? $quotation->handled_by,
             ]);
 
+            // RAB: simpan total modal; persetujuan gugur bila harga/modal berubah sejak disetujui.
+            $quotation->load('items');
+            $signature = $this->rabSignature($quotation);
+            $quotation->forceFill(['cost_total' => $quotation->rab()['cost']]);
+            if ($quotation->rab_signature !== null && $quotation->rab_signature !== $signature) {
+                $quotation->forceFill(['rab_approved_by' => null, 'rab_approved_at' => null, 'rab_signature' => null, 'rab_note' => null]);
+            }
+            $quotation->save();
+
+            if ($send) {
+                $review = $this->rabReview($quotation);
+                if ($review['needed'] && ! $quotation->rabApproved()) {
+                    if (! $actor || ! $actor->can('quotation.approve')) {
+                        throw ValidationException::withMessages(['rab' => 'Belum bisa dikirim: '.implode('; ', $review['reasons']).'. Simpan sebagai draf, lalu minta GM/atasan menyetujui RAB.']);
+                    }
+                    // Peninjau sendiri yang mengirim = sekaligus menyetujui RAB.
+                    $this->markRabApproved($quotation, $actor, 'Disetujui saat dikirim');
+                }
+            }
+
             if ($send) {
                 $version = ($quotation->revisions()->max('version') ?? 0) + 1;
                 $quotation->revisions()->create([
@@ -189,6 +216,78 @@ class QuotationService
 
             return $quotation->fresh(['items', 'revisions']);
         });
+    }
+
+    /**
+     * Modal baris: nilai yang diisi sales; kosong → modal katalog (varian/produk) bila ada;
+     * tetap kosong (null) bila tidak diketahui — dihitung "modal belum diisi" di RAB.
+     */
+    private function resolveCost(array $priced, QuotationItem $item, ?int $productId, ?int $variantId): ?float
+    {
+        if (array_key_exists('unit_cost', $priced)) {
+            if ($priced['unit_cost'] !== null && $priced['unit_cost'] !== '') {
+                return round(max(0, (float) $priced['unit_cost']), 2);
+            }
+        } elseif ($item->exists && $item->unit_cost !== null) {
+            return (float) $item->unit_cost;
+        }
+
+        $catalog = $variantId ? ProductVariant::find($variantId)?->cost_price : null;
+        $catalog = (float) $catalog > 0 ? $catalog : ($productId ? Product::find($productId)?->cost_price : null);
+
+        return (float) $catalog > 0 ? round((float) $catalog, 2) : null;
+    }
+
+    /** Margin minimum (%) di bawahnya penawaran wajib disetujui sebelum dikirim. */
+    public function minMarginPercent(): float
+    {
+        return (float) app(SettingService::class)->get('quotation.min_margin_percent', 15);
+    }
+
+    /** @return array{needed: bool, reasons: list<string>} */
+    public function rabReview(Quotation $quotation): array
+    {
+        $rab = $quotation->rab();
+        $min = $this->minMarginPercent();
+        $reasons = [];
+        if ($rab['missing'] > 0) {
+            $reasons[] = $rab['missing'].' baris belum ada modalnya';
+        }
+        if ($rab['percent'] === null || $rab['percent'] < $min) {
+            $reasons[] = 'margin '.($rab['percent'] === null ? '—' : str_replace('.', ',', (string) $rab['percent']).'%').' di bawah minimum '.rtrim(rtrim(number_format($min, 1, ',', ''), '0'), ',').'%';
+        }
+
+        return ['needed' => $reasons !== [], 'reasons' => $reasons];
+    }
+
+    /** Peninjau (GM/atasan) menyetujui RAB pada kondisi harga & modal saat ini. */
+    public function approveRab(Quotation $quotation, User $actor, ?string $note = null): Quotation
+    {
+        $quotation->load('items');
+        $this->markRabApproved($quotation, $actor, $note);
+
+        return $quotation;
+    }
+
+    private function markRabApproved(Quotation $quotation, User $actor, ?string $note): void
+    {
+        $quotation->forceFill([
+            'rab_approved_by' => $actor->id,
+            'rab_approved_at' => now(),
+            'rab_signature' => $this->rabSignature($quotation),
+            'rab_note' => $note ? mb_substr($note, 0, 500) : null,
+            'cost_total' => $quotation->rab()['cost'],
+        ])->save();
+    }
+
+    /** Sidik jari harga + modal: berubah sedikit saja → persetujuan RAB gugur. */
+    private function rabSignature(Quotation $quotation): string
+    {
+        $lines = $quotation->items->sortBy('id')->map(fn (QuotationItem $i) => implode('|', [
+            $i->id, (int) $i->quantity, (string) round((float) $i->unit_price, 2), (string) round((float) $i->discount, 2), $i->unit_cost === null ? 'x' : (string) round((float) $i->unit_cost, 2),
+        ]))->implode(';');
+
+        return hash('sha256', $lines.'#'.round((float) $quotation->discount, 2));
     }
 
     /** Approved quotation -> a real order the customer can pay. */

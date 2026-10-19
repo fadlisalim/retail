@@ -394,6 +394,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::put('/quotation/{quotation}', [Admin\QuotationController::class, 'update'])->name('quotations.update');
         Route::get('/quotation/{quotation}/pdf', [Admin\QuotationController::class, 'pdf'])->name('quotations.pdf');
         Route::post('/quotation/{quotation}/harga', [Admin\QuotationController::class, 'price'])->name('quotations.price');
+        Route::post('/quotation/{quotation}/setujui-rab', [Admin\QuotationController::class, 'approveRab'])->name('quotations.approve-rab');
         Route::post('/quotation/{quotation}/status', [Admin\QuotationController::class, 'status'])->name('quotations.status');
         Route::post('/quotation/{quotation}/jadikan-pesanan', [Admin\QuotationController::class, 'convert'])->name('quotations.convert');
     });

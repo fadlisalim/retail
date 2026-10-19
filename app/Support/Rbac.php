@@ -31,6 +31,7 @@ final class Rbac
         'payment.manage' => 'Kelola Pembayaran',
         'shipping.manage' => 'Kelola Pengiriman',
         'quotation.manage' => 'Kelola Quotation',
+        'quotation.approve' => 'Setujui RAB / margin penawaran',
         'customer.manage' => 'Kelola Customer',
         'review.moderate' => 'Moderasi Review & Tanya Jawab',
         'return.manage' => 'Kelola Retur',

@@ -78,6 +78,11 @@
                         </td>
                         <td class="px-4 py-3">
                             <span class="badge {{ $badgeClasses[$quotation->status->color()] ?? $badgeClasses['gray'] }}">{{ $quotation->status->label() }}</span>
+                            @php($rev = (float) $quotation->items_subtotal - (float) $quotation->discount)
+                            @if ($quotation->cost_total !== null && $rev > 0)
+                                @php($pct = round(($rev - (float) $quotation->cost_total) / $rev * 100, 1))
+                                <div class="mt-1 text-[11px] {{ $pct < $minMargin ? 'text-red-600' : 'text-green-700' }}" title="Margin internal (sebelum PPN)">margin {{ str_replace('.', ',', (string) $pct) }}%{{ $quotation->rab_approved_at ? ' · RAB ✓' : '' }}</div>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-right font-semibold">{{ (float) $quotation->grand_total > 0 ? rupiah($quotation->grand_total) : '—' }}</td>
                         <td class="px-4 py-3 text-right text-xs text-gray-400">{{ $quotation->valid_until?->format('d/m/Y') ?? '—' }}</td>

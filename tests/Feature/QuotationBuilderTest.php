@@ -34,7 +34,7 @@ class QuotationBuilderTest extends TestCase
         $settings->set('tax.enabled', true, 'boolean', 'tax');
         $settings->set('tax.ppn_percent', 11, 'integer', 'tax');
         $sales = $this->staff('admin-sales');
-        $product = $this->stockedProduct(10, ['name' => 'PJU Tenaga Surya 60W', 'price' => 2_000_000, 'brand_id' => null]);
+        $product = $this->stockedProduct(10, ['name' => 'PJU Tenaga Surya 60W', 'price' => 2_000_000, 'cost_price' => 1_500_000, 'brand_id' => null]);
         $customer = $this->customer(['name' => 'Pak Dedi', 'email' => 'dedi@test.id', 'whatsapp' => '6281200001111']);
 
         $this->actingAs($this->staff('admin-gudang'))->get(route('admin.quotations.create'))->assertForbidden();
@@ -86,8 +86,8 @@ class QuotationBuilderTest extends TestCase
         $this->actingAs($sales)->post(route('admin.quotations.price', $q), [
             'items' => [
                 ['id' => $items[0]->id, 'product_id' => $product->id, 'name' => 'PJU Tenaga Surya 60W', 'quantity' => 22, 'unit_price' => 1_900_000, 'discount' => 0, 'is_taxable' => 1],
-                ['id' => $items[1]->id, 'name' => 'Jasa instalasi & tiang 7 m', 'quantity' => 22, 'unit_price' => 1_250_000, 'discount' => 0, 'is_taxable' => 0],
-                ['name' => 'Pelatihan operator', 'quantity' => 1, 'unit_price' => 1_500_000, 'discount' => 0, 'is_taxable' => 0],
+                ['id' => $items[1]->id, 'name' => 'Jasa instalasi & tiang 7 m', 'quantity' => 22, 'unit_price' => 1_250_000, 'unit_cost' => 900_000, 'discount' => 0, 'is_taxable' => 0],
+                ['name' => 'Pelatihan operator', 'quantity' => 1, 'unit_price' => 1_500_000, 'unit_cost' => 1_000_000, 'discount' => 0, 'is_taxable' => 0],
             ],
             'discount' => 0, 'shipping_cost' => 2_500_000, 'apply_tax' => 1, 'valid_until' => now()->addDays(14)->format('Y-m-d'), 'action' => 'send',
         ])->assertRedirect()->assertSessionHas('success');

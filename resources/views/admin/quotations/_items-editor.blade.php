@@ -6,12 +6,13 @@
         'label' => $p->name.' — '.$p->sku,
         'name' => $p->name,
         'price' => (float) ($p->sale_price ?: $p->price),
-        'variants' => $p->variants->map(fn ($v) => ['id' => $v->id, 'label' => $v->name.' ('.$v->sku.')', 'name' => $p->name.' – '.$v->name, 'price' => (float) ($v->sale_price ?: $v->price ?: ($p->sale_price ?: $p->price))])->values(),
+        'cost' => (float) $p->cost_price > 0 ? (float) $p->cost_price : null,
+        'variants' => $p->variants->map(fn ($v) => ['id' => $v->id, 'label' => $v->name.' ('.$v->sku.')', 'name' => $p->name.' – '.$v->name, 'price' => (float) ($v->sale_price ?: $v->price ?: ($p->sale_price ?: $p->price)), 'cost' => (float) $v->cost_price > 0 ? (float) $v->cost_price : ((float) $p->cost_price > 0 ? (float) $p->cost_price : null)])->values(),
     ])->values();
     $q = $quotation ?? null;
     $initialItems = old('items') ?: ($q && $q->items->isNotEmpty()
-        ? $q->items->map(fn ($it) => ['id' => $it->id, 'product_id' => $it->product_id ?: '', 'product_variant_id' => $it->product_variant_id ?: '', 'name' => $it->name, 'note' => $it->note ?? '', 'quantity' => $it->quantity, 'unit_price' => (int) $it->unit_price, 'discount' => (int) $it->discount, 'is_taxable' => (bool) $it->is_taxable])->values()->all()
-        : [['id' => '', 'product_id' => '', 'product_variant_id' => '', 'name' => '', 'note' => '', 'quantity' => 1, 'unit_price' => '', 'discount' => 0, 'is_taxable' => true]]);
+        ? $q->items->map(fn ($it) => ['id' => $it->id, 'product_id' => $it->product_id ?: '', 'product_variant_id' => $it->product_variant_id ?: '', 'name' => $it->name, 'note' => $it->note ?? '', 'quantity' => $it->quantity, 'unit_price' => (int) $it->unit_price, 'unit_cost' => $it->unit_cost === null ? '' : (int) $it->unit_cost, 'discount' => (int) $it->discount, 'is_taxable' => (bool) $it->is_taxable])->values()->all()
+        : [['id' => '', 'product_id' => '', 'product_variant_id' => '', 'name' => '', 'note' => '', 'quantity' => 1, 'unit_price' => '', 'unit_cost' => '', 'discount' => 0, 'is_taxable' => true]]);
 @endphp
 <div x-data="quotationEditor({{ \Illuminate\Support\Js::from([
         'products' => $productOptions,
@@ -20,6 +21,7 @@
         'shipping' => (float) old('shipping_cost', $q?->shipping_cost ?? 0),
         'applyTax' => (bool) old('apply_tax', $q ? ($q->tax_amount > 0 || $q->items->isEmpty()) && $ppnEnabled : $ppnEnabled),
         'ppn' => (float) $ppnPercent,
+        'minMargin' => (float) ($minMargin ?? 15),
     ]) }})" class="space-y-4">
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
@@ -28,6 +30,7 @@
                     <th class="py-2 pr-2" style="min-width:280px">Produk / jasa</th>
                     <th class="px-2 py-2 text-center">Qty</th>
                     <th class="px-2 py-2">Harga satuan</th>
+                    <th class="px-2 py-2" title="Modal / HPP per unit — internal, tidak tampil di PDF">Modal / unit 🔒</th>
                     <th class="px-2 py-2">Diskon</th>
                     <th class="px-2 py-2 text-center" title="Kena PPN">PPN</th>
                     <th class="px-2 py-2 text-right">Jumlah</th>
@@ -54,6 +57,10 @@
                         </td>
                         <td class="px-2 py-2"><input type="number" min="1" class="form-input w-20 text-center" :name="'items[' + i + '][quantity]'" x-model.number="item.quantity"></td>
                         <td class="px-2 py-2"><input type="number" min="0" step="1" class="form-input w-32" :name="'items[' + i + '][unit_price]'" x-model="item.unit_price" required></td>
+                        <td class="px-2 py-2">
+                            <input type="number" min="0" step="1" class="form-input w-32" :class="item.unit_cost === '' || item.unit_cost === null ? 'border-amber-400 bg-amber-50' : ''" placeholder="isi modal" :name="'items[' + i + '][unit_cost]'" x-model="item.unit_cost">
+                            <p class="mt-1 text-[11px]" :class="lineMarginPct(i) === null ? 'text-amber-600' : (lineMarginPct(i) < minMargin ? 'text-red-600' : 'text-green-700')" x-text="lineMarginPct(i) === null ? 'modal belum diisi' : 'margin ' + rupiah(lineMargin(i)) + ' (' + lineMarginPct(i).toLocaleString('id-ID') + '%)'"></p>
+                        </td>
                         <td class="px-2 py-2"><input type="number" min="0" step="1" class="form-input w-28" :name="'items[' + i + '][discount]'" x-model="item.discount"></td>
                         <td class="px-2 py-2 text-center"><input type="hidden" :name="'items[' + i + '][is_taxable]'" :value="item.is_taxable ? 1 : 0"><input type="checkbox" x-model="item.is_taxable" class="rounded border-gray-300 text-brand-600"></td>
                         <td class="px-2 py-2 text-right font-medium text-gray-800" x-text="rupiah(lineTotal(i))"></td>
@@ -79,6 +86,17 @@
         <div class="sm:col-span-2"><label class="input-label">Catatan / ketentuan (tampil di PDF)</label><textarea name="admin_note" rows="3" class="form-textarea" placeholder="Garansi, lingkup pekerjaan, pengecualian, waktu pengerjaan…">{{ old('admin_note', $q?->admin_note) }}</textarea></div>
     </div>
 
+    {{-- RAB internal: modal & margin (tidak tampil di PDF / halaman customer) --}}
+    <div class="rounded-lg border p-4 text-sm" :class="rabOk ? 'border-green-200 bg-green-50' : 'border-amber-300 bg-amber-50'">
+        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">RAB internal 🔒 <span class="font-normal normal-case">— hanya tim, tidak tampil di PDF</span></p>
+        <div class="flex justify-between"><span class="text-gray-500">Penjualan (subtotal − diskon, sebelum PPN)</span><span x-text="rupiah(revenue)"></span></div>
+        <div class="flex justify-between"><span class="text-gray-500">Total modal</span><span x-text="rupiah(costTotal)"></span></div>
+        <div class="mt-1 flex justify-between border-t border-gray-200 pt-2 font-bold"><span>Margin</span><span :class="marginPct !== null && marginPct >= minMargin ? 'text-green-700' : 'text-red-600'" x-text="rupiah(revenue - costTotal) + (marginPct === null ? '' : ' (' + marginPct.toLocaleString('id-ID') + '%)')"></span></div>
+        <p class="mt-2 text-xs" x-show="missing > 0" x-cloak><span class="text-amber-700" x-text="missing + ' baris belum ada modalnya — margin belum akurat.'"></span></p>
+        <p class="mt-1 text-xs text-gray-500" x-text="rabOk ? 'Margin di atas minimum ' + minMargin + '% — bisa langsung dikirim.' : 'Margin di bawah minimum ' + minMargin + '% atau modal belum lengkap → perlu disetujui GM/atasan sebelum dikirim.'"></p>
+        <p class="mt-1 text-[11px] text-gray-400">Ongkir / instalasi di header tidak dihitung dalam margin. Masukkan jasa instalasi sebagai baris (dengan modalnya) bila ingin ikut dihitung.</p>
+    </div>
+
     <div class="rounded-lg bg-gray-50 p-4 text-sm">
         <div class="flex justify-between"><span class="text-gray-500">Subtotal</span><span x-text="rupiah(subtotal)"></span></div>
         <div class="flex justify-between" x-show="Number(discount) > 0"><span class="text-gray-500">Diskon</span><span x-text="'− ' + rupiah(discount)"></span></div>
@@ -93,24 +111,33 @@
 <script>
     function quotationEditor(cfg) {
         return {
-            products: cfg.products, items: cfg.items, discount: cfg.discount, shipping: cfg.shipping, applyTax: cfg.applyTax, ppn: cfg.ppn,
-            add() { this.items.push({ id: '', product_id: '', product_variant_id: '', name: '', note: '', quantity: 1, unit_price: '', discount: 0, is_taxable: true }); },
+            products: cfg.products, items: cfg.items, discount: cfg.discount, shipping: cfg.shipping, applyTax: cfg.applyTax, ppn: cfg.ppn, minMargin: cfg.minMargin,
+            add() { this.items.push({ id: '', product_id: '', product_variant_id: '', name: '', note: '', quantity: 1, unit_price: '', unit_cost: '', discount: 0, is_taxable: true }); },
             remove(i) { this.items.splice(i, 1); if (!this.items.length) this.add(); },
             product(i) { return this.products.find(p => String(p.id) === String(this.items[i].product_id)) || null; },
             variantsOf(i) { const p = this.product(i); return p ? p.variants : []; },
             pick(i) {
                 const p = this.product(i); this.items[i].product_variant_id = '';
-                if (p) { this.items[i].name = p.name; if (!p.variants.length) this.items[i].unit_price = Math.round(p.price); }
+                if (p) { this.items[i].name = p.name; if (!p.variants.length) { this.items[i].unit_price = Math.round(p.price); this.items[i].unit_cost = p.cost === null ? '' : Math.round(p.cost); } }
             },
             pickVariant(i) {
                 const p = this.product(i); const v = p ? p.variants.find(x => String(x.id) === String(this.items[i].product_variant_id)) : null;
-                if (v) { this.items[i].name = v.name; this.items[i].unit_price = Math.round(v.price); }
+                if (v) { this.items[i].name = v.name; this.items[i].unit_price = Math.round(v.price); this.items[i].unit_cost = v.cost === null ? '' : Math.round(v.cost); }
             },
             lineTotal(i) { const it = this.items[i]; return Math.max(0, (Number(it.unit_price) || 0) * (Number(it.quantity) || 0) - (Number(it.discount) || 0)); },
             get subtotal() { return this.items.reduce((s, _, i) => s + this.lineTotal(i), 0); },
             get taxable() { return this.items.reduce((s, it, i) => s + (it.is_taxable ? this.lineTotal(i) : 0), 0); },
             get tax() { return this.applyTax ? Math.round(Math.max(0, this.taxable - (Number(this.discount) || 0)) * this.ppn) / 100 : 0; },
             get grand() { return Math.max(0, this.subtotal - (Number(this.discount) || 0) + (Number(this.shipping) || 0) + this.tax); },
+            hasCost(i) { const c = this.items[i].unit_cost; return c !== '' && c !== null && c !== undefined; },
+            lineCost(i) { return this.hasCost(i) ? (Number(this.items[i].unit_cost) || 0) * (Number(this.items[i].quantity) || 0) : 0; },
+            lineMargin(i) { return this.lineTotal(i) - this.lineCost(i); },
+            lineMarginPct(i) { if (!this.hasCost(i)) return null; const t = this.lineTotal(i); return t > 0 ? Math.round(this.lineMargin(i) / t * 1000) / 10 : 0; },
+            get costTotal() { return this.items.reduce((s, _, i) => s + this.lineCost(i), 0); },
+            get missing() { return this.items.filter((_, i) => !this.hasCost(i)).length; },
+            get revenue() { return Math.max(0, this.subtotal - (Number(this.discount) || 0)); },
+            get marginPct() { return this.revenue > 0 ? Math.round((this.revenue - this.costTotal) / this.revenue * 1000) / 10 : null; },
+            get rabOk() { return this.missing === 0 && this.marginPct !== null && this.marginPct >= this.minMargin; },
             rupiah(n) { return 'Rp ' + Math.round(n || 0).toLocaleString('id-ID'); },
         };
     }

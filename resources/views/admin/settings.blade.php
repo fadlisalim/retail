@@ -98,6 +98,17 @@
             </div>
         </div>
 
+        {{-- Penawaran / RAB --}}
+        <div class="card p-5">
+            <h2 class="mb-4 font-semibold text-gray-900">Penawaran (RAB)</h2>
+            <div class="sm:w-64">
+                <label for="quotation_min_margin_percent" class="input-label">Margin minimum (%)</label>
+                <input type="number" step="0.5" min="0" max="100" name="quotation_min_margin_percent" id="quotation_min_margin_percent" value="{{ old('quotation_min_margin_percent', $settings['quotation.min_margin_percent']) }}" class="form-input">
+                @error('quotation_min_margin_percent')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+            </div>
+            <p class="mt-1 text-xs text-gray-500">Penawaran dengan margin di bawah angka ini (atau ada baris tanpa modal) harus disetujui user dengan izin "Setujui RAB / margin penawaran" (GM / super admin) sebelum bisa dikirim ke customer. Isi 100 bila semua penawaran wajib disetujui.</p>
+        </div>
+
         {{-- Marketing / Ads --}}
         <div class="card p-5">
             <h2 class="mb-4 font-semibold text-gray-900">Marketing / Iklan</h2>

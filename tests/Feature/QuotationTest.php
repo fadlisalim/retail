@@ -4,7 +4,12 @@ namespace Tests\Feature;
 
 use App\Enums\QuotationStatus;
 use App\Models\Product;
+use App\Models\Quotation;
+use App\Models\Role;
+use App\Models\User;
 use App\Services\QuotationService;
+use App\Support\QuotationForm;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -27,7 +32,7 @@ class QuotationTest extends TestCase
 
         // Admin prices it.
         $quotation = $service->price($quotation, [
-            ['id' => $quotation->items->first()->id, 'unit_price' => 1800000, 'is_taxable' => true],
+            ['id' => $quotation->items->first()->id, 'unit_price' => 1800000, 'unit_cost' => 1400000, 'is_taxable' => true],
         ], ['shipping_cost' => 500000]);
 
         $this->assertEquals(QuotationStatus::QuoteSent, $quotation->status);
@@ -76,7 +81,7 @@ class QuotationTest extends TestCase
             'items' => [['name' => $product->name, 'quantity' => 2, 'product_id' => $product->id]],
         ])->assertRedirect();
 
-        $quotation = \App\Models\Quotation::firstWhere('contact_email', 'azwar@test.id');
+        $quotation = Quotation::firstWhere('contact_email', 'azwar@test.id');
         $this->assertSame('government', $quotation->requester_role);
         $this->assertSame('awarded', $quotation->project_status);
         $this->assertSame('150_500', $quotation->budget_range);
@@ -90,7 +95,7 @@ class QuotationTest extends TestCase
         );
 
         // Awarded tender + decision maker + big budget + APBD = hottest lead.
-        $this->assertSame('bg-red-100 text-red-700', \App\Support\QuotationForm::priority($quotation)['class']);
+        $this->assertSame('bg-red-100 text-red-700', QuotationForm::priority($quotation)['class']);
     }
 
     public function test_intake_requires_project_type_status_location_and_budget(): void
@@ -103,14 +108,14 @@ class QuotationTest extends TestCase
             'items' => [['name' => $product->name, 'quantity' => 1, 'product_id' => $product->id]],
         ])->assertSessionHasErrors(['project_type', 'project_status', 'project_location', 'budget_range']);
 
-        $this->assertSame(0, \App\Models\Quotation::count());
+        $this->assertSame(0, Quotation::count());
     }
 
     public function test_admin_sees_intake_details_on_the_rfq_page(): void
     {
-        $this->seed(\Database\Seeders\RoleSeeder::class);
-        $admin = \App\Models\User::factory()->create(['is_staff' => true, 'is_active' => true]);
-        $admin->roles()->attach(\App\Models\Role::where('slug', 'super-admin')->first());
+        $this->seed(RoleSeeder::class);
+        $admin = User::factory()->create(['is_staff' => true, 'is_active' => true]);
+        $admin->roles()->attach(Role::where('slug', 'super-admin')->first());
 
         $quotation = app(QuotationService::class)->createRfq([
             'contact_name' => 'Azwar', 'contact_email' => 'azwar@test.id',

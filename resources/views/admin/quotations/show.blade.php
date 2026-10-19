@@ -172,6 +172,40 @@
                 </dl>
             </div>
 
+            {{-- RAB / margin (internal) --}}
+            <div class="card p-5 {{ $rabReview['needed'] && ! $quotation->rabApproved() ? 'border-amber-300' : '' }}">
+                <h2 class="mb-3 font-semibold text-gray-900">RAB &amp; Margin 🔒</h2>
+                <dl class="space-y-1.5 text-sm">
+                    <div class="flex justify-between"><dt class="text-gray-500">Penjualan (sebelum PPN)</dt><dd>{{ rupiah($rab['revenue']) }}</dd></div>
+                    <div class="flex justify-between"><dt class="text-gray-500">Total modal</dt><dd>{{ rupiah($rab['cost']) }}</dd></div>
+                    <div class="flex justify-between border-t border-gray-100 pt-2 font-bold"><dt>Margin</dt><dd class="{{ $rabReview['needed'] ? 'text-red-600' : 'text-green-700' }}">{{ rupiah($rab['margin']) }}{{ $rab['percent'] !== null ? ' ('.str_replace('.', ',', (string) $rab['percent']).'%)' : '' }}</dd></div>
+                </dl>
+                @if ($rab['missing'])
+                    <p class="mt-2 text-xs text-amber-700">{{ $rab['missing'] }} dari {{ $rab['lines'] }} baris belum ada modalnya.</p>
+                @endif
+
+                <div class="mt-3 rounded-lg p-3 text-xs {{ $quotation->rabApproved() ? 'bg-green-50 text-green-800' : ($rabReview['needed'] ? 'bg-amber-50 text-amber-800' : 'bg-gray-50 text-gray-600') }}">
+                    @if ($quotation->rabApproved())
+                        ✅ RAB disetujui {{ $quotation->rabApprover?->name ?? '—' }} · {{ $quotation->rab_approved_at->format('d/m/Y H:i') }}@if ($quotation->rab_note)<br>“{{ $quotation->rab_note }}”@endif
+                        <br><span class="text-green-700/70">Berlaku selama harga & modal tidak diubah.</span>
+                    @elseif ($rabReview['needed'])
+                        ⚠️ Perlu persetujuan GM/atasan sebelum dikirim: {{ implode('; ', $rabReview['reasons']) }}.
+                    @else
+                        Margin di atas minimum {{ rtrim(rtrim(number_format($minMargin, 1, ',', ''), '0'), ',') }}% — sales bisa langsung kirim.
+                    @endif
+                </div>
+
+                @can('quotation.approve')
+                    @if (! $quotation->rabApproved() && $rab['lines'] > 0)
+                        <form method="POST" action="{{ route('admin.quotations.approve-rab', $quotation) }}" class="mt-3 space-y-2" onsubmit="return confirm('Setujui RAB dengan margin {{ $rab['percent'] !== null ? str_replace('.', ',', (string) $rab['percent']).'%' : '—' }}?')">
+                            @csrf
+                            <input type="text" name="rab_note" maxlength="500" class="form-input text-xs" placeholder="Catatan persetujuan (opsional)">
+                            <button class="btn-primary w-full">Setujui RAB</button>
+                        </form>
+                    @endif
+                @endcan
+            </div>
+
             {{-- Status change --}}
             <div class="card p-5">
                 <h2 class="mb-3 font-semibold text-gray-900">Ubah Status</h2>

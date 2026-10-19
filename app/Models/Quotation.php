@@ -21,9 +21,15 @@ class Quotation extends Model
         'needs_installation', 'needs_survey', 'needs_tender_docs', 'technical_notes', 'requirements',
         'items_subtotal', 'discount', 'shipping_cost', 'tax_amount', 'grand_total',
         'payment_terms', 'valid_until', 'admin_note', 'converted_order_id', 'handled_by',
+        'cost_total', 'rab_approved_by', 'rab_approved_at', 'rab_signature', 'rab_note',
     ];
 
+    // Data RAB (modal & persetujuan) hanya untuk internal.
+    protected $hidden = ['cost_total', 'rab_approved_by', 'rab_approved_at', 'rab_signature', 'rab_note'];
+
     protected $casts = [
+        'cost_total' => 'decimal:2',
+        'rab_approved_at' => 'datetime',
         'needs_installation' => 'boolean',
         'needs_survey' => 'boolean',
         'needs_tender_docs' => 'boolean',
@@ -76,5 +82,38 @@ class Quotation extends Model
     public function convertedOrder(): BelongsTo
     {
         return $this->belongsTo(Order::class, 'converted_order_id');
+    }
+
+    public function rabApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rab_approved_by');
+    }
+
+    /**
+     * Ringkasan RAB untuk review internal. Pendapatan = subtotal item − diskon tambahan
+     * (sebelum PPN; ongkir/instalasi di header tidak dihitung). Modal = Σ modal baris.
+     *
+     * @return array{revenue: float, cost: float, margin: float, percent: ?float, missing: int, lines: int}
+     */
+    public function rab(): array
+    {
+        $items = $this->relationLoaded('items') ? $this->items : $this->items()->get();
+        $revenue = round((float) $this->items_subtotal - (float) $this->discount, 2);
+        $cost = round((float) $items->sum(fn (QuotationItem $i) => $i->lineCost() ?? 0), 2);
+        $margin = round($revenue - $cost, 2);
+
+        return [
+            'revenue' => $revenue,
+            'cost' => $cost,
+            'margin' => $margin,
+            'percent' => $revenue > 0 ? round($margin / $revenue * 100, 1) : null,
+            'missing' => $items->filter(fn (QuotationItem $i) => $i->unit_cost === null)->count(),
+            'lines' => $items->count(),
+        ];
+    }
+
+    public function rabApproved(): bool
+    {
+        return $this->rab_approved_at !== null && $this->rab_signature !== null;
     }
 }
