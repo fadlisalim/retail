@@ -186,12 +186,44 @@
 
                 <div class="mt-3 rounded-lg p-3 text-xs {{ $quotation->rabApproved() ? 'bg-green-50 text-green-800' : ($rabReview['needed'] ? 'bg-amber-50 text-amber-800' : 'bg-gray-50 text-gray-600') }}">
                     @if ($quotation->rabApproved())
-                        ✅ RAB disetujui {{ $quotation->rabApprover?->name ?? '—' }} · {{ $quotation->rab_approved_at->format('d/m/Y H:i') }}@if ($quotation->rab_note)<br>“{{ $quotation->rab_note }}”@endif
+                        ✅ RAB disetujui {{ $quotation->rabApproverName() ?? '—' }} · {{ $quotation->rab_approved_at->format('d/m/Y H:i') }}@if ($quotation->rab_note)<br>“{{ $quotation->rab_note }}”@endif
                         <br><span class="text-green-700/70">Berlaku selama harga & modal tidak diubah.</span>
                     @elseif ($rabReview['needed'])
-                        ⚠️ Perlu persetujuan GM/atasan sebelum dikirim: {{ implode('; ', $rabReview['reasons']) }}.
+                        ⚠️ Perlu persetujuan GM/atasan atau tim (via link) sebelum dikirim: {{ implode('; ', $rabReview['reasons']) }}.
                     @else
                         Margin di atas minimum {{ rtrim(rtrim(number_format($minMargin, 1, ',', ''), '0'), ',') }}% — sales bisa langsung kirim.
+                    @endif
+                </div>
+
+                {{-- Link review untuk tim (engineer / purchasing) tanpa login --}}
+                <div class="mt-4 border-t border-gray-100 pt-3">
+                    <p class="text-xs font-semibold text-gray-700">Review tim via link</p>
+                    @if ($quotation->rab_token)
+                        @php
+                            $rabUrl = route('rab.show', $quotation->rab_token);
+                            $rabWa = 'Mohon review RAB '.($quotation->quotation_number ?? $quotation->rfq_number).' — '.($quotation->company_name ?: $quotation->contact_name).($quotation->project_name ? ' ('.$quotation->project_name.')' : '').'. Cek modal & margin lalu setujui / minta revisi di: '.$rabUrl;
+                        @endphp
+                        <input type="text" readonly value="{{ $rabUrl }}" class="form-input mt-1 text-[11px]" onclick="this.select()">
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <button type="button" class="btn-outline text-xs" onclick="navigator.clipboard.writeText(@js($rabUrl)).then(() => this.textContent = 'Link disalin ✓')">Salin link</button>
+                            <a href="https://wa.me/?text={{ rawurlencode($rabWa) }}" target="_blank" rel="noopener" class="btn-outline text-xs">Bagikan via WA</a>
+                            <form method="POST" action="{{ route('admin.quotations.rab-link', $quotation) }}" onsubmit="return confirm('Ganti link? Link lama langsung tidak berlaku.')">@csrf<input type="hidden" name="renew" value="1"><button class="text-xs text-red-600 hover:underline">Ganti link</button></form>
+                        </div>
+                        <p class="mt-1 text-[11px] text-gray-400">Berisi harga modal — bagikan hanya ke tim internal. Tim cukup tulis nama, pilih divisi, lalu setujui / minta revisi.</p>
+                    @else
+                        <form method="POST" action="{{ route('admin.quotations.rab-link', $quotation) }}" class="mt-1">@csrf<button class="btn-outline w-full text-xs">Buat link review untuk tim</button></form>
+                    @endif
+
+                    @if ($quotation->rabReviews->isNotEmpty())
+                        <ul class="mt-3 space-y-1.5 text-xs">
+                            @foreach ($quotation->rabReviews->take(8) as $r)
+                                <li>
+                                    <span class="font-medium">{{ $r->isApproval() ? '✅' : '✏️' }} {{ $r->reviewer_name }}</span>
+                                    <span class="text-gray-400">· {{ $r->divisionLabel() }} · {{ $r->created_at->format('d/m H:i') }}</span>
+                                    @if ($r->note)<br><span class="text-gray-600">{{ $r->note }}</span>@endif
+                                </li>
+                            @endforeach
+                        </ul>
                     @endif
                 </div>
 

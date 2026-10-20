@@ -53,7 +53,7 @@ class QuotationController extends Controller
     public function show(Quotation $quotation): View
     {
         $quotation->load([
-            'items.product', 'attachments', 'revisions.creator', 'user', 'handler', 'rabApprover',
+            'items.product', 'attachments', 'revisions.creator', 'user', 'handler', 'rabApprover', 'rabReviews',
         ]);
 
         return view('admin.quotations.show', compact('quotation') + $this->builderData() + [
@@ -79,6 +79,15 @@ class QuotationController extends Controller
 
         return redirect()->route('admin.quotations.show', $quotation)
             ->with('success', $request->input('action') === 'send' ? 'Penawaran dibuat dan dikirim ke pelanggan.' : 'Penawaran disimpan sebagai draf. Cek PDF-nya, lalu kirim bila sudah pas.');
+    }
+
+    /** Buat (atau ganti = cabut yang lama) link review RAB untuk tim tanpa login. */
+    public function rabLink(Request $request, Quotation $quotation): RedirectResponse
+    {
+        $renew = $request->boolean('renew');
+        $this->quotations->rabLink($quotation, $renew);
+
+        return back()->with('success', $renew ? 'Link review RAB baru dibuat — link lama sudah tidak berlaku.' : 'Link review RAB dibuat. Salin & bagikan ke tim engineer / purchasing.');
     }
 
     /** GM/atasan menyetujui RAB (harga & modal saat ini) supaya sales bisa mengirim. */

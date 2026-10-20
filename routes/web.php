@@ -21,6 +21,7 @@ use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductOgImageController;
 use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\RabReviewController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SeoController;
@@ -161,6 +162,10 @@ Route::controller(QuotationController::class)->group(function () {
     Route::post('/penawaran/{quotation:public_token}/setujui', 'approve')->name('quotations.approve');
     Route::post('/penawaran/{quotation:public_token}/tolak', 'reject')->name('quotations.reject');
 });
+
+/* Review RAB tim internal lewat link ber-kunci (tanpa login; berisi modal — rahasia). */
+Route::get('/rab/{token}', [RabReviewController::class, 'show'])->middleware('throttle:60,1')->name('rab.show');
+Route::post('/rab/{token}', [RabReviewController::class, 'store'])->middleware('throttle:10,1')->name('rab.review');
 
 /* Wishlist */
 Route::controller(WishlistController::class)->group(function () {
@@ -395,6 +400,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/quotation/{quotation}/pdf', [Admin\QuotationController::class, 'pdf'])->name('quotations.pdf');
         Route::post('/quotation/{quotation}/harga', [Admin\QuotationController::class, 'price'])->name('quotations.price');
         Route::post('/quotation/{quotation}/setujui-rab', [Admin\QuotationController::class, 'approveRab'])->name('quotations.approve-rab');
+        Route::post('/quotation/{quotation}/link-rab', [Admin\QuotationController::class, 'rabLink'])->name('quotations.rab-link');
         Route::post('/quotation/{quotation}/status', [Admin\QuotationController::class, 'status'])->name('quotations.status');
         Route::post('/quotation/{quotation}/jadikan-pesanan', [Admin\QuotationController::class, 'convert'])->name('quotations.convert');
     });

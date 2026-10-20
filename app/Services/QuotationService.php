@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Quotation;
 use App\Models\QuotationItem;
+use App\Models\QuotationRabReview;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -182,7 +183,7 @@ class QuotationService
             $signature = $this->rabSignature($quotation);
             $quotation->forceFill(['cost_total' => $quotation->rab()['cost']]);
             if ($quotation->rab_signature !== null && $quotation->rab_signature !== $signature) {
-                $quotation->forceFill(['rab_approved_by' => null, 'rab_approved_at' => null, 'rab_signature' => null, 'rab_note' => null]);
+                $quotation->forceFill(['rab_approved_by' => null, 'rab_approved_name' => null, 'rab_approved_at' => null, 'rab_signature' => null, 'rab_note' => null]);
             }
             $quotation->save();
 
@@ -190,7 +191,7 @@ class QuotationService
                 $review = $this->rabReview($quotation);
                 if ($review['needed'] && ! $quotation->rabApproved()) {
                     if (! $actor || ! $actor->can('quotation.approve')) {
-                        throw ValidationException::withMessages(['rab' => 'Belum bisa dikirim: '.implode('; ', $review['reasons']).'. Simpan sebagai draf, lalu minta GM/atasan menyetujui RAB.']);
+                        throw ValidationException::withMessages(['rab' => 'Belum bisa dikirim: '.implode('; ', $review['reasons']).'. Disimpan sebagai draf — minta GM menyetujui, atau bagikan link review RAB ke tim engineer / purchasing.']);
                     }
                     // Peninjau sendiri yang mengirim = sekaligus menyetujui RAB.
                     $this->markRabApproved($quotation, $actor, 'Disetujui saat dikirim');
@@ -269,10 +270,11 @@ class QuotationService
         return $quotation;
     }
 
-    private function markRabApproved(Quotation $quotation, User $actor, ?string $note): void
+    private function markRabApproved(Quotation $quotation, ?User $actor, ?string $note, ?string $name = null): void
     {
         $quotation->forceFill([
-            'rab_approved_by' => $actor->id,
+            'rab_approved_by' => $actor?->id,
+            'rab_approved_name' => $name ?? $actor?->name,
             'rab_approved_at' => now(),
             'rab_signature' => $this->rabSignature($quotation),
             'rab_note' => $note ? mb_substr($note, 0, 500) : null,
@@ -280,8 +282,63 @@ class QuotationService
         ])->save();
     }
 
+    /** Link review RAB untuk tim (tanpa login). $regenerate = cabut link lama, buat baru. */
+    public function rabLink(Quotation $quotation, bool $regenerate = false): string
+    {
+        if ($regenerate || ! $quotation->rab_token) {
+            $quotation->forceFill(['rab_token' => Str::random(40)])->save();
+        }
+
+        return route('rab.show', $quotation->rab_token);
+    }
+
+    /**
+     * Review dari link tim: "approved" = RAB disetujui atas nama peninjau (membuka kirim
+     * bila harga & modal tidak berubah lagi); "revision" = minta revisi, persetujuan
+     * yang ada dicabut. Sales/handler diberi notifikasi.
+     *
+     * @param  array{reviewer_name: string, division?: ?string, decision: string, note?: ?string}  $data
+     */
+    public function reviewViaLink(Quotation $quotation, array $data, ?string $ip = null, ?string $userAgent = null): QuotationRabReview
+    {
+        return DB::transaction(function () use ($quotation, $data, $ip, $userAgent) {
+            $quotation->load('items');
+            $name = trim($data['reviewer_name']);
+            $division = $data['division'] ?? null;
+            $approved = $data['decision'] === QuotationRabReview::APPROVED;
+
+            $review = $quotation->rabReviews()->create([
+                'reviewer_name' => $name,
+                'division' => $division,
+                'decision' => $approved ? QuotationRabReview::APPROVED : QuotationRabReview::REVISION,
+                'note' => $data['note'] ?? null,
+                'signature' => $this->rabSignature($quotation),
+                'margin_percent' => $quotation->rab()['percent'],
+                'ip' => $ip,
+                'user_agent' => $userAgent ? mb_substr($userAgent, 0, 255) : null,
+            ]);
+
+            $who = $name.' ('.$review->divisionLabel().')';
+            if ($approved) {
+                $this->markRabApproved($quotation, null, trim('Disetujui via link tim. '.($data['note'] ?? '')), $who);
+            } else {
+                $quotation->forceFill(['rab_approved_by' => null, 'rab_approved_name' => null, 'rab_approved_at' => null, 'rab_signature' => null, 'rab_note' => null])->save();
+            }
+
+            $this->notifications->toUser(
+                $quotation->handler,
+                $approved ? 'RAB disetujui' : 'RAB minta revisi',
+                ($approved ? 'RAB ' : 'Revisi RAB ').($quotation->quotation_number ?? $quotation->rfq_number).' oleh '.$who.($review->note ? ': '.$review->note : '.'),
+                route('admin.quotations.show', $quotation),
+                'quotation',
+            );
+
+            return $review;
+        });
+    }
+
     /** Sidik jari harga + modal: berubah sedikit saja → persetujuan RAB gugur. */
-    private function rabSignature(Quotation $quotation): string
+    public function rabSignature(Quotation $quotation): string
     {
         $lines = $quotation->items->sortBy('id')->map(fn (QuotationItem $i) => implode('|', [
             $i->id, (int) $i->quantity, (string) round((float) $i->unit_price, 2), (string) round((float) $i->discount, 2), $i->unit_cost === null ? 'x' : (string) round((float) $i->unit_cost, 2),

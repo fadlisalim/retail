@@ -21,11 +21,11 @@ class Quotation extends Model
         'needs_installation', 'needs_survey', 'needs_tender_docs', 'technical_notes', 'requirements',
         'items_subtotal', 'discount', 'shipping_cost', 'tax_amount', 'grand_total',
         'payment_terms', 'valid_until', 'admin_note', 'converted_order_id', 'handled_by',
-        'cost_total', 'rab_approved_by', 'rab_approved_at', 'rab_signature', 'rab_note',
+        'cost_total', 'rab_approved_by', 'rab_approved_name', 'rab_approved_at', 'rab_signature', 'rab_note', 'rab_token',
     ];
 
-    // Data RAB (modal & persetujuan) hanya untuk internal.
-    protected $hidden = ['cost_total', 'rab_approved_by', 'rab_approved_at', 'rab_signature', 'rab_note'];
+    // Data RAB (modal, persetujuan, link tim) hanya untuk internal.
+    protected $hidden = ['cost_total', 'rab_approved_by', 'rab_approved_name', 'rab_approved_at', 'rab_signature', 'rab_note', 'rab_token'];
 
     protected $casts = [
         'cost_total' => 'decimal:2',
@@ -87,6 +87,17 @@ class Quotation extends Model
     public function rabApprover(): BelongsTo
     {
         return $this->belongsTo(User::class, 'rab_approved_by');
+    }
+
+    public function rabReviews(): HasMany
+    {
+        return $this->hasMany(QuotationRabReview::class)->latest('id');
+    }
+
+    /** Nama penyetuju RAB (user admin atau nama yang ditulis tim di link review). */
+    public function rabApproverName(): ?string
+    {
+        return $this->rab_approved_name ?: $this->rabApprover?->name;
     }
 
     /**

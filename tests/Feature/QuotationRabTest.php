@@ -139,4 +139,58 @@ class QuotationRabTest extends TestCase
         $this->actingAs($gm)->put(route('admin.settings.update'), ['tax_ppn_percent' => 11, 'quotation_min_margin_percent' => 20])->assertSessionHasNoErrors();
         $this->assertSame(20.0, app(QuotationService::class)->minMarginPercent());
     }
+
+    public function test_team_reviews_rab_through_secret_link_without_login(): void
+    {
+        app(SettingService::class)->set('quotation.min_margin_percent', '15', 'string', 'quotation');
+        $sales = $this->staff('admin-sales', 'Sales Andi');
+
+        // Margin 10% → kirim ditahan, tersimpan draf.
+        $this->actingAs($sales)->post(route('admin.quotations.store'), $this->payload([
+            ['name' => 'Inverter Hybrid 6kW', 'quantity' => 2, 'unit_price' => 10_000_000, 'unit_cost' => 9_000_000, 'is_taxable' => 1],
+        ], 'send'))->assertSessionHas('error');
+        $q = Quotation::firstOrFail();
+        $this->assertStringContainsString('bagikan link review RAB', session('error'));
+
+        // Sales membuat link → tampil dengan tombol salin & bagikan WA.
+        $this->actingAs($sales)->post(route('admin.quotations.rab-link', $q))->assertSessionHas('success');
+        $q->refresh();
+        $this->assertSame(40, strlen($q->rab_token));
+        $link = route('rab.show', $q->rab_token);
+        $this->actingAs($sales)->get(route('admin.quotations.show', $q))->assertOk()->assertSee($link)->assertSee('Bagikan via WA');
+        auth()->logout();
+
+        // Tanpa login: halaman review memuat modal & margin; token salah → 404; link customer tidak memuat token.
+        $this->get($link)->assertOk()->assertSee('Review RAB internal')->assertSee('Rp 18.000.000')->assertSee('10%')->assertSee('Setujui RAB');
+        $this->get(route('rab.show', str_repeat('x', 40)))->assertNotFound();
+        $this->get(route('rab.show', 'pendek'))->assertNotFound();
+        $this->assertStringNotContainsString($q->rab_token, json_encode($q->toArray()));
+
+        // Minta revisi wajib catatan.
+        $this->post(route('rab.review', $q->rab_token), ['reviewer_name' => 'Budi', 'division' => 'purchasing', 'decision' => 'revision'])->assertSessionHasErrors('note');
+        $this->post(route('rab.review', $q->rab_token), ['reviewer_name' => 'Budi', 'division' => 'purchasing', 'decision' => 'revision', 'note' => 'Harga inverter supplier naik'])->assertRedirect($link);
+        $this->assertFalse($q->fresh()->rabApproved());
+        $this->assertSame(1, $sales->notifications()->count());
+
+        // Engineer menyetujui → RAB disetujui atas namanya, sales bisa kirim tanpa GM.
+        $this->post(route('rab.review', $q->rab_token), ['reviewer_name' => 'Citra', 'division' => 'engineering', 'decision' => 'approved', 'note' => 'Spek sesuai'])->assertSessionHas('success');
+        $q->refresh();
+        $this->assertTrue($q->rabApproved());
+        $this->assertSame('Citra (Engineering)', $q->rabApproverName());
+        $this->assertNull($q->rab_approved_by);
+        $this->get($link)->assertOk()->assertSee('RAB disetujui Citra (Engineering)')->assertSee('Harga inverter supplier naik')->assertSee('value="Citra"', false);
+
+        $items = $q->items;
+        $lines = [['id' => $items[0]->id, 'name' => 'Inverter Hybrid 6kW', 'quantity' => 2, 'unit_price' => 10_000_000, 'unit_cost' => 9_000_000, 'is_taxable' => 1]];
+        $this->actingAs($sales)->get(route('admin.quotations.show', $q))->assertSee('RAB disetujui Citra (Engineering)')->assertSee('Spek sesuai');
+        $this->actingAs($sales)->post(route('admin.quotations.price', $q), $this->payload($lines, 'send'))->assertSessionHas('success');
+        $this->assertNotNull($q->fresh()->quotation_number);
+
+        // Ganti link → link lama mati.
+        $old = $q->fresh()->rab_token;
+        $this->actingAs($sales)->post(route('admin.quotations.rab-link', $q), ['renew' => 1])->assertSessionHas('success');
+        $this->assertNotSame($old, $q->fresh()->rab_token);
+        auth()->logout();
+        $this->get(route('rab.show', $old))->assertNotFound();
+    }
 }
