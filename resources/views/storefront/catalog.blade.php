@@ -192,6 +192,7 @@
                 @endif
 
                 {{-- Brands --}}
+                @if ($brands->isNotEmpty())
                 <div class="border-b border-gray-100 py-3">
                     <p class="mb-2 text-sm font-semibold text-gray-700">Brand</p>
                     <div class="max-h-48 space-y-1 overflow-y-auto">
@@ -203,17 +204,23 @@
                         @endforeach
                     </div>
                 </div>
+                @endif
 
-                {{-- Condition --}}
+                {{-- Condition — hanya kondisi yang ada di hasil; disembunyikan bila cuma satu pilihan. --}}
+                @php
+                    $conditionOptions = array_intersect_key(['new' => 'Baru', 'new_minor_defect' => 'Baru - Minor Defect', 'new_project_surplus' => 'Baru - Sisa Proyek', 'open_box' => 'Open Box', 'display_unit' => 'Bekas Display', 'used' => 'Bekas Pakai'], array_flip($availableConditions ?? []));
+                @endphp
+                @if (count($conditionOptions) > 1)
                 <div class="border-b border-gray-100 py-3">
                     <p class="mb-2 text-sm font-semibold text-gray-700">Kondisi</p>
-                    @foreach (['new' => 'Baru', 'new_minor_defect' => 'Baru - Minor Defect', 'new_project_surplus' => 'Baru - Sisa Proyek', 'open_box' => 'Open Box', 'display_unit' => 'Bekas Display', 'used' => 'Bekas Pakai'] as $val => $label)
+                    @foreach ($conditionOptions as $val => $label)
                         <label class="flex items-center gap-2 text-sm text-gray-600">
                             <input type="checkbox" name="condition[]" value="{{ $val }}" @checked(in_array($val, (array)($filters['condition'] ?? []))) class="rounded text-brand-600 focus:ring-brand-500">
                             {{ $label }}
                         </label>
                     @endforeach
                 </div>
+                @endif
 
                 {{-- Rating --}}
                 <div class="border-b border-gray-100 py-3">

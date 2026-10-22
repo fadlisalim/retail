@@ -23,7 +23,8 @@ class HomeController extends Controller
             'videoBanners' => Banner::active()->where('position', 'video')->orderBy('sort_order')->get(),
             'quotationBanner' => Banner::active()->where('position', 'quotation')->orderBy('sort_order')->first(),
             // All top-level categories, shown as a horizontally scrollable card row.
-            'shortcutCategories' => CategoryVisibility::filter(Category::active()->whereNull('parent_id')->orderBy('sort_order')->get()),
+            'shortcutCategories' => $shortcut = CategoryVisibility::filter(Category::active()->whereNull('parent_id')->orderBy('sort_order')->get()),
+            'categoryThumbs' => CategoryVisibility::thumbnails($shortcut),
             // Produk terlaris berdasarkan jumlah unit yang benar-benar terjual
             // (sold_count naik saat pesanan dibayar, termasuk penjualan manual
             // Tokopedia/offline). Sebelum ada riwayat penjualan, bagian ini

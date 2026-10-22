@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Role;
 use App\Models\User;
@@ -41,6 +42,18 @@ class StorefrontAuditTest extends TestCase
         $this->assertSame(1, substr_count($home->getContent(), 'href="'.route('affiliate.landing').'"'));
         // Ikon perbandingan hanya muncul bila ada produk yang dibandingkan.
         $home->assertDontSee('aria-label="Perbandingan"', false);
+    }
+
+    public function test_catalog_filters_only_offer_brands_and_conditions_present_and_home_uses_product_photos_for_categories(): void
+    {
+        $cat = Category::create(['name' => 'Inverter', 'slug' => 'inverter', 'is_active' => true, 'depth' => 0]);
+        $used = Brand::create(['name' => 'Merek Ada', 'slug' => 'merek-ada', 'is_active' => true]);
+        Brand::create(['name' => 'Merek Kosong', 'slug' => 'merek-kosong', 'is_active' => true]);
+        $this->stockedProduct(3, ['name' => 'Inverter Uji', 'category_id' => $cat->id, 'brand_id' => $used->id, 'condition' => 'new', 'main_image_path' => 'products/inverter-uji.webp']);
+
+        $page = $this->get(route('categories.show', 'inverter'))->assertOk();
+        $page->assertSee('Merek Ada')->assertDontSee('Merek Kosong')->assertDontSee('Bekas Display');
+        $this->get('/')->assertOk()->assertSee('storage/products/inverter-uji.webp', false)->assertSee('💬 Chat WhatsApp');
     }
 
     public function test_used_items_show_up_on_the_clearance_page_like_on_the_home_panel(): void

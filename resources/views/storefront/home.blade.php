@@ -171,6 +171,8 @@
                         <span class="grid h-16 w-16 place-items-center overflow-hidden rounded-full bg-brand-50 text-brand-600 ring-1 ring-brand-100 transition group-hover:bg-brand-100 sm:h-20 sm:w-20">
                             @if ($cat->image_path ?? false)
                                 <img src="{{ asset('storage/'.$cat->image_path) }}" alt="{{ $cat->name }}" class="h-full w-full object-cover">
+                            @elseif ($categoryThumbs[$cat->id] ?? false)
+                                <img src="{{ asset('storage/'.$categoryThumbs[$cat->id]) }}" alt="{{ $cat->name }}" class="h-full w-full bg-white object-contain p-1.5" loading="lazy">
                             @else
                                 <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
                             @endif
@@ -271,7 +273,7 @@
             <p class="mt-2 text-sm text-gray-300">Tim Rekasurya siap membantu konsultasi kebutuhan, survei lokasi, hingga instalasi. Dapatkan penawaran khusus untuk pengadaan skala proyek.</p>
             <div class="mt-4 flex flex-wrap gap-3">
                 <a href="{{ route('quotations.create') }}" class="btn-accent">Minta Penawaran</a>
-                <a href="{{ app(\App\Services\SettingService::class)->consultationLink() }}" target="_blank" rel="noopener" class="btn-outline border-white/40 text-white hover:bg-white/10">Chat WhatsApp</a>
+                <a href="{{ app(\App\Services\SettingService::class)->consultationLink() }}" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-600">💬 Chat WhatsApp</a>
             </div>
         </div>
         @if ($quotationBanner)

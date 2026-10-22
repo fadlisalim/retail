@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -37,6 +38,30 @@ class CategoryVisibility
 
             return $ids->unique()->values()->all();
         });
+    }
+
+    /**
+     * Foto pengganti untuk kategori tanpa gambar: foto produk terlaris di kategori itu
+     * (atau turunannya), supaya baris kategori di beranda tidak berisi ikon yang sama semua.
+     *
+     * @param  Collection<int, Category>  $categories
+     * @return array<int, string> id kategori => path gambar (disk public)
+     */
+    public static function thumbnails(Collection $categories): array
+    {
+        $children = Category::whereIn('parent_id', $categories->pluck('id'))->pluck('parent_id', 'id');
+        $products = Product::published()->whereNotNull('main_image_path')
+            ->whereIn('category_id', $categories->pluck('id')->merge($children->keys()))
+            ->orderByDesc('sold_count')->orderByDesc('is_featured')->latest('published_at')
+            ->get(['category_id', 'main_image_path']);
+
+        $thumbs = [];
+        foreach ($products as $p) {
+            $root = $children[$p->category_id] ?? $p->category_id;
+            $thumbs[$root] ??= $p->main_image_path;
+        }
+
+        return $thumbs;
     }
 
     /**

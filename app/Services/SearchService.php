@@ -28,6 +28,24 @@ class SearchService
         return $query->paginate($perPage)->withQueryString();
     }
 
+    /**
+     * Pilihan filter yang benar-benar ada di hasil saat ini (mengabaikan filter brand &
+     * kondisi itu sendiri), supaya sidebar tidak menawarkan pilihan yang hasilnya 0 produk.
+     *
+     * @return array{brand_ids: list<int>, conditions: list<string>}
+     */
+    public function facets(array $filters): array
+    {
+        $query = Product::query()->published();
+        $this->applyKeyword($query, $filters['q'] ?? null);
+        $this->applyFilters($query, array_diff_key($filters, array_flip(['brand', 'condition', 'sort'])));
+
+        return [
+            'brand_ids' => (clone $query)->whereNotNull('brand_id')->distinct()->pluck('brand_id')->map(fn ($id) => (int) $id)->all(),
+            'conditions' => (clone $query)->distinct()->pluck('condition')->map(fn ($c) => $c instanceof \BackedEnum ? $c->value : (string) $c)->all(),
+        ];
+    }
+
     private function applyKeyword(Builder $query, ?string $keyword): void
     {
         $keyword = trim((string) $keyword);

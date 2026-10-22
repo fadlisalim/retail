@@ -134,11 +134,15 @@ class CatalogController extends Controller
         ]);
 
         $products = $this->search->search($filters, (int) config('rekasurya.catalog.per_page', 24));
+        // Sidebar hanya menawarkan brand & kondisi yang ada di hasil ini (+ yang sedang dipilih).
+        $facets = $this->search->facets($filters);
+        $selectedBrands = (array) ($filters['brand'] ?? []);
 
         return view('storefront.catalog', array_merge([
             'products' => $products,
             'filters' => $filters,
-            'brands' => Brand::active()->orderBy('name')->get(),
+            'brands' => Brand::active()->where(fn ($q) => $q->whereIn('id', $facets['brand_ids'])->orWhereIn('slug', $selectedBrands))->orderBy('name')->get(),
+            'availableConditions' => array_values(array_unique(array_merge($facets['conditions'], (array) ($filters['condition'] ?? [])))),
             'rootCategories' => Category::active()->roots()->with('activeChildren')->orderBy('sort_order')->get(),
             'sortOptions' => $this->sortOptions(),
             'category' => null,
