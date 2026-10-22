@@ -19,57 +19,77 @@
             <span class="font-bold">{{ brand() }} <span class="text-accent-400">Admin</span></span>
         </div>
         @php
+            // Dikelompokkan per pekerjaan supaya mudah dicari; menu tanpa izin otomatis tersembunyi.
+            $kirana = app(\App\Services\SettingService::class)->assistantEnabled();
             $menu = [
-                ['admin.dashboard', 'Dashboard', null],
-                ['admin.products.index', 'Produk', 'catalog.manage'],
-                ['admin.categories.index', 'Kategori', 'catalog.manage'],
-                ['admin.brands.index', 'Brand', 'catalog.manage'],
-                ['admin.attributes.index', 'Atribut', 'catalog.manage'],
-                // Harga, margin, stok, berat & dimensi dalam satu tabel (menggantikan halaman Stok).
-                ['admin.prices.index', 'Edit Cepat Produk', 'price.manage|inventory.manage', 'prices'],
-                ['admin.warehouses.index', 'Gudang', 'inventory.manage'],
-                ['admin.coupons.index', 'Voucher', 'price.manage'],
-                ['admin.orders.index', 'Pesanan', 'order.view', 'orders'],
-                ['admin.reports.monthly', 'Laporan Pendapatan', 'dashboard.view'],
-                ['admin.quotations.index', 'Quotation', 'quotation.manage', 'quotations'],
-                ['admin.reviews.index', 'Review', 'review.moderate', 'reviews'],
-                ['admin.questions.index', 'Tanya Jawab', 'review.moderate', 'questions'],
-                ['admin.customers.index', 'Customer', 'customer.manage'],
-                ['admin.affiliates.index', 'Afiliasi', 'affiliate.manage', 'affiliates'],
-                ['admin.banners.index', 'Banner', 'content.manage'],
-                ['admin.pages.index', 'Halaman', 'content.manage'],
-                ['admin.articles.index', 'Artikel', 'content.manage'],
-                ['admin.faqs.index', 'FAQ', 'content.manage'],
-                ['admin.settings.edit', 'Pengaturan', 'setting.manage'],
-                ['admin.users.index', 'User Admin', 'user.manage'],
-                ['admin.traffic.index', 'Statistik Trafik', 'traffic.view'],
-                ['admin.assistant.index', 'CS Assistant', 'assistant.view'],
-                ['admin.wachat.index', 'WA Chat', 'assistant.view', 'wachat'],
-                ['admin.wa-campaign.index', 'WA Campaign', 'marketing.manage'],
-                ['admin.sitechat.index', 'Chat Toko', 'assistant.view', 'sitechat'],
-                ['admin.audit.index', 'Audit Log', 'audit.view'],
+                '' => [
+                    ['admin.dashboard', 'Dashboard', null],
+                ],
+                'Penjualan' => [
+                    ['admin.orders.index', 'Pesanan', 'order.view', 'orders'],
+                    ['admin.quotations.index', 'Penawaran / RAB', 'quotation.manage', 'quotations'],
+                    ['admin.reports.monthly', 'Laporan Pendapatan', 'dashboard.view'],
+                    ['admin.customers.index', 'Customer', 'customer.manage'],
+                    ['admin.coupons.index', 'Voucher', 'price.manage'],
+                ],
+                'Chat & Marketing' => [
+                    ['admin.sitechat.index', 'Chat Toko', 'assistant.view', 'sitechat'],
+                    ['admin.wachat.index', 'WA Chat', 'assistant.view', 'wachat'],
+                    ['admin.wa-campaign.index', 'WA Campaign', 'marketing.manage'],
+                    ['admin.affiliates.index', 'Afiliasi', 'affiliate.manage', 'affiliates'],
+                    $kirana ? ['admin.assistant.index', 'Log Kirana (AI)', 'assistant.view'] : null,
+                    ['admin.traffic.index', 'Statistik Trafik', 'traffic.view'],
+                ],
+                'Katalog & Stok' => [
+                    ['admin.products.index', 'Produk', 'catalog.manage'],
+                    // Harga, margin, stok, berat & dimensi dalam satu tabel.
+                    ['admin.prices.index', 'Edit Cepat Produk', 'price.manage|inventory.manage', 'prices'],
+                    ['admin.categories.index', 'Kategori', 'catalog.manage'],
+                    ['admin.brands.index', 'Brand', 'catalog.manage'],
+                    ['admin.attributes.index', 'Atribut', 'catalog.manage'],
+                    ['admin.warehouses.index', 'Gudang', 'inventory.manage'],
+                    ['admin.reviews.index', 'Review', 'review.moderate', 'reviews'],
+                    ['admin.questions.index', 'Tanya Jawab', 'review.moderate', 'questions'],
+                ],
+                'Konten' => [
+                    ['admin.banners.index', 'Banner', 'content.manage'],
+                    ['admin.articles.index', 'Artikel', 'content.manage'],
+                    ['admin.pages.index', 'Halaman', 'content.manage'],
+                    ['admin.faqs.index', 'FAQ', 'content.manage'],
+                ],
+                'Sistem' => [
+                    ['admin.settings.edit', 'Pengaturan', 'setting.manage'],
+                    ['admin.users.index', 'User Admin', 'user.manage'],
+                    ['admin.audit.index', 'Audit Log', 'audit.view'],
+                ],
             ];
+            // Izin dipisah "|" = salah satu cukup (mis. Edit Cepat Produk untuk katalog & gudang).
+            $can = fn (?string $permission) => ! $permission || collect(explode('|', $permission))->contains(fn ($p) => auth()->user()->can($p));
         @endphp
         <nav class="space-y-0.5 px-3 pb-10 text-sm">
-            @foreach ($menu as $item)
+            @foreach ($menu as $group => $items)
                 @php
-                    [$route, $label, $permission] = $item;
-                    $badgeKey = $item[3] ?? null;
-                    $badgeCount = $badgeKey ? (int) ($menuBadges[$badgeKey] ?? 0) : 0;
+                    $visible = collect($items)->filter(fn ($i) => $i && $can($i[2]));
                 @endphp
-                @php
-                    // Izin dipisah "|" = salah satu cukup (mis. Edit Cepat Produk untuk katalog & gudang).
-                    $allowed = ! $permission || collect(explode('|', $permission))->contains(fn ($p) => auth()->user()->can($p));
-                @endphp
-                @if ($allowed)
-                    <a href="{{ route($route) }}"
-                       class="flex items-center justify-between gap-2 rounded-lg px-3 py-2 {{ request()->routeIs(str_replace('.index', '', $route).'*') || request()->routeIs($route) ? 'bg-brand-600 font-semibold text-white' : 'text-brand-100 hover:bg-brand-700' }}">
-                        <span>{{ $label }}</span>
-                        @if ($badgeCount > 0)
-                            <span class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-semibold leading-none text-white"
-                                  title="{{ $badgeCount }} perlu ditindak">{{ $badgeCount > 99 ? '99+' : $badgeCount }}</span>
-                        @endif
-                    </a>
+                @if ($visible->isNotEmpty())
+                    @if ($group !== '')
+                        <p class="px-3 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wider text-brand-300">{{ $group }}</p>
+                    @endif
+                    @foreach ($visible as $item)
+                        @php
+                            [$route, $label] = $item;
+                            $badgeKey = $item[3] ?? null;
+                            $badgeCount = $badgeKey ? (int) ($menuBadges[$badgeKey] ?? 0) : 0;
+                        @endphp
+                        <a href="{{ route($route) }}"
+                           class="flex items-center justify-between gap-2 rounded-lg px-3 py-2 {{ request()->routeIs(str_replace('.index', '', $route).'*') || request()->routeIs($route) ? 'bg-brand-600 font-semibold text-white' : 'text-brand-100 hover:bg-brand-700' }}">
+                            <span>{{ $label }}</span>
+                            @if ($badgeCount > 0)
+                                <span class="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-semibold leading-none text-white"
+                                      title="{{ $badgeCount }} perlu ditindak">{{ $badgeCount > 99 ? '99+' : $badgeCount }}</span>
+                            @endif
+                        </a>
+                    @endforeach
                 @endif
             @endforeach
         </nav>

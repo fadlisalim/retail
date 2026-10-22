@@ -187,7 +187,7 @@
         @foreach ([
             ['Produk Bersertifikat', 'Kualitas tier-1 & bergaransi resmi'],
             ['Konsultasi Teknis', 'Tim ahli PLTS siap membantu'],
-            ['Harga Transparan', 'Harga sudah termasuk pajak'],
+            ['Harga Transparan', 'Harga belum PPN — PPN dihitung jelas saat checkout'],
             ['Layanan Instalasi', 'Survei & pemasangan profesional'],
         ] as [$t, $d])
             <div class="card flex items-start gap-2 p-3">
@@ -264,10 +264,6 @@
         </section>
     @endif
 
-    {{-- 10-11 most viewed / top rated --}}
-    <x-product-carousel title="Paling Banyak Dilihat" :products="$mostViewed" />
-    <x-product-carousel title="Rating Terbaik" :products="$topRated" />
-
     {{-- 13. Services / consultation --}}
     <section class="mt-10 grid gap-4 rounded-2xl bg-gray-900 p-6 text-white sm:grid-cols-2 sm:p-10">
         <div>
@@ -275,6 +271,7 @@
             <p class="mt-2 text-sm text-gray-300">Tim Rekasurya siap membantu konsultasi kebutuhan, survei lokasi, hingga instalasi. Dapatkan penawaran khusus untuk pengadaan skala proyek.</p>
             <div class="mt-4 flex flex-wrap gap-3">
                 <a href="{{ route('quotations.create') }}" class="btn-accent">Minta Penawaran</a>
+                <a href="{{ app(\App\Services\SettingService::class)->consultationLink() }}" target="_blank" rel="noopener" class="btn-outline border-white/40 text-white hover:bg-white/10">Chat WhatsApp</a>
             </div>
         </div>
         @if ($quotationBanner)
@@ -296,7 +293,9 @@
             <div class="grid gap-4 sm:grid-cols-3">
                 @foreach ($articles as $article)
                     <a href="{{ route('articles.show', $article->slug) }}" class="card overflow-hidden transition hover:shadow-md">
-                        <div class="aspect-video bg-brand-50"></div>
+                        @if ($article->cover_path)
+                            <img src="{{ asset('storage/'.$article->cover_path) }}" alt="{{ $article->title }}" class="aspect-video w-full object-cover" loading="lazy">
+                        @endif
                         <div class="p-4">
                             <p class="text-xs text-gray-400">{{ $article->published_at?->translatedFormat('d M Y') }}</p>
                             <h3 class="mt-1 line-clamp-2 font-semibold text-gray-800">{{ $article->title }}</h3>

@@ -15,9 +15,9 @@
                 <ul class="space-y-2 text-sm text-gray-500">
                     <li><a href="{{ route('products.index') }}" class="hover:text-brand-700">Semua Produk</a></li>
                     <li><a href="{{ route('brands.index') }}" class="hover:text-brand-700">Brand</a></li>
-                    <li><a href="{{ route('promo') }}" class="hover:text-brand-700">Promo</a></li>
+                    @if ($navHas['promo'])<li><a href="{{ route('promo') }}" class="hover:text-brand-700">Promo</a></li>@endif
                     <li><a href="{{ route('products.new') }}" class="hover:text-brand-700">Produk Baru</a></li>
-                    <li><a href="{{ route('clearance') }}" class="hover:text-brand-700">Clearance</a></li>
+                    @if ($navHas['clearance'])<li><a href="{{ route('clearance') }}" class="hover:text-brand-700">Clearance</a></li>@endif
                 </ul>
             </div>
             <div>
@@ -30,8 +30,8 @@
                     @endif
                     <li><a href="{{ route('quotations.create') }}" class="hover:text-brand-700">Permintaan Penawaran</a></li>
                     <li><a href="{{ route('affiliate.landing') }}" class="hover:text-brand-700">Program Afiliasi</a></li>
-                    <li><a href="{{ route('documentation') }}" class="hover:text-brand-700">Dokumentasi Pengerjaan</a></li>
-                    <li><a href="{{ route('articles.index') }}" class="hover:text-brand-700">Panduan Energi Surya</a></li>
+                    @if ($navHas['documentation'])<li><a href="{{ route('documentation') }}" class="hover:text-brand-700">Dokumentasi Pengerjaan</a></li>@endif
+                    @if ($navHas['articles'])<li><a href="{{ route('articles.index') }}" class="hover:text-brand-700">Panduan Energi Surya</a></li>@endif
                     <li><a href="{{ route('faq') }}" class="hover:text-brand-700">FAQ</a></li>
                     @foreach(['tentang-kami' => 'Tentang Rekasurya', 'kebijakan-pengiriman' => 'Kebijakan Pengiriman', 'kebijakan-retur' => 'Kebijakan Retur'] as $slug => $label)
                         <li><a href="{{ route('pages.show', $slug) }}" class="hover:text-brand-700">{{ $label }}</a></li>
@@ -39,14 +39,15 @@
                 </ul>
             </div>
             <div>
-                <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-700">Newsletter</h3>
-                <p class="mb-3 text-sm text-gray-500">Info produk & promo energi terbarukan.</p>
+                <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-700">Info Promo via WhatsApp</h3>
+                <p class="mb-3 text-sm text-gray-500">Stok clearance & promo terbaru langsung ke WhatsApp. Balas STOP kapan saja.</p>
                 <form action="{{ route('newsletter.subscribe') }}" method="POST" class="flex gap-2">
                     @csrf
-                    <label for="newsletter" class="sr-only">Email</label>
-                    <input id="newsletter" name="email" type="email" required placeholder="Email Anda" class="form-input rounded-lg">
-                    <button class="btn-primary shrink-0">Ikuti</button>
+                    <label for="promo-wa" class="sr-only">Nomor WhatsApp</label>
+                    <input id="promo-wa" name="phone" type="tel" inputmode="tel" required maxlength="30" placeholder="0812xxxxxxxx" class="form-input rounded-lg">
+                    <button class="btn-primary shrink-0">Daftar</button>
                 </form>
+                <a href="{{ $siteSettings->consultationLink() }}" target="_blank" rel="noopener" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-green-700 hover:underline">💬 Chat WhatsApp CS</a>
             </div>
         </div>
         <div class="mt-10 flex flex-col items-center justify-between gap-3 border-t border-gray-100 pt-6 text-sm text-gray-400 sm:flex-row">

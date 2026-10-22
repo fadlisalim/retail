@@ -8,6 +8,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Review;
+use App\Support\CategoryVisibility;
 use Illuminate\View\View;
 
 class HomeController extends Controller
@@ -22,7 +23,7 @@ class HomeController extends Controller
             'videoBanners' => Banner::active()->where('position', 'video')->orderBy('sort_order')->get(),
             'quotationBanner' => Banner::active()->where('position', 'quotation')->orderBy('sort_order')->first(),
             // All top-level categories, shown as a horizontally scrollable card row.
-            'shortcutCategories' => Category::active()->whereNull('parent_id')->orderBy('sort_order')->get(),
+            'shortcutCategories' => CategoryVisibility::filter(Category::active()->whereNull('parent_id')->orderBy('sort_order')->get()),
             // Produk terlaris berdasarkan jumlah unit yang benar-benar terjual
             // (sold_count naik saat pesanan dibayar, termasuk penjualan manual
             // Tokopedia/offline). Sebelum ada riwayat penjualan, bagian ini
@@ -39,8 +40,6 @@ class HomeController extends Controller
                 ->take(12)
                 ->get(),
             'brands' => Brand::active()->where('is_featured', true)->orderBy('sort_order')->take(12)->get(),
-            'mostViewed' => Product::published()->with(['brand', 'category'])->orderByDesc('view_count')->take(10)->get(),
-            'topRated' => Product::published()->where('rating_count', '>', 0)->with(['brand', 'category'])->orderByDesc('rating_avg')->take(10)->get(),
             'articles' => Article::published()->latest('published_at')->take(3)->get(),
             'testimonials' => Review::visible()->where('rating', '>=', 4)->whereNotNull('comment')->with(['user', 'product'])->latest()->take(6)->get(),
         ]);

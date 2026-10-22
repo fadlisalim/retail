@@ -37,19 +37,12 @@
         <nav aria-label="Menu akun" class="grid grid-cols-5 gap-2">
             @foreach ($navItems as $item)
                 @php($active = request()->routeIs($item['pattern']))
-                @php($isAffiliate = $item['route'] === 'account.affiliate.dashboard')
                 <a href="{{ route($item['route']) }}"
                    @if($active) aria-current="page" @endif
                    class="relative flex min-h-[4.75rem] flex-col items-center justify-center gap-1.5 rounded-xl border px-1 py-2 text-center transition
-                          {{ $isAffiliate
-                                ? 'border-red-200 bg-red-50 text-red-600'
-                                : ($active
-                                    ? 'border-brand-200 bg-brand-50 text-brand-700'
-                                    : 'border-gray-100 bg-white text-gray-600 hover:border-brand-200 hover:bg-brand-50/60') }}">
-                    @if ($isAffiliate)
-                        {{-- Static red dot to draw the eye (strong pulse lives on the dashboard banner). --}}
-                        <span class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500"></span>
-                    @endif
+                          {{ $active
+                                ? 'border-brand-200 bg-brand-50 text-brand-700'
+                                : 'border-gray-100 bg-white text-gray-600 hover:border-brand-200 hover:bg-brand-50/60' }}">
                     <svg class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}" />
                     </svg>
@@ -72,18 +65,14 @@
                 <ul class="space-y-0.5">
                     @foreach ($navItems as $item)
                         @php($active = request()->routeIs($item['pattern']))
-                        @php($isAffiliate = $item['route'] === 'account.affiliate.dashboard')
-                        <li>
+                                <li>
                             <a href="{{ route($item['route']) }}"
                                @if($active) aria-current="page" @endif
                                class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition {{ $active ? 'bg-brand-50 font-semibold text-brand-700' : 'text-gray-600 hover:bg-gray-50 hover:text-brand-700' }}">
-                                <svg class="h-5 w-5 shrink-0 {{ $isAffiliate && ! $active ? 'text-red-500' : '' }}" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
+                                <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}" />
                                 </svg>
                                 <span>{{ $item['label'] }}</span>
-                                @if ($isAffiliate)
-                                    <span class="ml-auto h-2 w-2 rounded-full bg-red-500"></span>
-                                @endif
                             </a>
                         </li>
                     @endforeach

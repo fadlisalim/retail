@@ -105,7 +105,8 @@ class SearchService
             $query->where('is_new', true);
         }
         if (! empty($f['clearance'])) {
-            $query->where('is_clearance', true);
+            // Sama dengan panel Clearance di beranda: ditandai clearance ATAU kondisi bukan baru (bekas/sisa proyek).
+            $query->where(fn ($q) => $q->where('is_clearance', true)->orWhere('condition', '!=', 'new'));
         }
         if (! empty($f['featured'])) {
             $query->where('is_featured', true);

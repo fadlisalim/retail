@@ -6,14 +6,13 @@ use App\Models\Banner;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Services\SearchService;
+use App\Support\CategoryVisibility;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CatalogController extends Controller
 {
-    public function __construct(private readonly SearchService $search)
-    {
-    }
+    public function __construct(private readonly SearchService $search) {}
 
     public function index(Request $request): View
     {
@@ -26,11 +25,11 @@ class CatalogController extends Controller
     /** Directory of all active categories with their sub-categories. */
     public function categories(): View
     {
-        $categories = Category::active()
+        $categories = CategoryVisibility::filter(Category::active()
             ->whereNull('parent_id')
             ->with(['activeChildren' => fn ($q) => $q->orderBy('sort_order')])
             ->orderBy('sort_order')
-            ->get();
+            ->get());
 
         return view('storefront.categories', ['categories' => $categories]);
     }
