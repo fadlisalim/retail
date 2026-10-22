@@ -57,6 +57,10 @@
 
     @hasSection('chat_page')
         {{-- tanpa footer, nav bawah, mini-cart, dan widget chat --}}
+    @elseif (View::hasSection('focus_mode'))
+        {{-- Checkout: mode fokus ala marketplace — tanpa footer, nav bawah & widget chat agar pembeli tidak terdistraksi.
+             Bantuan tetap ada lewat tautan WhatsApp di ringkasan pesanan. --}}
+        <footer class="py-6 text-center text-xs text-gray-400">&copy; {{ now()->year }} {{ $siteSettings->company()['legal_name'] }} · <a href="{{ route('pages.show', 'kebijakan-privasi') }}" class="hover:text-brand-700">Privasi</a></footer>
     @else
         @include('partials.footer')
         @include('partials.mobile-nav')

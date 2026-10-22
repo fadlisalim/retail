@@ -27,6 +27,17 @@ class LinkifyButtonsTest extends TestCase
         $this->assertStringContainsString('href="https://reka.click/x?a=1&amp;b=2"', $html);
     }
 
+    public function test_meaningful_anchor_text_is_kept_and_internal_links_open_in_the_same_tab(): void
+    {
+        $html = linkify_buttons('<p>Butuh bantuan? <a href="/konsultasi">Konsultasi gratis</a> atau <a href="https://x.id/q">minta penawaran</a>.</p>');
+
+        $this->assertStringContainsString('Konsultasi gratis</a>', $html);
+        $this->assertStringContainsString('minta penawaran</a>', $html);
+        $this->assertStringNotContainsString('KLIK DI SINI', $html);
+        $this->assertStringContainsString('<a href="/konsultasi" class=', $html);
+        $this->assertSame(1, substr_count($html, 'target="_blank"'));
+    }
+
     public function test_non_url_content_is_untouched(): void
     {
         $html = '<p>Tidak ada tautan di sini.</p>';

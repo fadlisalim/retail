@@ -83,23 +83,29 @@ if (! function_exists('linkify_buttons')) {
         $btnClass = 'not-prose my-1 inline-flex items-center gap-1 rounded-lg bg-brand-600 px-4 py-2 '
             .'text-sm font-semibold text-white no-underline transition hover:bg-brand-700';
 
-        $button = function (string $href) use ($btnClass): string {
+        $button = function (string $href, string $label = '') use ($btnClass): string {
             $href = trim($href);
             // Guard against javascript: and other unsafe schemes.
             if (! preg_match('#^https?://#i', $href) && ! str_starts_with($href, '/') && ! str_starts_with($href, 'mailto:')) {
                 return e($href);
             }
+            // Teks tautan yang bermakna ("Konsultasi gratis") dipertahankan; teks generik
+            // ("di sini", "klik") atau URL mentah diganti "KLIK DI SINI".
+            $label = trim(preg_replace('/\s+/', ' ', strip_tags($label)));
+            $generic = $label === '' || preg_match('#^https?://#i', $label) || in_array(mb_strtolower(trim($label, ' .:!')), ['di sini', 'disini', 'sini', 'klik', 'klik di sini', 'klik disini', 'link', 'tautan', 'here', 'click here'], true);
+            $text = $generic ? 'KLIK DI SINI' : e(html_entity_decode($label, ENT_QUOTES | ENT_HTML5));
+            $internal = str_starts_with($href, '/');
 
-            return '<a href="'.e($href).'" target="_blank" rel="noopener" class="'.$btnClass.'">'
+            return '<a href="'.e($href).'"'.($internal ? '' : ' target="_blank" rel="noopener"').' class="'.$btnClass.'">'
                 .'<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">'
                 .'<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/>'
-                .'</svg>KLIK DI SINI</a>';
+                .'</svg>'.$text.'</a>';
         };
 
         // Pass 1: replace existing anchor tags.
         $html = preg_replace_callback(
-            '/<a\b[^>]*\bhref=(["\'])(.*?)\1[^>]*>.*?<\/a>/is',
-            fn ($m) => $button(html_entity_decode($m[2], ENT_QUOTES | ENT_HTML5)),
+            '/<a\b[^>]*\bhref=(["\'])(.*?)\1[^>]*>(.*?)<\/a>/is',
+            fn ($m) => $button(html_entity_decode($m[2], ENT_QUOTES | ENT_HTML5), $m[3]),
             $html,
         );
 

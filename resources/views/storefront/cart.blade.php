@@ -37,10 +37,10 @@
                         @foreach ($buyable as $item)
                             <div class="flex gap-3 p-4" data-cartrow="{{ $item->id }}">
                                 <a href="{{ route('products.show', $item->product->slug) }}" class="shrink-0">
-                                    <img src="{{ $item->product->primaryImageUrl() }}" alt="{{ $item->product->name }}" class="h-20 w-20 rounded-lg object-cover">
+                                    <img src="{{ $item->product->primaryImageUrl() }}" alt="{{ $item->product->name }}" class="h-16 w-16 rounded-lg object-cover sm:h-20 sm:w-20">
                                 </a>
-                                <div class="flex flex-1 flex-col">
-                                    <a href="{{ route('products.show', $item->product->slug) }}" class="text-sm font-medium text-gray-800 hover:text-brand-700">{{ $item->product->name }}</a>
+                                <div class="flex min-w-0 flex-1 flex-col">
+                                    <a href="{{ route('products.show', $item->product->slug) }}" class="line-clamp-2 text-sm font-medium text-gray-800 hover:text-brand-700">{{ $item->product->name }}</a>
                                     @if ($item->variant)<p class="text-xs text-gray-500">{{ $item->variant->name }}</p>@endif
                                     <p class="mt-1 text-sm font-bold text-gray-900">{{ rupiah($item->currentUnitPrice()) }}</p>
 
@@ -56,18 +56,18 @@
                                         <span class="mt-1 inline-flex items-center gap-1 text-xs text-green-600"><svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>Kondisi disetujui</span>
                                     @endif
 
-                                    <div class="mt-2 flex items-center gap-3">
+                                    <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                                         <form action="{{ route('cart.update', $item) }}" method="POST" class="inline-flex items-center rounded-lg border border-gray-300" @submit.prevent="mutate($event)">
                                             @csrf @method('PATCH')
                                             <button type="submit" name="quantity" value="{{ max(1, $item->quantity - 1) }}" data-dec="{{ $item->id }}" class="px-2 py-1 text-gray-500 disabled:opacity-40" aria-label="Kurangi jumlah" @disabled($item->quantity <= 1)>−</button>
                                             <span class="w-10 text-center text-sm" data-qty="{{ $item->id }}" aria-live="polite">{{ $item->quantity }}</span>
                                             <button type="submit" name="quantity" value="{{ $item->quantity + 1 }}" data-inc="{{ $item->id }}" class="px-2 py-1 text-gray-500" aria-label="Tambah jumlah">+</button>
                                         </form>
-                                        <form action="{{ route('cart.save', $item) }}" method="POST" @submit.prevent="mutate($event)">@csrf<button class="text-xs text-gray-400 hover:text-brand-600">Simpan untuk nanti</button></form>
+                                        <form action="{{ route('cart.save', $item) }}" method="POST" @submit.prevent="mutate($event)">@csrf<button class="whitespace-nowrap text-xs text-gray-400 hover:text-brand-600">Simpan untuk nanti</button></form>
                                         <form action="{{ route('cart.destroy', $item) }}" method="POST" @submit.prevent="mutate($event)">@csrf @method('DELETE')<button class="text-xs text-red-400 hover:text-red-600">Hapus</button></form>
                                     </div>
                                 </div>
-                                <div class="text-right text-sm font-bold text-gray-900" data-line="{{ $item->id }}">{{ rupiah($item->currentUnitPrice() * $item->quantity) }}</div>
+                                <div class="shrink-0 whitespace-nowrap text-right text-sm font-bold text-gray-900" data-line="{{ $item->id }}">{{ rupiah($item->currentUnitPrice() * $item->quantity) }}</div>
                             </div>
                         @endforeach
                     </div>

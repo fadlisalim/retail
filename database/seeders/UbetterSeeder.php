@@ -52,7 +52,7 @@ class UbetterSeeder extends Seeder
         }
 
         $this->command?->info("UBetter: {$this->created} produk baru, {$this->updated} produk diperbarui harganya, {$this->variantsCreated} varian baru.");
-        $this->command?->warn('Inverter 3/6/6,2/12 kW belum ada foto & datasheet — unggah lewat Admin → Produk bila sudah ada.');
+        $this->command?->warn('Inverter 3 kW & 6,2 kW belum ada foto & datasheet — unggah lewat Admin → Produk bila sudah ada.');
     }
 
     private function seedProduct(Brand $brand, array $row): void
@@ -472,7 +472,7 @@ class UbetterSeeder extends Seeder
         if (! empty($row['variants'])) {
             $rows = '';
             foreach ($row['variants'] as $v) {
-                $extra = $v['detail'] ?? (($v['note'] ?? null) === 'estimasi' ? 'detail menyusul' : '');
+                $extra = $v['detail'] ?? '—';
                 $rows .= '<tr><td><strong>'.e($v['name']).'</strong></td><td>'.e($extra).'</td><td>'.rupiah($v['price']).'</td></tr>';
             }
             $html .= '<p><strong>Pilihan '.e(strtolower($row['option'])).':</strong></p><table><thead><tr><th>'.e($row['option']).'</th><th>Keterangan</th><th>Harga</th></tr></thead><tbody>'.$rows.'</tbody></table>';

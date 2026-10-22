@@ -547,7 +547,8 @@
         </div>
     </div>
 
-    {{-- Reviews --}}
+    {{-- Reviews — disembunyikan selama belum ada ulasan (tidak memajang blok kosong). --}}
+    @if ($product->rating_count > 0 || $canReview || $reviews->isNotEmpty())
     <section class="mt-10" id="ulasan">
         <h2 class="mb-4 text-lg font-bold text-gray-900">Rating &amp; Ulasan</h2>
         <div class="grid gap-6 @if ($product->rating_count > 0) md:grid-cols-[240px_1fr] @endif">
@@ -620,6 +621,7 @@
             </div>
         </div>
     </section>
+    @endif
 
     {{-- Q&A --}}
     <section class="mt-10">
@@ -652,14 +654,11 @@
                     @endforeach
                 </div>
             @empty
-                <p class="text-sm text-gray-400">Belum ada pertanyaan.</p>
             @endforelse
         </div>
     </section>
 
     <x-product-row title="Produk Terkait" :products="$related" />
-    <x-product-row title="Sering Dibeli Bersama" :products="$boughtTogether" />
-    <x-product-row title="Produk Serupa" :products="$similar" />
     <x-product-row title="Terakhir Dilihat" :products="$recentlyViewed" />
 
     {{-- Spacer so the mobile sticky purchase bar never covers the last content. --}}

@@ -1,6 +1,7 @@
 @extends('layouts.storefront')
 @section('title', 'Checkout')
 @section('noindex', 'noindex')
+@section('focus_mode', '1')
 
 @section('content')
     <h1 class="mb-4 text-xl font-bold text-gray-900 sm:text-2xl">Checkout</h1>
@@ -108,9 +109,9 @@
                     </div>
                     <div class="space-y-2" x-show="shippingOptions.length">
                         <template x-for="opt in shippingOptions" :key="opt.provider_code + opt.service_code">
-                            <label class="flex cursor-pointer items-center justify-between rounded-lg border border-gray-200 p-3 text-sm hover:border-brand-400">
-                                <span class="flex items-center gap-2">
-                                    <input type="radio" name="shipping_choice" :value="opt.provider_code + '|' + opt.service_code"
+                            <label class="flex cursor-pointer items-start justify-between gap-3 rounded-lg border border-gray-200 p-3 text-sm hover:border-brand-400">
+                                <span class="flex min-w-0 items-start gap-2">
+                                    <input type="radio" class="mt-0.5" name="shipping_choice" :value="opt.provider_code + '|' + opt.service_code"
                                            @change="selectShipping(opt)">
                                     <span>
                                         <span class="font-medium text-gray-800" x-text="opt.label"></span>
@@ -134,7 +135,7 @@
                                         @endif
                                     </span>
                                 </span>
-                                <span class="font-semibold" x-text="opt.confirmed ? opt.rupiah : 'Dikonfirmasi'"></span>
+                                <span class="shrink-0 whitespace-nowrap font-semibold" :class="opt.confirmed && opt.cost == 0 ? 'text-green-700' : ''" x-text="opt.confirmed ? (opt.cost == 0 ? 'Gratis' : opt.rupiah) : 'Dikonfirmasi'"></span>
                             </label>
                         </template>
                     </div>
@@ -201,11 +202,11 @@
 
                     <label class="flex items-start gap-2 text-xs text-gray-600">
                         <input type="checkbox" name="agree_terms" value="1" required class="mt-0.5 rounded text-brand-600">
-                        Saya menyetujui <a href="{{ route('pages.show', 'syarat-ketentuan') }}" class="text-brand-600 underline">syarat &amp; ketentuan</a> dan konfirmasi kondisi produk.
+                        <span>Saya menyetujui <a href="{{ route('pages.show', 'syarat-ketentuan') }}" target="_blank" class="text-brand-600 underline">syarat &amp; ketentuan</a> dan konfirmasi kondisi produk.</span>
                     </label>
                     <label class="flex items-start gap-2 text-xs text-gray-600">
                         <input type="checkbox" name="promo_consent" value="1" class="mt-0.5 rounded text-brand-600" @checked(old('promo_consent'))>
-                        Saya bersedia menerima info promo &amp; produk baru via WhatsApp (bisa berhenti kapan saja dengan membalas STOP).
+                        <span>Saya bersedia menerima info promo &amp; produk baru via WhatsApp (bisa berhenti kapan saja dengan membalas STOP).</span>
                     </label>
 
                     {{-- Cargo/freight: ongkir dikonfirmasi admin sebelum bayar. --}}

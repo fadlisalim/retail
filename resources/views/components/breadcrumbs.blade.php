@@ -19,8 +19,12 @@
     <ol class="flex flex-wrap items-center gap-1 text-gray-500">
         <li><a href="{{ route('home') }}" class="hover:text-brand-700">Beranda</a></li>
         @foreach ($items as $item)
-            <li aria-hidden="true" class="px-1">/</li>
-            <li>
+            {{-- Di HP, judul halaman saat ini tidak diulang di breadcrumb (sudah ada sebagai judul besar di bawahnya). --}}
+            @php
+                $mobileHide = $loop->last && count($items) > 1 ? 'hidden sm:block' : '';
+            @endphp
+            <li aria-hidden="true" class="px-1 {{ $mobileHide }}">/</li>
+            <li class="{{ $mobileHide }}">
                 @if (! empty($item['url']) && ! $loop->last)
                     <a href="{{ $item['url'] }}" class="hover:text-brand-700">{{ $item['label'] }}</a>
                 @else

@@ -53,8 +53,6 @@ class ProductController extends Controller
             'reviews' => $reviews,
             'ratingDistribution' => $reviewService->distribution($product),
             'related' => $this->related($product),
-            'similar' => $this->similar($product),
-            'boughtTogether' => $this->boughtTogether($product),
             'recentlyViewed' => $this->recentlyViewed($request, $product),
             'breadcrumbs' => $breadcrumbs,
             'canReview' => $this->userCanReview($product),
@@ -141,26 +139,28 @@ class ProductController extends Controller
         );
     }
 
+    /**
+     * Satu blok "Produk Terkait" (dulu 3 blok: Terkait, Sering Dibeli Bersama, Serupa — isinya
+     * berulang dan "dibeli bersama" bukan data nyata): kategori sama, terlaris dulu,
+     * lalu dilengkapi produk brand yang sama. Maks 8, tanpa duplikat.
+     */
     private function related(Product $product)
     {
-        return Product::published()->where('id', '!=', $product->id)
+        $sameCategory = Product::published()->where('id', '!=', $product->id)
             ->where('category_id', $product->category_id)
+            ->orderByDesc('sold_count')->latest('published_at')
             ->with(['brand', 'category'])->take(8)->get();
-    }
+        if ($sameCategory->count() >= 8 || ! $product->brand_id) {
+            return $sameCategory;
+        }
 
-    private function similar(Product $product)
-    {
-        return Product::published()->where('id', '!=', $product->id)
+        $sameBrand = Product::published()->where('id', '!=', $product->id)
             ->where('brand_id', $product->brand_id)
-            ->with(['brand', 'category'])->take(8)->get();
-    }
+            ->whereNotIn('id', $sameCategory->pluck('id'))
+            ->orderByDesc('sold_count')
+            ->with(['brand', 'category'])->take(8 - $sameCategory->count())->get();
 
-    private function boughtTogether(Product $product)
-    {
-        // Components of any bundle this product belongs to, else same-category picks.
-        return Product::published()->where('id', '!=', $product->id)
-            ->where('category_id', $product->category_id)
-            ->orderByDesc('sold_count')->with(['brand'])->take(4)->get();
+        return $sameCategory->concat($sameBrand)->values();
     }
 
     private function recentlyViewed(Request $request, Product $product)
