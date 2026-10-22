@@ -14,6 +14,10 @@
 - Perintah manual (darurat saja) sebagai user situs: `su -s /bin/bash energ3514 -c "cd /home/energi.click/retail && ..."`.
 - Cron `schedule:run` tiap menit milik user `energ3514`.
 
+## Aturan harga
+- Harga jual di energi.click selalu TANPA PPN (PPN ditambahkan saat checkout bila berlaku).
+- Harga modal = harga beli riil: supplier memungut PPN → modal TERMASUK PPN; supplier tanpa PPN (mis. UBetter) → modal apa adanya.
+
 ## Aturan keamanan
 - JANGAN pernah commit token/API key/password (Wablas, Anthropic, RajaOngkir, DB, ridl_ro). Hanya referensi `.env` + placeholder di `.env.example`.
 - Harga modal supplier tidak di-commit kecuali diberikan langsung pemilik.
