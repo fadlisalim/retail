@@ -24,8 +24,10 @@ use Illuminate\Support\Str;
  * memuat data stocklist dan ditandai "menyusul". Berat & dimensi bertanda
  * estimasi bila tidak tercantum di datasheet.
  *
- * Idempotent: produk/varian yang belum ada dibuat; yang sudah ada diperbarui
- * harga jual & modalnya (stocklist = acuan harga). Stok hanya diisi saat dibuat.
+ * Idempotent: produk/varian yang belum ada dibuat; yang sudah ada diperbarui harga,
+ * modal, deskripsi, spesifikasi, berat/dimensi & urutan foto (stocklist + datasheet =
+ * acuan — suntingan admin pada kolom itu tertimpa saat seeder dijalankan ulang).
+ * Stok hanya diisi saat dibuat. Brosur pabrik (memuat kontak pabrik) tidak dilampirkan.
  */
 class UbetterSeeder extends Seeder
 {
@@ -101,7 +103,15 @@ class UbetterSeeder extends Seeder
                 $this->setStock($product, null, $row['stock']);
             }
         } else {
-            $product->forceFill(['price' => $cheapest['price'], 'cost_price' => $cheapest['cost']])->save();
+            // Stocklist + datasheet = acuan: harga, modal, konten & logistik ikut diperbarui.
+            $product->forceFill([
+                'price' => $cheapest['price'], 'cost_price' => $cheapest['cost'],
+                'model' => $row['model'], 'short_description' => $row['short'],
+                'description' => $this->description($row), 'specifications' => $this->table($row['specs']),
+                'weight_grams' => $cheapest['weight'],
+                'length_cm' => $cheapest['dims'][0], 'width_cm' => $cheapest['dims'][1], 'height_cm' => $cheapest['dims'][2],
+                'requires_freight' => $row['freight'] ?? false, 'warranty' => $row['warranty'],
+            ])->save();
             $this->updated++;
         }
 
@@ -124,11 +134,15 @@ class UbetterSeeder extends Seeder
                 $this->variantsCreated++;
                 $this->setStock($product, $variant, $v['stock']);
             } else {
-                $variant->forceFill(['price' => $v['price'], 'cost_price' => $v['cost']])->save();
+                $variant->forceFill([
+                    'name' => $v['name'], 'option_values' => [$row['option'] => $v['name']],
+                    'price' => $v['price'], 'cost_price' => $v['cost'], 'weight_grams' => $v['weight'],
+                    'length_cm' => $v['dims'][0], 'width_cm' => $v['dims'][1], 'height_cm' => $v['dims'][2],
+                ])->save();
             }
         }
 
-        $this->syncImages($product, $row['images'] ?? [], $variants ?? []);
+        $this->syncImages($product, $row['images'] ?? [], $row['variant_images'] ?? []);
         foreach ($row['docs'] ?? [] as [$title, $file]) {
             $this->attachDocument($product, $title, $file);
         }
@@ -203,13 +217,25 @@ class UbetterSeeder extends Seeder
             'categories' => ['baterai-wall-mounted', 'baterai-lithium-lifepo4', 'baterai'],
             'warranty' => '10 tahun', 'featured' => true, 'freight' => true,
             'keywords' => 'powerwall 48v, baterai 10kwh, baterai 5kwh, lifepo4 51.2v 200ah, baterai wall mounted, baterai plts rumah, ubetter',
-            'images' => [['powerwall.jpg', false, 'Baterai Powerwall UBetter 51,2V wall-mounted']],
+            'images' => [['powerwall-10kwh.jpg', false, 'Baterai Powerwall UBetter 10 kWh'], ['powerwall-5kwh.jpg', false, 'Baterai Powerwall UBetter 5 kWh'], ['powerwall.jpg', false, 'Baterai Powerwall UBetter 51,2V wall-mounted']],
+            'variant_images' => ['UB-PW51-100' => 'powerwall-5kwh.jpg', 'UB-PW51-200' => 'powerwall-10kwh.jpg'],
             'variants' => [
-                ['sku' => 'UB-PW51-100', 'name' => '51,2V 100Ah (5,12 kWh)', 'price' => 19_500_000, 'cost' => 11_900_000, 'stock' => 100, 'weight' => 50_000, 'dims' => [60, 45, 17], 'note' => 'estimasi'],
-                ['sku' => 'UB-PW51-200', 'name' => '51,2V 200Ah (10,24 kWh)', 'price' => 29_700_000, 'cost' => 20_600_000, 'stock' => 100, 'weight' => 95_000, 'dims' => [80, 52, 20], 'note' => 'estimasi'],
+                ['sku' => 'UB-PW51-100', 'name' => '51,2V 100Ah (5,12 kWh)', 'price' => 19_500_000, 'cost' => 11_900_000, 'stock' => 100, 'weight' => 50_000, 'dims' => [66, 44, 20], 'detail' => '16S1P · 600 × 380 × 145 mm · ±45 kg · charge/discharge maks 100 A'],
+                ['sku' => 'UB-PW51-200', 'name' => '51,2V 200Ah (10,24 kWh)', 'price' => 29_700_000, 'cost' => 20_600_000, 'stock' => 100, 'weight' => 97_000, 'dims' => [75, 64, 22], 'detail' => '16S2P · 690 × 580 × 150 mm · ±90 kg · charge/discharge maks 200 A'],
             ],
-            'specs' => ['Tegangan nominal' => '51,2 V (sistem 48V)', 'Kapasitas' => '100Ah (5,12 kWh) · 200Ah (10,24 kWh)', 'Kimia sel' => 'LiFePO4, sel Grade A', 'Pemasangan' => 'Tempel dinding (wall-mounted)', 'Garansi' => '10 tahun', 'Arus, komunikasi BMS, dimensi & berat' => 'Datasheet menyusul — konfirmasi kompatibilitas inverter ke CS'],
-            'intro' => '<p><strong>Powerwall UBetter 51,2V</strong> — baterai penyimpanan energi rumah yang dipasang di dinding, untuk inverter hybrid / off-grid 48V. Menyimpan energi surya di siang hari untuk dipakai malam atau saat PLN padam.</p>',
+            'specs' => [
+                'Tegangan nominal / kerja' => '51,2 V (sistem 48V)',
+                '5 kWh' => '100Ah · 5.120 Wh · 16S1P · 600 × 380 × 145 mm · ±45 kg · arus charge & discharge maks 100 A',
+                '10 kWh' => '200Ah · 10.240 Wh · 16S2P · 690 × 580 × 150 mm · ±90 kg · arus charge & discharge maks 200 A',
+                'Charge standar' => '40 A (±5 jam)',
+                'Tegangan charge / cut-off discharge' => '58,4 V / 40 V',
+                'Suhu operasi' => 'Charge 0–55 °C · discharge −20–65 °C (kelembapan 60 ± 25% RH)',
+                'Casing' => 'Pelat baja cold-rolled',
+                'Fitur' => 'Tempel dinding atau berdiri di lantai · bisa diparalel (plug & play) · layar HD · pendinginan alami',
+                'Kimia sel' => 'LiFePO4, sel Grade A (umur hingga 10 tahun)',
+                'Garansi' => '10 tahun',
+            ],
+            'intro' => '<p><strong>Powerwall UBetter 51,2V</strong> — baterai penyimpanan energi rumah untuk inverter hybrid / off-grid 48V. Bisa ditempel di dinding atau berdiri di lantai, bisa diparalel untuk menambah kapasitas, dan dilengkapi layar untuk memantau kondisi baterai. Simpan energi surya siang hari untuk dipakai malam atau saat PLN padam.</p>',
         ];
     }
 
@@ -222,13 +248,25 @@ class UbetterSeeder extends Seeder
             'categories' => ['baterai-rack-mounted', 'baterai-lithium-lifepo4', 'baterai'],
             'warranty' => '10 tahun', 'freight' => true,
             'keywords' => 'baterai rack 48v, baterai server rack, lifepo4 51.2v 100ah, baterai 5kwh rack, ess 48v, ubetter',
-            'images' => [['rack.jpg', false, 'Baterai rack UBetter 51,2V (modul bertumpuk)']],
+            'images' => [['rack-3u.jpg', false, 'Baterai rack UBetter 51,2V 3U (modul bertumpuk)'], ['rack.jpg', false, 'Baterai rack UBetter 51,2V']],
+            'variant_images' => ['UB-RK51-100' => 'rack-3u.jpg'],
             'variants' => [
-                ['sku' => 'UB-RK51-100', 'name' => '51,2V 100Ah (5,12 kWh)', 'price' => 19_500_000, 'cost' => 11_900_000, 'stock' => 100, 'weight' => 48_000, 'dims' => [50, 45, 16], 'note' => 'estimasi'],
+                ['sku' => 'UB-RK51-100', 'name' => '51,2V 100Ah (5,12 kWh, 3U)', 'price' => 19_500_000, 'cost' => 11_900_000, 'stock' => 100, 'weight' => 55_000, 'dims' => [50, 56, 20], 'detail' => 'UBT-D05-U01 · 16S1P · 420 × 482 × 133 mm (3U) · ±50 kg · charge/discharge maks 100 A'],
                 ['sku' => 'UB-RK51-200', 'name' => '51,2V 200Ah (10,24 kWh)', 'price' => 29_700_000, 'cost' => 20_600_000, 'stock' => 50, 'weight' => 90_000, 'dims' => [62, 50, 22], 'note' => 'estimasi'],
             ],
-            'specs' => ['Tegangan nominal' => '51,2 V (sistem 48V)', 'Kapasitas' => '100Ah (5,12 kWh) · 200Ah (10,24 kWh)', 'Kimia sel' => 'LiFePO4, sel Grade A', 'Bentuk' => 'Modul rack — bisa ditumpuk & diparalel', 'Garansi' => '10 tahun', 'Arus, komunikasi BMS, dimensi & berat' => 'Datasheet menyusul — konfirmasi kompatibilitas inverter ke CS'],
-            'intro' => '<p><strong>Baterai Rack UBetter 51,2V</strong> — modul baterai 48V format rack yang bisa ditumpuk dan diparalel untuk menambah kapasitas sesuai kebutuhan: rumah, kantor, toko, hingga telekomunikasi.</p>',
+            'specs' => [
+                'Tegangan nominal' => '51,2 V (sistem 48V)',
+                '5 kWh (UBT-D05-U01)' => '100Ah · 5.120 Wh · 16S1P · 420 × 482 × 133 mm (3U, rack 19") · ±50 kg · arus charge/discharge maks 100 A',
+                '10 kWh' => '200Ah · 10.240 Wh — datasheet menyusul',
+                'Tegangan charge / cut-off discharge' => '58,4 V / 40 V',
+                'Komunikasi BMS' => 'RS485, RS232, CAN',
+                'Siklus hidup' => '> 8.000 siklus @ 80% DOD, 25 °C · umur desain 10+ tahun',
+                'Suhu kerja' => '0–55 °C',
+                'Fitur' => 'Desain rack standar plug & play · perawatan dari depan · modul hot-swappable · BMS canggih',
+                'Sertifikasi' => 'CE, UN38.3, MSDS',
+                'Garansi' => '10 tahun',
+            ],
+            'intro' => '<p><strong>Baterai Rack UBetter 51,2V</strong> — modul baterai 48V format rack 19" (3U) yang bisa ditumpuk dan diparalel untuk menambah kapasitas: rumah, kantor, toko, hingga telekomunikasi. Komunikasi BMS RS485/RS232/CAN untuk inverter hybrid yang mendukung, &gt; 8.000 siklus.</p>',
         ];
     }
 
@@ -363,14 +401,26 @@ class UbetterSeeder extends Seeder
             'categories' => ['baterai-all-in-one-ess', 'baterai'],
             'warranty' => 'Baterai 10 tahun · inverter 2 tahun', 'freight' => true,
             'keywords' => 'all in one ess, baterai inverter jadi satu, ess 15kwh, ess 5kwh, home energy storage, ubetter',
-            'images' => [['all-in-one.jpg', false, 'ESS All-in-One UBetter']],
+            'images' => [['all-in-one-vertical.jpg', false, 'ESS All-in-One UBetter (inverter + baterai vertikal)'], ['all-in-one.jpg', false, 'ESS All-in-One UBetter']],
             'variants' => [
-                ['sku' => 'UB-AIO-5-5K', 'name' => 'Baterai 5 kWh + inverter 5 kW', 'price' => 28_700_000, 'cost' => 18_500_000, 'stock' => 2, 'weight' => 70_000, 'dims' => [65, 35, 95], 'note' => 'estimasi'],
+                ['sku' => 'UB-AIO-5-5K', 'name' => 'Baterai 5 kWh + inverter 5 kW', 'price' => 28_700_000, 'cost' => 18_500_000, 'stock' => 2, 'weight' => 63_000, 'dims' => [82, 55, 22], 'detail' => 'UBT-N2HT5-P5 · 51,2V 100Ah (5,12 kWh) · 750 × 480 × 151 mm · ±57 kg · charge/discharge maks 100 A'],
                 ['sku' => 'UB-AIO-8-3K', 'name' => 'Baterai 8 kWh + inverter 3 kW', 'price' => 29_700_000, 'cost' => 21_500_000, 'stock' => 8, 'weight' => 95_000, 'dims' => [65, 38, 110], 'note' => 'estimasi'],
-                ['sku' => 'UB-AIO-15-5K', 'name' => 'Baterai 15 kWh + inverter 5 kW', 'price' => 39_700_000, 'cost' => 31_700_000, 'stock' => 7, 'weight' => 165_000, 'dims' => [70, 45, 130], 'note' => 'estimasi'],
-                ['sku' => 'UB-AIO-15-11K', 'name' => 'Baterai 15 kWh + inverter 11 kW', 'price' => 49_800_000, 'cost' => 38_900_000, 'stock' => 8, 'weight' => 175_000, 'dims' => [70, 45, 140], 'note' => 'estimasi'],
+                ['sku' => 'UB-AIO-15-5K', 'name' => 'Baterai 15 kWh + inverter 5 kW', 'price' => 39_700_000, 'cost' => 31_700_000, 'stock' => 7, 'weight' => 130_000, 'dims' => [95, 65, 30], 'detail' => 'UBT-N2HT5-P15 · 48V 314Ah (15,07 kWh) · 880 × 580 × 234 mm · ±120 kg · charge/discharge maks 100 A'],
+                ['sku' => 'UB-AIO-15-11K', 'name' => 'Baterai 15 kWh + inverter 11 kW', 'price' => 49_800_000, 'cost' => 38_900_000, 'stock' => 8, 'weight' => 145_000, 'dims' => [110, 65, 30], 'detail' => 'UBT-N2HT11-P15 · 48V 314Ah (15,07 kWh) · 1030 × 580 × 234 mm · ±135 kg · charge 157 A / discharge 250 A'],
             ],
-            'specs' => ['Isi' => 'Baterai LiFePO4 sel Grade A + inverter terintegrasi dalam satu kabinet', 'Konfigurasi' => '5 kWh + 5 kW · 8 kWh + 3 kW · 15 kWh + 5 kW · 15 kWh + 11 kW', 'Garansi' => 'Baterai 10 tahun · inverter 2 tahun', 'Tegangan, MPPT, dimensi & berat' => 'Datasheet menyusul — tanyakan ke CS'],
+            'specs' => [
+                'Isi' => 'Baterai LiFePO4 sel Grade A + inverter dua arah terintegrasi dalam satu kabinet vertikal',
+                '5 kW + 5 kWh (UBT-N2HT5-P5)' => 'Baterai 51,2V 100Ah (5,12 kWh) · 750 × 480 × 151 mm · ±57 kg · charge/discharge maks 100 A',
+                '5 kW + 15 kWh (UBT-N2HT5-P15)' => 'Baterai 48V 314Ah (15,07 kWh) · 880 × 580 × 234 mm · ±120 kg · charge/discharge maks 100 A',
+                '11 kW + 15 kWh (UBT-N2HT11-P15)' => 'Baterai 48V 314Ah (15,07 kWh) · 1030 × 580 × 234 mm · ±135 kg · charge 157 A / discharge 250 A',
+                '3 kW + 8 kWh' => 'Datasheet menyusul',
+                'Input PLN' => '220/230 V · rentang 170–280 VAC ±2% · 50/60 Hz · efisiensi 95% · bypass maks 40 A',
+                'Output inverter' => 'Pure sine wave · 220/230/240 V ±5% · 50/60 Hz ±0,3 Hz · power factor 1 · efisiensi 92%',
+                'Charging surya (MPPT)' => 'PV Voc maks 500 Vdc · rentang kerja 60–500 Vdc · arus PV maks 20 A',
+                'Komunikasi' => 'RS485 / RS232 / CAN · layar LCD',
+                'Proteksi' => 'BMS · overvoltage · overcurrent · overcharge',
+                'Garansi' => 'Baterai 10 tahun · inverter 2 tahun',
+            ],
             'intro' => '<p><strong>ESS All-in-One UBetter</strong> — baterai dan inverter sudah jadi satu kabinet, jadi pemasangan lebih cepat dan rapi: tinggal sambungkan panel surya dan jalur listrik rumah. Pilih kapasitas baterai & daya inverter sesuai beban.</p>',
         ];
     }
@@ -414,7 +464,7 @@ class UbetterSeeder extends Seeder
      *
      * @param  list<array{0: string, 1: bool, 2: string}>  $images
      */
-    private function syncImages(Product $product, array $images, array $variants): void
+    private function syncImages(Product $product, array $images, array $variantImages): void
     {
         $watermark = app(WatermarkService::class);
         $disk = Storage::disk('public');
@@ -441,28 +491,19 @@ class UbetterSeeder extends Seeder
                 $product->images()->create(['path' => $final, 'alt' => $alt, 'sort_order' => $i, 'watermarked_at' => $watermark->isSupported() ? now() : null]);
             }
         }
-        if ($stored && ! $product->main_image_path) {
+        // Urutan galeri mengikuti daftar; gambar pertama = foto utama.
+        foreach (array_values($stored) as $i => $path) {
+            $product->images()->where('path', $path)->update(['sort_order' => $i]);
+        }
+        if ($stored && $product->main_image_path !== reset($stored)) {
             $product->forceFill(['main_image_path' => reset($stored)])->save();
         }
 
-        $map = $this->catalogImagesFor($product->sku);
-        foreach ($map as $variantSku => $file) {
+        foreach ($variantImages as $variantSku => $file) {
             if (isset($stored[$file])) {
                 ProductVariant::where('sku', $variantSku)->whereNull('image_path')->update(['image_path' => $stored[$file]]);
             }
         }
-    }
-
-    /** @return array<string, string> */
-    private function catalogImagesFor(string $sku): array
-    {
-        foreach ([$this->lfp12(), $this->lfp25()] as $row) {
-            if ($row['sku'] === $sku) {
-                return $row['variant_images'];
-            }
-        }
-
-        return [];
     }
 
     private function attachDocument(Product $product, string $title, string $file): void
