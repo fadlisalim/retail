@@ -33,7 +33,7 @@
                     @if ($navHas['documentation'])<li><a href="{{ route('documentation') }}" class="hover:text-brand-700">Dokumentasi Pengerjaan</a></li>@endif
                     @if ($navHas['articles'])<li><a href="{{ route('articles.index') }}" class="hover:text-brand-700">Panduan Energi Surya</a></li>@endif
                     <li><a href="{{ route('faq') }}" class="hover:text-brand-700">FAQ</a></li>
-                    @foreach(['tentang-kami' => 'Tentang Rekasurya', 'kebijakan-pengiriman' => 'Kebijakan Pengiriman', 'kebijakan-retur' => 'Kebijakan Retur'] as $slug => $label)
+                    @foreach(['tentang-kami' => 'Tentang Kami', 'panduan-pembayaran' => 'Cara Pembayaran', 'kebijakan-pengiriman' => 'Kebijakan Pengiriman', 'kebijakan-retur' => 'Kebijakan Retur', 'informasi-garansi' => 'Informasi Garansi'] as $slug => $label)
                         <li><a href="{{ route('pages.show', $slug) }}" class="hover:text-brand-700">{{ $label }}</a></li>
                     @endforeach
                 </ul>
