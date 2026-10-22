@@ -63,6 +63,14 @@ class UbetterSeederTest extends TestCase
         $this->assertStringContainsString('UBT-N2HT11-P15', Product::where('sku', 'UB-AIO')->value('specifications'));
         $this->assertSame(145_000, (int) ProductVariant::where('sku', 'UB-AIO-15-11K')->value('weight_grams'));
 
+        // Inverter 6/12 kW (GPEO) & AIO 3+8 dari datasheet.
+        $inv6 = Product::where('sku', 'UB-INV-6K')->firstOrFail();
+        $this->assertStringContainsString('GPEO-6KL1', $inv6->name);
+        $this->assertStringContainsString('120 A / 130 A', $inv6->specifications);
+        $this->assertNotNull($inv6->main_image_path);
+        $this->assertStringContainsString('2 MPPT', Product::where('sku', 'UB-INV-12K')->value('specifications'));
+        $this->assertStringContainsString('820 × 450 × 230,5 mm', Product::where('sku', 'UB-AIO')->value('specifications'));
+
         // Jalan ulang memperbarui konten lama (spesifikasi "menyusul" → datasheet).
         $pw->forceFill(['specifications' => '<p>lama</p>', 'main_image_path' => 'products/ubetter/powerwall.webp'])->save();
         $this->seed(UbetterSeeder::class);

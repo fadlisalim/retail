@@ -4,3 +4,4 @@
 2026-10-19-rab-approve RoleSeeder
 2026-10-22-ubetter UbetterSeeder
 2026-10-22-ubetter-datasheet UbetterSeeder
+2026-10-22-ubetter-gpeo-aio UbetterSeeder

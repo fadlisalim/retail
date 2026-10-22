@@ -106,12 +106,13 @@ class UbetterSeeder extends Seeder
             // Stocklist + datasheet = acuan: harga, modal, konten & logistik ikut diperbarui.
             $product->forceFill([
                 'price' => $cheapest['price'], 'cost_price' => $cheapest['cost'],
-                'model' => $row['model'], 'short_description' => $row['short'],
+                'name' => $row['name'], 'model' => $row['model'], 'short_description' => $row['short'],
                 'description' => $this->description($row), 'specifications' => $this->table($row['specs']),
                 'weight_grams' => $cheapest['weight'],
                 'length_cm' => $cheapest['dims'][0], 'width_cm' => $cheapest['dims'][1], 'height_cm' => $cheapest['dims'][2],
                 'requires_freight' => $row['freight'] ?? false, 'warranty' => $row['warranty'],
             ])->save();
+            $product->categories()->syncWithoutDetaching($categories->values()->all());
             $this->updated++;
         }
 
@@ -356,6 +357,33 @@ class UbetterSeeder extends Seeder
             'intro' => '<p><strong>Inverter Surya UBetter '.$kw.' kW</strong> — inverter untuk sistem PLTS rumah dan usaha. Spesifikasi lengkap (tegangan baterai, rentang MPPT, input PV) belum kami terima dari pabrikan; hubungi CS untuk memastikan kecocokan dengan baterai & panel Anda.</p>',
         ];
 
+        $gpeo = fn (string $kw, string $model, string $sku, int $price, int $cost, int $stock, int $weight, array $dims, array $s) => [
+            'sku' => $sku, 'slug' => 'inverter-surya-ubetter-'.$kw.'-kw', 'model' => $model,
+            'name' => 'Inverter Hybrid Off-Grid UBetter '.$kw.' kW '.$s['vbat'].' ('.$model.', WiFi)',
+            'short' => 'Inverter hybrid off-grid '.$kw.' kW sistem '.$s['vbat'].': PV maks '.$s['pv'].', MPPT 85–450 V, charge/discharge baterai '.$s['bat_current'].', pure sine wave, IP54, '.$s['parallel'].', WiFi & RS485 BMS. Garansi 4 tahun.',
+            'categories' => ['inverter-off-grid', 'inverter-hybrid', 'inverter'],
+            'warranty' => '4 tahun',
+            'price' => $price, 'cost' => $cost, 'stock' => $stock, 'weight' => $weight, 'dims' => $dims,
+            'keywords' => 'inverter '.$kw.'kw, inverter hybrid '.$kw.'kw, inverter off grid '.$kw.'kw, '.strtolower($model).', inverter '.$s['vbat'].', ubetter',
+            'images' => [['inverter-gpeo.jpg', false, 'Inverter UBetter '.$model]],
+            'specs' => [
+                'Model' => $model,
+                'Input PV' => 'Daya string maks '.$s['pv'].' · tegangan maks 500 V · MPPT 85–450 V · '.$s['mppt'],
+                'Input PLN' => 'Maks '.$s['grid'].' · 220/230/240 Vac · 50/60 Hz · 170–280 Vac (UPS) / 90–280 Vac (beban)',
+                'Baterai' => 'LiFePO4 / aki · nominal '.$s['vbat'].' ('.$s['vrange'].') · charge/discharge maks '.$s['bat_current'].' · BMS RS485',
+                'Output off-grid' => $s['out'].' · 220/230/240 Vac 50/60 Hz · puncak '.$s['peak'].' (5 dtk) · THD < 3%',
+                'Paralel' => $s['parallel'],
+                'Waktu transfer' => '10 ms (UPS) · 20 ms (beban)',
+                'Efisiensi' => 'Puncak 98% · MPPT 99,9%',
+                'Proteksi' => 'Hubung singkat & overvoltage output · surge Type III (PV & AC) · IP54',
+                'Komunikasi' => 'RS232 / RS485 / dry contact / WiFi · layar LCD · update OTA',
+                'Lingkungan' => '−10–55 °C · 5–95% RH · derating > 2.000 m · standby < '.$s['standby'],
+                'Dimensi & berat' => $s['size'],
+                'Garansi' => '4 tahun (penawaran distributor; datasheet pabrik 3 tahun)',
+            ],
+            'intro' => '<p><strong>Inverter Hybrid Off-Grid UBetter '.$kw.' kW ('.$model.')</strong> — inverter '.$s['vbat'].' untuk PLTS rumah & usaha: MPPT lebar 85–450 V, efisiensi MPPT 99,9%, bisa jalan dengan baterai lithium maupun aki, input genset/PLN, IP54 dan pemantauan WiFi. '.$s['intro_extra'].'</p>',
+        ];
+
         $inv11 = [
             'sku' => 'UB-INV-11K', 'slug' => 'inverter-hybrid-ubetter-11kw-48v-dual-mppt', 'model' => 'G*11048SMH',
             'name' => 'Inverter Hybrid Off-Grid UBetter 11 kW 48V (Dual MPPT 11.000 W, WiFi)',
@@ -385,10 +413,20 @@ class UbetterSeeder extends Seeder
 
         return [
             $base('3', 'UB-INV-3K', 9_900_000, 4_700_000, 30, '2 tahun', 10_000, [45, 35, 18]),
-            $base('6', 'UB-INV-6K', 13_800_000, 8_900_000, 2, '4 tahun', 14_000, [52, 40, 20]),
+            $gpeo('6', 'GPEO-6KL1', 'UB-INV-6K', 13_800_000, 8_900_000, 2, 14_600, [56, 47, 24], [
+                'vbat' => '48V', 'vrange' => '40–60 Vdc', 'pv' => '6.000 W', 'mppt' => '1 MPPT (2 string) · arus 27 A/channel · Isc 35 A',
+                'grid' => '11.500 W / 50 A', 'bat_current' => '120 A / 130 A', 'out' => '6.000 W / 6.000 VA (27,3 A)', 'peak' => '12.000 VA',
+                'parallel' => 'bisa paralel hingga 12 unit', 'standby' => '10 W', 'size' => '347 × 445 × 120 mm · ±12,4 kg (bruto ±14,6 kg)',
+                'intro_extra' => 'Bisa diparalel hingga 12 unit untuk menambah daya.',
+            ]),
             $base('6,2', 'UB-INV-6K2', 10_500_000, 5_500_000, 9, '2 tahun', 14_000, [52, 40, 20]),
             $inv11,
-            $base('12', 'UB-INV-12K', 19_800_000, 13_900_000, 12, '4 tahun', 22_000, [65, 48, 24]),
+            $gpeo('12', 'GPEO-12KL1', 'UB-INV-12K', 19_800_000, 13_900_000, 12, 32_000, [75, 65, 24], [
+                'vbat' => '48V', 'vrange' => '40–60 Vdc', 'pv' => '12.000 W', 'mppt' => '2 MPPT (2 string/MPPT) · arus 27/27 A · Isc 35/35 A',
+                'grid' => '16.000 W / 90 A', 'bat_current' => '210 A / 230 A', 'out' => '12.000 W / 12.000 VA (54,5 A)', 'peak' => '24.000 VA',
+                'parallel' => 'paralel hingga 6 unit (1 fasa) / 12 unit (3 fasa)', 'standby' => '20 W', 'size' => '525 × 630 × 125 mm · ±28,5 kg (bruto ±32 kg)',
+                'intro_extra' => 'Dua MPPT untuk dua arah atap, dan bisa diparalel hingga 6 unit (1 fasa) atau 12 unit (3 fasa).',
+            ]),
         ];
     }
 
@@ -404,7 +442,7 @@ class UbetterSeeder extends Seeder
             'images' => [['all-in-one-vertical.jpg', false, 'ESS All-in-One UBetter (inverter + baterai vertikal)'], ['all-in-one.jpg', false, 'ESS All-in-One UBetter']],
             'variants' => [
                 ['sku' => 'UB-AIO-5-5K', 'name' => 'Baterai 5 kWh + inverter 5 kW', 'price' => 28_700_000, 'cost' => 18_500_000, 'stock' => 2, 'weight' => 63_000, 'dims' => [82, 55, 22], 'detail' => 'UBT-N2HT5-P5 · 51,2V 100Ah (5,12 kWh) · 750 × 480 × 151 mm · ±57 kg · charge/discharge maks 100 A'],
-                ['sku' => 'UB-AIO-8-3K', 'name' => 'Baterai 8 kWh + inverter 3 kW', 'price' => 29_700_000, 'cost' => 21_500_000, 'stock' => 8, 'weight' => 95_000, 'dims' => [65, 38, 110], 'note' => 'estimasi'],
+                ['sku' => 'UB-AIO-8-3K', 'name' => 'Baterai 8 kWh + inverter 3 kW', 'price' => 29_700_000, 'cost' => 21_500_000, 'stock' => 8, 'weight' => 76_000, 'dims' => [90, 52, 30], 'detail' => '25,6V 314Ah (8,04 kWh, 8S1P) · 820 × 450 × 230,5 mm · ±70 kg · charge/discharge maks 150 A (± 2 jam)'],
                 ['sku' => 'UB-AIO-15-5K', 'name' => 'Baterai 15 kWh + inverter 5 kW', 'price' => 39_700_000, 'cost' => 31_700_000, 'stock' => 7, 'weight' => 130_000, 'dims' => [95, 65, 30], 'detail' => 'UBT-N2HT5-P15 · 48V 314Ah (15,07 kWh) · 880 × 580 × 234 mm · ±120 kg · charge/discharge maks 100 A'],
                 ['sku' => 'UB-AIO-15-11K', 'name' => 'Baterai 15 kWh + inverter 11 kW', 'price' => 49_800_000, 'cost' => 38_900_000, 'stock' => 8, 'weight' => 145_000, 'dims' => [110, 65, 30], 'detail' => 'UBT-N2HT11-P15 · 48V 314Ah (15,07 kWh) · 1030 × 580 × 234 mm · ±135 kg · charge 157 A / discharge 250 A'],
             ],
@@ -413,7 +451,8 @@ class UbetterSeeder extends Seeder
                 '5 kW + 5 kWh (UBT-N2HT5-P5)' => 'Baterai 51,2V 100Ah (5,12 kWh) · 750 × 480 × 151 mm · ±57 kg · charge/discharge maks 100 A',
                 '5 kW + 15 kWh (UBT-N2HT5-P15)' => 'Baterai 48V 314Ah (15,07 kWh) · 880 × 580 × 234 mm · ±120 kg · charge/discharge maks 100 A',
                 '11 kW + 15 kWh (UBT-N2HT11-P15)' => 'Baterai 48V 314Ah (15,07 kWh) · 1030 × 580 × 234 mm · ±135 kg · charge 157 A / discharge 250 A',
-                '3 kW + 8 kWh' => 'Datasheet menyusul',
+                '3 kW + 8 kWh' => 'Baterai 25,6V 314Ah (8,04 kWh, 8S1P) · 820 × 450 × 230,5 mm · ±70 kg · charge/discharge maks 150 A (charge ± 2 jam) · RS232 · 6.000 siklus',
+                'Siklus baterai' => '5 kWh: 5.000 siklus (≥ 80%) · 8 kWh: 6.000 siklus (≥ 70%) · 15 kWh: hingga 8.000 siklus (≥ 70%) @ 25 °C, 0,5C',
                 'Input PLN' => '220/230 V · rentang 170–280 VAC ±2% · 50/60 Hz · efisiensi 95% · bypass maks 40 A',
                 'Output inverter' => 'Pure sine wave · 220/230/240 V ±5% · 50/60 Hz ±0,3 Hz · power factor 1 · efisiensi 92%',
                 'Charging surya (MPPT)' => 'PV Voc maks 500 Vdc · rentang kerja 60–500 Vdc · arus PV maks 20 A',
