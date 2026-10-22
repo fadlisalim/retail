@@ -16,44 +16,14 @@
                 <p class="mt-1 text-sm text-brand-50">Selamat datang kembali di {{ config('rekasurya.company.brand_name') }}.</p>
             </section>
 
-            {{-- Affiliate CTA — status-aware. Non-members get an attention-grabbing
-                 (pulsing) red invite; members see useful status/balance. --}}
+            {{-- Afiliasi — anggota melihat status/saldo; non-anggota cukup satu baris tautan kecil. --}}
             @php
                 $aff = $user->affiliate;
                 $affIcon = 'M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244';
                 $arrowIcon = 'M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3';
             @endphp
             @if (! $aff)
-                <section class="relative -mx-4 overflow-hidden rounded-none bg-gradient-to-br from-red-600 via-rose-600 to-red-700 p-5 text-white shadow-md sm:mx-0 sm:rounded-xl sm:p-6" aria-label="Ajakan gabung program afiliasi">
-                    {{-- Pinging "look at me" dot — auto-disabled under prefers-reduced-motion. --}}
-                    <span class="absolute right-4 top-4 flex h-3 w-3">
-                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
-                        <span class="relative inline-flex h-3 w-3 rounded-full bg-white"></span>
-                    </span>
-                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div class="flex items-start gap-3">
-                            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/20">
-                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="{{ $affIcon }}" />
-                                </svg>
-                            </span>
-                            <div>
-                                <span class="inline-block rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">Program Afiliasi</span>
-                                <h2 class="mt-1 text-lg font-bold leading-snug sm:text-xl">Dapatkan komisi hingga 10%!</h2>
-                                <p class="mt-0.5 text-sm text-red-50">Rekomendasikan produk energi surya &amp; raih komisi. Gratis, tanpa modal.</p>
-                            </div>
-                        </div>
-                        {{-- Already inside the account area → skip the landing page,
-                             jump straight to the affiliate registration form. --}}
-                        <a href="{{ route('account.affiliate.register') }}"
-                           class="inline-flex shrink-0 animate-pulse items-center justify-center gap-1.5 rounded-lg bg-white px-5 py-2.5 font-bold text-red-600 shadow transition hover:animate-none hover:bg-red-50">
-                            Gabung Sekarang
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="{{ $arrowIcon }}" />
-                            </svg>
-                        </a>
-                    </div>
-                </section>
+                <p class="text-xs text-gray-500">Ingin dapat komisi dari rekomendasi produk? <a href="{{ route('account.affiliate.register') }}" class="font-medium text-brand-700 hover:underline">Gabung program afiliasi</a>.</p>
             @elseif ($aff->isActive())
                 <a href="{{ route('account.affiliate.dashboard') }}" class="-mx-4 block rounded-none border-y border-brand-200 bg-brand-50 p-5 transition hover:bg-brand-100/60 sm:mx-0 sm:rounded-xl sm:border" aria-label="Buka dashboard afiliasi">
                     <div class="flex items-center justify-between gap-4">

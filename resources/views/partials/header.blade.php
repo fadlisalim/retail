@@ -7,7 +7,6 @@
                 <a href="{{ route('products.index') }}" class="hover:text-accent-400">Semua Produk</a>
                 @if ($navHas['promo'])<a href="{{ route('promo') }}" class="hover:text-accent-400">Promo</a>@endif
                 @if ($navHas['clearance'])<a href="{{ route('clearance') }}" class="hover:text-accent-400">Clearance</a>@endif
-                <a href="{{ route('affiliate.landing') }}" class="font-semibold text-accent-300 hover:text-accent-400">Afiliator</a>
                 <a href="{{ route('quotations.create') }}" class="hover:text-accent-400">Permintaan Penawaran</a>
                 @if ($navHas['documentation'])<a href="{{ route('documentation') }}" class="hover:text-accent-400">Dokumentasi</a>@endif
                 <a href="{{ route('faq') }}" class="hover:text-accent-400">Bantuan</a>
@@ -64,7 +63,6 @@
                 <span x-cloak x-show="unread > 0" x-text="unread > 9 ? '9+' : unread" class="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white"></span>
             </button>
             <a href="{{ route('products.index') }}" class="font-medium text-gray-600 hover:text-brand-700">Produk</a>
-            <a href="{{ route('affiliate.landing') }}" class="font-semibold text-accent-600 hover:text-accent-500">Afiliator</a>
         </nav>
 
         {{-- Action icons (desktop only — on mobile these live in the bottom nav) --}}

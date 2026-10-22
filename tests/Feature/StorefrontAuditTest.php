@@ -37,6 +37,8 @@ class StorefrontAuditTest extends TestCase
         $home->assertDontSee(route('promo'))->assertDontSee(route('documentation'))->assertDontSee(route('articles.index'));
         $home->assertDontSee('Harga sudah termasuk pajak')->assertSee('Harga belum PPN');
         $home->assertDontSee('Paling Banyak Dilihat')->assertDontSee('Rating Terbaik');
+        // Afiliator hanya di footer.
+        $this->assertSame(1, substr_count($home->getContent(), 'href="'.route('affiliate.landing').'"'));
         // Ikon perbandingan hanya muncul bila ada produk yang dibandingkan.
         $home->assertDontSee('aria-label="Perbandingan"', false);
     }
