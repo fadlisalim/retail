@@ -10,6 +10,7 @@ use App\Models\ProductVariant;
 use App\Models\WarehouseStock;
 use App\Services\StockService;
 use App\Services\WatermarkService;
+use App\Support\SeedGuard;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -25,9 +26,9 @@ use Illuminate\Support\Str;
  * estimasi bila tidak tercantum di datasheet.
  *
  * Idempotent: produk/varian yang belum ada dibuat; yang sudah ada diperbarui harga,
- * modal, deskripsi, spesifikasi, berat/dimensi & urutan foto (stocklist + datasheet =
- * acuan — suntingan admin pada kolom itu tertimpa saat seeder dijalankan ulang).
- * Stok hanya diisi saat dibuat. Datasheet pabrik dilampirkan versi bersih (datasheet-*.pdf):
+ * modal, deskripsi, spesifikasi, berat/dimensi, foto & dokumen — KECUALI yang sudah
+ * disunting/dihapus admin (SeedGuard): suntingan admin selalu menang, produk yang
+ * dihapus admin tidak dihidupkan lagi. Stok hanya diisi saat dibuat. Datasheet pabrik dilampirkan versi bersih (datasheet-*.pdf):
  * kontak pabrik sudah ditutup & diganti kontak Energi.Click.
  */
 class UbetterSeeder extends Seeder
@@ -63,8 +64,9 @@ class UbetterSeeder extends Seeder
         $categories = Category::whereIn('slug', $row['categories'])->pluck('id', 'slug');
 
         $product = Product::withTrashed()->where('sku', $row['sku'])->orWhere('slug', $row['slug'])->first();
-        if ($product?->trashed()) {
-            $product->restore();
+        $guard = new SeedGuard('ubetter:product:'.$row['sku']);
+        if ($product?->trashed() || (! $product && $guard->exists())) {
+            return; // dihapus admin — jangan dihidupkan lagi
         }
 
         if (! $product) {
@@ -99,26 +101,35 @@ class UbetterSeeder extends Seeder
                 'meta_description' => Str::limit(strip_tags($row['short']), 155),
             ]);
             $product->categories()->sync($categories->values()->all());
+            $guard->apply($product, $this->productFields($row, $cheapest));
             $this->created++;
             if (! $variants) {
                 $this->setStock($product, null, $row['stock']);
             }
         } else {
-            // Stocklist + datasheet = acuan: harga, modal, konten & logistik ikut diperbarui.
-            $product->forceFill([
-                'price' => $cheapest['price'], 'cost_price' => $cheapest['cost'],
-                'name' => $row['name'], 'model' => $row['model'], 'short_description' => $row['short'],
-                'description' => $this->description($row), 'specifications' => $this->table($row['specs']),
-                'weight_grams' => $cheapest['weight'],
-                'length_cm' => $cheapest['dims'][0], 'width_cm' => $cheapest['dims'][1], 'height_cm' => $cheapest['dims'][2],
-                'requires_freight' => $row['freight'] ?? false, 'warranty' => $row['warranty'],
-            ])->save();
-            $product->categories()->syncWithoutDetaching($categories->values()->all());
+            // Stocklist + datasheet = acuan, kecuali kolom yang sudah disunting admin.
+            $guard->apply($product, $this->productFields($row, $cheapest));
+            $product->save();
+            $current = $product->categories()->pluck('categories.id')->all();
+            foreach ($categories as $id) {
+                if ($guard->shouldAdd('categories', (string) $id, in_array($id, $current))) {
+                    $product->categories()->attach($id);
+                }
+            }
             $this->updated++;
         }
 
         foreach ($variants ?? [] as $i => $v) {
             $variant = ProductVariant::where('sku', $v['sku'])->first();
+            $variantGuard = new SeedGuard('ubetter:variant:'.$v['sku']);
+            $variantFields = [
+                'name' => $v['name'], 'option_values' => [$row['option'] => $v['name']],
+                'price' => $v['price'], 'cost_price' => $v['cost'], 'weight_grams' => $v['weight'],
+                'length_cm' => $v['dims'][0], 'width_cm' => $v['dims'][1], 'height_cm' => $v['dims'][2],
+            ];
+            if (! $variant && $variantGuard->exists()) {
+                continue; // varian dihapus admin
+            }
             if (! $variant) {
                 $variant = ProductVariant::create([
                     'product_id' => $product->id,
@@ -135,19 +146,30 @@ class UbetterSeeder extends Seeder
                 ]);
                 $this->variantsCreated++;
                 $this->setStock($product, $variant, $v['stock']);
-            } else {
-                $variant->forceFill([
-                    'name' => $v['name'], 'option_values' => [$row['option'] => $v['name']],
-                    'price' => $v['price'], 'cost_price' => $v['cost'], 'weight_grams' => $v['weight'],
-                    'length_cm' => $v['dims'][0], 'width_cm' => $v['dims'][1], 'height_cm' => $v['dims'][2],
-                ])->save();
             }
+            $variantGuard->apply($variant, $variantFields);
+            $variant->save();
+            $variantGuard->commit();
         }
 
-        $this->syncImages($product, $row['images'] ?? [], $row['variant_images'] ?? []);
+        $this->syncImages($product, $guard, $row['images'] ?? [], $row['variant_images'] ?? []);
         foreach ($row['docs'] ?? [] as [$title, $file]) {
-            $this->attachDocument($product, $title, $file);
+            $this->attachDocument($product, $guard, $title, $file);
         }
+        $guard->commit();
+    }
+
+    /** Kolom produk yang mengikuti stocklist + datasheet. */
+    private function productFields(array $row, array $cheapest): array
+    {
+        return [
+            'price' => $cheapest['price'], 'cost_price' => $cheapest['cost'],
+            'name' => $row['name'], 'model' => $row['model'], 'short_description' => $row['short'],
+            'description' => $this->description($row), 'specifications' => $this->table($row['specs']),
+            'weight_grams' => $cheapest['weight'],
+            'length_cm' => $cheapest['dims'][0], 'width_cm' => $cheapest['dims'][1], 'height_cm' => $cheapest['dims'][2],
+            'requires_freight' => $row['freight'] ?? false, 'warranty' => $row['warranty'],
+        ];
     }
 
     // ------------------------------------------------------------------ katalog
@@ -516,7 +538,7 @@ class UbetterSeeder extends Seeder
      *
      * @param  list<array{0: string, 1: bool, 2: string}>  $images
      */
-    private function syncImages(Product $product, array $images, array $variantImages): void
+    private function syncImages(Product $product, SeedGuard $guard, array $images, array $variantImages): void
     {
         $watermark = app(WatermarkService::class);
         $disk = Storage::disk('public');
@@ -538,17 +560,20 @@ class UbetterSeeder extends Seeder
                     $final = ($branded ? $watermark->optimize($final) : $watermark->apply($final)) ?? $final;
                 }
             }
-            $stored[$file] = $final;
-            if (! $product->images()->where('path', $final)->exists()) {
+            if ($guard->shouldAdd('images', $file, $product->images()->where('path', $final)->exists())) {
                 $product->images()->create(['path' => $final, 'alt' => $alt, 'sort_order' => $i, 'watermarked_at' => $watermark->isSupported() ? now() : null]);
             }
+            if ($product->images()->where('path', $final)->exists()) {
+                $stored[$file] = $final;
+            }
         }
-        // Urutan galeri mengikuti daftar; gambar pertama = foto utama.
-        foreach (array_values($stored) as $i => $path) {
-            $product->images()->where('path', $path)->update(['sort_order' => $i]);
-        }
-        if ($stored && $product->main_image_path !== reset($stored)) {
-            $product->forceFill(['main_image_path' => reset($stored)])->save();
+        // Urutan galeri mengikuti daftar & gambar pertama = foto utama — selama admin
+        // belum mengganti foto utamanya sendiri.
+        if ($stored && $guard->apply($product, ['main_image_path' => reset($stored)])) {
+            $product->save();
+            foreach (array_values($stored) as $i => $path) {
+                $product->images()->where('path', $path)->update(['sort_order' => $i]);
+            }
         }
 
         foreach ($variantImages as $variantSku => $file) {
@@ -558,10 +583,10 @@ class UbetterSeeder extends Seeder
         }
     }
 
-    private function attachDocument(Product $product, string $title, string $file): void
+    private function attachDocument(Product $product, SeedGuard $guard, string $title, string $file): void
     {
         $src = self::ASSETS.'/'.$file;
-        if (! is_file($src) || $product->documents()->where('title', $title)->exists()) {
+        if (! is_file($src) || ! $guard->shouldAdd('docs', $title, $product->documents()->where('title', $title)->exists())) {
             return;
         }
         $stored = 'products/docs/ubetter-'.$file;

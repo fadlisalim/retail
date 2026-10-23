@@ -8,3 +8,4 @@
 2026-10-22-kebijakan-toko KebijakanTokoSeeder
 2026-10-23-ubetter-varian-tabel UbetterSeeder
 2026-10-23-ubetter-datasheet-pdf UbetterSeeder
+2026-10-23-ubetter-snapshot UbetterSeeder

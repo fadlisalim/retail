@@ -8,6 +8,7 @@ use App\Models\ProductVariant;
 use Database\Seeders\CategorySeeder;
 use Database\Seeders\UbetterSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -77,12 +78,32 @@ class UbetterSeederTest extends TestCase
         $this->assertSame(1, $inv6->documents()->count());
         Storage::disk('public')->assertExists('products/docs/ubetter-datasheet-rack-3u.pdf');
 
-        // Jalan ulang memperbarui konten lama (spesifikasi "menyusul" → datasheet).
+        // Jalan ulang memperbarui konten lama tulisan seeder versi sebelumnya (spesifikasi "menyusul" → datasheet).
         $pw->forceFill(['specifications' => '<p>lama</p>', 'main_image_path' => 'products/ubetter/powerwall.webp'])->save();
+        $snapshot = json_decode(DB::table('seed_snapshots')->where('key', 'ubetter:product:UB-PW51')->value('values'), true);
+        DB::table('seed_snapshots')->where('key', 'ubetter:product:UB-PW51')
+            ->update(['values' => json_encode(['specifications' => '<p>lama</p>', 'main_image_path' => 'products/ubetter/powerwall.webp'] + $snapshot)]);
         $this->seed(UbetterSeeder::class);
         $this->assertStringContainsString('16S2P', $pw->fresh()->specifications);
         $this->assertStringContainsString('powerwall-10kwh', $pw->fresh()->main_image_path);
         $this->assertSame(2, $pw->documents()->count());
+
+        // Suntingan admin tidak tertimpa saat seeder dijalankan ulang (deploy).
+        $pw = $pw->fresh();
+        $pw->forceFill(['price' => 21_000_000, 'description' => '<p>Teks admin</p>', 'main_image_path' => 'products/admin-foto.webp'])->save();
+        $pw->documents()->where('title', 'like', '%5 kWh%')->delete();
+        $pw->images()->where('path', 'like', '%powerwall-5kwh%')->delete();
+        ProductVariant::where('sku', 'UB-PW51-100')->update(['price' => 18_000_000]);
+        Product::where('sku', 'UB-RK51')->firstOrFail()->delete();
+        $this->seed(UbetterSeeder::class);
+        $pw = $pw->fresh();
+        $this->assertSame(21_000_000, (int) $pw->price);
+        $this->assertSame('<p>Teks admin</p>', $pw->description);
+        $this->assertSame('products/admin-foto.webp', $pw->main_image_path);
+        $this->assertSame(1, $pw->documents()->count());
+        $this->assertFalse($pw->images()->where('path', 'like', '%powerwall-5kwh%')->exists());
+        $this->assertSame(18_000_000, (int) ProductVariant::where('sku', 'UB-PW51-100')->value('price'));
+        $this->assertTrue(Product::withTrashed()->where('sku', 'UB-RK51')->firstOrFail()->trashed());
 
         // Halaman produk tampil, modal tidak tampil ke publik.
         $page = $this->get(route('products.show', 'baterai-lifepo4-ubetter-12-8v-6-200ah'))->assertOk()->assertSee('12,8V 100Ah')->assertSee('Rp 3.200.000');
