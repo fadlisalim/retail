@@ -35,11 +35,44 @@ class WatermarkService
      * when that happens. Returns the FINAL storage path on success, or null on
      * failure (in which case the original file is left untouched).
      */
-    public function apply(string $path, string $disk = 'public', ?string $text = null): ?string
+    public function apply(string $path, string $disk = 'public', ?string $text = null, bool $square = false): ?string
     {
         return $this->reencode($path, $disk, function (\GdImage $img) use ($text): void {
             $this->stampTiled($img, $text ?? (string) config('rekasurya.company.brand_name', 'Energi.Click'));
-        });
+        }, $square);
+    }
+
+    /**
+     * Jadikan foto yang SUDAH tersimpan 1:1 (sisi pendek diberi latar, tanpa memotong
+     * produk; tanpa watermark ulang). Disimpan dengan nama baru agar cache browser/CDN
+     * tidak menampilkan versi lama; file asli dihapus. Mengembalikan path final, atau
+     * null bila gagal (file asli tetap utuh).
+     */
+    public function square(string $path, string $disk = 'public'): ?string
+    {
+        $storage = Storage::disk($disk);
+        if (! $this->isSupported() || ! $storage->exists($path)) {
+            return null;
+        }
+        $target = preg_replace('/(\.[^.\/]+)$/', '-1x1$1', $path);
+        $storage->copy($path, $target);
+        $final = $this->reencode($target, $disk, null, true);
+        if (! $final) {
+            $storage->delete($target);
+
+            return null;
+        }
+        $storage->delete($path);
+
+        return $final;
+    }
+
+    /** Ukuran gambar tersimpan sudah persegi? (null bila tidak terbaca) */
+    public function isSquare(string $path, string $disk = 'public'): ?bool
+    {
+        $size = @getimagesize(Storage::disk($disk)->path($path));
+
+        return $size ? $size[0] === $size[1] : null;
     }
 
     /**
@@ -57,7 +90,7 @@ class WatermarkService
      * to the most efficient format. Returns the FINAL storage path (extension
      * may change), deleting the original when it does, or null on failure.
      */
-    private function reencode(string $path, string $disk, ?\Closure $mutate): ?string
+    private function reencode(string $path, string $disk, ?\Closure $mutate, bool $square = false): ?string
     {
         if (! $this->isSupported()) {
             return null;
@@ -78,6 +111,9 @@ class WatermarkService
 
         $img = $this->downscale($img);
         $hasAlpha = $this->hasAlpha($img, $ext);
+        if ($square) {
+            $img = $this->padSquare($img, $hasAlpha);
+        }
 
         if ($mutate) {
             $mutate($img);
@@ -204,6 +240,66 @@ class WatermarkService
         imagealphablending($dst, true);
 
         return $dst;
+    }
+
+    /**
+     * Foto produk 1:1 ala marketplace: sisi pendek diberi latar (transparan untuk
+     * gambar ber-alpha; warna tepi foto bila seragam; selain itu putih) — produk
+     * tidak terpotong.
+     */
+    private function padSquare(\GdImage $img, bool $hasAlpha): \GdImage
+    {
+        $w = imagesx($img);
+        $h = imagesy($img);
+        if ($w === $h) {
+            return $img;
+        }
+
+        $side = max($w, $h);
+        $dst = imagecreatetruecolor($side, $side);
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+        [$r, $g, $b] = $hasAlpha ? [0, 0, 0] : $this->padColor($img, $h > $w);
+        $bg = $hasAlpha ? imagecolorallocatealpha($dst, 0, 0, 0, 127) : imagecolorallocate($dst, $r, $g, $b);
+        imagefilledrectangle($dst, 0, 0, $side - 1, $side - 1, $bg);
+        imagecopy($dst, $img, intdiv($side - $w, 2), intdiv($side - $h, 2), 0, 0, $w, $h);
+        imagedestroy($img);
+        imagealphablending($dst, true);
+
+        return $dst;
+    }
+
+    /**
+     * Warna latar: rata-rata piksel di tepi yang akan disambung (kiri/kanan untuk
+     * potret, atas/bawah untuk lanskap) bila seragam; selain itu putih.
+     *
+     * @return array{int, int, int}
+     */
+    private function padColor(\GdImage $img, bool $portrait): array
+    {
+        $w = imagesx($img);
+        $h = imagesy($img);
+        $samples = [];
+        $len = $portrait ? $h : $w;
+        for ($i = 0; $i < $len; $i += max(1, intdiv($len, 100))) {
+            foreach ($portrait ? [[0, $i], [$w - 1, $i]] : [[$i, 0], [$i, $h - 1]] as [$x, $y]) {
+                $c = imagecolorat($img, $x, $y);
+                $samples[] = [($c >> 16) & 0xFF, ($c >> 8) & 0xFF, $c & 0xFF];
+            }
+        }
+
+        $mean = [];
+        foreach ([0, 1, 2] as $ch) {
+            $values = array_column($samples, $ch);
+            $avg = array_sum($values) / count($values);
+            $sd = sqrt(array_sum(array_map(fn ($v) => ($v - $avg) ** 2, $values)) / count($values));
+            if ($sd > 10) {
+                return [255, 255, 255];
+            }
+            $mean[] = (int) round($avg);
+        }
+
+        return min($mean) > 225 ? [255, 255, 255] : $mean;
     }
 
     /**

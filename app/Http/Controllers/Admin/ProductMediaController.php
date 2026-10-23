@@ -32,9 +32,9 @@ class ProductMediaController extends Controller
         foreach ($request->file('images') as $file) {
             $path = $file->store('products', 'public');
 
-            // Optimise + watermark the freshly stored file. This may re-encode to
-            // a smaller format (WebP) and return a new path — store that path.
-            $optimised = $watermark->apply($path);
+            // Optimise + watermark + jadikan 1:1 file yang baru disimpan. Bisa di-encode
+            // ulang ke format lebih ringan (WebP) dengan path baru — simpan path itu.
+            $optimised = $watermark->apply($path, square: true);
 
             $produk->images()->create([
                 'path' => $optimised ?? $path,
