@@ -27,7 +27,8 @@ use Illuminate\Support\Str;
  * Idempotent: produk/varian yang belum ada dibuat; yang sudah ada diperbarui harga,
  * modal, deskripsi, spesifikasi, berat/dimensi & urutan foto (stocklist + datasheet =
  * acuan — suntingan admin pada kolom itu tertimpa saat seeder dijalankan ulang).
- * Stok hanya diisi saat dibuat. Brosur pabrik (memuat kontak pabrik) tidak dilampirkan.
+ * Stok hanya diisi saat dibuat. Datasheet pabrik dilampirkan versi bersih (datasheet-*.pdf):
+ * kontak pabrik sudah ditutup & diganti kontak Energi.Click.
  */
 class UbetterSeeder extends Seeder
 {
@@ -219,6 +220,7 @@ class UbetterSeeder extends Seeder
             'warranty' => '10 tahun', 'featured' => true, 'freight' => true,
             'keywords' => 'powerwall 48v, baterai 10kwh, baterai 5kwh, lifepo4 51.2v 200ah, baterai wall mounted, baterai plts rumah, ubetter',
             'images' => [['powerwall-10kwh.jpg', false, 'Baterai Powerwall UBetter 10 kWh'], ['powerwall-5kwh.jpg', false, 'Baterai Powerwall UBetter 5 kWh'], ['powerwall.jpg', false, 'Baterai Powerwall UBetter 51,2V wall-mounted']],
+            'docs' => [['Datasheet Powerwall UBetter 5 kWh (PDF)', 'datasheet-powerwall-5kwh.pdf'], ['Datasheet Powerwall UBetter 10 kWh (PDF)', 'datasheet-powerwall-10kwh.pdf']],
             'variant_images' => ['UB-PW51-100' => 'powerwall-5kwh.jpg', 'UB-PW51-200' => 'powerwall-10kwh.jpg'],
             'variants' => [
                 ['sku' => 'UB-PW51-100', 'name' => '51,2V 100Ah (5,12 kWh)', 'price' => 19_500_000, 'cost' => 11_900_000, 'stock' => 100, 'weight' => 50_000, 'dims' => [66, 44, 20], 'detail' => '16S1P · 600 × 380 × 145 mm · ±45 kg · charge/discharge maks 100 A'],
@@ -250,6 +252,7 @@ class UbetterSeeder extends Seeder
             'warranty' => '10 tahun', 'freight' => true,
             'keywords' => 'baterai rack 48v, baterai server rack, lifepo4 51.2v 100ah, baterai 5kwh rack, ess 48v, ubetter',
             'images' => [['rack-3u.jpg', false, 'Baterai rack UBetter 51,2V 3U (modul bertumpuk)'], ['rack.jpg', false, 'Baterai rack UBetter 51,2V']],
+            'docs' => [['Datasheet Baterai Rack UBetter 5 kWh 3U (PDF)', 'datasheet-rack-3u.pdf']],
             'variant_images' => ['UB-RK51-100' => 'rack-3u.jpg'],
             'variants' => [
                 ['sku' => 'UB-RK51-100', 'name' => '51,2V 100Ah (5,12 kWh, 3U)', 'price' => 19_500_000, 'cost' => 11_900_000, 'stock' => 100, 'weight' => 55_000, 'dims' => [50, 56, 20], 'detail' => 'UBT-D05-U01 · 16S1P · 420 × 482 × 133 mm (3U) · ±50 kg · charge/discharge maks 100 A'],
@@ -297,6 +300,7 @@ class UbetterSeeder extends Seeder
             'warranty' => '10 tahun', 'freight' => true, 'featured' => true,
             'keywords' => 'baterai 15kwh, baterai 16kwh, lifepo4 314ah, baterai rumah 48v, home energy storage, ess floor standing, ubetter',
             'images' => [['floor-15-16kwh.jpg', false, 'Baterai floor-standing UBetter 15/16 kWh'], ['floor-15-16kwh-2.jpg', false, 'Baterai floor-standing UBetter tampak samping']],
+            'docs' => [['Datasheet Baterai Floor-Standing UBetter 15/16 kWh (PDF)', 'datasheet-floor-15-16kwh.pdf']],
             'variants' => [
                 ['sku' => 'UB-FS48-314', 'name' => '48V 314Ah (15,07 kWh, 15S1P)', 'price' => 32_500_000, 'cost' => 23_800_000, 'stock' => 100, 'weight' => 130_000, 'dims' => [86, 50, 32], 'detail' => '±120 kg · 800 × 440 × 260 mm'],
                 ['sku' => 'UB-FS51-314', 'name' => '51,2V 314Ah (16,07 kWh, 16S1P)', 'price' => 34_500_000, 'cost' => 25_400_000, 'stock' => 100, 'weight' => 136_000, 'dims' => [86, 50, 32], 'detail' => '±126 kg · 800 × 440 × 260 mm'],
@@ -316,6 +320,7 @@ class UbetterSeeder extends Seeder
             'warranty' => '10 tahun', 'freight' => true,
             'keywords' => 'baterai 20kwh, baterai 30kwh, lifepo4 48v 410ah, baterai touchscreen, ess 20kwh, ubetter',
             'images' => [['vertical-20kwh.jpg', false, 'Baterai UBetter Vertical Touchscreen 20 kWh'], ['vertical-30kwh.jpg', false, 'Baterai UBetter Vertical Touchscreen']],
+            'docs' => [['Datasheet Baterai UBetter Vertical Touchscreen 20 kWh (PDF)', 'datasheet-vertical-20kwh.pdf']],
             'variants' => [
                 ['sku' => 'UB-VT48-410', 'name' => '48V 410Ah (19,68 kWh)', 'price' => 48_200_000, 'cost' => 39_300_000, 'stock' => 20, 'weight' => 182_000, 'dims' => [80, 36, 78], 'detail' => '15S2P · ±162 kg (bruto ±182 kg) · 750 × 304 × 710 mm'],
                 ['sku' => 'UB-VT48-628', 'name' => '48V 628Ah (±30 kWh)', 'price' => 62_400_000, 'cost' => 49_990_000, 'stock' => 12, 'weight' => 260_000, 'dims' => [85, 40, 100], 'note' => 'estimasi'],
@@ -366,6 +371,7 @@ class UbetterSeeder extends Seeder
             'price' => $price, 'cost' => $cost, 'stock' => $stock, 'weight' => $weight, 'dims' => $dims,
             'keywords' => 'inverter '.$kw.'kw, inverter hybrid '.$kw.'kw, inverter off grid '.$kw.'kw, '.strtolower($model).', inverter '.$s['vbat'].', ubetter',
             'images' => [['inverter-gpeo.jpg', false, 'Inverter UBetter '.$model]],
+            'docs' => [['Datasheet Inverter UBetter GPEO-4KL1 / 6KL1 / 12KL1 (PDF)', 'datasheet-inverter-4-6-12kw.pdf']],
             'specs' => [
                 'Model' => $model,
                 'Input PV' => 'Daya string maks '.$s['pv'].' · tegangan maks 500 V · MPPT 85–450 V · '.$s['mppt'],
@@ -440,6 +446,13 @@ class UbetterSeeder extends Seeder
             'warranty' => 'Baterai 10 tahun · inverter 2 tahun', 'freight' => true,
             'keywords' => 'all in one ess, baterai inverter jadi satu, ess 15kwh, ess 5kwh, home energy storage, ubetter',
             'images' => [['all-in-one-vertical.jpg', false, 'ESS All-in-One UBetter (inverter + baterai vertikal)'], ['all-in-one.jpg', false, 'ESS All-in-One UBetter']],
+            'docs' => [
+                ['Brosur ESS All-in-One UBetter 5 kWh / 15 kWh (PDF)', 'datasheet-aio-vertical.pdf'],
+                ['Spesifikasi All-in-One 5 kWh + 5 kW (PDF)', 'datasheet-aio-5k-5kwh.pdf'],
+                ['Spesifikasi All-in-One 8 kWh + 3 kW (PDF)', 'datasheet-aio-3k-8kwh.pdf'],
+                ['Spesifikasi All-in-One 15 kWh + 5 kW (PDF)', 'datasheet-aio-5k-15kwh.pdf'],
+                ['Spesifikasi All-in-One 15 kWh + 11 kW (PDF)', 'datasheet-aio-11k-15kwh.pdf'],
+            ],
             'variants' => [
                 ['sku' => 'UB-AIO-5-5K', 'name' => 'Baterai 5 kWh + inverter 5 kW', 'price' => 28_700_000, 'cost' => 18_500_000, 'stock' => 2, 'weight' => 63_000, 'dims' => [82, 55, 22], 'detail' => 'UBT-N2HT5-P5 · 51,2V 100Ah (5,12 kWh) · 750 × 480 × 151 mm · ±57 kg · charge/discharge maks 100 A'],
                 ['sku' => 'UB-AIO-8-3K', 'name' => 'Baterai 8 kWh + inverter 3 kW', 'price' => 29_700_000, 'cost' => 21_500_000, 'stock' => 8, 'weight' => 76_000, 'dims' => [90, 52, 30], 'detail' => '25,6V 314Ah (8,04 kWh, 8S1P) · 820 × 450 × 230,5 mm · ±70 kg · charge/discharge maks 150 A (± 2 jam)'],

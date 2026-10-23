@@ -71,11 +71,18 @@ class UbetterSeederTest extends TestCase
         $this->assertStringContainsString('2 MPPT', Product::where('sku', 'UB-INV-12K')->value('specifications'));
         $this->assertStringContainsString('820 × 450 × 230,5 mm', Product::where('sku', 'UB-AIO')->value('specifications'));
 
+        // Datasheet PDF (versi bersih tanpa kontak pabrik) terlampir di dokumen produk, tanpa dobel saat jalan ulang.
+        $this->assertSame(2, $pw->documents()->count());
+        $this->assertSame(5, Product::where('sku', 'UB-AIO')->firstOrFail()->documents()->count());
+        $this->assertSame(1, $inv6->documents()->count());
+        Storage::disk('public')->assertExists('products/docs/ubetter-datasheet-rack-3u.pdf');
+
         // Jalan ulang memperbarui konten lama (spesifikasi "menyusul" → datasheet).
         $pw->forceFill(['specifications' => '<p>lama</p>', 'main_image_path' => 'products/ubetter/powerwall.webp'])->save();
         $this->seed(UbetterSeeder::class);
         $this->assertStringContainsString('16S2P', $pw->fresh()->specifications);
         $this->assertStringContainsString('powerwall-10kwh', $pw->fresh()->main_image_path);
+        $this->assertSame(2, $pw->documents()->count());
 
         // Halaman produk tampil, modal tidak tampil ke publik.
         $page = $this->get(route('products.show', 'baterai-lifepo4-ubetter-12-8v-6-200ah'))->assertOk()->assertSee('12,8V 100Ah')->assertSee('Rp 3.200.000');
