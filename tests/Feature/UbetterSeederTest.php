@@ -88,6 +88,22 @@ class UbetterSeederTest extends TestCase
         $this->assertStringContainsString('powerwall-10kwh', $pw->fresh()->main_image_path);
         $this->assertSame(2, $pw->documents()->count());
 
+        // Foto 1:1, nama file ikut versi aset; foto versi lama (tanpa versi) diganti di baris yang sama.
+        $main = $pw->fresh()->main_image_path;
+        [$w, $h] = getimagesize(Storage::disk('public')->path($main));
+        $this->assertSame($w, $h);
+        $this->assertMatchesRegularExpression('#^products/ubetter/powerwall-10kwh-[0-9a-f]{8}\.#', $main);
+        $legacy = 'products/ubetter/powerwall-10kwh.webp';
+        $pw->images()->where('path', $main)->update(['path' => $legacy]);
+        $pw->forceFill(['main_image_path' => $legacy])->save();
+        $values = json_decode(DB::table('seed_snapshots')->where('key', 'ubetter:product:UB-PW51')->value('values'), true);
+        unset($values['path:powerwall-10kwh.jpg']);
+        DB::table('seed_snapshots')->where('key', 'ubetter:product:UB-PW51')->update(['values' => json_encode(['main_image_path' => $legacy] + $values)]);
+        $this->seed(UbetterSeeder::class);
+        $this->assertSame($main, $pw->fresh()->main_image_path);
+        $this->assertSame(0, $pw->images()->where('path', $legacy)->count());
+        $this->assertSame(1, $pw->images()->where('path', $main)->count());
+
         // Suntingan admin tidak tertimpa saat seeder dijalankan ulang (deploy).
         $pw = $pw->fresh();
         $pw->forceFill(['price' => 21_000_000, 'description' => '<p>Teks admin</p>', 'main_image_path' => 'products/admin-foto.webp'])->save();

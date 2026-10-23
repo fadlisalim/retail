@@ -6,6 +6,7 @@ use App\Enums\StockMovementType;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Models\WarehouseStock;
 use App\Services\StockService;
@@ -548,7 +549,8 @@ class UbetterSeeder extends Seeder
             if (! is_file($src)) {
                 continue;
             }
-            $stem = 'products/ubetter/'.pathinfo($file, PATHINFO_FILENAME);
+            // Nama file ikut versi aset, supaya foto yang diperbarui tidak tertahan cache browser/CDN.
+            $stem = 'products/ubetter/'.pathinfo($file, PATHINFO_FILENAME).'-'.substr((string) md5_file($src), 0, 8);
             if ($disk->exists("{$stem}.webp")) {
                 $final = "{$stem}.webp";
             } else {
@@ -560,11 +562,16 @@ class UbetterSeeder extends Seeder
                     $final = ($branded ? $watermark->optimize($final) : $watermark->apply($final)) ?? $final;
                 }
             }
+            $previous = $guard->recorded('path:'.$file) ?? $this->legacyImagePath($product, $file);
+            if ($previous && $previous !== $final) {
+                $this->replaceImage($product, $guard, $previous, $final);
+            }
             if ($guard->shouldAdd('images', $file, $product->images()->where('path', $final)->exists())) {
                 $product->images()->create(['path' => $final, 'alt' => $alt, 'sort_order' => $i, 'watermarked_at' => $watermark->isSupported() ? now() : null]);
             }
             if ($product->images()->where('path', $final)->exists()) {
                 $stored[$file] = $final;
+                $guard->remember('path:'.$file, $final);
             }
         }
         // Urutan galeri mengikuti daftar & gambar pertama = foto utama — selama admin
@@ -580,6 +587,36 @@ class UbetterSeeder extends Seeder
             if (isset($stored[$file])) {
                 ProductVariant::where('sku', $variantSku)->whereNull('image_path')->update(['image_path' => $stored[$file]]);
             }
+        }
+    }
+
+    /** Path foto dari versi seeder sebelum nama file memuat versi aset. */
+    private function legacyImagePath(Product $product, string $file): ?string
+    {
+        $stem = 'products/ubetter/'.pathinfo($file, PATHINFO_FILENAME);
+
+        return $product->images()->whereIn('path', ["{$stem}.webp", "{$stem}.jpg"])->value('path');
+    }
+
+    /**
+     * Aset foto diperbarui (mis. dijadikan 1:1) → ganti file pada baris galeri yang sama,
+     * termasuk foto utama & foto varian yang memakainya. Foto yang sudah dihapus admin
+     * tidak disentuh.
+     */
+    private function replaceImage(Product $product, SeedGuard $guard, string $old, string $new): void
+    {
+        if (! $product->images()->where('path', $old)->update(['path' => $new])) {
+            return;
+        }
+        if ($product->main_image_path === $old) {
+            $product->forceFill(['main_image_path' => $new])->save();
+        }
+        if ($guard->recorded('main_image_path') === $old) {
+            $guard->remember('main_image_path', $new);
+        }
+        ProductVariant::where('product_id', $product->id)->where('image_path', $old)->update(['image_path' => $new]);
+        if (! ProductImage::where('path', $old)->exists() && ! ProductVariant::where('image_path', $old)->exists()) {
+            Storage::disk('public')->delete($old);
         }
     }
 

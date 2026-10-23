@@ -68,6 +68,18 @@ final class SeedGuard
         return $add;
     }
 
+    /** Nilai yang terakhir dicatat seeder untuk kunci bebas (mis. path file yang disimpan). */
+    public function recorded(string $field): mixed
+    {
+        return $this->values[$field] ?? null;
+    }
+
+    /** Catat nilai yang barusan ditulis seeder sendiri (bukan suntingan admin). */
+    public function remember(string $field, mixed $value): void
+    {
+        $this->values[$field] = $value;
+    }
+
     public function commit(): void
     {
         DB::table('seed_snapshots')->updateOrInsert(
