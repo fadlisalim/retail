@@ -122,7 +122,7 @@ class Product extends Model
     }
 
     /* ------------------------------------------------------------------ */
-    /* Relationships                                                       */
+    /* Relationships */
     /* ------------------------------------------------------------------ */
 
     public function category(): BelongsTo
@@ -205,7 +205,7 @@ class Product extends Model
     }
 
     /* ------------------------------------------------------------------ */
-    /* Scopes                                                              */
+    /* Scopes */
     /* ------------------------------------------------------------------ */
 
     public function scopePublished(Builder $query): Builder
@@ -224,7 +224,7 @@ class Product extends Model
     }
 
     /* ------------------------------------------------------------------ */
-    /* Pricing (server-authoritative helpers)                              */
+    /* Pricing (server-authoritative helpers) */
     /* ------------------------------------------------------------------ */
 
     public function conditionEnum(): ProductCondition
@@ -268,6 +268,9 @@ class Product extends Model
         return $this->conditionEnum()->requiresAcknowledgement();
     }
 
+    /** Relasi yang dibaca kartu produk (badge "Harga Nego" butuh conditionDetail) — eager-load agar tidak N+1. */
+    public const CARD_RELATIONS = ['brand', 'category', 'conditionDetail'];
+
     /** Badge labels shown on cards/detail (section 10). */
     public function badges(bool $includeCondition = true, bool $includeCustom = true): array
     {
@@ -276,17 +279,33 @@ class Product extends Model
         // The card renders the custom tag as a separate inline chip (near the price),
         // so it passes $includeCustom = false to keep the image overlay uncluttered.
         $badges = [];
-        if ($includeCustom && filled($this->badge_text)) $badges[] = $this->badge_text;
-        if ($this->is_clearance) $badges[] = 'Clearance';
-        if ($this->isOnSale()) $badges[] = 'Promo';
-        if ($this->isLowStock()) $badges[] = 'Stok Terbatas';
-        if ($this->is_new) $badges[] = 'Baru';
+        if ($includeCustom && filled($this->badge_text)) {
+            $badges[] = $this->badge_text;
+        }
+        if ($this->is_clearance) {
+            $badges[] = 'Clearance';
+        }
+        if ($this->isOnSale()) {
+            $badges[] = 'Promo';
+        }
+        if ($this->isLowStock()) {
+            $badges[] = 'Stok Terbatas';
+        }
+        if ($this->is_new) {
+            $badges[] = 'Baru';
+        }
         if ($includeCondition && $this->condition !== ProductCondition::New->value) {
             $badges[] = $this->conditionEnum()->label();
         }
-        if ($this->conditionDetail?->is_negotiable) $badges[] = 'Harga Nego';
-        if ($this->pickup_only) $badges[] = 'Ambil di Lokasi';
-        if ($this->requires_quotation) $badges[] = 'Minta Penawaran';
+        if ($this->conditionDetail?->is_negotiable) {
+            $badges[] = 'Harga Nego';
+        }
+        if ($this->pickup_only) {
+            $badges[] = 'Ambil di Lokasi';
+        }
+        if ($this->requires_quotation) {
+            $badges[] = 'Minta Penawaran';
+        }
 
         return array_unique($badges);
     }

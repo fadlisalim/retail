@@ -30,16 +30,24 @@ class StorefrontComposer
 
     public function compose(View $view): void
     {
-        $view->with([
-            'navCategories' => $this->navCategories(),
-            'cartCount' => $this->cart->count(),
-            'wishlistCount' => $this->wishlist->count(),
-            'compareCount' => $this->comparison->count(),
-            'siteSettings' => $this->settings,
-            'whatsappEnabled' => $this->settings->whatsappEnabled(),
-            'whatsappNumber' => $this->settings->whatsappNumber(),
-            'navHas' => $this->navHas(),
-        ]);
+        // Composer ini jalan untuk layout DAN view halaman (2–3× per request) —
+        // hitung sekali per request, simpan di atribut request.
+        $request = request();
+        $data = $request->attributes->get(self::class);
+        if ($data === null) {
+            $data = [
+                'navCategories' => $this->navCategories(),
+                'cartCount' => $this->cart->count(),
+                'wishlistCount' => $this->wishlist->count(),
+                'compareCount' => $this->comparison->count(),
+                'siteSettings' => $this->settings,
+                'whatsappEnabled' => $this->settings->whatsappEnabled(),
+                'whatsappNumber' => $this->settings->whatsappNumber(),
+                'navHas' => $this->navHas(),
+            ];
+            $request->attributes->set(self::class, $data);
+        }
+        $view->with($data);
     }
 
     /**

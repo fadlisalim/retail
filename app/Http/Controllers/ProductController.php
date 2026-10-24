@@ -149,7 +149,7 @@ class ProductController extends Controller
         $sameCategory = Product::published()->where('id', '!=', $product->id)
             ->where('category_id', $product->category_id)
             ->orderByDesc('sold_count')->latest('published_at')
-            ->with(['brand', 'category'])->take(8)->get();
+            ->with(Product::CARD_RELATIONS)->take(8)->get();
         if ($sameCategory->count() >= 8 || ! $product->brand_id) {
             return $sameCategory;
         }
@@ -158,7 +158,7 @@ class ProductController extends Controller
             ->where('brand_id', $product->brand_id)
             ->whereNotIn('id', $sameCategory->pluck('id'))
             ->orderByDesc('sold_count')
-            ->with(['brand', 'category'])->take(8 - $sameCategory->count())->get();
+            ->with(Product::CARD_RELATIONS)->take(8 - $sameCategory->count())->get();
 
         return $sameCategory->concat($sameBrand)->values();
     }
