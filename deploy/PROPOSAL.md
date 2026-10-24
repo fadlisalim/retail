@@ -33,3 +33,5 @@ Penyebab (diukur dengan data contoh lokal):
 ## Ide berikutnya
 - Ukur kecepatan muat nyata di HP (foto produk & ukuran halaman beranda ±220 KB HTML) — kandidat audit berikutnya.
 - Simpan cache halaman beranda untuk pengunjung tanpa login selama 1–2 menit.
+
+PR: https://github.com/fadlisalim/retail/pull/1
