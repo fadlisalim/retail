@@ -53,12 +53,13 @@
     @endif
 
     @if ($proposal->isPending())
-        <form method="POST" action="{{ route('proposals.decide', $proposal->token) }}" class="card space-y-4 p-5" x-data="{ action: '{{ old('action', 'execute') }}', otpMsg: '', otpBusy: false,
+        <form method="POST" action="{{ route('proposals.decide', $proposal->token) }}" class="card space-y-4 p-5" x-data="{ action: '{{ old('action', 'execute') }}', otpMsg: '', otpOk: false, otpBusy: false,
                       async sendOtp() {
                           this.otpBusy = true;
                           const r = await fetch('{{ route('proposals.otp', $proposal->token) }}', { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content } });
                           const j = await r.json().catch(() => ({}));
-                          this.otpMsg = j.message || (r.status === 429 ? 'Terlalu sering — tunggu beberapa menit.' : 'Gagal mengirim OTP.');
+                          this.otpOk = r.ok;
+                          this.otpMsg = j.message || (r.status === 429 ? 'Terlalu sering — tunggu 10 menit lalu coba lagi.' : r.status === 419 ? 'Sesi kedaluwarsa — muat ulang halaman lalu coba lagi.' : 'Gagal mengirim OTP (error ' + r.status + ').');
                           this.otpBusy = false;
                       } }">
             @csrf
@@ -78,7 +79,12 @@
                 </label>
             </div>
 
-            <div class="rounded-lg bg-gray-50 p-3">
+            @unless ($ready)
+                <div class="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                    ⚠️ Tombol Eksekusi/Revisi belum aktif: <strong>token GitHub belum dipasang</strong>. Pasang dulu di Admin → Pengaturan → Status deploy otomatis, lalu muat ulang halaman ini.
+                </div>
+            @endunless
+            <div class="rounded-lg bg-gray-50 p-3 {{ $ready ? '' : 'pointer-events-none opacity-50' }}">
                 <p class="text-sm">Konfirmasi dengan kode OTP yang dikirim ke WhatsApp <strong>{{ $phone }}</strong>.</p>
                 <div class="mt-2 flex flex-wrap items-end gap-2">
                     <button type="button" class="btn-outline" @click="sendOtp()" :disabled="otpBusy" x-text="otpMsg ? 'Kirim ulang OTP' : 'Kirim OTP ke WA'">Kirim OTP ke WA</button>
@@ -89,7 +95,7 @@
                     </div>
                     <button type="submit" class="btn-primary" x-text="action === 'execute' ? 'Eksekusi sekarang' : 'Kirim revisi'">Eksekusi sekarang</button>
                 </div>
-                <p x-show="otpMsg" x-text="otpMsg" class="mt-2 text-sm text-gray-700" role="status"></p>
+                <p x-show="otpMsg" x-text="otpMsg" class="mt-2 rounded-md px-3 py-2 text-sm font-medium" :class="otpOk ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-700'" role="status"></p>
             </div>
         </form>
     @endif

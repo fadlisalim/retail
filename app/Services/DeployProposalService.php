@@ -7,6 +7,7 @@ use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -84,7 +85,8 @@ class DeployProposalService
 
         $sent = $this->wa->send($this->ownerPhone(), "🔐 Kode OTP eksekusi usulan energi.click: *{$code}*\nBerlaku ".self::OTP_TTL_MINUTES.' menit. Jangan bagikan kode ini ke siapa pun.');
         if (! $sent) {
-            throw ValidationException::withMessages(['otp' => 'OTP gagal dikirim ke WhatsApp — coba lagi sebentar.']);
+            Log::warning('OTP usulan gagal dikirim ke WA', ['proposal' => $proposal->id, 'wablas' => $this->wa->lastResult]);
+            throw ValidationException::withMessages(['otp' => 'OTP gagal dikirim ke WhatsApp ('.Str::limit((string) ($this->wa->lastResult['body'] ?? '-'), 120).'). Coba lagi sebentar.']);
         }
     }
 

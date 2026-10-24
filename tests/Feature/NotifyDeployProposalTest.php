@@ -76,6 +76,19 @@ class NotifyDeployProposalTest extends TestCase
             ->assertSee('Checkout lebih cepat di HP')->assertSee('Waktu muat katalog')->assertSee('Kirim OTP ke WA')
             ->assertDontSee('PR: https://github.com', false);
         $this->get('/usulan/'.str_repeat('x', 48))->assertNotFound();
+
+        // Token GitHub belum dipasang → peringatan jelas & OTP tidak dikirim.
+        $this->get(route('proposals.show', $proposal->token))->assertSee('token GitHub belum dipasang', false);
+        $this->postJson(route('proposals.otp', $proposal->token))->assertStatus(422)->assertJsonFragment(['message' => 'Token GitHub belum dipasang di Admin → Pengaturan → Status deploy otomatis.']);
+
+        app(DeployProposalService::class)->setGithubToken('github_pat_tes123');
+        $this->get(route('proposals.show', $proposal->token))->assertDontSee('token GitHub belum dipasang', false);
+
+        // Membuka/memuat ulang halaman berkali-kali tidak menghabiskan jatah kirim OTP.
+        foreach (range(1, 6) as $i) {
+            $this->get(route('proposals.show', $proposal->token))->assertOk();
+        }
+        $this->postJson(route('proposals.otp', $proposal->token))->assertOk();
     }
 
     public function test_waits_until_report_has_pr_link(): void

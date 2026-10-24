@@ -69,28 +69,28 @@ Route::get('/go/{slug}', function (string $slug) {
 
 Route::get('/pencarian', [SearchController::class, 'index'])->name('search');
 Route::get('/api/pencarian/suggest', [SearchController::class, 'suggest'])
-    ->middleware('throttle:60,1')->name('search.suggest');
+    ->middleware('throttle:60,1,search.suggest')->name('search.suggest');
 
 // CS chat assistant (Claude-powered, grounded in the catalogue). JSON endpoint
 // under /api/* so validation errors render as JSON (see bootstrap/app.php).
 Route::post('/api/asisten/tanya', [AssistantController::class, 'chat'])
-    ->middleware('throttle:15,1')->name('assistant.chat');
+    ->middleware('throttle:15,1,assistant.chat')->name('assistant.chat');
 Route::get('/api/asisten/riwayat', [AssistantController::class, 'history'])
-    ->middleware('throttle:30,1')->name('assistant.history');
+    ->middleware('throttle:30,1,assistant.history')->name('assistant.history');
 Route::post('/api/asisten/kontak', [AssistantController::class, 'contact'])
-    ->middleware('throttle:10,1')->name('assistant.contact');
+    ->middleware('throttle:10,1,assistant.contact')->name('assistant.contact');
 Route::post('/api/asisten/klik', [AssistantController::class, 'click'])
-    ->middleware('throttle:60,1')->name('assistant.click');
+    ->middleware('throttle:60,1,assistant.click')->name('assistant.click');
 Route::post('/api/asisten/unggah', [AssistantController::class, 'upload'])
-    ->middleware('throttle:10,1')->name('assistant.upload');
+    ->middleware('throttle:10,1,assistant.upload')->name('assistant.upload');
 
 // Chat Toko (customer ↔ admin, Tokopedia-style; NOT the AI assistant).
 Route::post('/api/chat-toko/kirim', [SiteChatController::class, 'send'])
-    ->middleware('throttle:20,1')->name('sitechat.send');
+    ->middleware('throttle:20,1,sitechat.send')->name('sitechat.send');
 Route::get('/api/chat-toko/pesan', [SiteChatController::class, 'messages'])
-    ->middleware('throttle:60,1')->name('sitechat.messages');
+    ->middleware('throttle:60,1,sitechat.messages')->name('sitechat.messages');
 Route::get('/api/chat-toko/notif', [SiteChatController::class, 'unread'])
-    ->middleware('throttle:60,1')->name('sitechat.unread');
+    ->middleware('throttle:60,1,sitechat.unread')->name('sitechat.unread');
 
 // Public documentation gallery — real photos of orders being prepared & shipped.
 Route::get('/dokumentasi', [DocumentationController::class, 'index'])->name('documentation');
@@ -130,23 +130,23 @@ Route::controller(CartController::class)->group(function () {
 Route::controller(CheckoutController::class)->middleware('auth')->group(function () {
     Route::get('/checkout', 'index')->name('checkout.index');
     Route::post('/checkout/ongkir', 'shippingOptions')->name('checkout.shipping');
-    Route::post('/checkout', 'store')->middleware('throttle:20,1')->name('checkout.store');
+    Route::post('/checkout', 'store')->middleware('throttle:20,1,checkout.store')->name('checkout.store');
 });
 
 /* Wilayah tujuan (RajaOngkir) untuk form alamat: autocomplete + dropdown bertingkat */
 Route::get('/api/ongkir/tujuan', [ShippingDestinationController::class, 'search'])
-    ->middleware(['auth', 'throttle:30,1'])->name('shipping.destinations');
+    ->middleware(['auth', 'throttle:30,1,shipping.destinations'])->name('shipping.destinations');
 Route::get('/api/ongkir/wilayah', [ShippingDestinationController::class, 'regions'])
-    ->middleware('throttle:60,1')->name('shipping.regions'); // publik: dipakai estimasi ongkir di halaman produk
+    ->middleware('throttle:60,1,shipping.regions')->name('shipping.regions'); // publik: dipakai estimasi ongkir di halaman produk
 
 /* Estimasi ongkir di halaman produk ("Berapa ongkir ke lokasi saya?") — tamu boleh */
 // 60/menit per IP: pengunjung yang mencoba beberapa wilayah berturut-turut jangan kena 429
 // (tiap ganti kelurahan + buka modal = 1 hit). Pastikan TRUSTED_PROXIES terisi di .env agar
 // jatah ini per pengunjung, bukan per IP Cloudflare yang dipakai bersama.
 Route::post('/api/ongkir/estimasi', [ShippingEstimateController::class, 'estimate'])
-    ->middleware('throttle:60,1')->name('shipping.estimate');
+    ->middleware('throttle:60,1,shipping.estimate')->name('shipping.estimate');
 Route::get('/api/ongkir/kota-indah', [ShippingEstimateController::class, 'indahCities'])
-    ->middleware('throttle:30,1')->name('shipping.indah-cities');
+    ->middleware('throttle:30,1,shipping.indah-cities')->name('shipping.indah-cities');
 
 /* Orders + invoice (public via non-guessable token) */
 Route::get('/pesanan/{order:public_token}', [OrderController::class, 'track'])->name('orders.track');
@@ -157,7 +157,7 @@ Route::get('/invoice/{invoice:public_token}/pdf', [OrderController::class, 'invo
 /* Quotation / RFQ */
 Route::controller(QuotationController::class)->group(function () {
     Route::get('/permintaan-penawaran', 'create')->name('quotations.create');
-    Route::post('/permintaan-penawaran', 'store')->middleware('throttle:10,1')->name('quotations.store');
+    Route::post('/permintaan-penawaran', 'store')->middleware('throttle:10,1,quotations.store')->name('quotations.store');
     Route::get('/penawaran/{quotation:public_token}', 'show')->name('quotations.show');
     Route::get('/penawaran/{quotation:public_token}/pdf', 'pdf')->name('quotations.pdf');
     Route::post('/penawaran/{quotation:public_token}/setujui', 'approve')->name('quotations.approve');
@@ -166,11 +166,11 @@ Route::controller(QuotationController::class)->group(function () {
 
 /* Review RAB tim internal lewat link ber-kunci (tanpa login; berisi modal — rahasia). */
 // Laporan usulan agent perbaikan otomatis (link ber-kunci dari WA pemilik; keputusan ber-OTP).
-Route::get('/usulan/{token}', [DeployProposalController::class, 'show'])->middleware('throttle:60,1')->name('proposals.show');
-Route::post('/usulan/{token}/otp', [DeployProposalController::class, 'otp'])->middleware('throttle:3,10')->name('proposals.otp');
-Route::post('/usulan/{token}', [DeployProposalController::class, 'decide'])->middleware('throttle:10,10')->name('proposals.decide');
-Route::get('/rab/{token}', [RabReviewController::class, 'show'])->middleware('throttle:60,1')->name('rab.show');
-Route::post('/rab/{token}', [RabReviewController::class, 'store'])->middleware('throttle:10,1')->name('rab.review');
+Route::get('/usulan/{token}', [DeployProposalController::class, 'show'])->middleware('throttle:60,1,proposal-view')->name('proposals.show');
+Route::post('/usulan/{token}/otp', [DeployProposalController::class, 'otp'])->middleware('throttle:5,10,proposal-otp')->name('proposals.otp');
+Route::post('/usulan/{token}', [DeployProposalController::class, 'decide'])->middleware('throttle:10,10,proposal-decide')->name('proposals.decide');
+Route::get('/rab/{token}', [RabReviewController::class, 'show'])->middleware('throttle:60,1,rab.show')->name('rab.show');
+Route::post('/rab/{token}', [RabReviewController::class, 'store'])->middleware('throttle:10,1,rab.review')->name('rab.review');
 
 /* Wishlist */
 Route::controller(WishlistController::class)->group(function () {
@@ -196,7 +196,7 @@ Route::post('/review/{review}/membantu', [ReviewController::class, 'helpful'])
 Route::post('/review/{review}/laporkan', [ReviewController::class, 'report'])
     ->middleware('auth')->name('reviews.report');
 Route::post('/produk/{product:slug}/tanya', [ProductController::class, 'ask'])
-    ->middleware(['auth', 'throttle:10,1'])->name('questions.store');
+    ->middleware(['auth', 'throttle:10,1,questions.store'])->name('questions.store');
 
 /* Affiliate program (public landing) */
 Route::get('/afiliasi', [AffiliateController::class, 'landing'])->name('affiliate.landing');
@@ -233,13 +233,13 @@ Route::middleware('guest')->group(function () {
     // Limiter 'login' (AppServiceProvider): 8/menit per email+IP, 40/menit per IP.
     Route::post('/masuk', [LoginController::class, 'store'])->middleware('throttle:login');
     Route::get('/daftar', [RegisterController::class, 'create'])->name('register');
-    Route::post('/daftar', [RegisterController::class, 'store'])->middleware('throttle:10,1');
+    Route::post('/daftar', [RegisterController::class, 'store'])->middleware('throttle:10,1,path-daftar');
 
     // Password reset (forgot password)
     Route::get('/lupa-password', [PasswordResetController::class, 'showForgot'])->name('password.request');
-    Route::post('/lupa-password', [PasswordResetController::class, 'sendLink'])->middleware('throttle:6,1')->name('password.email');
+    Route::post('/lupa-password', [PasswordResetController::class, 'sendLink'])->middleware('throttle:6,1,password.email')->name('password.email');
     Route::get('/reset-password/{token}', [PasswordResetController::class, 'showReset'])->name('password.reset');
-    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:6,1')->name('password.update');
+    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:6,1,password.update')->name('password.update');
 });
 Route::post('/keluar', [LoginController::class, 'destroy'])->middleware('auth')->name('logout');
 
@@ -253,7 +253,7 @@ Route::get('/akun/afiliasi/penarikan/{payout}/konfirmasi', [AffiliateController:
 Route::get('/verifikasi-email/{id}/{hash}', [EmailVerificationController::class, 'verify'])
     ->middleware('signed')->name('verification.verify');
 Route::post('/verifikasi-email/kirim-ulang', [EmailVerificationController::class, 'resend'])
-    ->middleware('throttle:6,1')->name('verification.send');
+    ->middleware('throttle:6,1,verification.send')->name('verification.send');
 Route::middleware('auth')->group(function () {
     Route::get('/verifikasi-email', [EmailVerificationController::class, 'notice'])->name('verification.notice');
 });
@@ -454,7 +454,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/buat', [Admin\WaCampaignController::class, 'create'])->name('create');
         Route::post('/', [Admin\WaCampaignController::class, 'store'])->name('store');
         Route::post('/audiens', [Admin\WaCampaignController::class, 'audience'])->name('audience');
-        Route::post('/tes', [Admin\WaCampaignController::class, 'test'])->middleware('throttle:10,1')->name('test');
+        Route::post('/tes', [Admin\WaCampaignController::class, 'test'])->middleware('throttle:10,1,admin.wa-campaign.test')->name('test');
         Route::post('/emergency', [Admin\WaCampaignController::class, 'emergency'])->name('emergency');
         Route::get('/kontak', [Admin\WaContactController::class, 'index'])->name('contacts');
         Route::post('/kontak', [Admin\WaContactController::class, 'store'])->name('contacts.store');
@@ -485,12 +485,12 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         // WhatsApp inbox (two-way chat via Wablas webhook + send API).
         Route::get('/wa-chat', [Admin\WaChatController::class, 'index'])->name('wachat.index');
         Route::get('/wa-chat/pesan', [Admin\WaChatController::class, 'messages'])->name('wachat.messages');
-        Route::post('/wa-chat/kirim', [Admin\WaChatController::class, 'send'])->middleware('throttle:30,1')->name('wachat.send');
-        Route::post('/wa-chat/kirim-media', [Admin\WaChatController::class, 'sendMedia'])->middleware('throttle:20,1')->name('wachat.media');
+        Route::post('/wa-chat/kirim', [Admin\WaChatController::class, 'send'])->middleware('throttle:30,1,admin.wachat.send')->name('wachat.send');
+        Route::post('/wa-chat/kirim-media', [Admin\WaChatController::class, 'sendMedia'])->middleware('throttle:20,1,admin.wachat.media')->name('wachat.media');
         Route::get('/trafik', [Admin\TrafficController::class, 'index'])
             ->middleware('permission:traffic.view')->name('traffic.index');
         Route::get('/chat-toko', [Admin\SiteChatController::class, 'index'])->name('sitechat.index');
         Route::get('/chat-toko/pesan', [Admin\SiteChatController::class, 'messages'])->name('sitechat.messages');
-        Route::post('/chat-toko/kirim', [Admin\SiteChatController::class, 'send'])->middleware('throttle:30,1')->name('sitechat.send');
+        Route::post('/chat-toko/kirim', [Admin\SiteChatController::class, 'send'])->middleware('throttle:30,1,admin.sitechat.send')->name('sitechat.send');
     });
 });

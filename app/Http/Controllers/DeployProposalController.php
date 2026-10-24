@@ -29,6 +29,7 @@ class DeployProposalController extends Controller
             'html' => Str::markdown(preg_replace('/^#\s+.+$/m', '', $proposal->report, 1), // judul sudah tampil di header
                 ['html_input' => 'strip', 'allow_unsafe_links' => false]),
             'phone' => Str::mask($this->proposals->ownerPhone(), '•', 4, -3),
+            'ready' => (bool) $this->proposals->githubToken(),
         ]);
     }
 
