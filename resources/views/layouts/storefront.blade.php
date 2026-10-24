@@ -18,14 +18,18 @@
     <meta property="og:url" content="@yield('canonical', url()->current())">
     <meta property="og:title" content="@yield('title', config('rekasurya.company.brand_name'))">
     <meta property="og:description" content="@yield('meta_description', config('rekasurya.company.tagline'))">
-    <meta property="og:image" content="@yield('og_image', asset('images/og-default.png'))">
-    <meta property="og:image:secure_url" content="@yield('og_image', asset('images/og-default.png'))">
+    {{-- Gambar hook default saat link energi.click dibagikan (banner 1200×630). --}}
+    <meta property="og:image" content="@yield('og_image', asset('images/og-energi-click.jpg'))">
+    <meta property="og:image:secure_url" content="@yield('og_image', asset('images/og-energi-click.jpg'))">
     {{-- Explicit type + dimensions are what make WhatsApp render the LARGE image
-         card on the first scrape (without them it falls back to a small icon). --}}
-    <meta property="og:image:type" content="@yield('og_image_type', 'image/png')">
-    <meta property="og:image:width" content="@yield('og_image_width', '1200')">
-    <meta property="og:image:height" content="@yield('og_image_height', '630')">
-    @hasSection('og_image_alt')<meta property="og:image:alt" content="@yield('og_image_alt')">@endif
+         card on the first scrape (without them it falls back to a small icon).
+         Halaman dengan gambar sendiri tanpa ukuran (mis. artikel) tidak diberi ukuran palsu. --}}
+    @if (View::hasSection('og_image_type') || ! View::hasSection('og_image'))
+        <meta property="og:image:type" content="@yield('og_image_type', 'image/jpeg')">
+        <meta property="og:image:width" content="@yield('og_image_width', '1200')">
+        <meta property="og:image:height" content="@yield('og_image_height', '630')">
+    @endif
+    <meta property="og:image:alt" content="@yield('og_image_alt', config('rekasurya.company.brand_name').' — Energi Cerdas, Tinggal Klik!')">
     <meta name="twitter:card" content="summary_large_image">
 
     @include('partials.meta-pixel')

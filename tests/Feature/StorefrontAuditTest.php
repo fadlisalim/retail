@@ -90,4 +90,15 @@ class StorefrontAuditTest extends TestCase
         app(SettingService::class)->set('chat.assistant_enabled', false, 'boolean', 'chat');
         $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()->assertDontSee('Log Kirana (AI)');
     }
+
+    public function test_shared_home_link_uses_the_energi_click_banner_as_preview_image(): void
+    {
+        $this->assertFileExists(public_path('images/og-energi-click.jpg'));
+        $this->assertSame([1200, 630], array_slice(getimagesize(public_path('images/og-energi-click.jpg')), 0, 2));
+
+        $this->get('/')->assertOk()
+            ->assertSee('<meta property="og:image" content="'.asset('images/og-energi-click.jpg').'">', false)
+            ->assertSee('<meta property="og:image:type" content="image/jpeg">', false)
+            ->assertSee('<meta property="og:image:width" content="1200">', false);
+    }
 }
