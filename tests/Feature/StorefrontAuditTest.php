@@ -99,6 +99,8 @@ class StorefrontAuditTest extends TestCase
         $this->get('/')->assertOk()
             ->assertSee('<meta property="og:image" content="'.asset('images/og-energi-click.jpg').'">', false)
             ->assertSee('<meta property="og:image:type" content="image/jpeg">', false)
-            ->assertSee('<meta property="og:image:width" content="1200">', false);
+            ->assertSee('<meta property="og:image:width" content="1200">', false)
+            ->assertSee('Panel Surya, Inverter &amp; Baterai Lithium Bergaransi Resmi', false)
+            ->assertSee('Konsultasi gratis via WhatsApp', false);
     }
 }

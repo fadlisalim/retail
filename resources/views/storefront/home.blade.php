@@ -1,5 +1,7 @@
 @extends('layouts.storefront')
-@section('title', config('rekasurya.company.brand_name').' — '.config('rekasurya.company.tagline'))
+{{-- Judul & deskripsi ini juga jadi teks preview saat link energi.click dibagikan (WhatsApp/FB). --}}
+@section('title', config('rekasurya.company.brand_name').' — Panel Surya, Inverter & Baterai Lithium Bergaransi Resmi')
+@section('meta_description', 'Harga transparan, stok siap kirim ke seluruh Indonesia. Bingung pilih sistem PLTS? Konsultasi gratis via WhatsApp.')
 
 @push('head')
 <script type="application/ld+json">
