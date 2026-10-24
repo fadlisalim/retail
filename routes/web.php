@@ -295,6 +295,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
 
     Route::middleware('permission:catalog.manage')->group(function () {
         Route::resource('kategori', Admin\CategoryController::class)->names('categories')->except('show');
+        Route::get('brand/{brand}/unduh-media', [Admin\BrandController::class, 'media'])->name('brands.media');
         Route::resource('brand', Admin\BrandController::class)->names('brands')->except('show');
         Route::get('produk/ekspor-shopee', [Admin\ProductController::class, 'exportShopee'])->name('products.export-shopee');
         Route::resource('produk', Admin\ProductController::class)->names('products')->except('show');

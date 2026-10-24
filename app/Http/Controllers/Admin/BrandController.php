@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BrandController extends Controller
 {
@@ -21,6 +22,55 @@ class BrandController extends Controller
             ->paginate(20);
 
         return view('admin.brands.index', compact('brands'));
+    }
+
+    /**
+     * Unduh semua foto (galeri, foto utama, foto varian) & dokumen produk satu brand
+     * dalam satu ZIP, dikelompokkan per produk — untuk materi marketing/reseller.
+     */
+    public function media(Brand $brand): BinaryFileResponse|RedirectResponse
+    {
+        if (! class_exists(\ZipArchive::class)) {
+            return back()->with('error', 'Ekstensi PHP zip belum aktif di server — ZIP tidak bisa dibuat.');
+        }
+
+        $disk = Storage::disk('public');
+        $tmp = (string) tempnam(sys_get_temp_dir(), 'media');
+        $zip = new \ZipArchive;
+        $zip->open($tmp, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+
+        $added = 0;
+        $add = function (?string $path, string $name) use ($disk, $zip, &$added): void {
+            if ($path && $disk->exists($path) && $zip->locateName($name) === false) {
+                $zip->addFile($disk->path($path), $name);
+                $added++;
+            }
+        };
+
+        $products = $brand->products()->with(['images', 'documents', 'variants'])->orderBy('name')->get();
+        foreach ($products as $product) {
+            $dir = Str::limit(Str::slug($product->name), 80, '');
+            $add($product->main_image_path, "{$dir}/foto/".basename((string) $product->main_image_path));
+            foreach ($product->images->whereNull('video_path') as $image) {
+                $add($image->path, "{$dir}/foto/".basename($image->path));
+            }
+            foreach ($product->variants as $variant) {
+                $add($variant->image_path, "{$dir}/foto-varian/".Str::slug($variant->name).'.'.pathinfo((string) $variant->image_path, PATHINFO_EXTENSION));
+            }
+            foreach ($product->documents as $doc) {
+                $add($doc->path, "{$dir}/dokumen/".Str::limit(Str::slug($doc->title), 80, '').'.'.pathinfo($doc->path, PATHINFO_EXTENSION));
+            }
+        }
+        $zip->close();
+
+        if (! $added) {
+            @unlink($tmp);
+
+            return back()->with('warning', "Brand {$brand->name} belum punya foto/dokumen produk.");
+        }
+
+        return response()->download($tmp, 'media-'.$brand->slug.'-'.now()->format('Ymd').'.zip', ['Content-Type' => 'application/zip'])
+            ->deleteFileAfterSend();
     }
 
     public function create(): View

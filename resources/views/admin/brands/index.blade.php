@@ -43,6 +43,9 @@
                             @endif
                         </td>
                         <td class="px-4 py-3 text-right whitespace-nowrap">
+                            @if ($brand->products_count)
+                                <a href="{{ route('admin.brands.media', $brand) }}" class="mr-3 text-brand-700 hover:underline" title="Unduh semua foto & dokumen produk brand ini">Unduh foto &amp; dokumen (ZIP)</a>
+                            @endif
                             <a href="{{ route('admin.brands.edit', $brand) }}" class="text-brand-700 hover:underline">Edit</a>
                             <form action="{{ route('admin.brands.destroy', $brand) }}" method="POST" class="ml-3 inline"
                                   onsubmit="return confirm('Hapus brand ini?')">
