@@ -1,37 +1,24 @@
-# Halaman toko lebih ringan: query database turun 30–45%
+# Logo header & footer 6× lebih ringan
 
 ## Ringkasan
-- Beranda kini butuh 49 query database (sebelumnya 82) — halaman lebih cepat terbuka, terutama saat ramai pengunjung.
-- Halaman kategori 50 → 29 query, halaman produk 61 → 45–50, keranjang 25 → 16.
-- Tidak ada perubahan tampilan, harga, atau data — murni kecepatan di sisi server.
+- Logo di header dan footer kini 8,8 KB (sebelumnya 56 KB, dimuat 2×) — halaman terbuka lebih hemat kuota, terutama di HP.
+- Logo punya ukuran eksplisit sehingga tata letak tidak bergeser saat memuat; logo footer baru dimuat saat discroll.
+- Tampilan sama persis, tidak ada perubahan harga/data.
 
 ## Temuan audit
-| Halaman | Query sebelum | Query sesudah |
-|---|---|---|
-| Beranda | 82 | 49 |
-| Kategori (Panel Surya) | 50 | 29 |
-| Produk (PJU Aurora Optimus LS) | 61 | 45 |
-| Produk (Panel 550Wp) | 61 | 50 |
-| Keranjang | 25 | 16 |
-| Promo | 36 | 23 |
-| Brand | 23 | 14 |
-
-Penyebab (diukur dengan data contoh lokal):
-- Tiap kartu produk mengambil detail kondisi (badge "Harga Nego") satu per satu → 29 query ekstra di beranda; makin banyak produk, makin lambat.
-- Data header/menu (kategori, jumlah keranjang, wishlist, banding) dihitung 2–3× per halaman.
-- Halaman kategori mengambil sub-kategori satu per satu (10 query) untuk menyaring produk.
+- Beranda: HTML 216 KB, 0,43 dtk lokal (setelah usulan sebelumnya); 28 gambar, 24 sudah lazy, semua punya alt.
+- Logo `logo.png` 512×512 (56 KB) dipakai di header dan footer pada ukuran tampil 36 px → 2 unduhan ±112 KB, footer ikut dimuat di awal.
+- Sebelum → sesudah: bobot logo per halaman 112 KB → 9 KB (header 8,8 KB + footer lazy).
 
 ## Perubahan
-- Kartu produk: relasi yang dibutuhkan (brand, kategori, detail kondisi) diambil sekaligus di beranda, pencarian/katalog, dan produk terkait.
-- Header toko: data menu & penghitung dihitung sekali per halaman.
-- Kategori: semua sub-kategori dibaca dengan 1 query.
-- Test baru: jumlah query beranda tidak boleh naik saat produk bertambah.
+- File baru `public/images/logo-sm.png` (128 px, cukup untuk layar 3×). `logo.png` asli tetap dipakai PDF penawaran & gambar OG.
+- `components/logo.blade.php`: pakai logo-sm, `width/height=128`, `decoding="async"`, opsi `lazy`.
+- Footer memakai `:lazy="true"`.
+- Test baru `LogoComponentTest`. 510 test lulus.
 
 ## Risiko
-- Rendah — logika tampilan sama persis; semua 507 test lulus.
+- Rendah — hanya mengganti file gambar yang sama versi kecil; logo di admin/auth ikut komponen yang sama (tampil ≤ 40 px).
 
 ## Ide berikutnya
-- Ukur kecepatan muat nyata di HP (foto produk & ukuran halaman beranda ±220 KB HTML) — kandidat audit berikutnya.
-- Simpan cache halaman beranda untuk pengunjung tanpa login selama 1–2 menit.
-
-PR: https://github.com/fadlisalim/retail/pull/1
+- Cache halaman beranda untuk pengunjung tanpa login 1–2 menit.
+- Konversi foto produk ke WebP + ukuran responsif (srcset) — ukur dulu bobot foto di produksi.
