@@ -1,37 +1,61 @@
-# Agent perbaikan otomatis energi.click
+# Agent audit & perbaikan otomatis energi.click
 
-Dijalankan terjadwal (Selasa, Kamis, Ahad ±07.00 WIB). Tiap putaran: audit → 1–3 perbaikan
-kecil → usulan PR → pemilik menerima laporan + link PR di WhatsApp → tayang hanya setelah
-pemilik menekan **Merge** (auto-deploy).
+Jalan **tiap hari pagi** (tugas terjadwal). Tiap putaran:
+audit → 1–3 perbaikan → usulan (PR, belum tayang) → server energi.click mengirim WA ke
+pemilik berisi ringkasan + link halaman laporan `energi.click/usulan/…` → pemilik memberi
+saran dan menekan **Eksekusi** (OTP WhatsApp) → PR di-merge → auto-deploy menayangkan.
+Agent TIDAK PERNAH me-merge sendiri.
 
 ## Alur kerja
 
 1. Ambil branch kerja terbaru: `git fetch origin claude/rekasurya-store-ecommerce-uwqx70`,
    lalu `git checkout -B claude/auto-improve origin/claude/rekasurya-store-ecommerce-uwqx70`.
-2. Bila PR lama dari `claude/auto-improve` masih terbuka (belum di-merge): tutup dengan
-   komentar singkat "digantikan usulan baru", dan sebutkan di laporan bahwa usulan lama
-   belum disetujui.
+2. **Baca saran pemilik dulu**: lihat 5 PR terakhir dari head `claude/auto-improve` (terbuka,
+   ditutup, maupun di-merge). Baca komentar berawalan **"Saran pemilik"**:
+   - PR ditutup + saran (revisi/tolak) → kerjakan ulang sesuai saran, atau jangan ulangi bila ditolak.
+   - PR di-merge + saran → jadikan prioritas putaran ini.
+   Bila PR sebelumnya masih terbuka: tutup dengan komentar "digantikan usulan baru", lalu sebut di laporan.
 3. Siapkan lingkungan: `composer install`, `cp .env.example .env`, `php artisan key:generate`,
-   `touch database/database.sqlite`, `php artisan migrate --seed`.
-4. Audit dan pilih **1–3 perbaikan kecil** yang paling berdampak bagi pembeli, misalnya:
-   - tampilan HP & desktop (screenshot Playwright: beranda, katalog, produk, keranjang, checkout),
-   - teks/tombol membingungkan, link mati, gambar tanpa alt, kontras rendah, layout meluber,
-   - SEO (judul/deskripsi/schema), kecepatan (query N+1, gambar berat), bug yang terlihat di test.
-   Hindari mengulang perbaikan yang sudah ada di `git log`.
-5. Kerjakan, lalu wajib: `vendor/bin/pint --dirty`, `php artisan test` (semua lulus), dan
-   `npm run build` bila ada class Tailwind baru.
-6. Tulis `deploy/PROPOSAL.md` (dibaca pemilik di WhatsApp — Bahasa Indonesia santai, singkat):
-   - maksimal 6 baris poin: apa yang diubah & manfaatnya bagi pembeli,
-   - 1 baris "Risiko:" (mis. "rendah — hanya tampilan"),
-   - opsional 1–2 ide besar untuk dibahas (tidak dikerjakan).
+   `touch database/database.sqlite`, `php artisan migrate --seed`, `npm ci && npm run build`.
+4. **Audit** (ukur, jangan menebak), dengan `php artisan serve` + Playwright (Chromium terpasang):
+   - **Performa**: waktu muat & ukuran transfer beranda, katalog, produk, keranjang, checkout
+     (HP 390px & desktop 1366px); jumlah query per halaman (N+1); gambar berat; cache.
+   - **Tampilan & kenyamanan**: screenshot HP & desktop; teks terpotong, layout meluber, kontras,
+     ukuran tombol sentuh, konsistensi.
+   - **Efektivitas**: kejelasan harga/stok/ongkir/garansi, CTA (beli, WA), alur checkout, kepercayaan.
+   - **Efisiensi & informatif**: langkah yang bisa dipangkas, info yang dicari pembeli tapi tidak ada,
+     link mati, alt gambar, SEO (judul/deskripsi/schema).
+5. Pilih **1–3 perbaikan** paling berdampak bagi customer. Kerjakan, lalu wajib:
+   `vendor/bin/pint --dirty`, `php artisan test` (semua lulus), `npm run build` bila ada class Tailwind baru.
+   Ukur lagi setelah perbaikan (angka sebelum → sesudah).
+6. Tulis `deploy/PROPOSAL.md` (Markdown, Bahasa Indonesia santai, dibaca pemilik di HP):
+
+   ```
+   # <judul singkat usulan>
+
+   ## Ringkasan
+   - 2–4 poin: apa yang berubah & manfaatnya bagi customer (bagian ini yang dikirim ke WA)
+
+   ## Temuan audit
+   - temuan + angka (mis. "katalog HP 2,1 dtk → 1,3 dtk", "18 query → 6 query")
+
+   ## Perubahan
+   - detail perubahan per halaman
+
+   ## Risiko
+   - rendah/sedang + alasan
+
+   ## Ide berikutnya
+   - 1–3 ide besar untuk dibahas (tidak dikerjakan)
+   ```
 7. Commit (pesan Bahasa Indonesia), `git push -f -u origin claude/auto-improve`, buat PR ke
-   `claude/rekasurya-store-ecommerce-uwqx70`.
-8. Tambahkan baris `PR: <url PR>` di akhir `deploy/PROPOSAL.md`, commit, push lagi. Server
-   mengirim WA ke pemilik hanya setelah baris PR ada.
+   `claude/rekasurya-store-ecommerce-uwqx70` (judul = judul usulan).
+8. Tambahkan baris terakhir `PR: <url PR>` di `deploy/PROPOSAL.md`, commit, push lagi. Server
+   baru mengirim WA setelah baris PR ada.
 
 ## Larangan
 
-- Jangan push ke `claude/rekasurya-store-ecommerce-uwqx70` atau branch lain selain `claude/auto-improve`.
+- Jangan push ke branch selain `claude/auto-improve`. Jangan me-merge PR sendiri.
 - Jangan mengubah harga, modal, stok, produk/katalog, isi halaman kebijakan, data pelanggan,
   pengaturan pembayaran/pajak, atau menambah seeder di `deploy/seeders.txt`.
 - Jangan menambah fitur besar, dependensi baru, atau migrasi yang menghapus/mengubah kolom.

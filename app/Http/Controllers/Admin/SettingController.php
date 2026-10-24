@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\DeployProposal;
+use App\Services\DeployProposalService;
 use App\Services\SettingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,7 +42,11 @@ class SettingController extends Controller
             'pickup.maps_url' => $this->settings->get('pickup.maps_url'),
         ];
 
-        return view('admin.settings', compact('settings') + ['deploy' => $this->deployStatus()]);
+        return view('admin.settings', compact('settings') + [
+            'deploy' => $this->deployStatus(),
+            'proposals' => DeployProposal::latest('id')->limit(5)->get(),
+            'githubTokenSet' => (bool) app(DeployProposalService::class)->githubToken(),
+        ]);
     }
 
     /**
@@ -66,6 +72,16 @@ class SettingController extends Controller
             'failed' => is_file($dir.'/failed'),
             'lines' => array_reverse($lines),
         ];
+    }
+
+    /** Token GitHub (fine-grained, repo ini saja) untuk tombol Eksekusi usulan agent — disimpan terenkripsi. */
+    public function githubToken(Request $request, DeployProposalService $proposals): RedirectResponse
+    {
+        $data = $request->validate(['github_token' => ['nullable', 'string', 'max:255', 'regex:/^(github_pat_|ghp_)[A-Za-z0-9_]+$/']],
+            ['github_token.regex' => 'Format token GitHub tidak dikenali (harus diawali github_pat_ atau ghp_).']);
+        $proposals->setGithubToken($request->boolean('remove') ? null : ($data['github_token'] ?? null));
+
+        return back()->with('success', $request->boolean('remove') ? 'Token GitHub dihapus.' : 'Token GitHub disimpan (terenkripsi).');
     }
 
     public function update(Request $request): RedirectResponse

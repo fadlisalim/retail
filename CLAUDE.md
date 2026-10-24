@@ -11,7 +11,7 @@
 - Deploy OTOMATIS: cron `deploy/auto-deploy.sh` (user energ3514, tiap 2 menit) → pull, composer bila lock berubah, migrate, seeder di `deploy/seeders.txt`, optimize:clear. Cukup commit + push; JANGAN suruh pemilik deploy manual lewat SSH.
 - Butuh seeder jalan di produksi? Tambah baris `<id-unik> <NamaSeeder>` di `deploy/seeders.txt` (sekali per id).
 - Seeder katalog yang dijalankan ulang WAJIB pakai `App\Support\SeedGuard`: suntingan admin (harga, foto, dokumen, deskripsi) tidak boleh tertimpa, produk/foto/dokumen yang dihapus admin tidak boleh dihidupkan lagi.
-- Agent perbaikan otomatis terjadwal: aturan di `deploy/AGENT.md`; usulan lewat branch `claude/auto-improve` + PR, laporan WA ke pemilik (`deploy:notify-proposal`), tayang setelah PR di-merge.
+- Agent audit harian: aturan di `deploy/AGENT.md`; usulan lewat branch `claude/auto-improve` + PR → WA pemilik berisi link `energi.click/usulan/…` → Eksekusi ber-OTP me-merge PR (token GitHub di Admin → Pengaturan) → auto-deploy.
 - Status/log deploy: Admin → Pengaturan → "Status deploy otomatis" (`storage/logs/deploy.log`).
 - Perintah manual (darurat saja) sebagai user situs: `su -s /bin/bash energ3514 -c "cd /home/energi.click/retail && ..."`.
 - Cron `schedule:run` tiap menit milik user `energ3514`.

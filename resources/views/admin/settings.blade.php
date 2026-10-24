@@ -218,5 +218,29 @@
                 @endforeach
             </ul>
         @endif
+
+        {{-- Agent perbaikan otomatis (deploy/AGENT.md): usulan → WA pemilik → Eksekusi ber-OTP. --}}
+        <div class="mt-5 border-t pt-4">
+            <h3 class="mb-1 text-sm font-semibold text-gray-900">Usulan agent perbaikan otomatis</h3>
+            @forelse ($proposals as $p)
+                <p class="text-sm"><a href="{{ route('proposals.show', $p->token) }}" target="_blank" class="text-brand-700 hover:underline">{{ $p->title }}</a>
+                    <span class="text-xs text-gray-500">· {{ $p->created_at->translatedFormat('d M H:i') }} · {{ $p->statusLabel() }}</span></p>
+            @empty
+                <p class="text-sm text-gray-500">Belum ada usulan.</p>
+            @endforelse
+
+            <form method="POST" action="{{ route('admin.settings.github-token') }}" class="mt-3 flex flex-wrap items-end gap-2">
+                @csrf @method('PUT')
+                <div class="min-w-0 flex-1">
+                    <label for="github_token" class="input-label">Token GitHub untuk tombol Eksekusi {!! $githubTokenSet ? '<span class="text-green-700">✅ terpasang</span>' : '<span class="text-amber-700">— belum</span>' !!}</label>
+                    <input id="github_token" name="github_token" type="password" autocomplete="off" class="form-input" placeholder="github_pat_…">
+                    <p class="mt-1 text-xs text-gray-500">Fine-grained token, hanya repo <code>{{ config('rekasurya.deploy.github_repo') }}</code>, izin <em>Contents</em> &amp; <em>Pull requests</em>: Read and write. Disimpan terenkripsi.</p>
+                </div>
+                <button type="submit" class="btn-primary">Simpan token</button>
+                @if ($githubTokenSet)
+                    <button type="submit" name="remove" value="1" class="btn-outline">Hapus</button>
+                @endif
+            </form>
+        </div>
     </div>
 @endsection

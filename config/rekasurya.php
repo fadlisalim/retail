@@ -90,10 +90,11 @@ return [
         'payment_window_hours' => (int) env('ORDER_PAYMENT_WINDOW_HOURS', 168),
     ],
 
-    // Agent perbaikan otomatis: usulan di-push ke branch ini (PR ke branch kerja), lalu
-    // server mengirim laporan + link PR ke WhatsApp pemilik. Tayang setelah PR di-merge.
+    // Agent perbaikan otomatis: usulan = PR dari branch claude/auto-improve. Server
+    // mengirim link laporan ke WA pemilik; Eksekusi (ber-OTP WA) me-merge PR → tayang.
     'deploy' => [
         'report_whatsapp' => env('DEPLOY_REPORT_WHATSAPP', '08112231107'),
+        'github_repo' => env('DEPLOY_GITHUB_REPO', 'fadlisalim/retail'),
     ],
 
     'demo' => [

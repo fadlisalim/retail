@@ -14,6 +14,7 @@ use App\Http\Controllers\CategoryOgImageController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CompareController;
 use App\Http\Controllers\ContentController;
+use App\Http\Controllers\DeployProposalController;
 use App\Http\Controllers\DocumentationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
@@ -164,6 +165,10 @@ Route::controller(QuotationController::class)->group(function () {
 });
 
 /* Review RAB tim internal lewat link ber-kunci (tanpa login; berisi modal — rahasia). */
+// Laporan usulan agent perbaikan otomatis (link ber-kunci dari WA pemilik; keputusan ber-OTP).
+Route::get('/usulan/{token}', [DeployProposalController::class, 'show'])->middleware('throttle:60,1')->name('proposals.show');
+Route::post('/usulan/{token}/otp', [DeployProposalController::class, 'otp'])->middleware('throttle:3,10')->name('proposals.otp');
+Route::post('/usulan/{token}', [DeployProposalController::class, 'decide'])->middleware('throttle:10,10')->name('proposals.decide');
 Route::get('/rab/{token}', [RabReviewController::class, 'show'])->middleware('throttle:60,1')->name('rab.show');
 Route::post('/rab/{token}', [RabReviewController::class, 'store'])->middleware('throttle:10,1')->name('rab.review');
 
@@ -432,6 +437,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::middleware('permission:setting.manage')->group(function () {
         Route::get('/pengaturan', [Admin\SettingController::class, 'edit'])->name('settings.edit');
         Route::put('/pengaturan', [Admin\SettingController::class, 'update'])->name('settings.update');
+        Route::put('/pengaturan/token-github', [Admin\SettingController::class, 'githubToken'])->name('settings.github-token');
     });
 
     Route::middleware('permission:user.manage')->group(function () {
