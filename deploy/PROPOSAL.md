@@ -22,3 +22,5 @@
 ## Ide berikutnya
 - Cache halaman beranda untuk pengunjung tanpa login 1–2 menit.
 - Konversi foto produk ke WebP + ukuran responsif (srcset) — ukur dulu bobot foto di produksi.
+
+PR: https://github.com/fadlisalim/retail/pull/2
