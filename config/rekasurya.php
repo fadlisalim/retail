@@ -90,6 +90,12 @@ return [
         'payment_window_hours' => (int) env('ORDER_PAYMENT_WINDOW_HOURS', 168),
     ],
 
+    // Agent perbaikan otomatis: usulan di-push ke branch ini (PR ke branch kerja), lalu
+    // server mengirim laporan + link PR ke WhatsApp pemilik. Tayang setelah PR di-merge.
+    'deploy' => [
+        'report_whatsapp' => env('DEPLOY_REPORT_WHATSAPP', '08112231107'),
+    ],
+
     'demo' => [
         // When true, seeded demo credentials are shown on the login screen.
         'expose_credentials' => env('DEMO_EXPOSE_CREDENTIALS', true),

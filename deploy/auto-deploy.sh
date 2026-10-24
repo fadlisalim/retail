@@ -22,6 +22,21 @@ flock -n 9 || exit 0
 
 log() { echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >> "$LOG"; }
 
+# Usulan dari agent perbaikan otomatis (PR, belum tayang): kirim laporan + link PR
+# ke WhatsApp pemilik, sekali per commit. Tayang hanya setelah PR di-merge.
+PROPOSAL_BRANCH="claude/auto-improve"
+if git fetch -q origin "$PROPOSAL_BRANCH" 2>/dev/null; then
+    PROPOSAL="$(git rev-parse FETCH_HEAD)"
+    if [ "$PROPOSAL" != "$(cat "$STATE_DIR/proposal-notified" 2>/dev/null)" ]; then
+        if git merge-base --is-ancestor "$PROPOSAL" HEAD 2>/dev/null; then
+            echo "$PROPOSAL" > "$STATE_DIR/proposal-notified" # sudah tayang (PR sudah di-merge)
+        elif git show "$PROPOSAL:deploy/PROPOSAL.md" > "$STATE_DIR/proposal.md" 2>/dev/null \
+            && php artisan deploy:notify-proposal "$PROPOSAL" --file="$STATE_DIR/proposal.md" >> "$LOG" 2>&1; then
+            echo "$PROPOSAL" > "$STATE_DIR/proposal-notified"
+        fi
+    fi
+fi
+
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 if ! git fetch -q origin "$BRANCH" 2>>"$LOG"; then
     log "GAGAL fetch origin/$BRANCH"
