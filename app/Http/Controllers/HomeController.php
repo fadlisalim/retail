@@ -15,13 +15,18 @@ class HomeController extends Controller
 {
     public function index(): View
     {
-        $featuredCard = fn ($q) => $q->published()->with(Product::CARD_RELATIONS);
+        // Satu query untuk semua banner beranda (sebelumnya 4 query terpisah).
+        $banners = Banner::active()
+            ->whereIn('position', ['hero', 'grid', 'video', 'quotation'])
+            ->orderBy('sort_order')
+            ->get()
+            ->groupBy('position');
 
         return view('storefront.home', [
-            'heroBanners' => Banner::active()->where('position', 'hero')->orderBy('sort_order')->get(),
-            'gridBanners' => Banner::active()->where('position', 'grid')->orderBy('sort_order')->get(),
-            'videoBanners' => Banner::active()->where('position', 'video')->orderBy('sort_order')->get(),
-            'quotationBanner' => Banner::active()->where('position', 'quotation')->orderBy('sort_order')->first(),
+            'heroBanners' => $banners->get('hero', collect()),
+            'gridBanners' => $banners->get('grid', collect()),
+            'videoBanners' => $banners->get('video', collect()),
+            'quotationBanner' => $banners->get('quotation', collect())->first(),
             // All top-level categories, shown as a horizontally scrollable card row.
             'shortcutCategories' => $shortcut = CategoryVisibility::filter(Category::active()->whereNull('parent_id')->orderBy('sort_order')->get()),
             'categoryThumbs' => CategoryVisibility::thumbnails($shortcut),
