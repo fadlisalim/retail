@@ -19,7 +19,7 @@ class SearchService
     {
         $query = Product::query()
             ->published()
-            ->with(['brand', 'category']);
+            ->with(Product::CARD_RELATIONS);
 
         $this->applyKeyword($query, $filters['q'] ?? null);
         $this->applyFilters($query, $filters);
@@ -175,7 +175,7 @@ class SearchService
         $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $keyword).'%';
 
         return Product::published()
-            ->with('brand', 'category')
+            ->with(Product::CARD_RELATIONS)
             ->where(fn ($q) => $q->where('name', 'like', $like)->orWhere('sku', 'like', $like)
                 ->orWhereHas('brand', fn ($b) => $b->where('name', 'like', $like)))
             ->orderByDesc('sold_count')

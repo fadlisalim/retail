@@ -15,7 +15,7 @@ class HomeController extends Controller
 {
     public function index(): View
     {
-        $featuredCard = fn ($q) => $q->published()->with(['brand', 'category']);
+        $featuredCard = fn ($q) => $q->published()->with(Product::CARD_RELATIONS);
 
         return view('storefront.home', [
             'heroBanners' => Banner::active()->where('position', 'hero')->orderBy('sort_order')->get(),
@@ -30,13 +30,13 @@ class HomeController extends Controller
             // Tokopedia/offline). Sebelum ada riwayat penjualan, bagian ini
             // memakai produk unggulan pilihan admin agar beranda tidak kosong.
             'bestSellers' => Product::published()->where('sold_count', '>', 0)
-                ->with(['brand', 'category'])->orderByDesc('sold_count')->latest('published_at')->take(10)->get(),
-            'featured' => Product::published()->where('is_featured', true)->with(['brand', 'category'])->latest('published_at')->take(10)->get(),
-            'newest' => Product::published()->where('is_new', true)->with(['brand', 'category'])->latest('published_at')->take(10)->get(),
-            'promos' => Product::published()->whereNotNull('sale_price')->where('is_clearance', false)->with(['brand', 'category'])->take(10)->get(),
+                ->with(Product::CARD_RELATIONS)->orderByDesc('sold_count')->latest('published_at')->take(10)->get(),
+            'featured' => Product::published()->where('is_featured', true)->with(Product::CARD_RELATIONS)->latest('published_at')->take(10)->get(),
+            'newest' => Product::published()->where('is_new', true)->with(Product::CARD_RELATIONS)->latest('published_at')->take(10)->get(),
+            'promos' => Product::published()->whereNotNull('sale_price')->where('is_clearance', false)->with(Product::CARD_RELATIONS)->take(10)->get(),
             'clearance' => Product::published()
                 ->where(fn ($q) => $q->where('is_clearance', true)->orWhere('condition', '!=', 'new'))
-                ->with(['brand', 'category'])
+                ->with(Product::CARD_RELATIONS)
                 ->latest('published_at')
                 ->take(12)
                 ->get(),

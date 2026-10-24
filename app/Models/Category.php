@@ -83,12 +83,21 @@ class Category extends Model
         return $chain;
     }
 
-    /** IDs of this category and all descendants — used to scope catalog queries. */
+    /** IDs of this category and all descendants — used to scope catalog queries. Satu query, bukan satu per level. */
     public function descendantIds(): array
     {
-        $ids = [$this->id];
-        foreach ($this->children as $child) {
-            $ids = array_merge($ids, $child->descendantIds());
+        $byParent = static::query()->get(['id', 'parent_id'])->groupBy('parent_id');
+        $ids = [];
+        $queue = [$this->id];
+        while ($queue) {
+            $id = array_shift($queue);
+            if (in_array($id, $ids, true)) {
+                continue;
+            }
+            $ids[] = $id;
+            foreach ($byParent->get($id, []) as $child) {
+                $queue[] = $child->id;
+            }
         }
 
         return $ids;
