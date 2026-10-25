@@ -20,3 +20,5 @@
 ## Ide berikutnya
 - Beranda & produk masih ±50 query: kategori root diambil 2× (header dan beranda) dan 5 rak produk punya relasi sendiri-sendiri — bisa dipangkas lagi atau di-cache 1–2 menit untuk pengunjung tanpa login.
 - Konversi foto produk ke WebP + srcset (ukur dulu bobot foto di produksi).
+
+PR: https://github.com/fadlisalim/retail/pull/4
