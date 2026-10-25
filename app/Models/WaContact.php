@@ -18,7 +18,7 @@ class WaContact extends Model
 
     protected $fillable = [
         'phone', 'name', 'user_id', 'source', 'tags', 'interests',
-        'consent_status', 'consent_source', 'consent_proof', 'consent_at',
+        'consent_status', 'consent_source', 'consent_proof', 'consent_at', 'permission_asked_at',
         'opted_out_at', 'opted_out_reason', 'last_promo_at',
         'orders_count', 'last_order_at', 'total_spent', 'notes',
     ];
@@ -29,6 +29,7 @@ class WaContact extends Model
             'tags' => 'array',
             'interests' => 'array',
             'consent_at' => 'datetime',
+            'permission_asked_at' => 'datetime',
             'opted_out_at' => 'datetime',
             'last_promo_at' => 'datetime',
             'last_order_at' => 'datetime',
@@ -60,6 +61,25 @@ class WaContact extends Model
     public function scopeEligible(Builder $query): Builder
     {
         return $query->where('consent_status', self::CONSENT_IN);
+    }
+
+    /** Kontak yang boleh dikirimi pesan minta izin: belum izin, belum STOP, belum pernah ditanya. */
+    public function scopeAskable(Builder $query): Builder
+    {
+        return $query->where(fn ($q) => $q->whereNull('consent_status')->orWhere('consent_status', self::CONSENT_UNKNOWN))
+            ->whereNull('permission_asked_at');
+    }
+
+    /** Kode sales dari tag "sales-XXX" (kontak lama ridlabs). */
+    public function salesCode(): ?string
+    {
+        foreach ((array) $this->tags as $tag) {
+            if (str_starts_with((string) $tag, 'sales-')) {
+                return substr((string) $tag, 6);
+            }
+        }
+
+        return null;
     }
 
     public function consentLabel(): string

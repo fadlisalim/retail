@@ -155,6 +155,15 @@ class WaContactService
         return in_array($t, ['stop', 'berhenti', 'unsubscribe', 'stop promo', 'berhenti promo', 'hentikan', 'stop promosi'], true);
     }
 
+    /** Balasan setuju atas pesan minta izin: "YA", "iya", "mau", "boleh", "ok", … (kata pertama). */
+    public function isYesMessage(string $text): bool
+    {
+        $t = mb_strtolower(trim(preg_replace('/[^\pL\pN\s]/u', ' ', $text)));
+        $first = preg_split('/\s+/', $t)[0] ?? '';
+
+        return in_array($first, ['ya', 'iya', 'iyaa', 'yaa', 'y', 'yes', 'mau', 'boleh', 'ok', 'oke', 'okay', 'siap', 'bisa'], true);
+    }
+
     /**
      * Sinkron dari data existing: akun customer, pesanan (nomor + minat kategori +
      * riwayat belanja), lead Kirana, dan pengirim WA chat. Consent tetap unknown.

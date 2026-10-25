@@ -20,6 +20,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /** WhatsApp Campaign: daftar, builder, kontrol kirim, laporan per campaign. */
@@ -134,7 +135,7 @@ class WaCampaignController extends Controller
 
         return response()->json([
             'count' => $count,
-            'eligible_total' => WaContact::eligible()->count(),
+            'eligible_total' => ($segment['kind'] ?? null) === 'permission' ? WaContact::askable()->count() : WaContact::eligible()->count(),
             'sample' => $this->service->audienceQuery($segment)->take(5)->pluck('name')->map(fn ($n) => $n ?: '(tanpa nama)')->all(),
         ]);
     }
@@ -237,6 +238,7 @@ class WaCampaignController extends Controller
             'name' => $request->input('name', 'Tes'), 'message' => (string) $request->input('message', ''),
             'product_id' => $request->input('product_id') ?: null, 'link_url' => $request->input('link_url') ?: null,
             'utm_campaign' => $request->input('utm_campaign') ?: null, 'image_path' => $request->input('image_path') ?: null,
+            'segment' => ['kind' => $request->input('kind') === 'permission' ? 'permission' : 'promo'],
         ];
         if (is_array($campaign) && trim($campaign['message']) === '') {
             return $this->testResponse($request, false, 'Isi pesan dulu.');
@@ -282,6 +284,7 @@ class WaCampaignController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'message' => ['required', 'string', 'max:3000'],
+            'followup_message' => [Rule::requiredIf($request->input('kind') === 'permission'), 'nullable', 'string', 'max:3000'],
             'product_id' => ['nullable', 'exists:products,id'],
             'link_url' => ['nullable', 'url', 'max:500'],
             'utm_campaign' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9_-]+$/'],
@@ -294,6 +297,7 @@ class WaCampaignController extends Controller
         $campaign->fill([
             'name' => $data['name'],
             'message' => $data['message'],
+            'followup_message' => $request->input('kind') === 'permission' ? ($data['followup_message'] ?? null) : null,
             'product_id' => $data['product_id'] ?? null,
             'link_url' => $data['link_url'] ?? null,
             'utm_campaign' => ($data['utm_campaign'] ?? null) ?: Str::slug($data['name']),
@@ -321,6 +325,7 @@ class WaCampaignController extends Controller
         $list = fn ($v) => array_values(array_filter(array_map('trim', (array) $v)));
 
         return array_filter([
+            'kind' => $request->input('kind') === 'permission' ? 'permission' : null,
             'tags' => $list($request->input('tags', [])),
             'interests' => $list($request->input('interests', [])),
             'sources' => $list($request->input('sources', [])),

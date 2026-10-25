@@ -87,7 +87,11 @@ class WablasWebhookController extends Controller
                     $wa->send($phone, 'Baik, nomor ini tidak akan menerima promo dari '.brand().' lagi. Terima kasih 🙏');
                 }
             } else {
-                app(WaCampaignService::class)->noteReply($phone);
+                $campaigns = app(WaCampaignService::class);
+                $campaigns->noteReply($phone);
+                if ($campaigns->handlePermissionReply($phone, $message)) {
+                    $handled = 'YA — izin promo tercatat, pesan lanjutan dikirim';
+                }
             }
         }
 

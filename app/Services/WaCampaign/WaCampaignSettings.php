@@ -25,7 +25,12 @@ class WaCampaignSettings
         'connection_type' => 'qr',    // qr (WhatsApp biasa via scan QR) | cloud (WhatsApp Cloud API resmi Meta)
         'emergency_stop' => false,
         'send_days' => '1,2,3,4,5,6', // ISO: 1 Senin … 7 Minggu
+        'stop_pause_percent' => 3,    // jeda otomatis bila balasan STOP > N% dari pesan terkirim (min. 30 terkirim); 0 = mati
+        'sales_names' => '',          // "KODE=Nama" per baris, untuk placeholder {sales}
     ];
+
+    /** Minimal pesan terkirim sebelum persentase STOP dinilai. */
+    public const STOP_RATE_MIN_SENT = 30;
 
     public function __construct(private readonly SettingService $settings) {}
 
@@ -40,7 +45,7 @@ class WaCampaignSettings
 
         return match ($key) {
             'gap_seconds' => max(1, (int) $value),
-            'per_day', 'min_gap_days', 'failure_pause_after', 'max_attempts' => max(0, (int) $value),
+            'per_day', 'min_gap_days', 'failure_pause_after', 'max_attempts', 'stop_pause_percent' => max(0, (int) $value),
             'emergency_stop' => filter_var($value, FILTER_VALIDATE_BOOL),
             default => $value,
         };
@@ -49,7 +54,7 @@ class WaCampaignSettings
     public function set(string $key, mixed $value): void
     {
         $type = match ($key) {
-            'gap_seconds', 'per_day', 'min_gap_days', 'failure_pause_after', 'max_attempts' => 'integer',
+            'gap_seconds', 'per_day', 'min_gap_days', 'failure_pause_after', 'max_attempts', 'stop_pause_percent' => 'integer',
             'emergency_stop' => 'boolean',
             default => 'string',
         };
@@ -94,6 +99,19 @@ class WaCampaignSettings
     public function perRun(): int
     {
         return max(1, intdiv(60, $this->get('gap_seconds')));
+    }
+
+    /** Nama sales untuk placeholder {sales} dari kode ridlabs; tanpa padanan → "tim sales kami". */
+    public function salesName(?string $code): string
+    {
+        foreach (preg_split('/\R/', (string) $this->get('sales_names')) as $line) {
+            [$k, $v] = array_pad(array_map('trim', explode('=', $line, 2)), 2, '');
+            if ($code !== null && $k !== '' && $v !== '' && strcasecmp($k, $code) === 0) {
+                return $v;
+            }
+        }
+
+        return 'tim sales kami';
     }
 
     public function footer(): string

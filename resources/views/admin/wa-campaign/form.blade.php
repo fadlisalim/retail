@@ -23,6 +23,7 @@
               'linkUrl' => old('link_url', $campaign->link_url ?? ''),
               'utm' => old('utm_campaign', $campaign->utm_campaign ?? ''),
               'name' => old('name', $campaign->name ?? ''),
+              'kind' => old('kind', $campaign->segment['kind'] ?? 'promo'),
               'footer' => $footer,
               'products' => $productsJs,
               'templates' => $templatesJs,
@@ -38,7 +39,17 @@
         <div class="space-y-6">
             {{-- 1. Penerima --}}
             <div class="card p-5">
-                <h2 class="mb-1 font-semibold text-gray-900">1. Penerima</h2>
+                <h2 class="mb-3 font-semibold text-gray-900">1. Jenis &amp; penerima</h2>
+                <div class="mb-4 grid gap-2 sm:grid-cols-2">
+                    <label class="flex cursor-pointer items-start gap-2 rounded-lg border p-3 text-sm" :class="kind === 'permission' ? 'border-brand-500 bg-brand-50' : 'border-gray-200'">
+                        <input type="radio" name="kind" value="permission" x-model="kind" @change="countAudience()" class="mt-1">
+                        <span><strong>Minta izin dulu</strong> (disarankan untuk kontak lama)<br><span class="text-xs text-gray-500">Teks saja tanpa link/gambar ke kontak yang <em>belum</em> izin. Balas YA → otomatis jadi penerima promo &amp; langsung dikirimi foto + link.</span></span>
+                    </label>
+                    <label class="flex cursor-pointer items-start gap-2 rounded-lg border p-3 text-sm" :class="kind !== 'permission' ? 'border-brand-500 bg-brand-50' : 'border-gray-200'">
+                        <input type="radio" name="kind" value="promo" x-model="kind" @change="countAudience()" class="mt-1">
+                        <span><strong>Promo</strong><br><span class="text-xs text-gray-500">Hanya ke kontak yang sudah memberi izin promo.</span></span>
+                    </label>
+                </div>
                 <p class="mb-4 text-xs text-gray-500">Hanya kontak dengan <strong>izin promo</strong> yang bisa jadi penerima ({{ number_format($eligibleTotal) }} kontak). Filter di bawah mempersempit dari situ. Kosongkan semua = semua kontak ber-izin.</p>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
@@ -107,6 +118,13 @@
                 </div>
                 <label for="message" class="input-label">Isi pesan <span class="text-red-500">*</span></label>
                 <textarea name="message" id="message" rows="7" x-model="message" required class="form-textarea" placeholder="Halo {nama}, ada promo panel surya bekas proyek Rp 850.000/panel…"></textarea>
+                <p x-show="kind === 'permission'" x-cloak class="mt-1 text-xs text-amber-700">Pesan izin dikirim tanpa link &amp; gambar. Wajib ajak balas <strong>YA</strong> dan sebut <strong>STOP</strong>. <code>{sales}</code> = nama sales (atur di Pengaturan).</p>
+                <div x-show="kind === 'permission'" x-cloak class="mt-4">
+                    <label for="followup_message" class="input-label">Pesan lanjutan setelah dibalas YA <span class="text-red-500">*</span></label>
+                    <textarea name="followup_message" id="followup_message" rows="4" class="form-textarea" placeholder="Siap Kak {nama} 🙏 Ini foto & detail {produk}: {link}">{{ old('followup_message', $campaign->followup_message) }}</textarea>
+                    <p class="mt-1 text-xs text-gray-500">Dikirim otomatis bersama foto produk/gambar campaign & link produk di bawah.</p>
+                    @error('followup_message')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
                 <p class="mt-1 text-xs text-gray-500">Placeholder: <code>{nama}</code> (nama depan), <code>{nama_lengkap}</code>, <code>{link}</code>, <code>{produk}</code>, <code>{harga}</code>. Link produk otomatis ditambah di akhir bila <code>{link}</code> tidak dipakai. Footer <em>"{{ $footer }}"</em> ditambahkan otomatis.</p>
                 @error('message')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
 
@@ -186,21 +204,22 @@
     <script>
         function waCampaignForm(cfg) {
             return {
-                message: cfg.message, productId: cfg.productId ? String(cfg.productId) : '', linkUrl: cfg.linkUrl, utm: cfg.utm, name: cfg.name,
+                kind: cfg.kind, message: cfg.message, productId: cfg.productId ? String(cfg.productId) : '', linkUrl: cfg.linkUrl, utm: cfg.utm, name: cfg.name,
                 products: cfg.products, templates: cfg.templates, uploaded: null, saveTemplate: false,
                 audience: null, eligibleTotal: 0, sample: [], counting: false, testing: false, testMsg: '', testOk: false,
                 init() { this.countAudience(); },
                 product() { return this.products.find(p => String(p.id) === String(this.productId)) || null; },
                 utmSlug() { return (this.utm || this.name || 'campaign').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); },
                 link() {
+                    if (this.kind === 'permission') return '';
                     const base = this.linkUrl || (this.product() ? this.product().url : '');
                     if (!base) return '';
                     return cfg.goBase + '/' + this.utmSlug(); // link pendek → redirect ke produk + UTM
                 },
-                imageUrl() { return this.uploaded || cfg.existingImage || (this.product() ? this.product().image : null); },
+                imageUrl() { if (this.kind === 'permission') return null; return this.uploaded || cfg.existingImage || (this.product() ? this.product().image : null); },
                 rendered() {
                     const p = this.product(); const link = this.link();
-                    let t = (this.message || '').replace(/\{nama\}/g, 'Budi').replace(/\{nama_lengkap\}/g, 'Budi Santoso').replace(/\{link\}/g, link).replace(/\{produk\}/g, p ? p.name : '').replace(/\{harga\}/g, p ? p.price : '').trim();
+                    let t = (this.message || '').replace(/\{nama\}/g, 'Budi').replace(/\{nama_lengkap\}/g, 'Budi Santoso').replace(/\{sales\}/g, 'Pak Eka').replace(/\{link\}/g, link).replace(/\{produk\}/g, p ? p.name : '').replace(/\{harga\}/g, p ? p.price : '').trim();
                     if (link && !(this.message || '').includes('{link}')) t += '\n\n' + link;
                     if (cfg.footer && !t.toLowerCase().includes('stop')) t += '\n\n' + cfg.footer;
                     return t;

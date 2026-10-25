@@ -31,7 +31,7 @@ class WaCampaign extends Model
     ];
 
     protected $fillable = [
-        'name', 'status', 'message', 'image_path', 'product_id', 'link_url', 'utm_campaign',
+        'name', 'status', 'message', 'followup_message', 'image_path', 'product_id', 'link_url', 'utm_campaign',
         'segment', 'audience_count', 'scheduled_at', 'started_at', 'finished_at',
         'pause_reason', 'consecutive_failures', 'created_by',
     ];
@@ -64,6 +64,15 @@ class WaCampaign extends Model
     public function logs(): HasMany
     {
         return $this->hasMany(WaCampaignLog::class, 'campaign_id');
+    }
+
+    /**
+     * Campaign "minta izin dulu": dikirim ke kontak yang BELUM izin, tanpa link & gambar;
+     * yang membalas YA otomatis jadi penerima promo dan dikirimi followup_message + foto/link.
+     */
+    public function isPermission(): bool
+    {
+        return ($this->segment['kind'] ?? 'promo') === 'permission';
     }
 
     public function statusLabel(): string

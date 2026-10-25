@@ -29,10 +29,13 @@ class WaCampaignService
 
     // ---------------------------------------------------------------- audiens
 
-    /** Query kontak sesuai filter segmen; SELALU dibatasi ke kontak yang mengizinkan promo. */
+    /**
+     * Query kontak sesuai filter segmen. Promo: SELALU dibatasi ke kontak yang mengizinkan
+     * promo. Campaign minta izin: kontak yang belum izin, belum STOP, belum pernah ditanya.
+     */
     public function audienceQuery(array $segment): Builder
     {
-        $q = WaContact::query()->eligible();
+        $q = ($segment['kind'] ?? 'promo') === 'permission' ? WaContact::query()->askable() : WaContact::query()->eligible();
 
         if (! empty($segment['tags'])) {
             $q->where(function (Builder $w) use ($segment) {
@@ -99,14 +102,15 @@ class WaCampaignService
         return route('wa-campaign.go', $campaign->utm_campaign ?: Str::slug($campaign->name));
     }
 
-    /** Render pesan untuk satu kontak: {nama}, {link}, {produk}, {harga} + footer STOP. */
+    /** Render pesan untuk satu kontak: {nama}, {sales}, {link}, {produk}, {harga} + footer STOP. Pesan izin: tanpa link. */
     public function render(WaCampaign $campaign, WaContact $contact): string
     {
-        $link = $this->shortLink($campaign) ?? '';
+        $link = $campaign->isPermission() ? '' : ($this->shortLink($campaign) ?? '');
         $product = $campaign->product;
         $body = strtr($campaign->message, [
             '{nama}' => $contact->firstName(),
             '{nama_lengkap}' => trim((string) $contact->name) ?: 'Kak',
+            '{sales}' => $this->settings->salesName($contact->salesCode()),
             '{link}' => $link,
             '{produk}' => $product?->name ?? '',
             '{harga}' => $product ? rupiah($product->effectivePrice()) : '',
@@ -126,6 +130,9 @@ class WaCampaignService
     /** URL gambar publik untuk Wablas (upload campaign atau foto utama produk). */
     public function imageUrl(WaCampaign $campaign): ?string
     {
+        if ($campaign->isPermission()) {
+            return null; // pesan izin: teks saja, foto dikirim setelah dibalas YA
+        }
         $path = $campaign->image_path ?: $campaign->product?->main_image_path;
         if (! $path) {
             return null;
@@ -334,6 +341,9 @@ class WaCampaignService
 
             $campaigns = WaCampaign::where('status', WaCampaign::RUNNING)->orderBy('started_at')->get();
             foreach ($campaigns as $campaign) {
+                if ($this->pauseIfTooManyStops($campaign)) {
+                    continue;
+                }
                 while ($budget > 0) {
                     $message = $this->claimNext($campaign);
                     if (! $message) {
@@ -404,7 +414,10 @@ class WaCampaignService
         $gap = $this->settings->get('min_gap_days');
         $skip = match (true) {
             ! $contact => 'Kontak sudah dihapus',
-            ! $contact->isOptedIn() => $contact->isOptedOut() ? 'Berhenti promo (STOP)' : 'Belum ada izin promo',
+            $contact->isOptedOut() => 'Berhenti promo (STOP)',
+            $campaign->isPermission() && $contact->isOptedIn() => 'Sudah izin promo',
+            $campaign->isPermission() && $contact->permission_asked_at !== null => 'Sudah pernah dimintai izin',
+            ! $campaign->isPermission() && ! $contact->isOptedIn() => 'Belum ada izin promo',
             $gap > 0 && $contact->last_promo_at && $contact->last_promo_at->gt(now()->subDays($gap)) => "Sudah menerima promo < {$gap} hari",
             default => null,
         };
@@ -422,7 +435,7 @@ class WaCampaignService
 
         if ($result['ok']) {
             $message->forceFill(['status' => WaCampaignMessage::ACCEPTED, 'wablas_id' => $result['id'], 'sent_at' => now(), 'error' => null, 'next_attempt_at' => null])->save();
-            $contact->forceFill(['last_promo_at' => now()])->save();
+            $contact->forceFill(['last_promo_at' => now()] + ($campaign->isPermission() ? ['permission_asked_at' => now()] : []))->save();
             $campaign->forceFill(['consecutive_failures' => 0])->save();
 
             return 'sent';
@@ -512,6 +525,66 @@ class WaCampaignService
     }
 
     /** Catat balasan dari kontak yang baru menerima promo (≤ 7 hari). */
+    /**
+     * Rem darurat reputasi nomor: bila yang membalas STOP melebihi N% dari pesan terkirim
+     * (setelah minimal 30 terkirim), campaign dijeda — banyak STOP biasanya diikuti laporan spam.
+     */
+    public function pauseIfTooManyStops(WaCampaign $campaign): bool
+    {
+        $limit = $this->settings->get('stop_pause_percent');
+        $sent = $campaign->messages()->whereNotNull('sent_at')->count();
+        if ($limit <= 0 || $sent < WaCampaignSettings::STOP_RATE_MIN_SENT) {
+            return false;
+        }
+        $stops = $campaign->messages()->whereNotNull('sent_at')
+            ->whereHas('contact', fn ($q) => $q->where('consent_status', WaContact::CONSENT_OUT)->whereColumn('wa_contacts.opted_out_at', '>=', 'wa_campaign_messages.sent_at'))
+            ->count();
+        $rate = $stops / $sent * 100;
+        if ($rate <= $limit) {
+            return false;
+        }
+        $this->pause($campaign, sprintf('%d dari %d penerima membalas STOP (%.1f%% > %d%%) — evaluasi isi pesan & daftar penerima sebelum melanjutkan.', $stops, $sent, $rate, $limit), 'error');
+
+        return true;
+    }
+
+    /**
+     * Balasan "YA" atas pesan minta izin (≤ 30 hari): kontak jadi penerima promo dan
+     * langsung dikirimi pesan lanjutan + foto/link produk campaign itu. True bila ditangani.
+     */
+    public function handlePermissionReply(string $phone, string $text): bool
+    {
+        if (! app(WaContactService::class)->isYesMessage($text)) {
+            return false;
+        }
+        $contact = WaContact::where('phone', $phone)->first();
+        if (! $contact || $contact->isOptedIn() || $contact->isOptedOut() || ! $contact->permission_asked_at || $contact->permission_asked_at->lt(now()->subDays(30))) {
+            return false;
+        }
+        $asked = WaCampaignMessage::where('contact_id', $contact->id)->whereNotNull('sent_at')->latest('sent_at')->get()
+            ->first(fn ($m) => $m->campaign?->isPermission());
+        $campaign = $asked?->campaign;
+
+        app(WaContactService::class)->optIn($contact, 'wa-reply', 'Membalas "'.Str::limit(trim($text), 40).'" atas pesan minta izin'.($campaign ? ' (campaign "'.$campaign->name.'")' : '').' pada '.now()->format('d/m/Y H:i'));
+        if ($campaign) {
+            WaCampaignLog::write($campaign->id, "{$phone} membalas YA → izin promo tercatat, pesan lanjutan dikirim.");
+        }
+        if (! $campaign || blank($campaign->followup_message)) {
+            return true;
+        }
+
+        $followup = $campaign->replicate();
+        $followup->message = (string) $campaign->followup_message;
+        $followup->segment = ['kind' => 'promo'];
+        $followup->setRelation('product', $campaign->product);
+        $body = $this->render($followup, $contact);
+        $image = $this->imageUrl($followup);
+        $image ? $this->client->sendImage($phone, $image, $body) : $this->client->sendText($phone, $body);
+        $contact->forceFill(['last_promo_at' => now()])->save();
+
+        return true;
+    }
+
     public function noteReply(string $phone): void
     {
         $message = WaCampaignMessage::where('phone', $phone)->whereNotNull('sent_at')->where('sent_at', '>=', now()->subDays(7))->latest('sent_at')->first();

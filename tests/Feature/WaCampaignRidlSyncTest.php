@@ -38,32 +38,31 @@ class WaCampaignRidlSyncTest extends TestCase
         ]);
     }
 
-    public function test_sync_imports_claimed_customers_with_consent_proof_and_never_revives_stop(): void
+    public function test_sync_imports_claimed_customers_without_auto_consent_and_never_revives_stop(): void
     {
         $stop = app(WaContactService::class)->upsert('089900001111', ['name' => 'Sudah Stop', 'source' => 'manual']);
         app(WaContactService::class)->optOut($stop, 'Balas STOP');
 
-        $this->artisan('wa-campaign:sync-ridl', ['--dry-run' => true])->expectsOutputToContain('dibaca 4, kontak baru 2, diperbarui 1, izin baru 2, sudah izin 0, tetap STOP 1, nomor invalid 1 (DRY RUN)')->assertSuccessful();
+        $this->artisan('wa-campaign:sync-ridl', ['--dry-run' => true])->expectsOutputToContain('dibaca 4, kontak baru 2, diperbarui 1, perlu minta izin 2, sudah izin 0, tetap STOP 1, nomor invalid 1 (DRY RUN)')->assertSuccessful();
         $this->assertSame(1, WaContact::count()); // dry run tidak menulis
 
         $this->artisan('wa-campaign:sync-ridl')->expectsOutputToContain('kontak baru 2')->assertSuccessful();
         $this->assertSame(3, WaContact::count());
 
         $hendra = WaContact::where('phone', '6281268123767')->firstOrFail();
-        $this->assertTrue($hendra->isOptedIn());
+        $this->assertFalse($hendra->isOptedIn()); // izin lewat balasan YA, bukan otomatis
         $this->assertSame('ridl', $hendra->source);
         $this->assertSame('Pak Hendra', $hendra->name);
         $this->assertSame(['legacy', 'sales-EPR'], $hendra->tags);
-        $this->assertStringContainsString('dilayani sales EPR pada 2026-04-01', $hendra->consent_proof);
         $this->assertStringContainsString('CV Surya', $hendra->notes);
-        $this->assertTrue(WaContact::where('phone', '6282328525988')->first()->isOptedIn());
+        $this->assertFalse(WaContact::where('phone', '6282328525988')->first()->isOptedIn());
         $this->assertNull(WaContact::where('phone', '6282276137910')->first());
         $this->assertTrue($stop->fresh()->isOptedOut());
 
-        // Jalan lagi: tidak dobel, izin yang ada tidak ditimpa; filter since/limit; tanpa-izin.
-        $hendra->forceFill(['consent_proof' => 'izin checkout'])->save();
-        $this->artisan('wa-campaign:sync-ridl')->expectsOutputToContain('kontak baru 0, diperbarui 3, izin baru 0, sudah izin 2, tetap STOP 1')->assertSuccessful();
-        $this->assertSame('izin checkout', $hendra->fresh()->consent_proof);
+        // Jalan lagi: tidak dobel, izin yang ada (mis. balas YA) tidak ditimpa; filter since/limit; tanpa-izin.
+        app(WaContactService::class)->optIn($hendra, 'wa-reply', 'Membalas YA');
+        $this->artisan('wa-campaign:sync-ridl')->expectsOutputToContain('kontak baru 0, diperbarui 3, perlu minta izin 1, sudah izin 1, tetap STOP 1')->assertSuccessful();
+        $this->assertSame('Membalas YA', $hendra->fresh()->consent_proof);
         $this->artisan('wa-campaign:sync-ridl', ['--since' => '2025-01-01', '--dry-run' => true])->expectsOutputToContain('dibaca 2')->assertSuccessful();
         $this->artisan('wa-campaign:sync-ridl', ['--limit' => 1, '--dry-run' => true])->expectsOutputToContain('dibaca 1')->assertSuccessful();
         WaContact::where('phone', '6282328525988')->delete();

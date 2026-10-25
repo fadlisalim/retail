@@ -12,19 +12,19 @@ use Illuminate\Support\Facades\DB;
 /**
  * Sinkron kontak WA Campaign dari DB customer lama ridlabs (koneksi 'ridl',
  * tabel customers). Hanya customer yang SUDAH DIKLAIM sales (claimed_at terisi).
- * Dasar izin promo: hubungan bisnis existing (pernah dilayani sales) — dicatat
- * sebagai bukti per kontak; kontak yang sudah STOP tidak pernah dihidupkan lagi,
- * izin yang sudah ada (checkout/daftar/manual) tidak ditimpa. Hanya membaca DB ridl.
+ * Kontak TIDAK otomatis diberi izin promo: customer lama dikirimi pesan "minta izin
+ * dulu" (campaign jenis izin) dan baru jadi penerima promo setelah membalas YA.
+ * Kontak yang sudah STOP tidak pernah dihidupkan lagi. Hanya membaca DB ridl.
  */
 class WaCampaignSyncRidl extends Command
 {
     protected $signature = 'wa-campaign:sync-ridl
         {--since= : Hanya claimed_at ≥ tanggal ini (Y-m-d)}
         {--limit= : Maks. baris (terbaru dulu) — untuk sinkron bertahap}
-        {--tanpa-izin : Hanya buat/perbarui kontak, jangan catat izin promo}
+        {--tanpa-izin : (tidak dipakai lagi — izin selalu lewat balasan YA)}
         {--dry-run : Hitung saja, tidak menulis}';
 
-    protected $description = 'Tarik customer lama ridlabs yang sudah diklaim sales ke kontak WA Campaign (izin: hubungan bisnis existing)';
+    protected $description = 'Tarik customer lama ridlabs yang sudah diklaim sales ke kontak WA Campaign (izin promo lewat balasan YA atas pesan minta izin)';
 
     public function handle(WaContactService $contacts, SettingService $settings): int
     {
@@ -45,7 +45,7 @@ class WaCampaignSyncRidl extends Command
             $query->limit((int) $this->option('limit'));
         }
 
-        $n = ['dibaca' => 0, 'baru' => 0, 'diperbarui' => 0, 'izin_baru' => 0, 'tetap_stop' => 0, 'sudah_izin' => 0, 'invalid' => 0];
+        $n = ['dibaca' => 0, 'baru' => 0, 'diperbarui' => 0, 'perlu_izin' => 0, 'tetap_stop' => 0, 'sudah_izin' => 0, 'invalid' => 0];
         $dry = (bool) $this->option('dry-run');
         $withConsent = ! $this->option('tanpa-izin');
 
@@ -59,7 +59,6 @@ class WaCampaignSyncRidl extends Command
             }
             $existing = WaContact::where('phone', $phone)->first();
             $sales = trim((string) ($row->id_sales ?? ''));
-            $claimed = $row->claimed_at ? substr((string) $row->claimed_at, 0, 10) : '';
 
             if ($dry) {
                 $existing ? $n['diperbarui']++ : $n['baru']++;
@@ -67,7 +66,7 @@ class WaCampaignSyncRidl extends Command
                     match (true) {
                         $existing?->isOptedOut() => $n['tetap_stop']++,
                         $existing?->isOptedIn() => $n['sudah_izin']++,
-                        default => $n['izin_baru']++,
+                        default => $n['perlu_izin']++,
                     };
                 }
 
@@ -93,13 +92,12 @@ class WaCampaignSyncRidl extends Command
                 } elseif ($contact->isOptedIn()) {
                     $n['sudah_izin']++;
                 } else {
-                    $contacts->optIn($contact, 'ridl', 'Customer lama ridlabs — sudah diklaim/dilayani sales '.($sales ?: '-').($claimed ? ' pada '.$claimed : '').' (hubungan bisnis existing)');
-                    $n['izin_baru']++;
+                    $n['perlu_izin']++; // dikirimi pesan minta izin; jadi penerima promo setelah balas YA
                 }
             }
         }
 
-        $summary = "ridlabs: dibaca {$n['dibaca']}, kontak baru {$n['baru']}, diperbarui {$n['diperbarui']}, izin baru {$n['izin_baru']}, sudah izin {$n['sudah_izin']}, tetap STOP {$n['tetap_stop']}, nomor invalid {$n['invalid']}".($dry ? ' (DRY RUN)' : '');
+        $summary = "ridlabs: dibaca {$n['dibaca']}, kontak baru {$n['baru']}, diperbarui {$n['diperbarui']}, perlu minta izin {$n['perlu_izin']}, sudah izin {$n['sudah_izin']}, tetap STOP {$n['tetap_stop']}, nomor invalid {$n['invalid']}".($dry ? ' (DRY RUN)' : '');
         $this->info($summary);
         if (! $dry) {
             $settings->set('wa_campaign.ridl_last_sync', now()->format('d/m/Y H:i').' — '.$summary, 'string', 'wa_campaign');
