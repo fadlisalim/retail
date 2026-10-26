@@ -31,7 +31,7 @@ class WaCampaign extends Model
     ];
 
     protected $fillable = [
-        'name', 'status', 'message', 'followup_message', 'image_path', 'product_id', 'link_url', 'utm_campaign',
+        'name', 'status', 'message', 'message_variants', 'followup_message', 'image_path', 'product_id', 'link_url', 'utm_campaign',
         'segment', 'audience_count', 'scheduled_at', 'started_at', 'finished_at',
         'pause_reason', 'consecutive_failures', 'created_by',
     ];
@@ -40,6 +40,7 @@ class WaCampaign extends Model
     {
         return [
             'segment' => 'array',
+            'message_variants' => 'array',
             'scheduled_at' => 'datetime',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
@@ -73,6 +74,37 @@ class WaCampaign extends Model
     public function isPermission(): bool
     {
         return ($this->segment['kind'] ?? 'promo') === 'permission';
+    }
+
+    /** Redaksi pesan yang digilir per penerima: pesan utama + variasi (maks. 4 total). @return list<string> */
+    public function variants(): array
+    {
+        return array_slice(array_values(array_filter(
+            [(string) $this->message, ...array_map('strval', (array) $this->message_variants)],
+            fn ($t) => trim($t) !== '',
+        )), 0, 4);
+    }
+
+    /**
+     * Statistik per versi pesan: terkirim, membalas, izin lewat balas YA, STOP.
+     *
+     * @return list<array{variant: int, sent: int, replied: int, yes: int, stop: int}>
+     */
+    public function variantStats(): array
+    {
+        $rows = [];
+        foreach (array_keys($this->variants()) as $i) {
+            $sent = $this->messages()->where('variant', $i)->whereNotNull('sent_at');
+            $rows[] = [
+                'variant' => $i,
+                'sent' => (clone $sent)->count(),
+                'replied' => (clone $sent)->where('reply_count', '>', 0)->count(),
+                'yes' => (clone $sent)->whereHas('contact', fn ($q) => $q->where('consent_status', WaContact::CONSENT_IN)->where('consent_source', 'wa-reply'))->count(),
+                'stop' => (clone $sent)->whereHas('contact', fn ($q) => $q->where('consent_status', WaContact::CONSENT_OUT))->count(),
+            ];
+        }
+
+        return $rows;
     }
 
     public function statusLabel(): string

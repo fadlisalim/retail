@@ -154,4 +154,38 @@ class WaCampaignPermissionTest extends TestCase
         $this->assertSame(1, $c->audience_count);
         $this->assertSame(40, app(WaCampaignSettings::class)->get('per_day'));
     }
+
+    public function test_four_message_versions_rotate_evenly_with_per_version_stats_and_default_sales_name(): void
+    {
+        app(WaCampaignSettings::class)->set('sales_names', '*=Miftah');
+        app(WaCampaignSettings::class)->set('gap_seconds', 2);
+        foreach (range(1, 8) as $i) {
+            $this->legacy('0812000000'.str_pad((string) $i, 2, '0', STR_PAD_LEFT), 'Kontak'.$i, 'EPR');
+        }
+        $campaign = $this->permissionCampaign();
+        $campaign->forceFill(['message_variants' => WaCampaignIzinSeeder::VARIANTS])->save();
+        $this->assertCount(4, $campaign->variants());
+
+        $service = app(WaCampaignService::class);
+        $service->schedule($campaign);
+        $service->dispatch();
+
+        $byVariant = $campaign->messages()->selectRaw('variant, count(*) n')->groupBy('variant')->pluck('n', 'variant')->all();
+        $this->assertSame([0 => 2, 1 => 2, 2 => 2, 3 => 2], array_map('intval', $byVariant)); // merata
+        foreach ($campaign->messages as $m) {
+            $this->assertStringContainsString('Miftah', $m->rendered_message);
+            $this->assertStringContainsString('Seraphim 345Wp', $m->rendered_message);
+            $this->assertStringContainsString('850rb', $m->rendered_message);
+            $this->assertStringContainsString('STOP', $m->rendered_message);
+        }
+        $this->assertCount(4, $campaign->messages()->pluck('rendered_message')->map(fn ($t) => preg_replace('/Kontak\d/', '', $t))->unique());
+
+        // Balas YA tercatat di statistik versinya.
+        $phone = $campaign->messages()->where('variant', 2)->value('phone');
+        $this->postJson('/webhook/wablas', ['phone' => $phone, 'message' => 'Ya'])->assertOk();
+        $stats = collect($campaign->fresh()->variantStats())->keyBy('variant');
+        $this->assertSame(1, $stats[2]['yes']);
+        $this->assertSame(2, $stats[2]['sent']);
+        $this->assertSame(0, $stats[0]['yes']);
+    }
 }

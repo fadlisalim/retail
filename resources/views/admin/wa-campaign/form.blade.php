@@ -118,6 +118,14 @@
                 </div>
                 <label for="message" class="input-label">Isi pesan <span class="text-red-500">*</span></label>
                 <textarea name="message" id="message" rows="7" x-model="message" required class="form-textarea" placeholder="Halo {nama}, ada promo panel surya bekas proyek Rp 850.000/panel…"></textarea>
+                <details class="mt-3 rounded-lg border border-gray-200 p-3" @if (array_filter((array) old('message_variants', $campaign->message_variants ?? []))) open @endif>
+                    <summary class="cursor-pointer text-sm font-medium text-gray-700">Variasi redaksi (opsional, sampai 4 versi)</summary>
+                    <p class="mt-1 text-xs text-gray-500">Versi digilir merata antar penerima, dan laporan menampilkan versi mana yang paling banyak dibalas. Isi & harga harus sama — hanya gaya bahasa yang berbeda.</p>
+                    @foreach ([0, 1, 2] as $i)
+                        <label for="variant_{{ $i }}" class="input-label mt-3">Versi {{ $i + 2 }}</label>
+                        <textarea name="message_variants[]" id="variant_{{ $i }}" rows="5" class="form-textarea">{{ old('message_variants.'.$i, $campaign->message_variants[$i] ?? '') }}</textarea>
+                    @endforeach
+                </details>
                 <p x-show="kind === 'permission'" x-cloak class="mt-1 text-xs text-amber-700">Pesan izin dikirim tanpa link &amp; gambar. Wajib ajak balas <strong>YA</strong> dan sebut <strong>STOP</strong>. <code>{sales}</code> = nama sales (atur di Pengaturan).</p>
                 <div x-show="kind === 'permission'" x-cloak class="mt-4">
                     <label for="followup_message" class="input-label">Pesan lanjutan setelah dibalas YA <span class="text-red-500">*</span></label>

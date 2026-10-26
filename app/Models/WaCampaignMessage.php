@@ -42,7 +42,7 @@ class WaCampaignMessage extends Model
     ];
 
     protected $fillable = [
-        'campaign_id', 'contact_id', 'phone', 'status', 'rendered_message', 'wablas_id',
+        'campaign_id', 'contact_id', 'phone', 'status', 'rendered_message', 'variant', 'wablas_id',
         'attempts', 'next_attempt_at', 'error', 'sent_at', 'delivered_at', 'read_at', 'failed_at', 'reply_count',
     ];
 

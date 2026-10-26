@@ -112,6 +112,7 @@ class WaCampaignController extends Controller
         return view('admin.wa-campaign.show', [
             'campaign' => $campaign->load('product', 'creator'),
             'stats' => $campaign->stats(),
+            'variantStats' => count($campaign->variants()) > 1 ? $campaign->variantStats() : [],
             'messages' => $messages,
             'filter' => $filter,
             'logs' => $campaign->logs()->latest('id')->take(30)->get(),
@@ -284,6 +285,8 @@ class WaCampaignController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'message' => ['required', 'string', 'max:3000'],
+            'message_variants' => ['nullable', 'array', 'max:3'],
+            'message_variants.*' => ['nullable', 'string', 'max:3000'],
             'followup_message' => [Rule::requiredIf($request->input('kind') === 'permission'), 'nullable', 'string', 'max:3000'],
             'product_id' => ['nullable', 'exists:products,id'],
             'link_url' => ['nullable', 'url', 'max:500'],
@@ -297,6 +300,7 @@ class WaCampaignController extends Controller
         $campaign->fill([
             'name' => $data['name'],
             'message' => $data['message'],
+            'message_variants' => array_values(array_filter(array_map('trim', $data['message_variants'] ?? []), fn ($t) => $t !== '')) ?: null,
             'followup_message' => $request->input('kind') === 'permission' ? ($data['followup_message'] ?? null) : null,
             'product_id' => $data['product_id'] ?? null,
             'link_url' => $data['link_url'] ?? null,

@@ -69,6 +69,27 @@
         <x-admin.stat-card label="Balasan" :value="$stats['replied']" color="brand" sub="dalam 7 hari" />
         <x-admin.stat-card label="STOP" :value="$stats['opted_out']" color="amber" :sub="$stats['skipped'].' dilewati · '.$stats['cancelled'].' batal'" />
     </div>
+    @if ($variantStats)
+        <div class="card mt-4 overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                    <tr><th class="px-4 py-2">Versi pesan</th><th class="px-4 py-2 text-right">Terkirim</th><th class="px-4 py-2 text-right">Membalas</th><th class="px-4 py-2 text-right">Balas YA</th><th class="px-4 py-2 text-right">STOP</th></tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach ($variantStats as $v)
+                        @php($pct = fn ($n) => $v['sent'] ? ' ('.round($n / $v['sent'] * 100).'%)' : '')
+                        <tr>
+                            <td class="px-4 py-2">Versi {{ $v['variant'] + 1 }} <span class="text-xs text-gray-500">— {{ \Illuminate\Support\Str::limit($campaign->variants()[$v['variant']], 60) }}</span></td>
+                            <td class="px-4 py-2 text-right">{{ $v['sent'] }}</td>
+                            <td class="px-4 py-2 text-right">{{ $v['replied'] }}{{ $pct($v['replied']) }}</td>
+                            <td class="px-4 py-2 text-right font-medium text-green-700">{{ $v['yes'] }}{{ $pct($v['yes']) }}</td>
+                            <td class="px-4 py-2 text-right text-amber-700">{{ $v['stop'] }}{{ $pct($v['stop']) }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
     <p class="mt-2 text-[11px] text-gray-400">"Terkirim/Sampai/Dibaca" hanya terisi bila Wablas mengirim webhook status (tracking) ke situs ini. Tanpa itu, status berhenti di "Diterima gateway".</p>
 
     <div class="mt-6 grid gap-6 lg:grid-cols-[1fr_340px]">

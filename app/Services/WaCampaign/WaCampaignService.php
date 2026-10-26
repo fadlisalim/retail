@@ -103,11 +103,13 @@ class WaCampaignService
     }
 
     /** Render pesan untuk satu kontak: {nama}, {sales}, {link}, {produk}, {harga} + footer STOP. Pesan izin: tanpa link. */
-    public function render(WaCampaign $campaign, WaContact $contact): string
+    public function render(WaCampaign $campaign, WaContact $contact, int $variant = 0): string
     {
+        $variants = $campaign->variants();
+        $template = $variants[$variant] ?? $variants[0] ?? (string) $campaign->message;
         $link = $campaign->isPermission() ? '' : ($this->shortLink($campaign) ?? '');
         $product = $campaign->product;
-        $body = strtr($campaign->message, [
+        $body = strtr($template, [
             '{nama}' => $contact->firstName(),
             '{nama_lengkap}' => trim((string) $contact->name) ?: 'Kak',
             '{sales}' => $this->settings->salesName($contact->salesCode()),
@@ -116,7 +118,7 @@ class WaCampaignService
             '{harga}' => $product ? rupiah($product->effectivePrice()) : '',
         ]);
         $body = trim($body);
-        if ($link !== '' && ! str_contains($campaign->message, '{link}')) {
+        if ($link !== '' && ! str_contains($template, '{link}')) {
             $body .= "\n\n".$link;
         }
         $footer = $this->settings->footer();
@@ -354,9 +356,10 @@ class WaCampaignService
                     if ($result === 'sent' || $result === 'uncertain' || $result === 'failed') {
                         $budget--;
                         Cache::put('wa-campaign:last-attempt-at', now()->toIso8601String(), 86400);
-                        // Jeda antar pesan supaya tidak menyembur (gap_seconds).
+                        // Jeda antar pesan supaya tidak menyembur: gap_seconds ±1/3 secara acak
+                        // (mis. 30 dtk → 20–40 dtk), jadi ritmenya tidak kaku seperti mesin.
                         if ($budget > 0 && ! app()->runningUnitTests()) {
-                            usleep($gap * 1_000_000);
+                            usleep(random_int((int) ($gap * 666_667), (int) ($gap * 1_333_333)));
                         }
                     }
                     if ($campaign->fresh()->status !== WaCampaign::RUNNING) {
@@ -427,9 +430,11 @@ class WaCampaignService
             return 'skipped';
         }
 
-        $text = $this->render($campaign, $contact);
+        // Redaksi digilir merata antar penerima (versi tetap sama saat dikirim ulang).
+        $variant = $message->variant ?? ($message->id % max(1, count($campaign->variants())));
+        $text = $this->render($campaign, $contact, $variant);
         $image = $this->imageUrl($campaign);
-        $message->forceFill(['rendered_message' => $text, 'attempts' => $message->attempts + 1])->save();
+        $message->forceFill(['rendered_message' => $text, 'variant' => $variant, 'attempts' => $message->attempts + 1])->save();
 
         $result = $image ? $this->client->sendImage($contact->phone, $image, $text) : $this->client->sendText($contact->phone, $text);
 
