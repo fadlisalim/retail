@@ -74,7 +74,6 @@
                                             <p class="truncate text-xs font-semibold text-gray-800" x-text="p.name"></p>
                                             <p class="text-xs font-bold text-brand-700">
                                                 <span x-text="p.price"></span>
-                                                <span x-show="!p.in_stock" class="ml-1 font-normal text-red-500">(stok habis)</span>
                                             </p>
                                         </div>
                                     </a>

@@ -49,13 +49,13 @@
             <x-price :product="$product" compact />
         </div>
 
-        {{-- "Stok tersedia" dihilangkan; hanya tampilkan status non-normal + jumlah terjual. --}}
+        {{-- Jumlah/status stok tidak ditampilkan (data stok kadang belum mutakhir); stok tercatat 0 → ajak tanya via WA. --}}
         @if (! $product->inStock() || $product->requires_quotation || $product->sold_count > 0)
             <div class="mt-1.5 flex items-center gap-2 text-xs text-gray-400">
                 @if ($product->requires_quotation)
                     <span class="text-teal-600">Via penawaran</span>
                 @elseif (! $product->inStock())
-                    <span class="text-red-500">Stok habis</span>
+                    <span class="text-green-700">Tanya stok via WA</span>
                 @endif
                 @if ($product->sold_count > 0)<span>{{ $product->sold_count }} terjual</span>@endif
             </div>

@@ -1,6 +1,7 @@
 @extends('layouts.storefront')
 @section('title', $product->meta_title ?: $product->name)
 @php
+    $stockWaLink = whatsapp_link('Halo '.brand().', saya mau konfirmasi stok '.$product->name.' ('.route('products.show', $product->slug).')');
     $ogPriceLabel = $product->requires_quotation
         ? 'Minta penawaran'
         : rupiah($product->effectivePrice());
@@ -286,7 +287,7 @@
                                     <img src="{{ asset('storage/'.$variant->image_path) }}" alt="{{ $variant->name }}" class="h-9 w-9 shrink-0 rounded object-cover" loading="lazy">
                                 @endif
                                 <span class="font-medium">{{ $variant->name }}</span>
-                                @if ($variant->stock <= 0)<span class="text-xs text-red-400">(habis)</span>@endif
+                                @if ($variant->stock <= 0)<span class="text-xs text-gray-400">(tanya stok)</span>@endif
                             </button>
                         @endforeach
                     </div>
@@ -294,10 +295,12 @@
                 </div>
             @endif
 
-            {{-- Stock + qty --}}
-            <div class="mt-4 flex items-center gap-4">
-                <span class="text-sm" x-show="stock > 0"><span class="font-medium text-green-600">Stok tersedia</span> <span class="text-gray-400" x-text="'(' + stock + ' {{ $product->unit }})'"></span></span>
-                <span class="text-sm font-medium text-red-500" x-show="stock <= 0">Stok habis</span>
+            {{-- Jumlah stok tidak ditampilkan (data stok kadang belum mutakhir) — pembeli konfirmasi lewat WhatsApp. --}}
+            <div class="mt-4">
+                <a href="{{ $stockWaLink }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-sm font-medium text-green-700 hover:underline">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.6-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.1.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3Z"/></svg>
+                    Hubungi kami untuk konfirmasi stok
+                </a>
             </div>
 
             @unless ($product->requires_quotation)
@@ -330,14 +333,15 @@
                 @if ($product->requires_quotation)
                     <a href="{{ route('quotations.create', ['produk' => $product->slug]) }}" class="btn-accent flex-1">Minta Penawaran</a>
                 @elseif ($product->is_purchasable)
-                    <form action="{{ route('cart.store') }}" method="POST" class="flex-1" @submit="$store.cart.submit($event)">
+                    <form action="{{ route('cart.store') }}" method="POST" class="flex-1" @submit="$store.cart.submit($event)" x-show="stock > 0">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
                         <input type="hidden" name="variant_id" :value="variantId">
                         <input type="hidden" name="quantity" :value="qty">
                         <button type="submit" class="btn-primary w-full"
-                                :disabled="stock <= 0 || ({{ $product->variants->isNotEmpty() ? 'true' : 'false' }} && !variantId)">Tambah ke Keranjang</button>
+                                :disabled="{{ $product->variants->isNotEmpty() ? 'true' : 'false' }} && !variantId">Tambah ke Keranjang</button>
                     </form>
+                    <a href="{{ $stockWaLink }}" target="_blank" rel="noopener" x-show="stock <= 0" x-cloak class="btn-primary flex-1 bg-green-600 hover:bg-green-700">Tanya stok via WhatsApp</a>
                 @endif
                 @php
                     $chatProduct = [
@@ -390,8 +394,9 @@
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
                         <input type="hidden" name="variant_id" :value="variantId">
                         <input type="hidden" name="quantity" :value="qty">
-                        <button type="submit" class="btn-primary" :disabled="stock <= 0" x-text="stock <= 0 ? 'Stok Habis' : 'Tambah ke Keranjang'"></button>
+                        <button type="submit" class="btn-primary" x-show="stock > 0">Tambah ke Keranjang</button>
                     </form>
+                    <a href="{{ $stockWaLink }}" target="_blank" rel="noopener" x-show="stock <= 0" x-cloak class="btn-primary shrink-0 bg-green-600 hover:bg-green-700">Tanya stok</a>
                 @endif
             </div>
         </div>

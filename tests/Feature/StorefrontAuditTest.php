@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Product;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\WaContact;
@@ -102,5 +103,22 @@ class StorefrontAuditTest extends TestCase
             ->assertSee('<meta property="og:image:width" content="1200">', false)
             ->assertSee('Panel Surya, Inverter &amp; Baterai Lithium Bergaransi Resmi', false)
             ->assertSee('Konsultasi gratis via WhatsApp', false);
+    }
+
+    public function test_product_page_hides_stock_and_offers_whatsapp_stock_confirmation(): void
+    {
+        $category = Category::factory()->create();
+        $ready = Product::factory()->create(['name' => 'Panel Uji 550Wp', 'category_id' => $category->id, 'stock' => 37, 'min_stock' => 50]);
+        $empty = Product::factory()->create(['name' => 'Inverter Uji 5kW', 'category_id' => $category->id, 'stock' => 0]);
+
+        $this->get(route('products.show', $ready->slug))->assertOk()
+            ->assertSee('Hubungi kami untuk konfirmasi stok')
+            ->assertSee('https://wa.me/', false)
+            ->assertDontSee('Stok tersedia')->assertDontSee('(37')->assertDontSee('Stok Terbatas')
+            ->assertSee('Tambah ke Keranjang');
+
+        $this->get(route('products.show', $empty->slug))->assertOk()
+            ->assertSee('Tanya stok via WhatsApp')
+            ->assertDontSee('Stok habis')->assertDontSee('Stok Habis');
     }
 }

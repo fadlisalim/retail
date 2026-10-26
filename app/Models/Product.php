@@ -275,7 +275,7 @@ class Product extends Model
     public function badges(bool $includeCondition = true, bool $includeCustom = true): array
     {
         // Ordered by display priority so cards (which show the first ~2) surface the
-        // most important first: custom tag, Clearance, Promo, Stok Terbatas, Baru.
+        // most important first: custom tag, Clearance, Promo, Baru.
         // The card renders the custom tag as a separate inline chip (near the price),
         // so it passes $includeCustom = false to keep the image overlay uncluttered.
         $badges = [];
@@ -288,9 +288,7 @@ class Product extends Model
         if ($this->isOnSale()) {
             $badges[] = 'Promo';
         }
-        if ($this->isLowStock()) {
-            $badges[] = 'Stok Terbatas';
-        }
+        // Badge "Stok Terbatas" tidak dipakai: data stok kadang belum mutakhir (konfirmasi via WA).
         if ($this->is_new) {
             $badges[] = 'Baru';
         }
