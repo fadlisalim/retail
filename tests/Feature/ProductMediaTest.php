@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
@@ -134,5 +136,19 @@ class ProductMediaTest extends TestCase
             'title' => 'x', 'type' => 'datasheet',
             'document' => UploadedFile::fake()->create('virus.exe', 10),
         ])->assertSessionHasErrors('document');
+    }
+
+    public function test_admin_can_filter_products_without_cost_price(): void
+    {
+        $this->actingAs($this->staff());
+        $withCost = Product::factory()->create(['name' => 'Ada Modal', 'cost_price' => 1_000_000]);
+        $noCost = Product::factory()->create(['name' => 'Tanpa Modal', 'cost_price' => null]);
+        $variantGap = Product::factory()->create(['name' => 'Varian Bolong', 'cost_price' => 500_000, 'product_type' => 'variable']);
+        ProductVariant::create(['product_id' => $variantGap->id, 'sku' => 'VB-1', 'name' => 'A', 'price' => 1, 'cost_price' => 100, 'is_active' => true]);
+        ProductVariant::create(['product_id' => $variantGap->id, 'sku' => 'VB-2', 'name' => 'B', 'price' => 1, 'cost_price' => null, 'is_active' => true]);
+
+        $this->get(route('admin.products.index', ['media' => 'no-cost']))->assertOk()
+            ->assertSee('Belum ada harga modal')
+            ->assertSee('Tanpa Modal')->assertSee('Varian Bolong')->assertDontSee('Ada Modal');
     }
 }

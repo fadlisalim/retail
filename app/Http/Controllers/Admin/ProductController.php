@@ -71,6 +71,7 @@ class ProductController extends Controller
         'no-document' => 'Belum ada dokumen',
         'no-video' => 'Belum ada video',
         'incomplete' => 'Belum lengkap (salah satu kosong)',
+        'no-cost' => 'Belum ada harga modal',
     ];
 
     /**
@@ -88,6 +89,10 @@ class ProductController extends Controller
             'no-image' => $withoutImage($query),
             'no-document' => $query->whereDoesntHave('documents'),
             'no-video' => $query->whereDoesntHave('videos'),
+            // Produk tanpa varian dengan modal kosong/0, atau ada varian aktif yang modalnya kosong/0.
+            'no-cost' => $query->where(fn ($sub) => $sub
+                ->where(fn ($q) => $q->whereDoesntHave('variants')->where(fn ($c) => $c->whereNull('cost_price')->orWhere('cost_price', '<=', 0)))
+                ->orWhereHas('variants', fn ($v) => $v->where('is_active', true)->where(fn ($c) => $c->whereNull('cost_price')->orWhere('cost_price', '<=', 0)))),
             'incomplete' => $query->where(fn ($sub) => $sub
                 ->where($withoutImage)
                 ->orWhereDoesntHave('documents')
