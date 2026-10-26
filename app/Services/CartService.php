@@ -35,6 +35,17 @@ class CartService
         );
     }
 
+    /** Cart yang SUDAH ada untuk konteks ini, tanpa membuat baris baru (untuk baca saja). */
+    public function find(): ?Cart
+    {
+        if ($userId = auth()->id()) {
+            return Cart::where('user_id', $userId)->first();
+        }
+        $token = session('guest_token');
+
+        return $token ? Cart::where('session_token', $token)->whereNull('user_id')->first() : null;
+    }
+
     /** Merge the guest cart into the user's cart after a successful login. */
     public function mergeGuestIntoUser(int $userId, string $guestToken): void
     {
@@ -176,10 +187,14 @@ class CartService
         $this->current()->update(['note' => $note]);
     }
 
-    /** Total buyable-item quantity, for the header cart badge. */
+    /**
+     * Total buyable-item quantity, for the header cart badge. Hanya membaca: badge
+     * dipanggil di setiap halaman, jadi tidak boleh membuat keranjang kosong untuk
+     * tiap pengunjung/bot.
+     */
     public function count(): int
     {
-        return (int) $this->current()->items()->sum('quantity');
+        return (int) ($this->find()?->items()->sum('quantity') ?? 0);
     }
 
     public function availableStock(Product $product, ?ProductVariant $variant): int

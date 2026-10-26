@@ -19,6 +19,17 @@ class WishlistService
         );
     }
 
+    /** Wishlist yang SUDAH ada, tanpa membuat baris baru (badge & ikon hati di setiap halaman). */
+    public function find(): ?Wishlist
+    {
+        if ($userId = auth()->id()) {
+            return Wishlist::where('user_id', $userId)->first();
+        }
+        $token = session('guest_token');
+
+        return $token ? Wishlist::where('session_token', $token)->whereNull('user_id')->first() : null;
+    }
+
     public function toggle(Product $product): bool
     {
         $wishlist = $this->current();
@@ -37,12 +48,12 @@ class WishlistService
 
     public function has(Product $product): bool
     {
-        return $this->current()->items()->where('product_id', $product->id)->exists();
+        return (bool) $this->find()?->items()->where('product_id', $product->id)->exists();
     }
 
     public function count(): int
     {
-        return $this->current()->items()->count();
+        return (int) ($this->find()?->items()->count() ?? 0);
     }
 
     public function mergeGuestIntoUser(int $userId, string $guestToken): void
