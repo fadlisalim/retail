@@ -101,10 +101,10 @@ class WaCampaignSettings
         return max(1, intdiv(60, $this->get('gap_seconds')));
     }
 
-    /** Nama sales untuk placeholder {sales} dari kode ridlabs; "*=Nama" = semua kode lain; tanpa padanan → "tim sales kami". */
+    /** Nama sales untuk placeholder {sales} dari kode ridlabs; "*=Nama" = semua kode lain; tanpa padanan → "Admin". */
     public function salesName(?string $code): string
     {
-        $default = 'tim sales kami';
+        $default = 'Admin';
         foreach (preg_split('/\R/', (string) $this->get('sales_names')) as $line) {
             [$k, $v] = array_pad(array_map('trim', explode('=', $line, 2)), 2, '');
             if ($k === '*' && $v !== '') {

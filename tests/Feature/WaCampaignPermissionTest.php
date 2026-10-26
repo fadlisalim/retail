@@ -74,9 +74,9 @@ class WaCampaignPermissionTest extends TestCase
         $this->assertSame(2, $service->dispatch()['sent']);
 
         $m = $campaign->messages()->where('phone', '6281268123767')->first();
-        $this->assertStringContainsString('Halo Kak Hendra, ini Energi.Click dari Rekasurya (dulu dilayani Pak Eka)', $m->rendered_message);
+        $this->assertStringContainsString('Halo Kak Hendra, saya Pak Eka dari Energi.Click (Rekasurya)', $m->rendered_message);
         $this->assertStringNotContainsString('http', $m->rendered_message); // tanpa link
-        $this->assertStringContainsString('(dulu dilayani tim sales kami)', $campaign->messages()->where('phone', '6282328525988')->value('rendered_message'));
+        $this->assertStringContainsString('saya Admin dari Energi.Click', $campaign->messages()->where('phone', '6282328525988')->value('rendered_message'));
         Http::assertNotSent(fn ($r) => str_contains($r->url(), 'send-image')); // tanpa gambar
         $this->assertNotNull($hendra->fresh()->permission_asked_at);
         $this->assertFalse($hendra->fresh()->isOptedIn());

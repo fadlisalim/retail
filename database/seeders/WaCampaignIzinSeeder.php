@@ -13,7 +13,8 @@ use Illuminate\Database\Seeder;
  * pemilik): teks saja tanpa link/gambar, ajak balas YA / STOP. Balasan YA otomatis jadi
  * penerima promo dan langsung dikirimi foto + link Seraphim 345Wp. 4 versi redaksi (digilir,
  * isi & harga sama) supaya terlihat versi mana yang paling banyak dibalas. Kuota 40 pesan/hari,
- * rata-rata 2 pesan/menit (jeda acak 20–40 dtk), {sales} = Miftah (keputusan pemilik).
+ * rata-rata 2 pesan/menit (jeda acak 20–40 dtk), {sales} = Miftah, sales Energi.Click
+ * yang menyapa (bukan sales lama — keputusan pemilik).
  * Admin tinggal cek preview, kirim tes, Mulai. Draf yang belum dikirim ikut diperbarui.
  */
 class WaCampaignIzinSeeder extends Seeder
@@ -21,37 +22,37 @@ class WaCampaignIzinSeeder extends Seeder
     public const CAMPAIGN_NAME = 'Minta izin + Seraphim 345Wp — customer lama';
 
     public const MESSAGE = <<<'TXT'
-Halo Kak {nama}, ini Energi.Click dari Rekasurya (dulu dilayani {sales}) 🙏
-Sekarang kami punya toko online panel surya, inverter & baterai.
+Halo Kak {nama}, saya {sales} dari Energi.Click (Rekasurya) 🙏
+Kakak dulu pernah terhubung dengan tim Rekasurya — sekarang kami punya toko online panel surya, inverter & baterai.
 
 Kebetulan ada stok terbatas *panel Seraphim 345Wp bekas proyek* (fungsi normal, garansi toko 3 thn) cuma *Rp 850rb/panel*.
 
-Mau kami kirimi foto & detailnya? Balas *YA*.
+Mau saya kirimi foto & detailnya? Balas *YA*.
 Kalau tidak berkenan dihubungi lagi, balas *STOP*.
 TXT;
 
-    /** Versi 2–4 (versi 1 = MESSAGE). */
+    /** Versi 2–4 (versi 1 = MESSAGE). {sales} = sales Energi.Click yang mengirim (bukan sales lama). */
     public const VARIANTS = [
         <<<'TXT'
-Permisi Kak {nama} 🙏 Kami dari Energi.Click (Rekasurya), dulu Kakak dilayani {sales}.
-Sekarang kami buka toko online perlengkapan PLTS: panel surya, inverter & baterai.
+Permisi Kak {nama} 🙏 Saya {sales} dari Energi.Click – Rekasurya.
+Terima kasih dulu pernah terhubung dengan tim Rekasurya; sekarang perlengkapan PLTS (panel surya, inverter, baterai) bisa dipesan online di toko kami.
 
 Lagi ada panel *Seraphim 345Wp bekas proyek* — fungsi normal, garansi toko 3 thn — *Rp 850rb/panel*, stoknya terbatas.
 
-Boleh kami kirim foto & detailnya? Balas *YA*.
+Boleh saya kirim foto & detailnya? Balas *YA*.
 Kalau tidak ingin dihubungi lagi, balas *STOP*.
 TXT,
         <<<'TXT'
-Hai Kak {nama} 👋 Energi.Click – Rekasurya di sini (dulu Kakak dilayani {sales}).
+Hai Kak {nama} 👋 {sales} dari Energi.Click (Rekasurya) di sini. Kakak tercatat pernah terhubung dengan tim Rekasurya, jadi saya mau kabari info stok:
 
-Info stok: panel *Seraphim 345Wp bekas proyek*, kondisi normal, garansi toko 3 tahun, cuma *Rp 850rb/panel*. Cocok untuk PLTS rumah, pompa air, atau proyek hemat budget.
+panel *Seraphim 345Wp bekas proyek*, kondisi normal, garansi toko 3 tahun, cuma *Rp 850rb/panel* — cocok untuk PLTS rumah, pompa air, atau proyek hemat budget.
 
 Mau dikirimi foto & detailnya? Balas *YA* ya Kak.
 Kalau tidak berkenan dihubungi, cukup balas *STOP* 🙏
 TXT,
         <<<'TXT'
 Halo Kak {nama}, semoga sehat selalu 🙏
-Ini Energi.Click dari Rekasurya — dulu Kakak pernah dilayani {sales}. Sekarang semua kebutuhan panel surya, inverter & baterai bisa dipesan online di toko kami.
+Perkenalkan, saya {sales} dari Energi.Click — toko online Rekasurya untuk panel surya, inverter & baterai. Kakak dulu pernah terhubung dengan tim Rekasurya.
 
 Kebetulan ada stok terbatas *panel Seraphim 345Wp bekas proyek* (normal, garansi toko 3 thn) harga *Rp 850rb/panel*.
 

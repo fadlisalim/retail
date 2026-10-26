@@ -14,3 +14,4 @@
 2026-10-24-aurora-pju AuroraPjuSeeder
 2026-10-25-wa-izin WaCampaignIzinSeeder
 2026-10-26-wa-izin-4-versi WaCampaignIzinSeeder
+2026-10-26-wa-izin-miftah-pengirim WaCampaignIzinSeeder
