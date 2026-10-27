@@ -26,6 +26,7 @@ class WaCampaignSettings
         'emergency_stop' => false,
         'send_days' => '1,2,3,4,5,6', // ISO: 1 Senin … 7 Minggu
         'stop_pause_percent' => 3,    // jeda otomatis bila balasan STOP > N% dari pesan terkirim (min. 30 terkirim); 0 = mati
+        'stop_pause_percent_permission' => 10, // idem untuk pesan minta izin (STOP memang salah satu jawaban yang ditawarkan)
         'sales_names' => '',          // "KODE=Nama" per baris, untuk placeholder {sales}
     ];
 
@@ -45,7 +46,7 @@ class WaCampaignSettings
 
         return match ($key) {
             'gap_seconds' => max(1, (int) $value),
-            'per_day', 'min_gap_days', 'failure_pause_after', 'max_attempts', 'stop_pause_percent' => max(0, (int) $value),
+            'per_day', 'min_gap_days', 'failure_pause_after', 'max_attempts', 'stop_pause_percent', 'stop_pause_percent_permission' => max(0, (int) $value),
             'emergency_stop' => filter_var($value, FILTER_VALIDATE_BOOL),
             default => $value,
         };
@@ -54,7 +55,7 @@ class WaCampaignSettings
     public function set(string $key, mixed $value): void
     {
         $type = match ($key) {
-            'gap_seconds', 'per_day', 'min_gap_days', 'failure_pause_after', 'max_attempts', 'stop_pause_percent' => 'integer',
+            'gap_seconds', 'per_day', 'min_gap_days', 'failure_pause_after', 'max_attempts', 'stop_pause_percent', 'stop_pause_percent_permission' => 'integer',
             'emergency_stop' => 'boolean',
             default => 'string',
         };

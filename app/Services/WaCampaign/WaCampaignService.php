@@ -218,7 +218,7 @@ class WaCampaignService
         if ($campaign->status !== WaCampaign::PAUSED) {
             return;
         }
-        $campaign->forceFill(['status' => WaCampaign::RUNNING, 'pause_reason' => null, 'consecutive_failures' => 0, 'started_at' => $campaign->started_at ?? now()])->save();
+        $campaign->forceFill(['status' => WaCampaign::RUNNING, 'pause_reason' => null, 'consecutive_failures' => 0, 'started_at' => $campaign->started_at ?? now(), 'stop_window_from' => now()])->save();
         WaCampaignLog::write($campaign->id, 'Dilanjutkan.');
     }
 
@@ -532,23 +532,27 @@ class WaCampaignService
     /** Catat balasan dari kontak yang baru menerima promo (≤ 7 hari). */
     /**
      * Rem darurat reputasi nomor: bila yang membalas STOP melebihi N% dari pesan terkirim
-     * (setelah minimal 30 terkirim), campaign dijeda — banyak STOP biasanya diikuti laporan spam.
+     * (minimal 30 terkirim), campaign dijeda — banyak STOP biasanya diikuti laporan spam.
+     * Pesan minta izin memakai batas lebih longgar (STOP memang salah satu jawaban yang
+     * ditawarkan). Setelah admin menekan Lanjutkan, hitungan dimulai ulang dari saat itu.
      */
     public function pauseIfTooManyStops(WaCampaign $campaign): bool
     {
-        $limit = $this->settings->get('stop_pause_percent');
-        $sent = $campaign->messages()->whereNotNull('sent_at')->count();
+        $limit = $this->settings->get($campaign->isPermission() ? 'stop_pause_percent_permission' : 'stop_pause_percent');
+        $window = $campaign->messages()->whereNotNull('sent_at')
+            ->when($campaign->stop_window_from, fn ($q, $from) => $q->where('sent_at', '>=', $from));
+        $sent = (clone $window)->count();
         if ($limit <= 0 || $sent < WaCampaignSettings::STOP_RATE_MIN_SENT) {
             return false;
         }
-        $stops = $campaign->messages()->whereNotNull('sent_at')
+        $stops = (clone $window)
             ->whereHas('contact', fn ($q) => $q->where('consent_status', WaContact::CONSENT_OUT)->whereColumn('wa_contacts.opted_out_at', '>=', 'wa_campaign_messages.sent_at'))
             ->count();
         $rate = $stops / $sent * 100;
         if ($rate <= $limit) {
             return false;
         }
-        $this->pause($campaign, sprintf('%d dari %d penerima membalas STOP (%.1f%% > %d%%) — evaluasi isi pesan & daftar penerima sebelum melanjutkan.', $stops, $sent, $rate, $limit), 'error');
+        $this->pause($campaign, sprintf('%d dari %d penerima membalas STOP (%.1f%% > %d%%) — evaluasi isi pesan & daftar penerima. Tekan Lanjutkan bila tetap ingin mengirim (hitungan STOP dimulai ulang).', $stops, $sent, $rate, $limit), 'error');
 
         return true;
     }

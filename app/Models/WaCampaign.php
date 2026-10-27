@@ -44,6 +44,7 @@ class WaCampaign extends Model
             'scheduled_at' => 'datetime',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
+            'stop_window_from' => 'datetime',
         ];
     }
 

@@ -130,8 +130,14 @@ class WaCampaignPermissionTest extends TestCase
         $service->dispatch();
         $this->assertSame(30, $campaign->messages()->whereNotNull('sent_at')->count());
 
-        // 2 dari 30 (6,7%) membalas STOP → di atas 3% → dijeda sebelum mengirim sisanya.
+        // Pesan izin: 2 STOP dari 30 (6,7%) masih wajar (batas 10%) → tidak dijeda.
         foreach (['6281200000001', '6281200000002'] as $phone) {
+            $this->postJson('/webhook/wablas', ['phone' => $phone, 'message' => 'STOP'])->assertOk();
+        }
+        $this->assertFalse($service->pauseIfTooManyStops($campaign->fresh()));
+
+        // 4 STOP (13,3%) → dijeda sebelum mengirim sisanya.
+        foreach (['6281200000003', '6281200000004'] as $phone) {
             $this->postJson('/webhook/wablas', ['phone' => $phone, 'message' => 'STOP'])->assertOk();
         }
         app(WaCampaignSettings::class)->set('per_day', 500);
@@ -141,6 +147,31 @@ class WaCampaignPermissionTest extends TestCase
         $this->assertSame(WaCampaign::PAUSED, $campaign->status);
         $this->assertStringContainsString('membalas STOP', $campaign->pause_reason);
         $this->assertSame(10, $campaign->messages()->where('status', WaCampaignMessage::QUEUED)->count());
+
+        // Admin menekan Lanjutkan → hitungan STOP dimulai ulang, sisa antrean terkirim.
+        $this->travel(1)->minutes();
+        $service->resume($campaign);
+        $service->dispatch();
+        $campaign = $campaign->fresh();
+        $this->assertNotSame(WaCampaign::PAUSED, $campaign->status, (string) $campaign->pause_reason);
+        $this->assertSame(0, $campaign->messages()->where('status', WaCampaignMessage::QUEUED)->count());
+    }
+
+    public function test_promo_campaign_keeps_strict_three_percent_stop_limit(): void
+    {
+        foreach (range(1, 30) as $i) {
+            $c = $this->legacy('0813000000'.str_pad((string) $i, 2, '0', STR_PAD_LEFT), 'Promo '.$i);
+            app(WaContactService::class)->optIn($c, 'checkout', 'tes');
+        }
+        $promo = WaCampaign::create(['name' => 'Promo', 'status' => WaCampaign::DRAFT, 'message' => 'Halo {nama}', 'segment' => ['tags' => ['legacy']]]);
+        $service = app(WaCampaignService::class);
+        $service->schedule($promo);
+        app(WaCampaignSettings::class)->set('gap_seconds', 2);
+        $service->dispatch();
+        $this->postJson('/webhook/wablas', ['phone' => '6281300000001', 'message' => 'STOP'])->assertOk();
+        $this->postJson('/webhook/wablas', ['phone' => '6281300000002', 'message' => 'STOP'])->assertOk();
+
+        $this->assertTrue($service->pauseIfTooManyStops($promo->fresh()));
     }
 
     public function test_izin_seeder_creates_permission_draft_and_lowers_daily_quota(): void

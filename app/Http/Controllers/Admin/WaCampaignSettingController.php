@@ -51,6 +51,7 @@ class WaCampaignSettingController extends Controller
             'test_phone' => ['nullable', 'string', 'max:30'],
             'connection_type' => ['required', 'in:qr,cloud'],
             'stop_pause_percent' => ['nullable', 'integer', 'between:0,50'],
+            'stop_pause_percent_permission' => ['nullable', 'integer', 'between:0,50'],
             'sales_names' => ['nullable', 'string', 'max:2000'],
         ], [
             'footer.regex' => 'Footer harus memuat kata STOP agar pelanggan tahu cara berhenti.',
@@ -61,6 +62,7 @@ class WaCampaignSettingController extends Controller
             $this->settings->set($k, $data[$k]);
         }
         $this->settings->set('stop_pause_percent', (int) ($data['stop_pause_percent'] ?? WaCampaignSettings::DEFAULTS['stop_pause_percent']));
+        $this->settings->set('stop_pause_percent_permission', (int) ($data['stop_pause_percent_permission'] ?? WaCampaignSettings::DEFAULTS['stop_pause_percent_permission']));
         $this->settings->set('sales_names', trim((string) ($data['sales_names'] ?? '')));
         $this->settings->set('send_days', implode(',', array_map('intval', $data['send_days'] ?? [1, 2, 3, 4, 5, 6])));
         $test = $contacts->normalize($data['test_phone'] ?? null);
