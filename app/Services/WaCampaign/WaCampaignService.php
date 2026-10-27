@@ -118,7 +118,8 @@ class WaCampaignService
             '{harga}' => $product ? rupiah($product->effectivePrice()) : '',
         ]);
         $body = trim($body);
-        if ($link !== '' && ! str_contains($template, '{link}')) {
+        // Link otomatis ditambahkan bila pesan belum memuat {link} maupun link lain yang ditulis langsung.
+        if ($link !== '' && ! str_contains($template, '{link}') && ! preg_match('#https?://#', $template)) {
             $body .= "\n\n".$link;
         }
         $footer = $this->settings->footer();

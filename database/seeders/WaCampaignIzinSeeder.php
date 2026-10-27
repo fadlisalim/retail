@@ -63,10 +63,10 @@ TXT,
 
     public const FOLLOWUP = <<<'TXT'
 Siap Kak {nama}, terima kasih 🙏
-Ini foto & detail *{produk}* — {harga}/panel, stok terbatas:
-{link}
+Ini detail *panel Seraphim 345Wp bekas proyek* — {harga}/panel:
+https://energi.click/s/nAe6UL
 
-Mau pesan atau tanya-tanya, balas saja chat ini ya.
+Untuk konfirmasi stok & pemesanan, balas saja chat ini ya.
 TXT;
 
     public function run(): void

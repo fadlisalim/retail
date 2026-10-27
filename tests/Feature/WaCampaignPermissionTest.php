@@ -9,6 +9,7 @@ use App\Models\WaContact;
 use App\Services\WaCampaign\WaCampaignService;
 use App\Services\WaCampaign\WaCampaignSettings;
 use App\Services\WaCampaign\WaContactService;
+use Database\Seeders\WaCampaignIzinFollowupSeeder;
 use Database\Seeders\WaCampaignIzinSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -91,7 +92,8 @@ class WaCampaignPermissionTest extends TestCase
         $this->assertSame('wa-reply', $hendra->consent_source);
         $this->assertStringContainsString('Ya mau kak', $hendra->consent_proof);
         Http::assertSent(fn ($r) => str_contains($r->url(), 'send-image') && $r['data'][0]['phone'] === '6281268123767'
-            && str_contains($r['data'][0]['caption'], 'Panel Seraphim 345Wp') && str_contains($r['data'][0]['caption'], url('/go/izin-seraphim')));
+            && str_contains($r['data'][0]['caption'], 'Seraphim 345Wp') && str_contains($r['data'][0]['caption'], 'https://energi.click/s/nAe6UL')
+            && ! str_contains($r['data'][0]['caption'], '/go/')); // link ditulis langsung → tidak ditambah link kedua
 
         // Balasan YA kedua tidak mengirim ulang (sudah izin).
         $sentBefore = count(Http::recorded());
@@ -218,5 +220,27 @@ class WaCampaignPermissionTest extends TestCase
         $this->assertSame(1, $stats[2]['yes']);
         $this->assertSame(2, $stats[2]['sent']);
         $this->assertSame(0, $stats[0]['yes']);
+    }
+
+    public function test_followup_seeder_adds_promo_image_and_link_to_running_permission_campaign(): void
+    {
+        Storage::fake('public');
+        $hendra = $this->legacy('081268123767', 'Hendra');
+        $this->seed(WaCampaignIzinSeeder::class);
+        $campaign = WaCampaign::where('name', WaCampaignIzinSeeder::CAMPAIGN_NAME)->firstOrFail();
+        $service = app(WaCampaignService::class);
+        $service->schedule($campaign);
+        $service->dispatch();
+        $this->assertFalse($campaign->fresh()->canEdit()); // sudah berjalan
+
+        $this->seed(WaCampaignIzinFollowupSeeder::class);
+        Storage::disk('public')->assertExists(WaCampaignIzinFollowupSeeder::IMAGE);
+
+        $this->postJson('/webhook/wablas', ['phone' => '6281268123767', 'message' => 'iya'])->assertOk();
+        $this->assertTrue($hendra->fresh()->isOptedIn());
+        Http::assertSent(fn ($r) => str_contains($r->url(), 'send-image')
+            && str_contains($r['data'][0]['image'], 'seraphim-345-bekas-proyek.jpg')
+            && str_contains($r['data'][0]['caption'], 'https://energi.click/s/nAe6UL')
+            && str_contains($r['data'][0]['caption'], 'konfirmasi stok'));
     }
 }
