@@ -16,6 +16,25 @@ use Illuminate\Support\Facades\DB;
  */
 class CategoryVisibility
 {
+    /**
+     * Kategori utama aktif (beserta anak aktif) yang terisi, diambil sekali per request:
+     * dipakai bersama oleh mega menu header dan beranda.
+     *
+     * @return Collection<int, Category>
+     */
+    public static function visibleRoots(): Collection
+    {
+        $bag = request()->attributes;
+        if (! $bag->has('visible_roots')) {
+            $bag->set('visible_roots', self::filter(Category::active()->roots()
+                ->with(['activeChildren'])
+                ->orderBy('sort_order')
+                ->get()));
+        }
+
+        return $bag->get('visible_roots');
+    }
+
     /** @return list<int> */
     public static function populatedIds(): array
     {

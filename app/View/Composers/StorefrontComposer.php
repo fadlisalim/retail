@@ -3,7 +3,6 @@
 namespace App\View\Composers;
 
 use App\Models\Article;
-use App\Models\Category;
 use App\Models\OrderDocumentation;
 use App\Models\Product;
 use App\Services\CartService;
@@ -74,9 +73,6 @@ class StorefrontComposer
      */
     private function navCategories()
     {
-        return CategoryVisibility::filter(Category::active()->roots()
-            ->with(['activeChildren'])
-            ->orderBy('sort_order')
-            ->get());
+        return CategoryVisibility::visibleRoots();
     }
 }

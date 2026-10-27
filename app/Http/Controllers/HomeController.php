@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use App\Models\Banner;
 use App\Models\Brand;
-use App\Models\Category;
 use App\Models\Product;
 use App\Models\Review;
 use App\Support\CategoryVisibility;
@@ -28,7 +27,7 @@ class HomeController extends Controller
             'videoBanners' => $banners->get('video', collect()),
             'quotationBanner' => $banners->get('quotation', collect())->first(),
             // All top-level categories, shown as a horizontally scrollable card row.
-            'shortcutCategories' => $shortcut = CategoryVisibility::filter(Category::active()->whereNull('parent_id')->orderBy('sort_order')->get()),
+            'shortcutCategories' => $shortcut = CategoryVisibility::visibleRoots(),
             'categoryThumbs' => CategoryVisibility::thumbnails($shortcut),
             // Produk terlaris berdasarkan jumlah unit yang benar-benar terjual
             // (sold_count naik saat pesanan dibayar, termasuk penjualan manual
