@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use Database\Seeders\AuroraHargaJualSeeder;
 use Database\Seeders\AuroraModalSeeder;
+use Database\Seeders\HargaPemilikOkt27Seeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -49,5 +50,22 @@ class AuroraModalSeederTest extends TestCase
         foreach ([$inv, $e1->fresh(), $e8->fresh()] as $m) {
             $this->assertGreaterThanOrEqual(0.22, ($m->price - $m->cost_price) / $m->price);
         }
+    }
+
+    public function test_owner_prices_for_echo_8_and_aiko(): void
+    {
+        $echo = Product::factory()->create(['sku' => 'AURORA-ECHO', 'product_type' => 'variable', 'price' => 7_400_000]);
+        ProductVariant::create(['product_id' => $echo->id, 'sku' => 'AURORA-ECHO-1', 'name' => 'ECHO-1', 'price' => 7_400_000, 'is_active' => true]);
+        $e8 = ProductVariant::create(['product_id' => $echo->id, 'sku' => 'AURORA-ECHO-8', 'name' => 'ECHO-8', 'price' => 38_400_000, 'is_active' => true]);
+        $aiko = Product::factory()->create(['sku' => 'AIKO-COMET2U', 'product_type' => 'variable', 'price' => 2_490_000]);
+        $a640 = ProductVariant::create(['product_id' => $aiko->id, 'sku' => 'AIKO-COMET2U-640', 'name' => '640 Wp', 'price' => 2_490_000, 'sale_price' => 2_400_000, 'is_active' => true]);
+
+        $this->seed(HargaPemilikOkt27Seeder::class);
+
+        $this->assertSame(33_250_000, (int) $e8->fresh()->price);
+        $this->assertSame(7_400_000, (int) $echo->fresh()->price);
+        $this->assertSame(2_750_000, (int) $a640->fresh()->price);
+        $this->assertSame(2_400_000, (int) $a640->fresh()->sale_price); // diskon admin tetap
+        $this->assertSame(2_750_000, (int) $aiko->fresh()->price);
     }
 }
