@@ -21,3 +21,5 @@
 ## Ide berikutnya
 - Cache 1–2 menit untuk rak produk beranda (5 rak, tiap rak query + relasi) bagi pengunjung tanpa login.
 - Konversi foto produk ke WebP + srcset (ukur dulu bobot foto di produksi).
+
+PR: https://github.com/fadlisalim/retail/pull/5
