@@ -16,3 +16,4 @@
 2026-10-26-wa-izin-4-versi WaCampaignIzinSeeder
 2026-10-26-wa-izin-miftah-pengirim WaCampaignIzinSeeder
 2026-10-27-wa-izin-followup-foto WaCampaignIzinFollowupSeeder
+2026-10-27-aurora-modal AuroraModalSeeder
