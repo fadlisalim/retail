@@ -19,3 +19,4 @@
 2026-10-27-aurora-modal AuroraModalSeeder
 2026-10-27-aurora-harga-22 AuroraHargaJualSeeder
 2026-10-27-harga-echo8-aiko HargaPemilikOkt27Seeder
+2026-10-29-nomor-wa-toko NomorWaTokoSeeder
